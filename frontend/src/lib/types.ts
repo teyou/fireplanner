@@ -528,6 +528,56 @@ export interface PropertyState {
 }
 
 // ============================================================
+// Year-by-Year Projection
+// ============================================================
+
+export interface ProjectionRow {
+  age: number
+  year: number
+  isRetired: boolean
+  // Default columns
+  totalIncome: number
+  annualExpenses: number
+  savingsOrWithdrawal: number
+  portfolioReturnDollar: number
+  portfolioReturnPct: number
+  liquidNW: number
+  cpfTotal: number
+  totalNW: number
+  fireProgress: number
+  // Expanded: income breakdown
+  salary: number
+  rentalIncome: number
+  investmentIncome: number
+  businessIncome: number
+  governmentIncome: number
+  totalGross: number
+  // Expanded: tax/CPF deductions
+  sgTax: number
+  cpfEmployee: number
+  cpfEmployer: number
+  totalNet: number
+  // Expanded: CPF balances
+  cpfOA: number
+  cpfSA: number
+  cpfMA: number
+  // Expanded: withdrawal detail
+  withdrawalAmount: number
+  // Expanded: other
+  cumulativeSavings: number
+  activeLifeEvents: string[]
+}
+
+export interface ProjectionSummary {
+  fireAchievedAge: number | null
+  peakTotalNW: number
+  peakTotalNWAge: number
+  terminalLiquidNW: number
+  terminalTotalNW: number
+  portfolioDepletedAge: number | null
+}
+
+// ============================================================
 // Validation
 // ============================================================
 

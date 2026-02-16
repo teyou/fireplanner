@@ -1,0 +1,332 @@
+/**
+ * Year-by-year deterministic projection combining income engine, portfolio growth,
+ * and withdrawal strategy into a single trajectory from currentAge to lifeExpectancy.
+ *
+ * Reuses pre-computed IncomeProjectionRow[] from income.ts — no recomputation.
+ * Adds the portfolio/withdrawal dimension on top.
+ */
+
+import type {
+  IncomeProjectionRow,
+  ProjectionRow,
+  ProjectionSummary,
+  WithdrawalStrategyType,
+  StrategyParamsMap,
+  GlidePathConfig,
+} from '@/lib/types'
+import { calculatePortfolioReturn, interpolateGlidePath } from './portfolio'
+import {
+  constantDollar,
+  vpw,
+  guardrails,
+  vanguardDynamic,
+  capeBased,
+  floorCeiling,
+} from './withdrawal'
+
+export interface ProjectionParams {
+  incomeProjection: IncomeProjectionRow[]
+  currentAge: number
+  retirementAge: number
+  lifeExpectancy: number
+  initialLiquidNW: number
+  swr: number
+  expectedReturn: number
+  usePortfolioReturn: boolean
+  inflation: number
+  expenseRatio: number
+  annualExpenses: number
+  fireNumber: number
+  currentWeights: number[]
+  targetWeights: number[]
+  assetReturns: number[]
+  glidePathConfig: GlidePathConfig
+  withdrawalStrategy: WithdrawalStrategyType
+  strategyParams: StrategyParamsMap
+}
+
+export interface ProjectionResult {
+  rows: ProjectionRow[]
+  summary: ProjectionSummary
+}
+
+/**
+ * Determine allocation weights at a given age, accounting for glide path.
+ * Pre-retirement uses currentWeights, post-retirement uses targetWeights,
+ * with glide path interpolation when enabled and age is in range.
+ */
+function getWeightsAtAge(
+  age: number,
+  isRetired: boolean,
+  currentWeights: number[],
+  targetWeights: number[],
+  glidePathConfig: GlidePathConfig,
+): number[] {
+  if (glidePathConfig.enabled) {
+    if (age >= glidePathConfig.startAge && age <= glidePathConfig.endAge) {
+      const duration = glidePathConfig.endAge - glidePathConfig.startAge
+      const progress = duration > 0 ? (age - glidePathConfig.startAge) / duration : 1
+      return interpolateGlidePath(currentWeights, targetWeights, progress, glidePathConfig.method)
+    }
+    if (age > glidePathConfig.endAge) {
+      return targetWeights
+    }
+  }
+  return isRetired ? targetWeights : currentWeights
+}
+
+/**
+ * Compute the initial withdrawal amount at retirement start.
+ * Uses strategy-specific rate when available, falls back to profile SWR.
+ * Matches the pattern in runDeterministicComparison.
+ */
+function computeInitialWithdrawal(
+  portfolio: number,
+  strategy: WithdrawalStrategyType,
+  strategyParams: StrategyParamsMap,
+  defaultSwr: number,
+): number {
+  switch (strategy) {
+    case 'constant_dollar':
+      return portfolio * strategyParams.constant_dollar.swr
+    case 'guardrails':
+      return portfolio * strategyParams.guardrails.initialRate
+    case 'vanguard_dynamic':
+      return portfolio * strategyParams.vanguard_dynamic.swr
+    case 'floor_ceiling':
+      return portfolio * strategyParams.floor_ceiling.targetRate
+    default:
+      return portfolio * defaultSwr
+  }
+}
+
+/**
+ * Dispatch to the correct withdrawal strategy function.
+ */
+function computeWithdrawal(
+  portfolio: number,
+  retirementYear: number,
+  strategy: WithdrawalStrategyType,
+  strategyParams: StrategyParamsMap,
+  initialWithdrawal: number,
+  prevWithdrawal: number,
+  inflation: number,
+  remainingYears: number,
+): number {
+  switch (strategy) {
+    case 'constant_dollar':
+      return constantDollar(portfolio, retirementYear, initialWithdrawal, inflation)
+    case 'vpw':
+      return vpw(
+        portfolio, remainingYears,
+        strategyParams.vpw.expectedRealReturn, strategyParams.vpw.targetEndValue,
+      )
+    case 'guardrails': {
+      const gp = strategyParams.guardrails
+      return guardrails(
+        portfolio, retirementYear, initialWithdrawal, prevWithdrawal, inflation,
+        gp.initialRate, gp.ceilingTrigger, gp.floorTrigger, gp.adjustmentSize,
+      )
+    }
+    case 'vanguard_dynamic': {
+      const vd = strategyParams.vanguard_dynamic
+      return vanguardDynamic(
+        portfolio, retirementYear, initialWithdrawal, prevWithdrawal, inflation,
+        vd.swr, vd.ceiling, vd.floor,
+      )
+    }
+    case 'cape_based': {
+      const cb = strategyParams.cape_based
+      return capeBased(portfolio, retirementYear, cb.baseRate, cb.capeWeight, cb.currentCape)
+    }
+    case 'floor_ceiling': {
+      const fc = strategyParams.floor_ceiling
+      return floorCeiling(portfolio, fc.floor, fc.ceiling, fc.targetRate)
+    }
+    default:
+      return constantDollar(portfolio, retirementYear, initialWithdrawal, inflation)
+  }
+}
+
+/**
+ * Generate the complete year-by-year projection from currentAge to lifeExpectancy.
+ *
+ * Pre-retirement: liquidNW = liquidNW × (1 + rate) + annualSavings
+ * Post-retirement: liquidNW = (liquidNW - netWithdrawal) × (1 + rate), clamped to ≥ 0
+ *   where netWithdrawal = withdrawalAmount - postRetirementIncome
+ */
+export function generateProjection(params: ProjectionParams): ProjectionResult {
+  const {
+    incomeProjection,
+    currentAge,
+    retirementAge,
+    lifeExpectancy,
+    initialLiquidNW,
+    swr,
+    expectedReturn,
+    usePortfolioReturn,
+    inflation,
+    expenseRatio,
+    annualExpenses,
+    fireNumber,
+    currentWeights,
+    targetWeights,
+    assetReturns,
+    glidePathConfig,
+    withdrawalStrategy,
+    strategyParams,
+  } = params
+
+  const rows: ProjectionRow[] = []
+  let liquidNW = initialLiquidNW
+  let prevWithdrawal = 0
+  let initialWithdrawal = 0
+  let retirementYearCounter = -1
+  let fireAchievedAge: number | null = null
+  let peakTotalNW = 0
+  let peakTotalNWAge = currentAge
+  let portfolioDepletedAge: number | null = null
+
+  const totalYears = lifeExpectancy - currentAge
+
+  for (let i = 0; i <= totalYears; i++) {
+    const age = currentAge + i
+    const year = i
+    const isRetired = age >= retirementAge
+    const incomeRow = incomeProjection[i]
+    if (!incomeRow) break
+
+    // Track retirement year (0-indexed from first retired year)
+    if (isRetired) retirementYearCounter++
+    const retirementYear = retirementYearCounter
+
+    // Weights for this age
+    const weights = getWeightsAtAge(age, isRetired, currentWeights, targetWeights, glidePathConfig)
+
+    // Return rate (nominal, net of expense ratio)
+    let returnRate: number
+    if (usePortfolioReturn && assetReturns.length === weights.length) {
+      returnRate = calculatePortfolioReturn(weights, assetReturns) - expenseRatio
+    } else {
+      returnRate = expectedReturn - expenseRatio
+    }
+
+    const startLiquidNW = liquidNW
+    let withdrawalAmount = 0
+    let portfolioReturnDollar: number
+    let savingsOrWithdrawal: number
+    let totalIncome: number
+
+    const inflationAdjustedExpenses = annualExpenses * Math.pow(1 + inflation, year)
+
+    if (!isRetired) {
+      // Pre-retirement: accumulation
+      portfolioReturnDollar = startLiquidNW * returnRate
+      liquidNW = startLiquidNW * (1 + returnRate) + incomeRow.annualSavings
+      savingsOrWithdrawal = incomeRow.annualSavings
+      totalIncome = incomeRow.totalNet
+    } else {
+      // Post-retirement: decumulation
+
+      // Compute initial withdrawal at the start of retirement
+      if (retirementYear === 0) {
+        initialWithdrawal = computeInitialWithdrawal(
+          startLiquidNW, withdrawalStrategy, strategyParams, swr,
+        )
+      }
+
+      // Post-retirement income from active streams
+      const postRetirementIncome = incomeRow.rentalIncome + incomeRow.investmentIncome +
+        incomeRow.businessIncome + incomeRow.governmentIncome
+
+      // Compute withdrawal if portfolio has funds
+      if (startLiquidNW > 0) {
+        const remainingYears = lifeExpectancy - age
+        withdrawalAmount = computeWithdrawal(
+          startLiquidNW, retirementYear, withdrawalStrategy, strategyParams,
+          initialWithdrawal, prevWithdrawal, inflation, remainingYears,
+        )
+        // Can't withdraw more than portfolio
+        withdrawalAmount = Math.min(withdrawalAmount, startLiquidNW)
+      }
+
+      // Net draw from portfolio: positive = drawing, negative = surplus reinvested
+      const netWithdrawal = withdrawalAmount - postRetirementIncome
+
+      // Portfolio grows after net withdrawal
+      const afterNetWithdrawal = startLiquidNW - netWithdrawal
+      portfolioReturnDollar = afterNetWithdrawal * returnRate
+      liquidNW = Math.max(0, afterNetWithdrawal * (1 + returnRate))
+
+      prevWithdrawal = withdrawalAmount
+      savingsOrWithdrawal = -netWithdrawal
+      totalIncome = withdrawalAmount + postRetirementIncome
+    }
+
+    // CPF and totals
+    const cpfTotal = incomeRow.cpfOA + incomeRow.cpfSA + incomeRow.cpfMA
+    const totalNW = liquidNW + cpfTotal
+
+    // FIRE progress
+    const fireProgress = fireNumber > 0 ? totalNW / fireNumber : 0
+
+    // Track FIRE achievement
+    if (fireProgress >= 1 && fireAchievedAge === null) {
+      fireAchievedAge = age
+    }
+
+    // Track peak NW
+    if (totalNW > peakTotalNW) {
+      peakTotalNW = totalNW
+      peakTotalNWAge = age
+    }
+
+    // Track depletion
+    if (isRetired && liquidNW <= 0 && portfolioDepletedAge === null) {
+      portfolioDepletedAge = age
+    }
+
+    rows.push({
+      age,
+      year,
+      isRetired,
+      totalIncome,
+      annualExpenses: inflationAdjustedExpenses,
+      savingsOrWithdrawal,
+      portfolioReturnDollar,
+      portfolioReturnPct: returnRate,
+      liquidNW,
+      cpfTotal,
+      totalNW,
+      fireProgress,
+      salary: incomeRow.salary,
+      rentalIncome: incomeRow.rentalIncome,
+      investmentIncome: incomeRow.investmentIncome,
+      businessIncome: incomeRow.businessIncome,
+      governmentIncome: incomeRow.governmentIncome,
+      totalGross: incomeRow.totalGross,
+      sgTax: incomeRow.sgTax,
+      cpfEmployee: incomeRow.cpfEmployee,
+      cpfEmployer: incomeRow.cpfEmployer,
+      totalNet: incomeRow.totalNet,
+      cpfOA: incomeRow.cpfOA,
+      cpfSA: incomeRow.cpfSA,
+      cpfMA: incomeRow.cpfMA,
+      withdrawalAmount,
+      cumulativeSavings: incomeRow.cumulativeSavings,
+      activeLifeEvents: incomeRow.activeLifeEvents,
+    })
+  }
+
+  const lastRow = rows[rows.length - 1]
+  const summary: ProjectionSummary = {
+    fireAchievedAge,
+    peakTotalNW,
+    peakTotalNWAge,
+    terminalLiquidNW: lastRow?.liquidNW ?? 0,
+    terminalTotalNW: lastRow?.totalNW ?? 0,
+    portfolioDepletedAge,
+  }
+
+  return { rows, summary }
+}
