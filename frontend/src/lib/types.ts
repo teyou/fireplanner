@@ -432,21 +432,21 @@ export interface CrisisScenario {
 }
 
 export interface SequenceRiskResult {
-  normalSuccessRate: number
-  crisisSuccessRate: number
-  successDegradation: number
-  normalBands: PercentileBands
-  crisisBands: PercentileBands
+  normal_success_rate: number
+  crisis_success_rate: number
+  success_degradation: number
+  normal_percentile_bands: PercentileBands
+  crisis_percentile_bands: PercentileBands
   mitigations: MitigationImpact[]
-  computationTimeMs: number
+  computation_time_ms: number
 }
 
 export interface MitigationImpact {
   strategy: string
   description: string
-  normalSuccessRate: number
-  crisisSuccessRate: number
-  successImprovement: number
+  normal_success_rate: number
+  crisis_success_rate: number
+  success_improvement: number
 }
 
 // ============================================================
