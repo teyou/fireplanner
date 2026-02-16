@@ -174,8 +174,7 @@ export function interpolateGlidePath(
 export function getGlidePathAllocations(
   config: GlidePathConfig,
   currentWeights: number[],
-  targetWeights: number[],
-  currentAge: number
+  targetWeights: number[]
 ): { age: number; weights: number[] }[] {
   if (!config.enabled) return []
 

@@ -1,4 +1,4 @@
-import type { ValidationErrors, ProfileState, IncomeState } from '@/lib/types'
+import type { ValidationErrors, ProfileState, IncomeState, AllocationState } from '@/lib/types'
 
 /**
  * Cross-field validation rules within the profile store.
@@ -65,6 +65,39 @@ export function validateCrossStoreRules(
     if (jump.age > profile.retirementAge) {
       errors[`promotionJump_${i}_age`] =
         `Promotion age (${jump.age}) must be <= retirement age (${profile.retirementAge})`
+    }
+  }
+
+  return errors
+}
+
+/**
+ * Cross-store validation: allocation store rules that depend on profile store.
+ */
+export function validateAllocationCrossStoreRules(
+  profile: Pick<ProfileState, 'currentAge' | 'lifeExpectancy'>,
+  allocation: Pick<AllocationState, 'glidePathConfig' | 'targetWeights'>
+): ValidationErrors {
+  const errors: ValidationErrors = {}
+
+  if (allocation.glidePathConfig.enabled) {
+    if (allocation.glidePathConfig.startAge < profile.currentAge) {
+      errors['glidePathConfig.startAge'] =
+        `Glide path start age (${allocation.glidePathConfig.startAge}) must be >= current age (${profile.currentAge})`
+    }
+    if (allocation.glidePathConfig.endAge > profile.lifeExpectancy) {
+      errors['glidePathConfig.endAge'] =
+        `Glide path end age (${allocation.glidePathConfig.endAge}) must be <= life expectancy (${profile.lifeExpectancy})`
+    }
+    if (allocation.glidePathConfig.startAge >= allocation.glidePathConfig.endAge) {
+      errors['glidePathConfig.startAge'] =
+        'Glide path start age must be less than end age'
+    }
+
+    // Validate target weights sum when glide path is enabled
+    const targetSum = allocation.targetWeights.reduce((a, b) => a + b, 0)
+    if (Math.abs(targetSum - 1) >= 0.001) {
+      errors.targetWeights = 'Target weights must sum to 100% when glide path is enabled'
     }
   }
 

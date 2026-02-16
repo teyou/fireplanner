@@ -16,7 +16,6 @@ import {
   ASSET_CLASSES,
   CORRELATION_MATRIX,
   ALLOCATION_TEMPLATES,
-  RISK_FREE_RATE,
 } from '@/lib/data/historicalReturns'
 
 const defaultReturns = ASSET_CLASSES.map((a) => a.expectedReturn)
@@ -276,7 +275,7 @@ describe('getGlidePathAllocations', () => {
   it('returns empty array when glide path disabled', () => {
     const result = getGlidePathAllocations(
       { enabled: false, method: 'linear', startAge: 55, endAge: 65 },
-      current, target, 30
+      current, target
     )
     expect(result).toEqual([])
   })
@@ -284,7 +283,7 @@ describe('getGlidePathAllocations', () => {
   it('generates correct number of years', () => {
     const result = getGlidePathAllocations(
       { enabled: true, method: 'linear', startAge: 55, endAge: 65 },
-      current, target, 30
+      current, target
     )
     // 55 to 65 inclusive = 11 entries
     expect(result).toHaveLength(11)
@@ -295,7 +294,7 @@ describe('getGlidePathAllocations', () => {
   it('first year matches current weights, last year matches target', () => {
     const result = getGlidePathAllocations(
       { enabled: true, method: 'linear', startAge: 55, endAge: 65 },
-      current, target, 30
+      current, target
     )
     result[0].weights.forEach((w, i) => expect(w).toBeCloseTo(current[i], 5))
     result[10].weights.forEach((w, i) => expect(w).toBeCloseTo(target[i], 5))
@@ -304,7 +303,7 @@ describe('getGlidePathAllocations', () => {
   it('returns empty array for invalid duration', () => {
     const result = getGlidePathAllocations(
       { enabled: true, method: 'linear', startAge: 65, endAge: 55 },
-      current, target, 30
+      current, target
     )
     expect(result).toEqual([])
   })
