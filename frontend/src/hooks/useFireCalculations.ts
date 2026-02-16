@@ -1,9 +1,12 @@
 import { useMemo } from 'react'
 import type { FireMetrics } from '@/lib/types'
 import { calculateAllFireMetrics } from '@/lib/calculations/fire'
+import { calculatePortfolioReturn } from '@/lib/calculations/portfolio'
 import { generateIncomeProjection } from '@/lib/calculations/income'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
+import { useAllocationStore } from '@/stores/useAllocationStore'
+import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
 
 interface FireCalculationsResult {
   metrics: FireMetrics | null
@@ -12,14 +15,15 @@ interface FireCalculationsResult {
 }
 
 /**
- * Derived hook: reads profile + income stores, checks validation, computes FIRE metrics.
- * When income projection is available, uses row 0's totalGross as effective income
- * and row 0's annualSavings for more accurate FIRE calculations.
- * Falls back to profile.annualIncome when income projection is unavailable.
+ * Derived hook: reads profile + income + allocation stores, checks validation, computes FIRE metrics.
+ * When allocation has no validation errors, uses portfolio expected return from Markowitz
+ * instead of profile.expectedReturn. Falls back to profile.expectedReturn when allocation has errors.
+ * When income projection is available, uses row 0's totalGross as effective income.
  */
 export function useFireCalculations(): FireCalculationsResult {
   const profile = useProfileStore()
   const income = useIncomeStore()
+  const allocation = useAllocationStore()
 
   return useMemo(() => {
     const profileErrors = profile.validationErrors
@@ -66,6 +70,18 @@ export function useFireCalculations(): FireCalculationsResult {
       }
     }
 
+    // Use portfolio expected return from allocation when available
+    let expectedReturn = profile.expectedReturn
+    const allocationErrors = allocation.validationErrors
+    const allocationHasErrors = Object.keys(allocationErrors).length > 0
+
+    if (!allocationHasErrors) {
+      const effectiveReturns = ASSET_CLASSES.map((ac, i) =>
+        allocation.returnOverrides[i] ?? ac.expectedReturn
+      )
+      expectedReturn = calculatePortfolioReturn(allocation.currentWeights, effectiveReturns)
+    }
+
     const metrics = calculateAllFireMetrics({
       currentAge: profile.currentAge,
       retirementAge: profile.retirementAge,
@@ -74,7 +90,7 @@ export function useFireCalculations(): FireCalculationsResult {
       liquidNetWorth: profile.liquidNetWorth,
       cpfTotal,
       swr: profile.swr,
-      expectedReturn: profile.expectedReturn,
+      expectedReturn,
       inflation: profile.inflation,
       expenseRatio: profile.expenseRatio,
     })
@@ -109,5 +125,8 @@ export function useFireCalculations(): FireCalculationsResult {
     income.lifeEventsEnabled,
     income.personalReliefs,
     income.validationErrors,
+    allocation.currentWeights,
+    allocation.returnOverrides,
+    allocation.validationErrors,
   ])
 }

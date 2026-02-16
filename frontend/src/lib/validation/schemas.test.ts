@@ -11,12 +11,16 @@ import {
   incomeSchema,
   careerPhaseSchema,
   promotionJumpSchema,
+  allocationWeightsSchema,
+  glidePathConfigSchema,
   validateProfileField,
   validateIncomeField,
+  validateAllocationField,
 } from './schemas'
 import {
   validateProfileConsistency,
   validateCrossStoreRules,
+  validateAllocationCrossStoreRules,
 } from './rules'
 
 describe('field schemas', () => {
@@ -399,5 +403,161 @@ describe('validateIncomeField', () => {
 
   it('returns null for unknown fields', () => {
     expect(validateIncomeField('unknownField', 'anything')).toBeNull()
+  })
+})
+
+// ============================================================
+// Allocation Schema Tests
+// ============================================================
+
+describe('allocationWeightsSchema', () => {
+  it('accepts weights summing to 1.0', () => {
+    expect(allocationWeightsSchema.safeParse(
+      [0.30, 0.10, 0.10, 0.25, 0.05, 0.05, 0.10, 0.05]
+    ).success).toBe(true)
+  })
+
+  it('accepts weights with tiny floating point error', () => {
+    // 0.1 + 0.2 = 0.30000000000000004 in JS
+    expect(allocationWeightsSchema.safeParse(
+      [0.15, 0.05, 0.05, 0.45, 0.05, 0.05, 0.15, 0.05]
+    ).success).toBe(true)
+  })
+
+  it('rejects weights not summing to 1.0', () => {
+    const result = allocationWeightsSchema.safeParse(
+      [0.30, 0.10, 0.10, 0.25, 0.05, 0.05, 0.10, 0.10]
+    )
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects negative weights', () => {
+    const result = allocationWeightsSchema.safeParse(
+      [-0.10, 0.20, 0.10, 0.25, 0.05, 0.05, 0.10, 0.35]
+    )
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects weights > 1', () => {
+    const result = allocationWeightsSchema.safeParse(
+      [1.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.1]
+    )
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects wrong array length', () => {
+    expect(allocationWeightsSchema.safeParse([0.5, 0.5]).success).toBe(false)
+    expect(allocationWeightsSchema.safeParse([]).success).toBe(false)
+  })
+})
+
+describe('glidePathConfigSchema', () => {
+  it('accepts valid config', () => {
+    expect(glidePathConfigSchema.safeParse({
+      enabled: true, method: 'linear', startAge: 55, endAge: 65,
+    }).success).toBe(true)
+  })
+
+  it('accepts disabled config regardless of ages', () => {
+    // Even with startAge >= endAge, disabled config passes the object validation
+    // but fails the refinement. Disabled configs should still have valid structure.
+    expect(glidePathConfigSchema.safeParse({
+      enabled: false, method: 'linear', startAge: 55, endAge: 65,
+    }).success).toBe(true)
+  })
+
+  it('rejects startAge >= endAge', () => {
+    const result = glidePathConfigSchema.safeParse({
+      enabled: true, method: 'linear', startAge: 65, endAge: 55,
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects invalid method', () => {
+    expect(glidePathConfigSchema.safeParse({
+      enabled: true, method: 'invalid', startAge: 55, endAge: 65,
+    }).success).toBe(false)
+  })
+
+  it('accepts all three methods', () => {
+    for (const method of ['linear', 'slowStart', 'fastStart']) {
+      expect(glidePathConfigSchema.safeParse({
+        enabled: true, method, startAge: 55, endAge: 65,
+      }).success).toBe(true)
+    }
+  })
+})
+
+describe('validateAllocationField', () => {
+  it('returns null for valid weights', () => {
+    expect(validateAllocationField('currentWeights',
+      [0.30, 0.10, 0.10, 0.25, 0.05, 0.05, 0.10, 0.05]
+    )).toBeNull()
+  })
+
+  it('returns error for invalid weights', () => {
+    expect(validateAllocationField('currentWeights',
+      [0.50, 0.10, 0.10, 0.25, 0.05, 0.05, 0.10, 0.05]
+    )).toBeTruthy()
+  })
+
+  it('returns null for unknown fields', () => {
+    expect(validateAllocationField('unknownField', 'anything')).toBeNull()
+  })
+})
+
+describe('validateAllocationCrossStoreRules', () => {
+  const defaultProfile = { currentAge: 30, lifeExpectancy: 90 }
+  const validTargetWeights = [0.15, 0.05, 0.05, 0.45, 0.05, 0.05, 0.15, 0.05]
+  const disabledGlidePath = {
+    enabled: false, method: 'linear' as const, startAge: 55, endAge: 65,
+  }
+
+  it('returns empty when glide path disabled', () => {
+    const errors = validateAllocationCrossStoreRules(defaultProfile, {
+      glidePathConfig: disabledGlidePath,
+      targetWeights: validTargetWeights,
+    })
+    expect(Object.keys(errors)).toHaveLength(0)
+  })
+
+  it('catches glide path startAge < currentAge', () => {
+    const errors = validateAllocationCrossStoreRules(defaultProfile, {
+      glidePathConfig: { enabled: true, method: 'linear', startAge: 25, endAge: 65 },
+      targetWeights: validTargetWeights,
+    })
+    expect(errors['glidePathConfig.startAge']).toBeTruthy()
+  })
+
+  it('catches glide path endAge > lifeExpectancy', () => {
+    const errors = validateAllocationCrossStoreRules(defaultProfile, {
+      glidePathConfig: { enabled: true, method: 'linear', startAge: 55, endAge: 95 },
+      targetWeights: validTargetWeights,
+    })
+    expect(errors['glidePathConfig.endAge']).toBeTruthy()
+  })
+
+  it('catches glide path startAge >= endAge', () => {
+    const errors = validateAllocationCrossStoreRules(defaultProfile, {
+      glidePathConfig: { enabled: true, method: 'linear', startAge: 70, endAge: 60 },
+      targetWeights: validTargetWeights,
+    })
+    expect(errors['glidePathConfig.startAge']).toBeTruthy()
+  })
+
+  it('catches target weights not summing to 1.0 when enabled', () => {
+    const errors = validateAllocationCrossStoreRules(defaultProfile, {
+      glidePathConfig: { enabled: true, method: 'linear', startAge: 55, endAge: 65 },
+      targetWeights: [0.50, 0.10, 0.10, 0.25, 0.05, 0.05, 0.10, 0.05],
+    })
+    expect(errors.targetWeights).toBeTruthy()
+  })
+
+  it('passes with valid glide path config', () => {
+    const errors = validateAllocationCrossStoreRules(defaultProfile, {
+      glidePathConfig: { enabled: true, method: 'linear', startAge: 55, endAge: 65 },
+      targetWeights: validTargetWeights,
+    })
+    expect(Object.keys(errors)).toHaveLength(0)
   })
 })

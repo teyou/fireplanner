@@ -113,9 +113,10 @@ export function CorrelationHeatmap() {
       .style('opacity', 0)
       .style('transition', 'opacity 0.15s')
 
+    const container = containerRef.current
     return () => {
       svg.selectAll('*').remove()
-      d3.select(containerRef.current).selectAll('.d3-tooltip').remove()
+      d3.select(container).selectAll('.d3-tooltip').remove()
     }
   }, [])
 
