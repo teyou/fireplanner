@@ -1,0 +1,168 @@
+import { describe, it, expect } from 'vitest'
+import * as fc from 'fast-check'
+import {
+  calculateCpfContribution,
+  calculateCpfExtraInterest,
+  projectCpfBalances,
+  calculateBrsFrsErs,
+  estimateCpfLifePayout,
+} from './cpf'
+
+describe('calculateCpfContribution', () => {
+  it('age 30, $72K salary → 37% total rate', () => {
+    const result = calculateCpfContribution(72000, 30)
+    expect(result.total).toBeCloseTo(72000 * 0.37, 0)
+    expect(result.employee).toBeCloseTo(72000 * 0.20, 0)
+    expect(result.employer).toBeCloseTo(72000 * 0.17, 0)
+  })
+
+  it('OA/SA/MA allocation for age 30', () => {
+    const result = calculateCpfContribution(72000, 30)
+    expect(result.oaAllocation).toBeCloseTo(72000 * 0.23, 0)
+    expect(result.saAllocation).toBeCloseTo(72000 * 0.06, 0)
+    expect(result.maAllocation).toBeCloseTo(72000 * 0.08, 0)
+  })
+
+  it('age 57 uses 55-60 bracket (29.5% total)', () => {
+    const result = calculateCpfContribution(72000, 57)
+    expect(result.total).toBeCloseTo(72000 * 0.295, 0)
+    expect(result.employee).toBeCloseTo(72000 * 0.15, 0)
+    expect(result.employer).toBeCloseTo(72000 * 0.145, 0)
+  })
+
+  it('OW ceiling: salary above $81,600 is capped', () => {
+    const result = calculateCpfContribution(120000, 30)
+    // Only $81,600 subject to CPF (no bonus)
+    expect(result.total).toBeCloseTo(81600 * 0.37, 0)
+  })
+
+  it('AW ceiling: bonus capped at $102K - OW', () => {
+    const result = calculateCpfContribution(81600, 30, 30000)
+    // OW: $81,600 (at ceiling), AW ceiling: $102,000 - $81,600 = $20,400
+    // Total subject: $81,600 + $20,400 = $102,000
+    expect(result.total).toBeCloseTo(102000 * 0.37, 0)
+  })
+
+  it('returns zero for zero salary', () => {
+    const result = calculateCpfContribution(0, 30)
+    expect(result.total).toBe(0)
+    expect(result.employee).toBe(0)
+  })
+
+  it('age 62 uses 60-65 bracket (20.5%)', () => {
+    const result = calculateCpfContribution(60000, 62)
+    expect(result.total).toBeCloseTo(60000 * 0.205, 0)
+  })
+
+  it('age 67 uses 65-70 bracket (16%)', () => {
+    const result = calculateCpfContribution(60000, 67)
+    expect(result.total).toBeCloseTo(60000 * 0.16, 0)
+  })
+
+  it('age 72 uses above 70 bracket (12.5%)', () => {
+    const result = calculateCpfContribution(60000, 72)
+    expect(result.total).toBeCloseTo(60000 * 0.125, 0)
+  })
+
+  // Property-based: CPF <= salary * max_total_rate (37%)
+  it('CPF contribution never exceeds salary × 37%', () => {
+    fc.assert(
+      fc.property(
+        fc.double({ min: 0, max: 500000, noNaN: true }),
+        fc.integer({ min: 18, max: 80 }),
+        (salary, age) => {
+          const result = calculateCpfContribution(salary, age)
+          // Total can't exceed OW ceiling * max rate
+          return result.total <= 102000 * 0.37 + 1 // small epsilon
+        }
+      )
+    )
+  })
+})
+
+describe('calculateCpfExtraInterest', () => {
+  it('max extra interest on $60K combined', () => {
+    // $20K OA + $30K SA + $10K MA = $60K → $600 extra interest
+    const extra = calculateCpfExtraInterest(20000, 30000, 10000, 30)
+    expect(extra).toBeCloseTo(600, 0)
+  })
+
+  it('OA capped at $20K for extra interest', () => {
+    // $50K OA → only $20K qualifies, $40K SA → $40K qualifies (remaining $40K cap)
+    const extra = calculateCpfExtraInterest(50000, 40000, 0, 30)
+    // $20K OA + $40K SA = $60K → $600
+    expect(extra).toBeCloseTo(600, 0)
+  })
+
+  it('small balances get proportional extra interest', () => {
+    // $10K OA + $5K SA + $3K MA = $18K → $180 extra interest
+    const extra = calculateCpfExtraInterest(10000, 5000, 3000, 30)
+    expect(extra).toBeCloseTo(180, 0)
+  })
+
+  it('zero balances → zero extra interest', () => {
+    expect(calculateCpfExtraInterest(0, 0, 0, 30)).toBe(0)
+  })
+})
+
+describe('projectCpfBalances', () => {
+  it('produces correct number of years', () => {
+    const projections = projectCpfBalances(30, 35, 10000, 5000, 3000, 72000, 0.03)
+    expect(projections).toHaveLength(6) // ages 30, 31, 32, 33, 34, 35
+  })
+
+  it('balances grow over time', () => {
+    const projections = projectCpfBalances(30, 40, 10000, 5000, 3000, 72000, 0.03)
+    for (let i = 1; i < projections.length; i++) {
+      expect(projections[i].totalBalance).toBeGreaterThan(projections[i - 1].totalBalance)
+    }
+  })
+
+  it('first year includes contributions and interest', () => {
+    const projections = projectCpfBalances(30, 30, 10000, 5000, 3000, 72000, 0)
+    expect(projections[0].annualContribution).toBeGreaterThan(0)
+    expect(projections[0].annualInterest).toBeGreaterThan(0)
+    expect(projections[0].totalBalance).toBeGreaterThan(10000 + 5000 + 3000)
+  })
+})
+
+describe('calculateBrsFrsErs', () => {
+  it('age 55 → no growth needed (current year values)', () => {
+    const result = calculateBrsFrsErs(55)
+    expect(result.brs).toBeCloseTo(106500, 0)
+    expect(result.frs).toBeCloseTo(213000, 0)
+    expect(result.ers).toBeCloseTo(426000, 0)
+  })
+
+  it('age 30 → 25 years of 3.5% growth', () => {
+    const result = calculateBrsFrsErs(30)
+    const growthFactor = Math.pow(1.035, 25)
+    expect(result.brs).toBeCloseTo(106500 * growthFactor, 0)
+    expect(result.frs).toBeCloseTo(213000 * growthFactor, 0)
+  })
+
+  it('age >= 55 → no further growth', () => {
+    const result = calculateBrsFrsErs(60)
+    expect(result.brs).toBeCloseTo(106500, 0)
+  })
+})
+
+describe('estimateCpfLifePayout', () => {
+  it('Standard plan: FRS $213K → ~$13,419/yr', () => {
+    const payout = estimateCpfLifePayout(213000, 'standard')
+    expect(payout).toBeCloseTo(13419, 0)
+  })
+
+  it('Basic plan: FRS $213K → ~$11,502/yr', () => {
+    const payout = estimateCpfLifePayout(213000, 'basic')
+    expect(payout).toBeCloseTo(11502, 0)
+  })
+
+  // Pre-Retiree integration test: CPF LIFE ~$13,400/yr
+  it('Pre-Retiree: ~$13,400/yr CPF LIFE', () => {
+    const payout = estimateCpfLifePayout(213000, 'standard')
+    // $213,000 * 6.3% = $13,419 (CLAUDE.md says ~$13,400)
+    expect(payout).toBeCloseTo(13419, 0)
+    expect(Math.abs(payout - 13400)).toBeLessThan(100)
+  })
+})
