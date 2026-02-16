@@ -4,6 +4,7 @@ import {
   User,
   DollarSign,
   PieChart,
+  TableProperties,
   BarChart3,
   TrendingDown,
   History,
@@ -32,6 +33,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
       { label: 'FIRE Profile', path: '/profile', icon: <User className="h-4 w-4" /> },
       { label: 'Income Engine', path: '/income', icon: <DollarSign className="h-4 w-4" /> },
       { label: 'Asset Allocation', path: '/allocation', icon: <PieChart className="h-4 w-4" /> },
+      { label: 'Projection', path: '/projection', icon: <TableProperties className="h-4 w-4" /> },
     ],
   },
   {
