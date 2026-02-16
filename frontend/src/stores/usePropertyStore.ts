@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { PropertyState, PropertyType, ValidationErrors } from '@/lib/types'
+import type { PropertyState, ValidationErrors } from '@/lib/types'
 
 interface PropertyActions {
   setField: <K extends keyof Omit<PropertyState, 'validationErrors'>>(
