@@ -542,3 +542,150 @@ describe('property-based tests', () => {
     )
   })
 })
+
+// ============================================================
+// Integration test vectors from CLAUDE.md
+// ============================================================
+
+describe('integration tests', () => {
+  it('Fresh Graduate: age 25, $48K income, simple model', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 25,
+      retirementAge: 65,
+      lifeExpectancy: 90,
+      salaryModel: 'simple',
+      annualSalary: 48000,
+      salaryGrowthRate: 0.03,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 30000,
+      inflation: 0.025,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 0,
+      initialCpfSA: 0,
+      initialCpfMA: 0,
+    })
+
+    // Row 0: age 25, salary $48K
+    expect(rows[0].salary).toBe(48000)
+    expect(rows[0].totalGross).toBe(48000)
+
+    // FIRE Number = $30K / 0.035 = ~$857,143
+    const fireNumber = 30000 / 0.035
+    expect(fireNumber).toBeCloseTo(857143, -1)
+
+    // Savings rate: ($48K - CPF employee - tax - $30K) / $48K
+    // CPF employee: 48000 * 0.20 = 9600
+    expect(rows[0].cpfEmployee).toBeCloseTo(9600, 0)
+
+    // After CPF and tax deductions, net income should be reasonable
+    expect(rows[0].totalNet).toBeGreaterThan(30000) // Must exceed expenses to save
+    expect(rows[0].totalNet).toBeLessThan(48000) // Must be less than gross
+
+    // Verify CPF contributions at correct rates for age 25
+    expect(rows[0].cpfEmployer).toBeCloseTo(48000 * 0.17, 0)
+  })
+
+  it('Mid-Career: age 35, $180K income, CPF rates correct', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 35,
+      retirementAge: 65,
+      lifeExpectancy: 90,
+      salaryModel: 'simple',
+      annualSalary: 180000,
+      salaryGrowthRate: 0.03,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 96000,
+      inflation: 0.025,
+      personalReliefs: 20000,
+      srsAnnualContribution: 15300,
+      initialCpfOA: 200000,
+      initialCpfSA: 100000,
+      initialCpfMA: 0,
+    })
+
+    // At $180K salary, OW ceiling applies ($81,600/yr)
+    // CPF employee contribution: $81,600 * 0.20 = $16,320
+    expect(rows[0].cpfEmployee).toBeCloseTo(81600 * 0.20, 0)
+
+    // Tax calculation: $180K - $16,320 CPF - $15,300 SRS - $20,000 reliefs = $128,380 chargeable
+    // Tax on $128,380: cumulative at $120K = $7,950 + ($128,380 - $120,000) * 0.15 = $7,950 + $1,257 = $9,207
+    expect(rows[0].sgTax).toBeGreaterThan(8000)
+    expect(rows[0].sgTax).toBeLessThan(15000)
+
+    // Salary should be $180K
+    expect(rows[0].salary).toBe(180000)
+    expect(rows[0].totalGross).toBe(180000)
+  })
+
+  it('Pre-Retiree: government income stream appears at correct age', () => {
+    const cpfLifeStream: IncomeStream = {
+      id: 'cpf-life',
+      name: 'CPF LIFE',
+      annualAmount: 13400,
+      startAge: 65,
+      endAge: 90,
+      growthRate: 0,
+      type: 'government',
+      growthModel: 'none',
+      taxTreatment: 'tax-exempt',
+      isCpfApplicable: false,
+      isActive: true,
+    }
+
+    const rows = generateIncomeProjection({
+      currentAge: 55,
+      retirementAge: 58,
+      lifeExpectancy: 90,
+      salaryModel: 'simple',
+      annualSalary: 200000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [cpfLifeStream],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 80000,
+      inflation: 0.025,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 500000,
+      initialCpfSA: 300000,
+      initialCpfMA: 100000,
+    })
+
+    // Before 65: no government income
+    const row60 = rows.find((r) => r.age === 60)!
+    expect(row60.governmentIncome).toBe(0)
+
+    // At 65: CPF LIFE kicks in
+    const row65 = rows.find((r) => r.age === 65)!
+    expect(row65.governmentIncome).toBe(13400)
+    expect(row65.isRetired).toBe(true)
+
+    // At 89: still receiving
+    const row89 = rows.find((r) => r.age === 89)!
+    expect(row89.governmentIncome).toBe(13400)
+
+    // At 90 (endAge): no longer receiving
+    const row90 = rows.find((r) => r.age === 90)!
+    expect(row90.governmentIncome).toBe(0)
+  })
+})

@@ -68,7 +68,7 @@ export function LifeEventsSection() {
 
   const addEvent = () => {
     if (income.lifeEvents.length >= MAX_EVENTS) return
-    const id = `event-${Date.now()}`
+    const id = `event-${crypto.randomUUID()}`
     income.addLifeEvent(createEvent(id))
   }
 
@@ -76,7 +76,7 @@ export function LifeEventsSection() {
     const template = EVENT_TEMPLATES[templateName]
     if (!template) return
     if (income.lifeEvents.length >= MAX_EVENTS) return
-    const id = `event-${Date.now()}`
+    const id = `event-${crypto.randomUUID()}`
     income.addLifeEvent({ ...template, id })
   }
 

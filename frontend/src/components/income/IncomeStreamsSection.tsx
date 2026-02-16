@@ -33,7 +33,7 @@ export function IncomeStreamsSection() {
 
   const addStream = () => {
     if (income.incomeStreams.length >= MAX_STREAMS) return
-    const id = `stream-${Date.now()}`
+    const id = `stream-${crypto.randomUUID()}`
     income.addIncomeStream(createStream(id))
   }
 

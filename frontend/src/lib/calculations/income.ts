@@ -387,7 +387,6 @@ export function calculateIncomeSummary(
   let totalSavings = 0
   let totalIncome = 0
   let totalCpfContributions = 0
-  let preRetirementYears = 0
 
   for (const row of projection) {
     if (row.totalGross > peakEarningAmount) {
@@ -400,7 +399,6 @@ export function calculateIncomeSummary(
       totalSavings += row.annualSavings
       totalIncome += row.totalNet
       totalCpfContributions += row.cpfEmployee + row.cpfEmployer
-      preRetirementYears++
     }
   }
 
