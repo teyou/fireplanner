@@ -1,0 +1,544 @@
+import { describe, it, expect } from 'vitest'
+import * as fc from 'fast-check'
+import {
+  calculateSimpleSalary,
+  calculateRealisticSalary,
+  calculateDataDrivenSalary,
+  getSalaryAtAge,
+  getStreamAmountAtAge,
+  applyLifeEvents,
+  generateIncomeProjection,
+  calculateIncomeSummary,
+  DEFAULT_CAREER_PHASES,
+} from './income'
+import type {
+  IncomeStream,
+  LifeEvent,
+  IncomeProjectionRow,
+} from '@/lib/types'
+
+// ============================================================
+// Simple salary model
+// ============================================================
+
+describe('calculateSimpleSalary', () => {
+  it('returns base salary at year 0', () => {
+    expect(calculateSimpleSalary(72000, 0.03, 0)).toBe(72000)
+  })
+
+  it('compounds correctly over 10 years at 3%', () => {
+    const result = calculateSimpleSalary(72000, 0.03, 10)
+    const expected = 72000 * Math.pow(1.03, 10)
+    expect(result).toBeCloseTo(expected, 2)
+  })
+
+  it('handles zero growth', () => {
+    expect(calculateSimpleSalary(72000, 0, 5)).toBe(72000)
+  })
+
+  it('handles zero salary', () => {
+    expect(calculateSimpleSalary(0, 0.03, 5)).toBe(0)
+  })
+
+  it('handles negative salary', () => {
+    expect(calculateSimpleSalary(-1000, 0.03, 5)).toBe(0)
+  })
+
+  it('handles negative yearsFromStart', () => {
+    expect(calculateSimpleSalary(72000, 0.03, -1)).toBe(72000)
+  })
+})
+
+// ============================================================
+// Realistic salary model
+// ============================================================
+
+describe('calculateRealisticSalary', () => {
+  const phases = DEFAULT_CAREER_PHASES
+
+  it('returns base salary when targetAge equals currentAge', () => {
+    expect(calculateRealisticSalary(48000, 25, 25, phases, [])).toBe(48000)
+  })
+
+  it('applies early career growth rate', () => {
+    // Age 25 to 26: one year at 8% (Early Career phase: 22-30)
+    const result = calculateRealisticSalary(48000, 25, 26, phases, [])
+    expect(result).toBeCloseTo(48000 * 1.08, 2)
+  })
+
+  it('transitions between phases correctly', () => {
+    // Age 25 to 31: 5 years early career (8%), 1 year mid career (5%)
+    const result = calculateRealisticSalary(48000, 25, 31, phases, [])
+    const expected = 48000 * Math.pow(1.08, 5) * 1.05
+    expect(result).toBeCloseTo(expected, 2)
+  })
+
+  it('applies promotion jumps multiplicatively', () => {
+    const jumps = [{ age: 30, increasePercent: 0.2 }]
+    // Age 25 to 30: 5 years early career (8%), then 20% promotion at age 30
+    const result = calculateRealisticSalary(48000, 25, 30, phases, jumps)
+    const expected = 48000 * Math.pow(1.08, 5) * 1.2
+    expect(result).toBeCloseTo(expected, 2)
+  })
+
+  it('applies multiple promotion jumps', () => {
+    const jumps = [
+      { age: 30, increasePercent: 0.2 },
+      { age: 35, increasePercent: 0.15 },
+    ]
+    // 25-30: 5yr early career (8%) + 20% promo
+    // 30-35: 5yr mid career (5%) + 15% promo
+    const result = calculateRealisticSalary(48000, 25, 35, phases, jumps)
+    const afterEarly = 48000 * Math.pow(1.08, 5) * 1.2
+    const expected = afterEarly * Math.pow(1.05, 5) * 1.15
+    expect(result).toBeCloseTo(expected, 2)
+  })
+
+  it('handles zero base salary', () => {
+    expect(calculateRealisticSalary(0, 25, 35, phases, [])).toBe(0)
+  })
+})
+
+// ============================================================
+// Data-driven salary model
+// ============================================================
+
+describe('calculateDataDrivenSalary', () => {
+  it('returns $72K for age 30 degree with adjustment 1.0', () => {
+    expect(calculateDataDrivenSalary(30, 'degree', 1.0)).toBe(72000)
+  })
+
+  it('applies adjustment factor', () => {
+    expect(calculateDataDrivenSalary(30, 'degree', 1.2)).toBeCloseTo(86400, 0)
+  })
+
+  it('returns lower salary for lower education level', () => {
+    const diploma = calculateDataDrivenSalary(30, 'diploma', 1.0)
+    const degree = calculateDataDrivenSalary(30, 'degree', 1.0)
+    expect(diploma).toBeLessThan(degree)
+  })
+
+  it('returns $57K for age 25 degree', () => {
+    expect(calculateDataDrivenSalary(25, 'degree', 1.0)).toBe(57000)
+  })
+})
+
+// ============================================================
+// getSalaryAtAge dispatcher
+// ============================================================
+
+describe('getSalaryAtAge', () => {
+  it('dispatches to simple model', () => {
+    const result = getSalaryAtAge({
+      model: 'simple',
+      baseSalary: 72000,
+      growthRate: 0.03,
+      currentAge: 30,
+      targetAge: 35,
+      phases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      education: 'degree',
+      momAdjustment: 1.0,
+    })
+    expect(result).toBeCloseTo(calculateSimpleSalary(72000, 0.03, 5), 2)
+  })
+
+  it('dispatches to data-driven model', () => {
+    const result = getSalaryAtAge({
+      model: 'data-driven',
+      baseSalary: 72000,
+      growthRate: 0.03,
+      currentAge: 30,
+      targetAge: 35,
+      phases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      education: 'degree',
+      momAdjustment: 1.0,
+    })
+    expect(result).toBe(calculateDataDrivenSalary(35, 'degree', 1.0))
+  })
+})
+
+// ============================================================
+// Stream amount at age
+// ============================================================
+
+describe('getStreamAmountAtAge', () => {
+  const baseStream: IncomeStream = {
+    id: '1',
+    name: 'Rental',
+    annualAmount: 24000,
+    startAge: 30,
+    endAge: 65,
+    growthRate: 0.02,
+    type: 'rental',
+    growthModel: 'fixed',
+    taxTreatment: 'taxable',
+    isCpfApplicable: false,
+    isActive: true,
+  }
+
+  it('returns 0 before start age', () => {
+    expect(getStreamAmountAtAge(baseStream, 25, 0.025)).toBe(0)
+  })
+
+  it('returns 0 at end age', () => {
+    expect(getStreamAmountAtAge(baseStream, 65, 0.025)).toBe(0)
+  })
+
+  it('returns base amount at start age with fixed growth', () => {
+    expect(getStreamAmountAtAge(baseStream, 30, 0.025)).toBe(24000)
+  })
+
+  it('applies fixed growth over 5 years', () => {
+    const result = getStreamAmountAtAge(baseStream, 35, 0.025)
+    expect(result).toBeCloseTo(24000 * Math.pow(1.02, 5), 2)
+  })
+
+  it('applies inflation-linked growth', () => {
+    const inflStream = { ...baseStream, growthModel: 'inflation-linked' as const }
+    const result = getStreamAmountAtAge(inflStream, 35, 0.025)
+    expect(result).toBeCloseTo(24000 * Math.pow(1.025, 5), 2)
+  })
+
+  it('returns flat amount with none growth', () => {
+    const flatStream = { ...baseStream, growthModel: 'none' as const }
+    expect(getStreamAmountAtAge(flatStream, 35, 0.025)).toBe(24000)
+    expect(getStreamAmountAtAge(flatStream, 50, 0.025)).toBe(24000)
+  })
+
+  it('returns 0 when inactive', () => {
+    const inactiveStream = { ...baseStream, isActive: false }
+    expect(getStreamAmountAtAge(inactiveStream, 35, 0.025)).toBe(0)
+  })
+})
+
+// ============================================================
+// Life events
+// ============================================================
+
+describe('applyLifeEvents', () => {
+  const careerBreak: LifeEvent = {
+    id: 'e1',
+    name: 'Career Break',
+    startAge: 35,
+    endAge: 36,
+    incomeImpact: 0,
+    affectedStreamIds: [],
+    savingsPause: true,
+    cpfPause: true,
+  }
+
+  const partTime: LifeEvent = {
+    id: 'e2',
+    name: 'Part-time',
+    startAge: 40,
+    endAge: 45,
+    incomeImpact: 0.5,
+    affectedStreamIds: ['s1'],
+    savingsPause: false,
+    cpfPause: false,
+  }
+
+  it('applies zero impact (career break)', () => {
+    expect(applyLifeEvents(72000, 35, 'any', [careerBreak], true)).toBe(0)
+  })
+
+  it('does not apply outside age range', () => {
+    expect(applyLifeEvents(72000, 34, 'any', [careerBreak], true)).toBe(72000)
+    expect(applyLifeEvents(72000, 36, 'any', [careerBreak], true)).toBe(72000)
+  })
+
+  it('applies partial impact (part-time)', () => {
+    expect(applyLifeEvents(72000, 42, 's1', [partTime], true)).toBe(36000)
+  })
+
+  it('only affects specified streams', () => {
+    expect(applyLifeEvents(72000, 42, 's2', [partTime], true)).toBe(72000)
+  })
+
+  it('affects all streams when affectedStreamIds is empty', () => {
+    expect(applyLifeEvents(72000, 35, 'anything', [careerBreak], true)).toBe(0)
+  })
+
+  it('returns original amount when disabled', () => {
+    expect(applyLifeEvents(72000, 35, 'any', [careerBreak], false)).toBe(72000)
+  })
+})
+
+// ============================================================
+// Full projection - Fresh Graduate scenario
+// ============================================================
+
+describe('generateIncomeProjection', () => {
+  const freshGradParams = {
+    currentAge: 25,
+    retirementAge: 65,
+    lifeExpectancy: 90,
+    salaryModel: 'simple' as const,
+    annualSalary: 48000,
+    salaryGrowthRate: 0.03,
+    realisticPhases: DEFAULT_CAREER_PHASES,
+    promotionJumps: [],
+    momEducation: 'degree' as const,
+    momAdjustment: 1.0,
+    employerCpfEnabled: true,
+    incomeStreams: [],
+    lifeEvents: [],
+    lifeEventsEnabled: false,
+    annualExpenses: 30000,
+    inflation: 0.025,
+    personalReliefs: 20000,
+    srsAnnualContribution: 0,
+    initialCpfOA: 0,
+    initialCpfSA: 0,
+    initialCpfMA: 0,
+  }
+
+  it('produces correct number of rows', () => {
+    const rows = generateIncomeProjection(freshGradParams)
+    expect(rows).toHaveLength(90 - 25 + 1) // 66 rows
+  })
+
+  it('first row has correct salary', () => {
+    const rows = generateIncomeProjection(freshGradParams)
+    expect(rows[0].age).toBe(25)
+    expect(rows[0].salary).toBe(48000)
+    expect(rows[0].year).toBe(0)
+    expect(rows[0].isRetired).toBe(false)
+  })
+
+  it('first row gross equals salary (no streams)', () => {
+    const rows = generateIncomeProjection(freshGradParams)
+    expect(rows[0].totalGross).toBe(48000)
+  })
+
+  it('first row has CPF contributions', () => {
+    const rows = generateIncomeProjection(freshGradParams)
+    // Age 25, salary 48000, CPF rate 37%: employee 20%, employer 17%
+    expect(rows[0].cpfEmployee).toBeCloseTo(48000 * 0.20, 0)
+    expect(rows[0].cpfEmployer).toBeCloseTo(48000 * 0.17, 0)
+  })
+
+  it('first row net is gross minus tax minus CPF employee', () => {
+    const rows = generateIncomeProjection(freshGradParams)
+    expect(rows[0].totalNet).toBeCloseTo(
+      rows[0].totalGross - rows[0].sgTax - rows[0].cpfEmployee, 2
+    )
+  })
+
+  it('first row savings is net minus expenses', () => {
+    const rows = generateIncomeProjection(freshGradParams)
+    const expectedSavings = Math.max(0, rows[0].totalNet - 30000)
+    expect(rows[0].annualSavings).toBeCloseTo(expectedSavings, 2)
+  })
+
+  it('retirement rows have zero salary', () => {
+    const rows = generateIncomeProjection(freshGradParams)
+    const retiredRow = rows.find((r) => r.age === 65)!
+    expect(retiredRow.salary).toBe(0)
+    expect(retiredRow.isRetired).toBe(true)
+    expect(retiredRow.cpfEmployee).toBe(0)
+  })
+
+  it('salary grows over time (simple model)', () => {
+    const rows = generateIncomeProjection(freshGradParams)
+    expect(rows[10].salary).toBeCloseTo(48000 * Math.pow(1.03, 10), 0)
+  })
+
+  it('cumulative savings are monotonically non-decreasing', () => {
+    const rows = generateIncomeProjection(freshGradParams)
+    for (let i = 1; i < rows.length; i++) {
+      expect(rows[i].cumulativeSavings).toBeGreaterThanOrEqual(rows[i - 1].cumulativeSavings)
+    }
+  })
+
+  it('CPF balances grow with interest over time', () => {
+    const rows = generateIncomeProjection(freshGradParams)
+    // After first year working, CPF OA should be > 0
+    expect(rows[0].cpfOA).toBeGreaterThan(0)
+    expect(rows[0].cpfSA).toBeGreaterThan(0)
+    // Last row should have higher CPF than first
+    expect(rows[rows.length - 1].cpfOA).toBeGreaterThan(rows[0].cpfOA)
+  })
+})
+
+// ============================================================
+// Projection with life events
+// ============================================================
+
+describe('generateIncomeProjection with life events', () => {
+  it('career break zeroes out salary', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 30,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 72000,
+      salaryGrowthRate: 0.03,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [
+        {
+          id: 'e1',
+          name: 'Career Break',
+          startAge: 35,
+          endAge: 36,
+          incomeImpact: 0,
+          affectedStreamIds: [],
+          savingsPause: true,
+          cpfPause: true,
+        },
+      ],
+      lifeEventsEnabled: true,
+      annualExpenses: 48000,
+      inflation: 0.025,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 0,
+      initialCpfSA: 0,
+      initialCpfMA: 0,
+    })
+
+    const breakRow = rows.find((r) => r.age === 35)!
+    expect(breakRow.salary).toBe(0)
+    expect(breakRow.cpfEmployee).toBe(0)
+    expect(breakRow.annualSavings).toBe(0)
+    expect(breakRow.activeLifeEvents).toContain('Career Break')
+
+    // Before and after should have salary
+    const beforeBreak = rows.find((r) => r.age === 34)!
+    expect(beforeBreak.salary).toBeGreaterThan(0)
+    const afterBreak = rows.find((r) => r.age === 36)!
+    expect(afterBreak.salary).toBeGreaterThan(0)
+  })
+})
+
+// ============================================================
+// Income summary
+// ============================================================
+
+describe('calculateIncomeSummary', () => {
+  it('returns zeros for empty projection', () => {
+    const summary = calculateIncomeSummary([], 48000)
+    expect(summary.peakEarningAge).toBe(0)
+    expect(summary.lifetimeEarnings).toBe(0)
+  })
+
+  it('computes correct peak earning for simple projection', () => {
+    const rows: IncomeProjectionRow[] = [
+      { year: 0, age: 30, salary: 72000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 72000, sgTax: 2000, cpfEmployee: 14400, cpfEmployer: 12240, totalNet: 55600, annualSavings: 7600, cumulativeSavings: 7600, cpfOA: 16560, cpfSA: 4320, cpfMA: 5760, isRetired: false, activeLifeEvents: [] },
+      { year: 1, age: 31, salary: 80000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 80000, sgTax: 3000, cpfEmployee: 16000, cpfEmployer: 13600, totalNet: 61000, annualSavings: 13000, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, isRetired: false, activeLifeEvents: [] },
+      { year: 2, age: 32, salary: 0, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0, cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, isRetired: true, activeLifeEvents: [] },
+    ]
+
+    const summary = calculateIncomeSummary(rows, 48000)
+    expect(summary.peakEarningAge).toBe(31)
+    expect(summary.peakEarningAmount).toBe(80000)
+    expect(summary.lifetimeEarnings).toBe(152000)
+    expect(summary.totalCpfContributions).toBe(14400 + 12240 + 16000 + 13600)
+  })
+})
+
+// ============================================================
+// Property-based tests
+// ============================================================
+
+describe('property-based tests', () => {
+  it('simple salary: result >= 0', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 500000 }),
+        fc.double({ min: -0.1, max: 0.3, noNaN: true }),
+        fc.integer({ min: 0, max: 40 }),
+        (baseSalary, growthRate, years) => {
+          const result = calculateSimpleSalary(baseSalary, growthRate, years)
+          expect(result).toBeGreaterThanOrEqual(0)
+        }
+      )
+    )
+  })
+
+  it('projection length is correct', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 18, max: 55 }),
+        fc.integer({ min: 0, max: 200000 }),
+        fc.integer({ min: 10000, max: 100000 }),
+        (currentAge, salary, expenses) => {
+          const lifeExpectancy = currentAge + 30
+          const retirementAge = currentAge + 20
+
+          const rows = generateIncomeProjection({
+            currentAge,
+            retirementAge,
+            lifeExpectancy,
+            salaryModel: 'simple',
+            annualSalary: salary,
+            salaryGrowthRate: 0.03,
+            realisticPhases: DEFAULT_CAREER_PHASES,
+            promotionJumps: [],
+            momEducation: 'degree',
+            momAdjustment: 1.0,
+            employerCpfEnabled: true,
+            incomeStreams: [],
+            lifeEvents: [],
+            lifeEventsEnabled: false,
+            annualExpenses: expenses,
+            inflation: 0.025,
+            personalReliefs: 20000,
+            srsAnnualContribution: 0,
+            initialCpfOA: 0,
+            initialCpfSA: 0,
+            initialCpfMA: 0,
+          })
+
+          expect(rows).toHaveLength(lifeExpectancy - currentAge + 1)
+        }
+      )
+    )
+  })
+
+  it('tax never exceeds gross income', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 20000, max: 500000 }),
+        (salary) => {
+          const rows = generateIncomeProjection({
+            currentAge: 30,
+            retirementAge: 65,
+            lifeExpectancy: 70,
+            salaryModel: 'simple',
+            annualSalary: salary,
+            salaryGrowthRate: 0,
+            realisticPhases: DEFAULT_CAREER_PHASES,
+            promotionJumps: [],
+            momEducation: 'degree',
+            momAdjustment: 1.0,
+            employerCpfEnabled: true,
+            incomeStreams: [],
+            lifeEvents: [],
+            lifeEventsEnabled: false,
+            annualExpenses: 30000,
+            inflation: 0,
+            personalReliefs: 20000,
+            srsAnnualContribution: 0,
+            initialCpfOA: 0,
+            initialCpfSA: 0,
+            initialCpfMA: 0,
+          })
+
+          for (const row of rows) {
+            expect(row.sgTax).toBeLessThanOrEqual(row.totalGross)
+            expect(row.sgTax).toBeGreaterThanOrEqual(0)
+            expect(row.cpfEmployee).toBeGreaterThanOrEqual(0)
+          }
+        }
+      )
+    )
+  })
+})
