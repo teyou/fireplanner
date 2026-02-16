@@ -260,7 +260,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
 
       prevWithdrawal = withdrawalAmount
       savingsOrWithdrawal = -netWithdrawal
-      totalIncome = withdrawalAmount + postRetirementIncome
+      totalIncome = postRetirementIncome
     }
 
     // CPF and totals
