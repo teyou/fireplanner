@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { CrisisComparisonChart } from '@/components/sequenceRisk/CrisisComparisonChart'
 import { MitigationPanel } from '@/components/sequenceRisk/MitigationPanel'
+import { AnalysisModeToggle } from '@/components/shared/AnalysisModeToggle'
 import { useSequenceRiskQuery } from '@/hooks/useSequenceRiskQuery'
+import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 import { CRISIS_SCENARIOS } from '@/lib/data/crisisScenarios'
 import { formatPercent } from '@/lib/utils'
 import type { CrisisScenario } from '@/lib/types'
@@ -12,6 +14,7 @@ import type { CrisisScenario } from '@/lib/types'
 export function SequenceRiskPage() {
   const [selectedCrisis, setSelectedCrisis] = useState<CrisisScenario>(CRISIS_SCENARIOS[0])
   const { mutate, data, isPending, error, canRun, validationErrors } = useSequenceRiskQuery()
+  const { portfolioLabel } = useAnalysisPortfolio()
 
   const errorMessages = Object.values(validationErrors)
   const disabledReason = !canRun
@@ -26,6 +29,8 @@ export function SequenceRiskPage() {
           Stress-test your retirement plan against historical crises. See how early market crashes affect portfolio survival and evaluate mitigation strategies.
         </p>
       </div>
+
+      <AnalysisModeToggle portfolioLabel={portfolioLabel} />
 
       {Object.keys(validationErrors).length > 0 && (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">

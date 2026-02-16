@@ -9,6 +9,7 @@ import {
   calculateFatFire,
   calculateProgress,
   calculateAllFireMetrics,
+  projectPortfolioAtRetirement,
 } from './fire'
 
 describe('calculateFireNumber', () => {
@@ -306,6 +307,109 @@ describe('property-based tests', () => {
         (r, savings, nw, fire) => {
           const years = calculateYearsToFire(r, savings, nw, fire)
           return years >= 0
+        }
+      )
+    )
+  })
+})
+
+describe('projectPortfolioAtRetirement', () => {
+  it('normal projection: $100K + $20K/yr savings, 5% return, 10 years', () => {
+    // FV lump sum: 100000 * (1.05)^10 = 162,889.46
+    // FV annuity: 20000 * ((1.05)^10 - 1) / 0.05 = 251,557.85
+    // Total: 414,447.31
+    const result = projectPortfolioAtRetirement({
+      currentNW: 100000,
+      annualSavings: 20000,
+      netRealReturn: 0.05,
+      yearsToRetirement: 10,
+    })
+    expect(result).toBeCloseTo(414447, 0)
+  })
+
+  it('already retired (n=0): returns currentNW unchanged', () => {
+    const result = projectPortfolioAtRetirement({
+      currentNW: 500000,
+      annualSavings: 20000,
+      netRealReturn: 0.05,
+      yearsToRetirement: 0,
+    })
+    expect(result).toBe(500000)
+  })
+
+  it('negative years: returns currentNW (already past retirement)', () => {
+    const result = projectPortfolioAtRetirement({
+      currentNW: 500000,
+      annualSavings: 20000,
+      netRealReturn: 0.05,
+      yearsToRetirement: -5,
+    })
+    expect(result).toBe(500000)
+  })
+
+  it('zero return: linear approximation (currentNW + savings * n)', () => {
+    const result = projectPortfolioAtRetirement({
+      currentNW: 100000,
+      annualSavings: 20000,
+      netRealReturn: 0,
+      yearsToRetirement: 10,
+    })
+    // 100000 + 20000 * 10 = 300000
+    expect(result).toBeCloseTo(300000, 0)
+  })
+
+  it('negative savings: still projects (savings term negative)', () => {
+    const result = projectPortfolioAtRetirement({
+      currentNW: 500000,
+      annualSavings: -10000,
+      netRealReturn: 0.05,
+      yearsToRetirement: 10,
+    })
+    // FV lump: 500000 * 1.05^10 = 814,447.31
+    // FV annuity: -10000 * (1.05^10 - 1) / 0.05 = -125,778.93
+    // Total: ~688,668
+    expect(result).toBeCloseTo(688668, 0)
+  })
+
+  it('clamps to 0 when projection goes negative', () => {
+    const result = projectPortfolioAtRetirement({
+      currentNW: 10000,
+      annualSavings: -50000,
+      netRealReturn: 0.02,
+      yearsToRetirement: 10,
+    })
+    // Would produce negative value; should clamp to 0
+    expect(result).toBe(0)
+  })
+
+  it('Fresh Graduate integration: $50K NW, $18K savings, 4.4% return, 16 yrs', () => {
+    // FV lump: 50000 * 1.044^16 = 99,581.34
+    // FV annuity: 18000 * (1.044^16 - 1) / 0.044 = 405,665.54
+    // Total: 505,246.88
+    const result = projectPortfolioAtRetirement({
+      currentNW: 50000,
+      annualSavings: 18000,
+      netRealReturn: 0.044,
+      yearsToRetirement: 16,
+    })
+    expect(result).toBeCloseTo(505247, -2) // within $100
+  })
+
+  it('result is always >= 0', () => {
+    fc.assert(
+      fc.property(
+        fc.double({ min: 0, max: 5000000, noNaN: true }),
+        fc.double({ min: -100000, max: 500000, noNaN: true }),
+        fc.double({ min: -0.05, max: 0.2, noNaN: true }),
+        fc.double({ min: 0, max: 50, noNaN: true }),
+        (nw, savings, r, n) => {
+          const result = projectPortfolioAtRetirement({
+            currentNW: nw,
+            annualSavings: savings,
+            netRealReturn: r,
+            yearsToRetirement: n,
+          })
+          return result >= 0
         }
       )
     )
