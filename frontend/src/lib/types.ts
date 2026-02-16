@@ -450,6 +450,61 @@ export interface MitigationImpact {
 }
 
 // ============================================================
+// Historical Backtest (W6)
+// ============================================================
+
+export type BacktestDataset = 'us_only' | 'sg_only' | 'blended'
+
+export interface BacktestParams {
+  initial_portfolio: number
+  allocation_weights: number[]
+  swr: number
+  retirement_duration: number
+  dataset: BacktestDataset
+  blend_ratio: number
+  expense_ratio: number
+  include_heatmap: boolean
+  withdrawal_strategy: WithdrawalStrategyType
+  strategy_params: StrategyParamsMap
+  inflation: number
+}
+
+export interface PerYearResult {
+  start_year: number
+  end_year: number
+  survived: boolean
+  ending_balance: number
+  min_balance: number
+  worst_year: number
+  best_year: number
+  total_withdrawn: number
+}
+
+export interface BacktestSummary {
+  total_periods: number
+  successful_periods: number
+  failed_periods: number
+  success_rate: number
+  worst_start_year: number
+  best_start_year: number
+  median_ending_balance: number
+  average_total_withdrawn: number
+}
+
+export interface HeatmapData {
+  swr_values: number[]
+  duration_values: number[]
+  success_rates: number[][]
+}
+
+export interface BacktestResult {
+  results: PerYearResult[]
+  summary: BacktestSummary
+  heatmap: HeatmapData | null
+  computation_time_ms: number
+}
+
+// ============================================================
 // Validation
 // ============================================================
 

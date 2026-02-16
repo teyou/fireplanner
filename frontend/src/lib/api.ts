@@ -3,6 +3,8 @@ import type {
   MonteCarloResult,
   CrisisScenario,
   SequenceRiskResult,
+  BacktestResult,
+  BacktestDataset,
   WithdrawalStrategyType,
   StrategyParamsMap,
 } from '@/lib/types'
@@ -167,4 +169,36 @@ export async function runSequenceRisk(params: SequenceRiskParams): Promise<Seque
   }
 
   return post<SequenceRiskResult>('/api/sequence-risk', body)
+}
+
+export interface BacktestApiParams {
+  initialPortfolio: number
+  allocationWeights: number[]
+  swr: number
+  retirementDuration: number
+  dataset: BacktestDataset
+  blendRatio: number
+  expenseRatio: number
+  includeHeatmap: boolean
+  withdrawalStrategy: WithdrawalStrategyType
+  strategyParams: StrategyParamsMap
+  inflation: number
+}
+
+export async function runBacktest(params: BacktestApiParams): Promise<BacktestResult> {
+  const body = {
+    initial_portfolio: params.initialPortfolio,
+    allocation_weights: params.allocationWeights,
+    swr: params.swr,
+    retirement_duration: params.retirementDuration,
+    dataset: params.dataset,
+    blend_ratio: params.blendRatio,
+    expense_ratio: params.expenseRatio,
+    include_heatmap: params.includeHeatmap,
+    withdrawal_strategy: params.withdrawalStrategy,
+    strategy_params: toStrategyParamsSnake(params.strategyParams),
+    inflation: params.inflation,
+  }
+
+  return post<BacktestResult>('/api/backtest', body)
 }
