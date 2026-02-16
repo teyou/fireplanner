@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.simulation import router as simulation_router
+from app.api.routes.sequence_risk import router as sequence_risk_router
 from app.config import settings
 
 app = FastAPI(
@@ -20,6 +21,7 @@ app.add_middleware(
 
 
 app.include_router(simulation_router, prefix="/api")
+app.include_router(sequence_risk_router, prefix="/api")
 
 
 @app.get("/health")
