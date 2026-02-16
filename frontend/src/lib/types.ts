@@ -505,6 +505,26 @@ export interface BacktestResult {
 }
 
 // ============================================================
+// Property (W7)
+// ============================================================
+
+export type PropertyType = 'hdb' | 'condo' | 'landed'
+
+export interface PropertyState {
+  propertyType: PropertyType
+  purchasePrice: number
+  leaseYears: number
+  appreciationRate: number
+  rentalYield: number
+  mortgageRate: number
+  mortgageTerm: number
+  ltv: number
+  residencyForAbsd: 'citizen' | 'pr' | 'foreigner'
+  propertyCount: number
+  validationErrors: ValidationErrors
+}
+
+// ============================================================
 // Validation
 // ============================================================
 
