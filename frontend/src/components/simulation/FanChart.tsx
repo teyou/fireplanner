@@ -1,0 +1,93 @@
+import { Area, AreaChart, CartesianGrid, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import type { PercentileBands } from '@/lib/types'
+import { formatCurrency } from '@/lib/utils'
+
+interface FanChartProps {
+  bands: PercentileBands
+  retirementAge: number
+}
+
+export function FanChart({ bands, retirementAge }: FanChartProps) {
+  const data = bands.years.map((_, i) => ({
+    age: bands.ages[i],
+    p5: bands.p5[i],
+    p10: bands.p10[i],
+    p25: bands.p25[i],
+    p50: bands.p50[i],
+    p75: bands.p75[i],
+    p90: bands.p90[i],
+    p95: bands.p95[i],
+    // Stacked areas need the difference between bands
+    band_5_10: bands.p10[i] - bands.p5[i],
+    band_10_25: bands.p25[i] - bands.p10[i],
+    band_25_50: bands.p50[i] - bands.p25[i],
+    band_50_75: bands.p75[i] - bands.p50[i],
+    band_75_90: bands.p90[i] - bands.p75[i],
+    band_90_95: bands.p95[i] - bands.p90[i],
+  }))
+
+  // Sample data points for readability (every 5 years)
+  const sampled = data.filter((_, i) => i % 5 === 0 || i === data.length - 1)
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Portfolio Balance Fan Chart</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={400}>
+          <AreaChart data={sampled} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <XAxis
+              dataKey="age"
+              label={{ value: 'Age', position: 'insideBottom', offset: -5 }}
+            />
+            <YAxis
+              tickFormatter={(v: number) => formatCurrency(v)}
+              width={90}
+            />
+            <Tooltip
+              formatter={(value: number, name: string) => {
+                const labels: Record<string, string> = {
+                  p5: '5th Percentile',
+                  band_5_10: '10th Percentile',
+                  band_10_25: '25th Percentile',
+                  band_25_50: '50th (Median)',
+                  band_50_75: '75th Percentile',
+                  band_75_90: '90th Percentile',
+                  band_90_95: '95th Percentile',
+                }
+                return [formatCurrency(value), labels[name] ?? name]
+              }}
+              labelFormatter={(age: number) => `Age ${age}${age === retirementAge ? ' (Retirement)' : ''}`}
+            />
+
+            {/* Stacked area bands from p5 up */}
+            <Area type="monotone" dataKey="p5" stackId="1" fill="#dcfce7" stroke="none" fillOpacity={0.6} />
+            <Area type="monotone" dataKey="band_5_10" stackId="1" fill="#bbf7d0" stroke="none" fillOpacity={0.5} />
+            <Area type="monotone" dataKey="band_10_25" stackId="1" fill="#86efac" stroke="none" fillOpacity={0.4} />
+            <Area type="monotone" dataKey="band_25_50" stackId="1" fill="#4ade80" stroke="none" fillOpacity={0.4} />
+            <Area type="monotone" dataKey="band_50_75" stackId="1" fill="#86efac" stroke="none" fillOpacity={0.4} />
+            <Area type="monotone" dataKey="band_75_90" stackId="1" fill="#bbf7d0" stroke="none" fillOpacity={0.5} />
+            <Area type="monotone" dataKey="band_90_95" stackId="1" fill="#dcfce7" stroke="none" fillOpacity={0.6} />
+
+            {/* Median line */}
+            <Line type="monotone" dataKey="p50" stroke="#16a34a" strokeWidth={2} dot={false} />
+          </AreaChart>
+        </ResponsiveContainer>
+        <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-3 h-3 rounded bg-green-400" /> Median (p50)
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-3 h-3 rounded bg-green-200" /> p25-p75
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-3 h-3 rounded bg-green-100" /> p5-p95
+          </span>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
