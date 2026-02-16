@@ -59,7 +59,7 @@ export function FireTargetsSection() {
           <div className="space-y-1">
             <Label className="text-sm flex items-center">
               FIRE Number Basis
-              <InfoTooltip text="Today's $: target based on current expenses. At Retirement: inflation-adjusted to your retirement age." />
+              <InfoTooltip text="Today's $: current expenses. At Retirement: inflation-adjusted to retirement age. At FIRE Age: inflation-adjusted to when you actually reach FIRE." />
             </Label>
             <select
               value={fireNumberBasis}
@@ -68,10 +68,16 @@ export function FireTargetsSection() {
             >
               <option value="today">Today's $</option>
               <option value="retirement">At Retirement</option>
+              <option value="fireAge">At FIRE Age</option>
             </select>
             {fireNumberBasis === 'retirement' && (
               <p className="text-xs text-muted-foreground">
                 Inflation-adjusted to age {retirementAge} at {(inflation * 100).toFixed(1)}%
+              </p>
+            )}
+            {fireNumberBasis === 'fireAge' && effectiveFireAge !== null && isFinite(effectiveFireAge) && (
+              <p className="text-xs text-muted-foreground">
+                Inflation-adjusted to FIRE age {Math.ceil(effectiveFireAge)} at {(inflation * 100).toFixed(1)}%
               </p>
             )}
           </div>

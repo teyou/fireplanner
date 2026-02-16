@@ -176,26 +176,52 @@ export function calculateAllFireMetrics(params: {
   const multiplier = FIRE_TYPE_MULTIPLIERS[fireType]
   let effectiveExpenses = annualExpenses * multiplier
 
+  // Net real return = nominal - inflation - expense ratio
+  const netRealReturn = expectedReturn - inflation - expenseRatio
+
   // Inflate expenses to retirement age if using retirement-dollar basis
   const yearsToRetirement = Math.max(0, retirementAge - currentAge)
   if (fireNumberBasis === 'retirement' && yearsToRetirement > 0 && inflation > 0) {
     effectiveExpenses *= Math.pow(1 + inflation, yearsToRetirement)
   }
 
+  // fireAge basis: iterative fixed-point convergence
+  // FIRE number depends on FIRE age (inflation target), FIRE age depends on FIRE number (NPER).
+  // Start with today's expenses, compute FIRE age, inflate to that age, recompute, repeat.
+  let inflationFactor = 1
+  if (fireNumberBasis === 'fireAge' && inflation > 0) {
+    let prevYearsToFire = 0
+    const MAX_ITERATIONS = 10
+    const TOLERANCE = 0.01
+
+    for (let i = 0; i < MAX_ITERATIONS; i++) {
+      const currentFireNumber = calculateFireNumber(annualExpenses * multiplier * inflationFactor, swr)
+      const currentYearsToFire = calculateYearsToFire(netRealReturn, annualSavings, totalNetWorth, currentFireNumber)
+
+      const yearsForInflation = isFinite(currentYearsToFire) ? Math.max(0, currentYearsToFire) : 0
+      inflationFactor = Math.pow(1 + inflation, yearsForInflation)
+
+      if (Math.abs(currentYearsToFire - prevYearsToFire) < TOLERANCE) break
+      prevYearsToFire = currentYearsToFire
+    }
+
+    effectiveExpenses = annualExpenses * multiplier * inflationFactor
+  }
+
   const fireNumber = calculateFireNumber(effectiveExpenses, swr)
-  // Lean/Fat reference values also inflate when using retirement basis
+  // Lean/Fat reference values also inflate when using retirement or fireAge basis
   let leanExpenses = annualExpenses
   let fatExpenses = annualExpenses
   if (fireNumberBasis === 'retirement' && yearsToRetirement > 0 && inflation > 0) {
-    const inflationFactor = Math.pow(1 + inflation, yearsToRetirement)
+    const retirementInflationFactor = Math.pow(1 + inflation, yearsToRetirement)
+    leanExpenses *= retirementInflationFactor
+    fatExpenses *= retirementInflationFactor
+  } else if (fireNumberBasis === 'fireAge' && inflation > 0) {
     leanExpenses *= inflationFactor
     fatExpenses *= inflationFactor
   }
   const leanFireNumber = calculateLeanFire(leanExpenses, swr)
   const fatFireNumber = calculateFatFire(fatExpenses, swr)
-
-  // Net real return = nominal - inflation - expense ratio
-  const netRealReturn = expectedReturn - inflation - expenseRatio
 
   const yearsToFire = calculateYearsToFire(
     netRealReturn,

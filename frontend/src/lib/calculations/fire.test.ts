@@ -337,6 +337,53 @@ describe('fireNumberBasis', () => {
     const retirement = calculateAllFireMetrics({ ...paramsZeroInflation, fireNumberBasis: 'retirement' })
     expect(retirement.fireNumber).toBe(today.fireNumber)
   })
+
+  it('fireAge basis inflates to converged FIRE age', () => {
+    const m = calculateAllFireMetrics({ ...baseParams, fireNumberBasis: 'fireAge' })
+    const todayM = calculateAllFireMetrics({ ...baseParams, fireNumberBasis: 'today' })
+    // fireAge result should be self-consistent: the inflation used matches the computed FIRE age
+    // Convergence tolerance of 0.01 years means FIRE number can differ by ~$300, so check within 0.05%
+    const convergedYears = m.yearsToFire
+    const expectedInflationFactor = Math.pow(1 + baseParams.inflation, convergedYears)
+    const expectedFireNumber = (baseParams.annualExpenses * expectedInflationFactor) / baseParams.swr
+    const relativeError = Math.abs(m.fireNumber - expectedFireNumber) / expectedFireNumber
+    expect(relativeError).toBeLessThan(0.0005)
+    // Should be higher than today basis (inflation applied)
+    expect(m.fireNumber).toBeGreaterThan(todayM.fireNumber)
+  })
+
+  it('fireAge basis with inflation = 0 is identical to today basis', () => {
+    const paramsZeroInflation = { ...baseParams, inflation: 0 }
+    const today = calculateAllFireMetrics({ ...paramsZeroInflation, fireNumberBasis: 'today' })
+    const fireAge = calculateAllFireMetrics({ ...paramsZeroInflation, fireNumberBasis: 'fireAge' })
+    expect(fireAge.fireNumber).toBe(today.fireNumber)
+    expect(fireAge.leanFireNumber).toBe(today.leanFireNumber)
+    expect(fireAge.fatFireNumber).toBe(today.fatFireNumber)
+  })
+
+  it('fireAge basis when already at FIRE applies no inflation', () => {
+    const atFireParams = {
+      ...baseParams,
+      liquidNetWorth: 2000000,
+      cpfTotal: 0,
+      annualExpenses: 48000,
+      swr: 0.04,
+    }
+    // NW (2M) >= FIRE number (48K/0.04 = 1.2M), so years-to-FIRE = 0
+    const m = calculateAllFireMetrics({ ...atFireParams, fireNumberBasis: 'fireAge' })
+    const todayM = calculateAllFireMetrics({ ...atFireParams, fireNumberBasis: 'today' })
+    expect(m.yearsToFire).toBe(0)
+    expect(m.fireNumber).toBe(todayM.fireNumber)
+  })
+
+  it('fireAge basis produces value between today and retirement bases', () => {
+    const today = calculateAllFireMetrics({ ...baseParams, fireNumberBasis: 'today' })
+    const fireAge = calculateAllFireMetrics({ ...baseParams, fireNumberBasis: 'fireAge' })
+    const retirement = calculateAllFireMetrics({ ...baseParams, fireNumberBasis: 'retirement' })
+    // FIRE age < retirement age in typical savings scenario, so fireAge inflation < retirement inflation
+    expect(fireAge.fireNumber).toBeGreaterThan(today.fireNumber)
+    expect(fireAge.fireNumber).toBeLessThan(retirement.fireNumber)
+  })
 })
 
 describe('property-based tests', () => {
