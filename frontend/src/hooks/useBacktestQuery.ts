@@ -5,6 +5,7 @@ import type { BacktestResult, BacktestDataset, WithdrawalStrategyType } from '@/
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
+import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 
 interface BacktestConfig {
   swr: number
@@ -38,6 +39,7 @@ export function useBacktestQuery(): UseBacktestQueryResult {
   const profile = useProfileStore()
   const allocation = useAllocationStore()
   const withdrawal = useWithdrawalStore()
+  const analysisPortfolio = useAnalysisPortfolio()
   const [config, setConfigState] = useState<BacktestConfig>(DEFAULT_CONFIG)
 
   const profileErrors = profile.validationErrors
@@ -54,8 +56,8 @@ export function useBacktestQuery(): UseBacktestQueryResult {
   const mutation = useMutation({
     mutationFn: async () => {
       return runBacktest({
-        initialPortfolio: profile.liquidNetWorth + profile.cpfOA + profile.cpfSA + profile.cpfMA,
-        allocationWeights: allocation.currentWeights,
+        initialPortfolio: analysisPortfolio.initialPortfolio,
+        allocationWeights: analysisPortfolio.allocationWeights,
         swr: config.swr,
         retirementDuration: config.retirementDuration,
         dataset: config.dataset,

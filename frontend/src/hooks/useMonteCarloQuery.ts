@@ -7,6 +7,7 @@ import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useSimulationStore } from '@/stores/useSimulationStore'
 import { ASSET_CLASSES, CORRELATION_MATRIX } from '@/lib/data/historicalReturns'
 import { buildProjectionParams } from '@/hooks/useIncomeProjection'
+import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 
 interface UseMonteCarloQueryResult {
   mutate: () => void
@@ -23,6 +24,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
   const income = useIncomeStore()
   const allocation = useAllocationStore()
   const simulation = useSimulationStore()
+  const analysisPortfolio = useAnalysisPortfolio()
 
   // Gate on upstream validation
   const profileErrors = profile.validationErrors
@@ -63,15 +65,17 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
       )
 
       const params: MonteCarloParams = {
-        initialPortfolio: profile.liquidNetWorth + profile.cpfOA + profile.cpfSA + profile.cpfMA,
-        allocationWeights: allocation.currentWeights,
+        initialPortfolio: analysisPortfolio.initialPortfolio,
+        allocationWeights: analysisPortfolio.allocationWeights,
         expectedReturns,
         stdDevs,
         correlationMatrix: CORRELATION_MATRIX,
-        currentAge: profile.currentAge,
+        // When skipping accumulation, start simulation at retirement age
+        currentAge: analysisPortfolio.skipAccumulation ? profile.retirementAge : profile.currentAge,
         retirementAge: profile.retirementAge,
         lifeExpectancy: profile.lifeExpectancy,
-        annualSavings,
+        // When skipping accumulation, no pre-retirement savings (post-retirement income still included)
+        annualSavings: analysisPortfolio.skipAccumulation ? [] : annualSavings,
         postRetirementIncome,
         method: simulation.mcMethod,
         nSimulations: simulation.nSimulations,

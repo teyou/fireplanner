@@ -7,6 +7,7 @@ import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import { ASSET_CLASSES, CORRELATION_MATRIX } from '@/lib/data/historicalReturns'
 import { buildProjectionParams } from '@/hooks/useIncomeProjection'
 import { useIncomeStore } from '@/stores/useIncomeStore'
+import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 
 interface UseSequenceRiskQueryResult {
   mutate: (crisis: CrisisScenario) => void
@@ -23,6 +24,7 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
   const income = useIncomeStore()
   const allocation = useAllocationStore()
   const withdrawal = useWithdrawalStore()
+  const analysisPortfolio = useAnalysisPortfolio()
 
   const profileErrors = profile.validationErrors
   const allocationErrors = allocation.validationErrors
@@ -58,8 +60,8 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
       const strategy = withdrawal.selectedStrategies[0] ?? 'constant_dollar'
 
       return runSequenceRisk({
-        initialPortfolio: profile.liquidNetWorth + profile.cpfOA + profile.cpfSA + profile.cpfMA,
-        allocationWeights: allocation.currentWeights,
+        initialPortfolio: analysisPortfolio.initialPortfolio,
+        allocationWeights: analysisPortfolio.allocationWeights,
         expectedReturns,
         stdDevs,
         correlationMatrix: CORRELATION_MATRIX,
