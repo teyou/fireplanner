@@ -1,0 +1,201 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useSimulationStore } from '@/stores/useSimulationStore'
+import type { MonteCarloMethod, WithdrawalStrategyType } from '@/lib/types'
+import { InfoTooltip } from '@/components/shared/InfoTooltip'
+
+const MC_METHODS: { value: MonteCarloMethod; label: string }[] = [
+  { value: 'parametric', label: 'Parametric (Cholesky)' },
+  { value: 'bootstrap', label: 'Historical Bootstrap' },
+  { value: 'fat_tail', label: 'Fat-Tail (Student-t df=5)' },
+]
+
+const STRATEGIES: { value: WithdrawalStrategyType; label: string }[] = [
+  { value: 'constant_dollar', label: 'Constant Dollar (4% Rule)' },
+  { value: 'vpw', label: 'Variable Percentage (VPW)' },
+  { value: 'guardrails', label: 'Guardrails (Guyton-Klinger)' },
+  { value: 'vanguard_dynamic', label: 'Vanguard Dynamic' },
+  { value: 'cape_based', label: 'CAPE-Based' },
+  { value: 'floor_ceiling', label: 'Floor & Ceiling' },
+]
+
+interface SimulationControlsProps {
+  onRun: () => void
+  isPending: boolean
+  canRun: boolean
+  validationErrors: Record<string, string>
+}
+
+export function SimulationControls({ onRun, isPending, canRun, validationErrors }: SimulationControlsProps) {
+  const simulation = useSimulationStore()
+
+  const errorMessages = Object.values(validationErrors)
+  const disabledReason = !canRun
+    ? errorMessages[0] ?? 'Fix validation errors to run simulation'
+    : undefined
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Simulation Parameters</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label>
+              Method
+              <InfoTooltip text="How returns are generated. Parametric uses normal distribution with correlations. Bootstrap samples from history. Fat-tail uses Student-t for extreme events." />
+            </Label>
+            <Select
+              value={simulation.mcMethod}
+              onValueChange={(v) => simulation.setField('mcMethod', v as MonteCarloMethod)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MC_METHODS.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>
+              Withdrawal Strategy
+              <InfoTooltip text="How money is withdrawn during retirement. Each strategy handles market volatility differently." />
+            </Label>
+            <Select
+              value={simulation.selectedStrategy}
+              onValueChange={(v) => simulation.setField('selectedStrategy', v as WithdrawalStrategyType)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STRATEGIES.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>
+              Simulations
+              <InfoTooltip text="Number of Monte Carlo paths. More = more accurate but slower. 10,000 is standard." />
+            </Label>
+            <Input
+              type="number"
+              min={100}
+              max={100000}
+              step={1000}
+              value={simulation.nSimulations}
+              onChange={(e) => simulation.setField('nSimulations', Number(e.target.value))}
+            />
+          </div>
+        </div>
+
+        <StrategyParams />
+
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={onRun}
+            disabled={!canRun || isPending}
+            className="min-w-[160px]"
+          >
+            {isPending ? 'Running...' : 'Run Simulation'}
+          </Button>
+          {disabledReason && (
+            <span className="text-sm text-muted-foreground">{disabledReason}</span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function StrategyParams() {
+  const simulation = useSimulationStore()
+  const strategy = simulation.selectedStrategy
+  const params = simulation.strategyParams[strategy]
+
+  const setParam = (field: string, value: number) => {
+    simulation.setStrategyParam(
+      strategy,
+      field as keyof typeof params,
+      value
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {strategy === 'constant_dollar' && (
+        <ParamInput label="SWR" value={(params as { swr: number }).swr * 100} onChange={(v) => setParam('swr', v / 100)} suffix="%" />
+      )}
+      {strategy === 'vpw' && (
+        <>
+          <ParamInput label="Expected Real Return" value={(params as { expectedRealReturn: number }).expectedRealReturn * 100} onChange={(v) => setParam('expectedRealReturn', v / 100)} suffix="%" />
+          <ParamInput label="Target End Value" value={(params as { targetEndValue: number }).targetEndValue} onChange={(v) => setParam('targetEndValue', v)} prefix="$" />
+        </>
+      )}
+      {strategy === 'guardrails' && (
+        <>
+          <ParamInput label="Initial Rate" value={(params as { initialRate: number }).initialRate * 100} onChange={(v) => setParam('initialRate', v / 100)} suffix="%" />
+          <ParamInput label="Ceiling Trigger" value={(params as { ceilingTrigger: number }).ceilingTrigger * 100} onChange={(v) => setParam('ceilingTrigger', v / 100)} suffix="%" />
+          <ParamInput label="Floor Trigger" value={(params as { floorTrigger: number }).floorTrigger * 100} onChange={(v) => setParam('floorTrigger', v / 100)} suffix="%" />
+          <ParamInput label="Adjustment" value={(params as { adjustmentSize: number }).adjustmentSize * 100} onChange={(v) => setParam('adjustmentSize', v / 100)} suffix="%" />
+        </>
+      )}
+      {strategy === 'vanguard_dynamic' && (
+        <>
+          <ParamInput label="SWR" value={(params as { swr: number }).swr * 100} onChange={(v) => setParam('swr', v / 100)} suffix="%" />
+          <ParamInput label="Ceiling" value={(params as { ceiling: number }).ceiling * 100} onChange={(v) => setParam('ceiling', v / 100)} suffix="%" />
+          <ParamInput label="Floor" value={(params as { floor: number }).floor * 100} onChange={(v) => setParam('floor', v / 100)} suffix="%" />
+        </>
+      )}
+      {strategy === 'cape_based' && (
+        <>
+          <ParamInput label="Base Rate" value={(params as { baseRate: number }).baseRate * 100} onChange={(v) => setParam('baseRate', v / 100)} suffix="%" />
+          <ParamInput label="CAPE Weight" value={(params as { capeWeight: number }).capeWeight * 100} onChange={(v) => setParam('capeWeight', v / 100)} suffix="%" />
+          <ParamInput label="Current CAPE" value={(params as { currentCape: number }).currentCape} onChange={(v) => setParam('currentCape', v)} />
+        </>
+      )}
+      {strategy === 'floor_ceiling' && (
+        <>
+          <ParamInput label="Floor" value={(params as { floor: number }).floor} onChange={(v) => setParam('floor', v)} prefix="$" />
+          <ParamInput label="Ceiling" value={(params as { ceiling: number }).ceiling} onChange={(v) => setParam('ceiling', v)} prefix="$" />
+          <ParamInput label="Target Rate" value={(params as { targetRate: number }).targetRate * 100} onChange={(v) => setParam('targetRate', v / 100)} suffix="%" />
+        </>
+      )}
+    </div>
+  )
+}
+
+function ParamInput({ label, value, onChange, prefix, suffix }: {
+  label: string
+  value: number
+  onChange: (v: number) => void
+  prefix?: string
+  suffix?: string
+}) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs">{label}</Label>
+      <div className="flex items-center gap-1">
+        {prefix && <span className="text-sm text-muted-foreground">{prefix}</span>}
+        <Input
+          type="number"
+          className="h-8 text-sm"
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+        />
+        {suffix && <span className="text-sm text-muted-foreground">{suffix}</span>}
+      </div>
+    </div>
+  )
+}
