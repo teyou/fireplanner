@@ -1,12 +1,45 @@
+import { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { useAllocationStore } from '@/stores/useAllocationStore'
 import { PercentInput } from '@/components/shared/PercentInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { calculatePortfolioReturn } from '@/lib/calculations/portfolio'
+import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
 import type { RebalanceFrequency } from '@/lib/types'
 
 export function AssumptionsSection() {
   const store = useProfileStore()
+  const allocation = useAllocationStore()
+
+  const { isOverridden, effectiveReturn, portfolioReturnDisplay } = useMemo(() => {
+    const allocationErrors = allocation.validationErrors
+    const hasErrors = Object.keys(allocationErrors).length > 0
+
+    if (!hasErrors) {
+      const effectiveReturns = ASSET_CLASSES.map((ac, i) =>
+        allocation.returnOverrides[i] ?? ac.expectedReturn
+      )
+      const portfolioReturn = calculatePortfolioReturn(allocation.currentWeights, effectiveReturns)
+      return {
+        isOverridden: true,
+        effectiveReturn: portfolioReturn,
+        portfolioReturnDisplay: (portfolioReturn * 100).toFixed(1),
+      }
+    }
+
+    return {
+      isOverridden: false,
+      effectiveReturn: store.expectedReturn,
+      portfolioReturnDisplay: null,
+    }
+  }, [
+    allocation.validationErrors,
+    allocation.currentWeights,
+    allocation.returnOverrides,
+    store.expectedReturn,
+  ])
 
   return (
     <Card>
@@ -15,13 +48,25 @@ export function AssumptionsSection() {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <PercentInput
-            label="Expected Nominal Return"
-            value={store.expectedReturn}
-            onChange={(v) => store.setField('expectedReturn', v)}
-            error={store.validationErrors.expectedReturn}
-            tooltip="Expected annual portfolio return before inflation. Depends on asset allocation."
-          />
+          <div>
+            <PercentInput
+              label="Expected Nominal Return"
+              value={isOverridden ? effectiveReturn : store.expectedReturn}
+              onChange={(v) => store.setField('expectedReturn', v)}
+              error={store.validationErrors.expectedReturn}
+              tooltip="Expected annual portfolio return before inflation. Depends on asset allocation."
+              disabled={isOverridden}
+            />
+            {isOverridden ? (
+              <p className="text-xs text-green-600 mt-1">
+                Derived from Asset Allocation ({portfolioReturnDisplay}%). Edit weights in Asset Allocation to change.
+              </p>
+            ) : (
+              <p className="text-xs text-amber-600 mt-1">
+                Manual override — fix Asset Allocation weights to auto-derive.
+              </p>
+            )}
+          </div>
 
           <PercentInput
             label="Inflation Rate"
@@ -60,8 +105,8 @@ export function AssumptionsSection() {
         </div>
 
         <p className="text-xs text-muted-foreground mt-3">
-          Net real return: {((store.expectedReturn - store.inflation - store.expenseRatio) * 100).toFixed(1)}%
-          ({(store.expectedReturn * 100).toFixed(1)}% nominal - {(store.inflation * 100).toFixed(1)}% inflation - {(store.expenseRatio * 100).toFixed(1)}% fees)
+          Net real return: {((effectiveReturn - store.inflation - store.expenseRatio) * 100).toFixed(1)}%
+          ({(effectiveReturn * 100).toFixed(1)}% nominal - {(store.inflation * 100).toFixed(1)}% inflation - {(store.expenseRatio * 100).toFixed(1)}% fees)
         </p>
       </CardContent>
     </Card>

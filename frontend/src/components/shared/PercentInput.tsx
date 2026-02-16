@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
@@ -14,6 +15,10 @@ interface PercentInputProps {
   disabled?: boolean
 }
 
+function toDisplay(decimal: number): string {
+  return (decimal * 100).toFixed(1)
+}
+
 export function PercentInput({
   label,
   value,
@@ -24,8 +29,55 @@ export function PercentInput({
   step = 0.1,
   disabled,
 }: PercentInputProps) {
-  // Display as percentage (user sees "4" for 0.04)
-  const displayValue = (value * 100).toFixed(1)
+  const [localValue, setLocalValue] = useState(() => toDisplay(value))
+  const [prevValue, setPrevValue] = useState(value)
+  const [isFocused, setIsFocused] = useState(false)
+
+  // Sync from props during render when NOT focused (handles resets, rehydration, external changes)
+  if (value !== prevValue) {
+    setPrevValue(value)
+    if (!isFocused) {
+      setLocalValue(toDisplay(value))
+    }
+  }
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value
+      setLocalValue(raw)
+
+      const pct = parseFloat(raw)
+      if (!isNaN(pct)) {
+        onChange(pct / 100)
+      }
+    },
+    [onChange]
+  )
+
+  const handleFocus = useCallback(() => {
+    setIsFocused(true)
+  }, [])
+
+  const handleBlur = useCallback(() => {
+    setIsFocused(false)
+    const pct = parseFloat(localValue)
+    if (isNaN(pct) || localValue.trim() === '') {
+      // Revert to current store value
+      setLocalValue(toDisplay(value))
+    } else {
+      // Reformat to canonical display
+      setLocalValue(toDisplay(pct / 100))
+    }
+  }, [localValue, value])
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.currentTarget.blur()
+      }
+    },
+    []
+  )
 
   return (
     <div className={cn('space-y-1', className)}>
@@ -43,11 +95,11 @@ export function PercentInput({
       <div className="relative">
         <Input
           type="number"
-          value={displayValue}
-          onChange={(e) => {
-            const pct = parseFloat(e.target.value)
-            if (!isNaN(pct)) onChange(pct / 100)
-          }}
+          value={localValue}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
           step={step}
           className={cn(
             'pr-7 border-blue-300',
