@@ -201,6 +201,36 @@ export function validateIncomeField(
   return result.error.issues[0]?.message ?? 'Invalid value'
 }
 
+// ============================================================
+// Simulation Schema (W4)
+// ============================================================
+
+export const mcMethodSchema = z.enum(['parametric', 'bootstrap', 'fat_tail'])
+export const withdrawalStrategySchema = z.enum([
+  'constant_dollar', 'vpw', 'guardrails', 'vanguard_dynamic', 'cape_based', 'floor_ceiling',
+])
+export const nSimulationsSchema = z.number().int().min(100).max(100000)
+export const capeSchema = z.number().min(5).max(100)
+
+/** Validate a single simulation field and return error message or null */
+export function validateSimulationField(
+  field: string,
+  value: unknown
+): string | null {
+  const fieldSchemas: Record<string, z.ZodType> = {
+    nSimulations: nSimulationsSchema,
+    mcMethod: mcMethodSchema,
+    selectedStrategy: withdrawalStrategySchema,
+  }
+
+  const schema = fieldSchemas[field]
+  if (!schema) return null
+
+  const result = schema.safeParse(value)
+  if (result.success) return null
+  return result.error.issues[0]?.message ?? 'Invalid value'
+}
+
 /** Validate a single allocation field and return error message or null */
 export function validateAllocationField(
   field: string,

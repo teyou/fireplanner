@@ -260,6 +260,135 @@ export interface AllocationState {
 }
 
 // ============================================================
+// Monte Carlo Simulation (W4)
+// ============================================================
+
+export type MonteCarloMethod = 'parametric' | 'bootstrap' | 'fat_tail'
+
+export type WithdrawalStrategyType =
+  | 'constant_dollar'
+  | 'vpw'
+  | 'guardrails'
+  | 'vanguard_dynamic'
+  | 'cape_based'
+  | 'floor_ceiling'
+
+export interface ConstantDollarParams {
+  swr: number
+}
+
+export interface VpwParams {
+  expectedRealReturn: number
+  targetEndValue: number
+}
+
+export interface GuardrailsParams {
+  initialRate: number
+  ceilingTrigger: number
+  floorTrigger: number
+  adjustmentSize: number
+}
+
+export interface VanguardDynamicParams {
+  swr: number
+  ceiling: number
+  floor: number
+}
+
+export interface CapeBasedParams {
+  baseRate: number
+  capeWeight: number
+  currentCape: number
+}
+
+export interface FloorCeilingParams {
+  floor: number
+  ceiling: number
+  targetRate: number
+}
+
+export interface StrategyParamsMap {
+  constant_dollar: ConstantDollarParams
+  vpw: VpwParams
+  guardrails: GuardrailsParams
+  vanguard_dynamic: VanguardDynamicParams
+  cape_based: CapeBasedParams
+  floor_ceiling: FloorCeilingParams
+}
+
+export interface MonteCarloParams {
+  initialPortfolio: number
+  allocationWeights: number[]
+  expectedReturns: number[]
+  stdDevs: number[]
+  correlationMatrix: number[][]
+  currentAge: number
+  retirementAge: number
+  lifeExpectancy: number
+  annualSavings: number[]
+  postRetirementIncome: number[]
+  method: MonteCarloMethod
+  nSimulations: number
+  seed?: number
+  withdrawalStrategy: WithdrawalStrategyType
+  strategyParams: StrategyParamsMap
+  expenseRatio: number
+  inflation: number
+}
+
+export interface PercentileBands {
+  years: number[]
+  ages: number[]
+  p5: number[]
+  p10: number[]
+  p25: number[]
+  p50: number[]
+  p75: number[]
+  p90: number[]
+  p95: number[]
+}
+
+export interface TerminalStats {
+  median: number
+  mean: number
+  worst: number
+  best: number
+  p5: number
+  p95: number
+}
+
+export interface SafeSwr {
+  confidence_95: number
+  confidence_90: number
+  confidence_85: number
+}
+
+export interface FailureDistribution {
+  buckets: string[]
+  counts: number[]
+  total_failures: number
+}
+
+export interface MonteCarloResult {
+  success_rate: number
+  percentile_bands: PercentileBands
+  terminal_stats: TerminalStats
+  safe_swr: SafeSwr | null
+  failure_distribution: FailureDistribution
+  n_simulations: number
+  computation_time_ms: number
+  cached: boolean
+}
+
+export interface SimulationState {
+  mcMethod: MonteCarloMethod
+  selectedStrategy: WithdrawalStrategyType
+  strategyParams: StrategyParamsMap
+  nSimulations: number
+  validationErrors: ValidationErrors
+}
+
+// ============================================================
 // Validation
 // ============================================================
 
