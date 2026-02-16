@@ -15,6 +15,7 @@ import {
   BRS_GROWTH_RATE,
   CPF_LIFE_BASIC_RATE,
   CPF_LIFE_STANDARD_RATE,
+  CPF_LIFE_ESCALATING_RATE,
 } from '@/lib/data/cpfRates'
 
 /**
@@ -156,14 +157,24 @@ export function calculateBrsFrsErs(
   }
 }
 
+export type CpfLifePlan = 'basic' | 'standard' | 'escalating'
+
 /**
  * Estimate annual CPF LIFE payout starting at age 65.
- * Based on FRS at age 55 and selected plan (Basic or Standard).
+ * Based on retirement sum at age 55 and selected plan.
+ *
+ * - Basic: ~5.4% annual payout rate (flat, higher bequest)
+ * - Standard: ~6.3% annual payout rate (flat, lower bequest)
+ * - Escalating: ~4.8% initial rate, increases 2%/yr (hedges inflation)
  */
 export function estimateCpfLifePayout(
-  frsAt55: number,
-  plan: 'basic' | 'standard' = 'standard'
+  retirementSumAt55: number,
+  plan: CpfLifePlan = 'standard'
 ): number {
-  const rate = plan === 'basic' ? CPF_LIFE_BASIC_RATE : CPF_LIFE_STANDARD_RATE
-  return frsAt55 * rate
+  const rates: Record<CpfLifePlan, number> = {
+    basic: CPF_LIFE_BASIC_RATE,
+    standard: CPF_LIFE_STANDARD_RATE,
+    escalating: CPF_LIFE_ESCALATING_RATE,
+  }
+  return retirementSumAt55 * rates[plan]
 }

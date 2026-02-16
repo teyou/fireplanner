@@ -86,9 +86,10 @@ export const FRS_2024 = 213000
 export const ERS_2024 = 426000
 export const BRS_GROWTH_RATE = 0.035 // 3.5% p.a.
 
-// CPF LIFE payout rates (annual rate applied to FRS at 55)
+// CPF LIFE payout rates (annual rate applied to retirement sum at 55)
 export const CPF_LIFE_BASIC_RATE = 0.054 // ~5.4%
 export const CPF_LIFE_STANDARD_RATE = 0.063 // ~6.3%
+export const CPF_LIFE_ESCALATING_RATE = 0.048 // ~4.8% initial, increases 2%/yr
 export const CPF_LIFE_START_AGE = 65
 
 /**

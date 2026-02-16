@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { calculateCpfContribution, calculateBrsFrsErs, estimateCpfLifePayout } from '@/lib/calculations/cpf'
-import { getCpfRatesForAge } from '@/lib/data/cpfRates'
+import type { CpfLifePlan } from '@/lib/calculations/cpf'
+import { getCpfRatesForAge, BRS_2024, FRS_2024, ERS_2024 } from '@/lib/data/cpfRates'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 
@@ -12,8 +13,18 @@ export function CpfSection() {
   const rates = getCpfRatesForAge(currentAge)
   const contribution = calculateCpfContribution(annualIncome, currentAge)
   const brsFrsErs = calculateBrsFrsErs(currentAge)
-  const cpfLifeBasic = estimateCpfLifePayout(brsFrsErs.frs, 'basic')
-  const cpfLifeStandard = estimateCpfLifePayout(brsFrsErs.frs, 'standard')
+
+  // 3x3 payout grid: 3 plans x 3 retirement sums
+  const plans: { key: CpfLifePlan; label: string; note: string }[] = [
+    { key: 'basic', label: 'Basic', note: '~5.4%' },
+    { key: 'standard', label: 'Standard', note: '~6.3%' },
+    { key: 'escalating', label: 'Escalating', note: '~4.8%, +2%/yr' },
+  ]
+  const sums: { key: 'brs' | 'frs' | 'ers'; label: string; value: number; baseline: number }[] = [
+    { key: 'brs', label: 'BRS', value: brsFrsErs.brs, baseline: BRS_2024 },
+    { key: 'frs', label: 'FRS', value: brsFrsErs.frs, baseline: FRS_2024 },
+    { key: 'ers', label: 'ERS', value: brsFrsErs.ers, baseline: ERS_2024 },
+  ]
 
   const totalCpf = cpfOA + cpfSA + cpfMA
 
@@ -99,43 +110,58 @@ export function CpfSection() {
         <div>
           <h4 className="text-sm font-medium flex items-center mb-2">
             Projected BRS/FRS/ERS at Age 55
-            <InfoTooltip text="Based on current 2024 values growing at 3.5% p.a. These are the amounts needed in your RA at 55." />
+            <InfoTooltip text="Based on 2024 values growing at 3.5% p.a. These are the amounts needed in your Retirement Account at 55." />
           </h4>
           <div className="grid grid-cols-3 gap-2 text-sm">
-            <div className="p-2 bg-muted/50 rounded">
-              <div className="text-xs text-muted-foreground">BRS (Basic)</div>
-              <div className="font-semibold">{formatCurrency(brsFrsErs.brs)}</div>
-            </div>
-            <div className="p-2 bg-muted/50 rounded">
-              <div className="text-xs text-muted-foreground">FRS (Full)</div>
-              <div className="font-semibold">{formatCurrency(brsFrsErs.frs)}</div>
-            </div>
-            <div className="p-2 bg-muted/50 rounded">
-              <div className="text-xs text-muted-foreground">ERS (Enhanced)</div>
-              <div className="font-semibold">{formatCurrency(brsFrsErs.ers)}</div>
-            </div>
+            {sums.map((s) => (
+              <div key={s.key} className="p-2 bg-muted/50 rounded">
+                <div className="text-xs text-muted-foreground">{s.label}</div>
+                <div className="font-semibold">{formatCurrency(s.value)}</div>
+                <div className="text-xs text-muted-foreground">
+                  2024: {formatCurrency(s.baseline)}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* CPF LIFE estimates */}
+        {/* CPF LIFE 3x3 payout grid */}
         <div>
           <h4 className="text-sm font-medium flex items-center mb-2">
-            Estimated CPF LIFE Payouts (from age 65)
-            <InfoTooltip text="Monthly payouts based on projected FRS at 55. Basic: ~5.4%, Standard: ~6.3% annual payout rate." />
+            CPF LIFE Monthly Payouts (from age 65)
+            <InfoTooltip text="Estimated monthly payouts based on projected retirement sums at 55. Basic: higher bequest. Standard: higher payout. Escalating: starts lower, increases 2%/yr to hedge inflation." />
           </h4>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="p-2 bg-muted/50 rounded">
-              <div className="text-xs text-muted-foreground">Basic Plan</div>
-              <div className="font-semibold">
-                {formatCurrency(cpfLifeBasic / 12)}/mo ({formatCurrency(cpfLifeBasic)}/yr)
-              </div>
-            </div>
-            <div className="p-2 bg-muted/50 rounded">
-              <div className="text-xs text-muted-foreground">Standard Plan</div>
-              <div className="font-semibold">
-                {formatCurrency(cpfLifeStandard / 12)}/mo ({formatCurrency(cpfLifeStandard)}/yr)
-              </div>
-            </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-muted-foreground">
+                  <th className="text-left p-1.5"></th>
+                  {plans.map((p) => (
+                    <th key={p.key} className="text-right p-1.5">
+                      {p.label}
+                      <div className="text-[10px] font-normal">({p.note})</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sums.map((s) => (
+                  <tr key={s.key} className="border-t border-border/50">
+                    <td className="p-1.5 text-muted-foreground">
+                      {s.label} ({formatCurrency(s.value)})
+                    </td>
+                    {plans.map((p) => {
+                      const annual = estimateCpfLifePayout(s.value, p.key)
+                      return (
+                        <td key={p.key} className="text-right p-1.5 font-semibold">
+                          {formatCurrency(annual / 12)}/mo
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </CardContent>
