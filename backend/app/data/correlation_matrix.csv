@@ -1,0 +1,15 @@
+# 8x8 Correlation Matrix for Asset Classes
+# Matches frontend CORRELATION_MATRIX in historicalReturns.ts
+# Computed from overlapping historical years
+# Generated: 2026-02-17
+#
+# Order: US_Equities, SG_Equities, Intl_Equities, Bonds, REITs, Gold, Cash, CPF
+,US_Equities,SG_Equities,Intl_Equities,Bonds,REITs,Gold,Cash,CPF
+US_Equities,1.00,0.55,0.85,-0.05,0.60,0.05,0.02,0.00
+SG_Equities,0.55,1.00,0.65,-0.10,0.50,0.10,0.02,0.00
+Intl_Equities,0.85,0.65,1.00,-0.03,0.55,0.08,0.02,0.00
+Bonds,-0.05,-0.10,-0.03,1.00,0.15,0.20,0.30,0.00
+REITs,0.60,0.50,0.55,0.15,1.00,0.10,0.05,0.00
+Gold,0.05,0.10,0.08,0.20,0.10,1.00,0.05,0.00
+Cash,0.02,0.02,0.02,0.30,0.05,0.05,1.00,0.00
+CPF,0.00,0.00,0.00,0.00,0.00,0.00,0.00,1.00
