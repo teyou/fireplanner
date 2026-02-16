@@ -1,4 +1,4 @@
-import type { FireMetrics, FireType } from '@/lib/types'
+import type { FireMetrics, FireType, FireNumberBasis } from '@/lib/types'
 
 /** Expense multiplier for each FIRE type */
 const FIRE_TYPE_MULTIPLIERS: Record<FireType, number> = {
@@ -151,6 +151,7 @@ export function calculateAllFireMetrics(params: {
   inflation: number
   expenseRatio: number
   fireType?: FireType
+  fireNumberBasis?: FireNumberBasis
 }): FireMetrics {
   const {
     currentAge,
@@ -164,6 +165,7 @@ export function calculateAllFireMetrics(params: {
     inflation,
     expenseRatio,
     fireType = 'regular',
+    fireNumberBasis = 'today',
   } = params
 
   const totalNetWorth = liquidNetWorth + cpfTotal
@@ -172,16 +174,28 @@ export function calculateAllFireMetrics(params: {
 
   // Apply FIRE type multiplier to expenses for the main FIRE number
   const multiplier = FIRE_TYPE_MULTIPLIERS[fireType]
-  const effectiveExpenses = annualExpenses * multiplier
+  let effectiveExpenses = annualExpenses * multiplier
+
+  // Inflate expenses to retirement age if using retirement-dollar basis
+  const yearsToRetirement = Math.max(0, retirementAge - currentAge)
+  if (fireNumberBasis === 'retirement' && yearsToRetirement > 0 && inflation > 0) {
+    effectiveExpenses *= Math.pow(1 + inflation, yearsToRetirement)
+  }
 
   const fireNumber = calculateFireNumber(effectiveExpenses, swr)
-  // Lean/Fat reference values always use base expenses
-  const leanFireNumber = calculateLeanFire(annualExpenses, swr)
-  const fatFireNumber = calculateFatFire(annualExpenses, swr)
+  // Lean/Fat reference values also inflate when using retirement basis
+  let leanExpenses = annualExpenses
+  let fatExpenses = annualExpenses
+  if (fireNumberBasis === 'retirement' && yearsToRetirement > 0 && inflation > 0) {
+    const inflationFactor = Math.pow(1 + inflation, yearsToRetirement)
+    leanExpenses *= inflationFactor
+    fatExpenses *= inflationFactor
+  }
+  const leanFireNumber = calculateLeanFire(leanExpenses, swr)
+  const fatFireNumber = calculateFatFire(fatExpenses, swr)
 
   // Net real return = nominal - inflation - expense ratio
   const netRealReturn = expectedReturn - inflation - expenseRatio
-  const yearsToRetirement = retirementAge - currentAge
 
   const yearsToFire = calculateYearsToFire(
     netRealReturn,

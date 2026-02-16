@@ -94,6 +94,7 @@ export function useFireCalculations(): FireCalculationsResult {
       inflation: profile.inflation,
       expenseRatio: profile.expenseRatio,
       fireType: profile.fireType,
+      fireNumberBasis: profile.fireNumberBasis,
     })
 
     return { metrics, hasErrors: false, errors: {} }
@@ -113,6 +114,7 @@ export function useFireCalculations(): FireCalculationsResult {
     profile.inflation,
     profile.expenseRatio,
     profile.fireType,
+    profile.fireNumberBasis,
     profile.srsAnnualContribution,
     profile.validationErrors,
     income.salaryModel,

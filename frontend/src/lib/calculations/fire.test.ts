@@ -284,6 +284,61 @@ describe('calculateAllFireMetrics', () => {
   })
 })
 
+describe('fireNumberBasis', () => {
+  const baseParams = {
+    currentAge: 30,
+    retirementAge: 65,
+    annualIncome: 100000,
+    annualExpenses: 48000,
+    liquidNetWorth: 200000,
+    cpfTotal: 0,
+    swr: 0.04,
+    expectedReturn: 0.07,
+    inflation: 0.025,
+    expenseRatio: 0.003,
+  }
+
+  it('today basis produces same result as default (regression)', () => {
+    const withToday = calculateAllFireMetrics({ ...baseParams, fireNumberBasis: 'today' })
+    const withDefault = calculateAllFireMetrics(baseParams)
+    expect(withToday.fireNumber).toBe(withDefault.fireNumber)
+    expect(withToday.leanFireNumber).toBe(withDefault.leanFireNumber)
+    expect(withToday.fatFireNumber).toBe(withDefault.fatFireNumber)
+  })
+
+  it('retirement basis inflates expenses correctly', () => {
+    // $48K expenses, 2.5% inflation, age 30→65 (35 years)
+    // inflated = 48000 × 1.025^35 = ~113,813.55
+    // FIRE number = 113,813.55 / 0.04 = ~2,845,338.72
+    const m = calculateAllFireMetrics({ ...baseParams, fireNumberBasis: 'retirement' })
+    const inflated = 48000 * Math.pow(1.025, 35)
+    expect(m.fireNumber).toBeCloseTo(inflated / 0.04, 0)
+  })
+
+  it('lean/fat variants also inflate with retirement basis', () => {
+    const m = calculateAllFireMetrics({ ...baseParams, fireNumberBasis: 'retirement' })
+    const inflationFactor = Math.pow(1.025, 35)
+    // Lean: 48000 * inflationFactor * 0.6 / 0.04
+    expect(m.leanFireNumber).toBeCloseTo(48000 * inflationFactor * 0.6 / 0.04, 0)
+    // Fat: 48000 * inflationFactor * 1.5 / 0.04
+    expect(m.fatFireNumber).toBeCloseTo(48000 * inflationFactor * 1.5 / 0.04, 0)
+  })
+
+  it('retirement basis with currentAge >= retirementAge applies no inflation', () => {
+    const params = { ...baseParams, currentAge: 65, retirementAge: 65, fireNumberBasis: 'retirement' as const }
+    const m = calculateAllFireMetrics(params)
+    // yearsToRetirement = 0, so (1+i)^0 = 1, no inflation
+    expect(m.fireNumber).toBe(48000 / 0.04) // 1,200,000
+  })
+
+  it('retirement basis with inflation = 0 is identical to today basis', () => {
+    const paramsZeroInflation = { ...baseParams, inflation: 0 }
+    const today = calculateAllFireMetrics({ ...paramsZeroInflation, fireNumberBasis: 'today' })
+    const retirement = calculateAllFireMetrics({ ...paramsZeroInflation, fireNumberBasis: 'retirement' })
+    expect(retirement.fireNumber).toBe(today.fireNumber)
+  })
+})
+
 describe('property-based tests', () => {
   it('FIRE number > 0 when expenses > 0 and SWR > 0', () => {
     fc.assert(

@@ -7,10 +7,10 @@ import { useFireCalculations } from '@/hooks/useFireCalculations'
 import { PercentInput } from '@/components/shared/PercentInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { formatCurrency, formatPercent } from '@/lib/utils'
-import type { FireType } from '@/lib/types'
+import type { FireType, FireNumberBasis } from '@/lib/types'
 
 export function FireTargetsSection() {
-  const { fireType, swr, setField, validationErrors } = useProfileStore()
+  const { fireType, swr, fireNumberBasis, inflation, retirementAge, setField, validationErrors } = useProfileStore()
   const { metrics, hasErrors } = useFireCalculations()
 
   return (
@@ -47,6 +47,26 @@ export function FireTargetsSection() {
             tooltip="The percentage of your portfolio you withdraw annually in retirement. 4% is the classic rule."
             step={0.5}
           />
+
+          <div className="space-y-1">
+            <Label className="text-sm flex items-center">
+              FIRE Number Basis
+              <InfoTooltip text="Today's $: target based on current expenses. At Retirement: inflation-adjusted to your retirement age." />
+            </Label>
+            <select
+              value={fireNumberBasis}
+              onChange={(e) => setField('fireNumberBasis', e.target.value as FireNumberBasis)}
+              className="flex h-10 w-full rounded-md border border-blue-300 bg-background px-3 py-2 text-sm"
+            >
+              <option value="today">Today's $</option>
+              <option value="retirement">At Retirement</option>
+            </select>
+            {fireNumberBasis === 'retirement' && (
+              <p className="text-xs text-muted-foreground">
+                Inflation-adjusted to age {retirementAge} at {(inflation * 100).toFixed(1)}%
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Computed Metrics */}

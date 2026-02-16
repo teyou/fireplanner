@@ -8,6 +8,7 @@ export type MaritalStatus = 'single' | 'married'
 export type ResidencyStatus = 'citizen' | 'pr' | 'foreigner'
 export type SalaryModel = 'simple' | 'realistic' | 'data-driven'
 export type RebalanceFrequency = 'annual' | 'semi-annual' | 'quarterly'
+export type FireNumberBasis = 'today' | 'retirement'
 export type AnalysisMode = 'currentNW' | 'fireNumber' | 'projectedNW'
 export type IncomeStreamType = 'employment' | 'rental' | 'investment' | 'business' | 'government'
 export type GrowthModel = 'fixed' | 'inflation-linked' | 'none'
@@ -40,6 +41,7 @@ export interface ProfileState {
   // FIRE Targets
   fireType: FireType
   swr: number
+  fireNumberBasis: FireNumberBasis
 
   // Assumptions
   expectedReturn: number
