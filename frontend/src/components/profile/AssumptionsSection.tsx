@@ -7,39 +7,44 @@ import { PercentInput } from '@/components/shared/PercentInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { calculatePortfolioReturn } from '@/lib/calculations/portfolio'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
+import { cn } from '@/lib/utils'
 import type { RebalanceFrequency } from '@/lib/types'
 
 export function AssumptionsSection() {
   const store = useProfileStore()
   const allocation = useAllocationStore()
 
-  const { isOverridden, effectiveReturn, portfolioReturnDisplay } = useMemo(() => {
-    const allocationErrors = allocation.validationErrors
-    const hasErrors = Object.keys(allocationErrors).length > 0
+  const { portfolioReturn, portfolioReturnDisplay, allocationValid } = useMemo(() => {
+    const hasErrors = Object.keys(allocation.validationErrors).length > 0
 
     if (!hasErrors) {
       const effectiveReturns = ASSET_CLASSES.map((ac, i) =>
         allocation.returnOverrides[i] ?? ac.expectedReturn
       )
-      const portfolioReturn = calculatePortfolioReturn(allocation.currentWeights, effectiveReturns)
+      const ret = calculatePortfolioReturn(allocation.currentWeights, effectiveReturns)
       return {
-        isOverridden: true,
-        effectiveReturn: portfolioReturn,
-        portfolioReturnDisplay: (portfolioReturn * 100).toFixed(1),
+        portfolioReturn: ret,
+        portfolioReturnDisplay: (ret * 100).toFixed(1),
+        allocationValid: true,
       }
     }
 
     return {
-      isOverridden: false,
-      effectiveReturn: store.expectedReturn,
+      portfolioReturn: null,
       portfolioReturnDisplay: null,
+      allocationValid: false,
     }
   }, [
     allocation.validationErrors,
     allocation.currentWeights,
     allocation.returnOverrides,
-    store.expectedReturn,
   ])
+
+  // Determine the effective return used for calculations
+  const useAuto = store.usePortfolioReturn
+  const effectiveReturn = useAuto && portfolioReturn !== null
+    ? portfolioReturn
+    : store.expectedReturn
 
   return (
     <Card>
@@ -48,22 +53,52 @@ export function AssumptionsSection() {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-1">
+              <Label className="text-sm">Expected Nominal Return</Label>
+              <InfoTooltip text="Choose 'From Allocation' to automatically compute your expected return from your asset allocation weights, or 'Manual' to enter your own estimate. The derived value updates when you change allocations." />
+            </div>
+
+            <div className="inline-flex rounded-md border bg-muted p-0.5 mb-1">
+              <button
+                onClick={() => store.setField('usePortfolioReturn', true)}
+                className={cn(
+                  'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                  useAuto
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                From Allocation
+              </button>
+              <button
+                onClick={() => store.setField('usePortfolioReturn', false)}
+                className={cn(
+                  'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                  !useAuto
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                Manual
+              </button>
+            </div>
+
             <PercentInput
-              label="Expected Nominal Return"
-              value={isOverridden ? effectiveReturn : store.expectedReturn}
+              value={effectiveReturn}
               onChange={(v) => store.setField('expectedReturn', v)}
               error={store.validationErrors.expectedReturn}
-              tooltip="Expected annual portfolio return before inflation. Depends on asset allocation."
-              disabled={isOverridden}
+              disabled={useAuto && allocationValid}
             />
-            {isOverridden ? (
-              <p className="text-xs text-green-600 mt-1">
+
+            {useAuto && allocationValid && (
+              <p className="text-xs text-green-600">
                 Derived from Asset Allocation ({portfolioReturnDisplay}%). Edit weights in Asset Allocation to change.
               </p>
-            ) : (
-              <p className="text-xs text-amber-600 mt-1">
-                Manual override — fix Asset Allocation weights to auto-derive.
+            )}
+            {useAuto && !allocationValid && (
+              <p className="text-xs text-amber-600">
+                Asset Allocation has errors — using manual value ({(store.expectedReturn * 100).toFixed(1)}%) until fixed.
               </p>
             )}
           </div>

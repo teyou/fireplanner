@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
 interface PercentInputProps {
-  label: string
+  label?: string
   /** Stored as decimal (e.g. 0.04 for 4%) */
   value: number
   onChange: (value: number) => void
@@ -81,17 +81,19 @@ export function PercentInput({
 
   return (
     <div className={cn('space-y-1', className)}>
-      <Label className="text-sm flex items-center gap-1">
-        {label}
-        {tooltip && (
-          <span
-            className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted text-muted-foreground text-xs cursor-help"
-            title={tooltip}
-          >
-            i
-          </span>
-        )}
-      </Label>
+      {label && (
+        <Label className="text-sm flex items-center gap-1">
+          {label}
+          {tooltip && (
+            <span
+              className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted text-muted-foreground text-xs cursor-help"
+              title={tooltip}
+            >
+              i
+            </span>
+          )}
+        </Label>
+      )}
       <div className="relative">
         <Input
           type="number"

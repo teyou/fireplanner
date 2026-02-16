@@ -47,10 +47,10 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
       return { results: null, hasErrors: true, errors: allErrors }
     }
 
-    // Use portfolio expected return from allocation when available
+    // Use portfolio expected return from allocation when user has opted in and allocation is valid
     let expectedReturn = profile.expectedReturn
     const allocationErrors = allocation.validationErrors
-    if (Object.keys(allocationErrors).length === 0) {
+    if (profile.usePortfolioReturn && Object.keys(allocationErrors).length === 0) {
       const effectiveReturns = ASSET_CLASSES.map((ac, i) =>
         allocation.returnOverrides[i] ?? ac.expectedReturn
       )
@@ -82,6 +82,7 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
     profile.lifeExpectancy,
     profile.annualExpenses,
     profile.expectedReturn,
+    profile.usePortfolioReturn,
     profile.inflation,
     profile.expenseRatio,
     profile.swr,

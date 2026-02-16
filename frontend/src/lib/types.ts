@@ -43,6 +43,7 @@ export interface ProfileState {
 
   // Assumptions
   expectedReturn: number
+  usePortfolioReturn: boolean
   inflation: number
   expenseRatio: number
   rebalanceFrequency: RebalanceFrequency

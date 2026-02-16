@@ -70,12 +70,12 @@ export function useFireCalculations(): FireCalculationsResult {
       }
     }
 
-    // Use portfolio expected return from allocation when available
+    // Use portfolio expected return from allocation when user has opted in and allocation is valid
     let expectedReturn = profile.expectedReturn
     const allocationErrors = allocation.validationErrors
     const allocationHasErrors = Object.keys(allocationErrors).length > 0
 
-    if (!allocationHasErrors) {
+    if (profile.usePortfolioReturn && !allocationHasErrors) {
       const effectiveReturns = ASSET_CLASSES.map((ac, i) =>
         allocation.returnOverrides[i] ?? ac.expectedReturn
       )
@@ -109,6 +109,7 @@ export function useFireCalculations(): FireCalculationsResult {
     profile.cpfMA,
     profile.swr,
     profile.expectedReturn,
+    profile.usePortfolioReturn,
     profile.inflation,
     profile.expenseRatio,
     profile.fireType,

@@ -16,7 +16,7 @@ const PROFILE_DATA_KEYS = [
   'currentAge', 'retirementAge', 'lifeExpectancy', 'lifeStage', 'maritalStatus',
   'residencyStatus', 'annualIncome', 'annualExpenses', 'liquidNetWorth',
   'cpfOA', 'cpfSA', 'cpfMA', 'srsBalance', 'srsAnnualContribution',
-  'fireType', 'swr', 'expectedReturn', 'inflation', 'expenseRatio', 'rebalanceFrequency',
+  'fireType', 'swr', 'expectedReturn', 'usePortfolioReturn', 'inflation', 'expenseRatio', 'rebalanceFrequency',
 ] as const
 
 const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
@@ -37,6 +37,7 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   fireType: 'regular',
   swr: 0.04,
   expectedReturn: 0.07,
+  usePortfolioReturn: true,
   inflation: 0.025,
   expenseRatio: 0.003,
   rebalanceFrequency: 'annual',
