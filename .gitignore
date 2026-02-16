@@ -6,3 +6,13 @@ coverage/
 *.local
 .DS_Store
 *.tsbuildinfo
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+.pytest_cache/
+htmlcov/
