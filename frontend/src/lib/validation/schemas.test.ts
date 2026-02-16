@@ -9,7 +9,10 @@ import {
   expenseRatioSchema,
   profileSchema,
   incomeSchema,
+  careerPhaseSchema,
+  promotionJumpSchema,
   validateProfileField,
+  validateIncomeField,
 } from './schemas'
 import {
   validateProfileConsistency,
@@ -253,59 +256,148 @@ describe('validateProfileConsistency', () => {
 })
 
 describe('validateCrossStoreRules', () => {
+  const defaultIncome = {
+    incomeStreams: [],
+    lifeEvents: [],
+    lifeEventsEnabled: false,
+    promotionJumps: [],
+  }
+  const defaultProfile = { currentAge: 30, retirementAge: 65, lifeExpectancy: 90 }
+
   it('returns empty when no income streams', () => {
-    const errors = validateCrossStoreRules(
-      { lifeExpectancy: 90 },
-      { incomeStreams: [] }
-    )
+    const errors = validateCrossStoreRules(defaultProfile, defaultIncome)
     expect(Object.keys(errors)).toHaveLength(0)
   })
 
   it('catches income stream end age exceeding life expectancy', () => {
-    const errors = validateCrossStoreRules(
-      { lifeExpectancy: 90 },
-      {
-        incomeStreams: [
-          {
-            id: '1',
-            name: 'Salary',
-            annualAmount: 72000,
-            startAge: 25,
-            endAge: 95,
-            growthRate: 0.03,
-            type: 'employment',
-            growthModel: 'fixed',
-            taxTreatment: 'taxable',
-            isCpfApplicable: true,
-            isActive: true,
-          },
-        ],
-      }
-    )
+    const errors = validateCrossStoreRules(defaultProfile, {
+      ...defaultIncome,
+      incomeStreams: [
+        {
+          id: '1', name: 'Salary', annualAmount: 72000,
+          startAge: 25, endAge: 95, growthRate: 0.03,
+          type: 'employment', growthModel: 'fixed', taxTreatment: 'taxable',
+          isCpfApplicable: true, isActive: true,
+        },
+      ],
+    })
     expect(errors['incomeStream_1_endAge']).toBeTruthy()
   })
 
   it('passes when end age equals life expectancy', () => {
-    const errors = validateCrossStoreRules(
-      { lifeExpectancy: 90 },
-      {
-        incomeStreams: [
-          {
-            id: '1',
-            name: 'Salary',
-            annualAmount: 72000,
-            startAge: 25,
-            endAge: 90,
-            growthRate: 0.03,
-            type: 'employment',
-            growthModel: 'fixed',
-            taxTreatment: 'taxable',
-            isCpfApplicable: true,
-            isActive: true,
-          },
-        ],
-      }
-    )
+    const errors = validateCrossStoreRules(defaultProfile, {
+      ...defaultIncome,
+      incomeStreams: [
+        {
+          id: '1', name: 'Salary', annualAmount: 72000,
+          startAge: 25, endAge: 90, growthRate: 0.03,
+          type: 'employment', growthModel: 'fixed', taxTreatment: 'taxable',
+          isCpfApplicable: true, isActive: true,
+        },
+      ],
+    })
     expect(Object.keys(errors)).toHaveLength(0)
+  })
+
+  it('catches life event end age exceeding life expectancy', () => {
+    const errors = validateCrossStoreRules(defaultProfile, {
+      ...defaultIncome,
+      lifeEventsEnabled: true,
+      lifeEvents: [
+        {
+          id: 'e1', name: 'Break', startAge: 35, endAge: 95,
+          incomeImpact: 0, affectedStreamIds: [],
+          savingsPause: true, cpfPause: true,
+        },
+      ],
+    })
+    expect(errors['lifeEvent_e1_endAge']).toBeTruthy()
+  })
+
+  it('does not validate life events when disabled', () => {
+    const errors = validateCrossStoreRules(defaultProfile, {
+      ...defaultIncome,
+      lifeEventsEnabled: false,
+      lifeEvents: [
+        {
+          id: 'e1', name: 'Break', startAge: 35, endAge: 95,
+          incomeImpact: 0, affectedStreamIds: [],
+          savingsPause: true, cpfPause: true,
+        },
+      ],
+    })
+    expect(Object.keys(errors)).toHaveLength(0)
+  })
+
+  it('catches promotion jump before current age', () => {
+    const errors = validateCrossStoreRules(defaultProfile, {
+      ...defaultIncome,
+      promotionJumps: [{ age: 25, increasePercent: 0.2 }],
+    })
+    expect(errors['promotionJump_0_age']).toBeTruthy()
+  })
+
+  it('catches promotion jump after retirement age', () => {
+    const errors = validateCrossStoreRules(defaultProfile, {
+      ...defaultIncome,
+      promotionJumps: [{ age: 70, increasePercent: 0.2 }],
+    })
+    expect(errors['promotionJump_0_age']).toBeTruthy()
+  })
+})
+
+describe('careerPhaseSchema', () => {
+  it('accepts valid career phase', () => {
+    expect(careerPhaseSchema.safeParse({
+      label: 'Early Career', minAge: 22, maxAge: 30, growthRate: 0.08,
+    }).success).toBe(true)
+  })
+
+  it('rejects empty label', () => {
+    expect(careerPhaseSchema.safeParse({
+      label: '', minAge: 22, maxAge: 30, growthRate: 0.08,
+    }).success).toBe(false)
+  })
+
+  it('rejects growth rate > 50%', () => {
+    expect(careerPhaseSchema.safeParse({
+      label: 'Test', minAge: 22, maxAge: 30, growthRate: 0.6,
+    }).success).toBe(false)
+  })
+})
+
+describe('promotionJumpSchema', () => {
+  it('accepts valid promotion jump', () => {
+    expect(promotionJumpSchema.safeParse({ age: 30, increasePercent: 0.2 }).success).toBe(true)
+  })
+
+  it('rejects zero increase', () => {
+    expect(promotionJumpSchema.safeParse({ age: 30, increasePercent: 0 }).success).toBe(false)
+  })
+
+  it('rejects increase > 200%', () => {
+    expect(promotionJumpSchema.safeParse({ age: 30, increasePercent: 2.5 }).success).toBe(false)
+  })
+})
+
+describe('validateIncomeField', () => {
+  it('returns null for valid salary', () => {
+    expect(validateIncomeField('annualSalary', 72000)).toBeNull()
+  })
+
+  it('returns error for negative salary', () => {
+    expect(validateIncomeField('annualSalary', -1)).toBeTruthy()
+  })
+
+  it('returns null for valid MOM adjustment', () => {
+    expect(validateIncomeField('momAdjustment', 1.0)).toBeNull()
+  })
+
+  it('returns error for MOM adjustment > 3', () => {
+    expect(validateIncomeField('momAdjustment', 4.0)).toBeTruthy()
+  })
+
+  it('returns null for unknown fields', () => {
+    expect(validateIncomeField('unknownField', 'anything')).toBeNull()
   })
 })

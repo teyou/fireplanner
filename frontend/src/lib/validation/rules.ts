@@ -24,15 +24,47 @@ export function validateProfileConsistency(
  * Cross-store validation: income store rules that depend on profile store.
  */
 export function validateCrossStoreRules(
-  profile: Pick<ProfileState, 'lifeExpectancy'>,
-  income: Pick<IncomeState, 'incomeStreams'>
+  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy'>,
+  income: Pick<IncomeState, 'incomeStreams' | 'lifeEvents' | 'lifeEventsEnabled' | 'promotionJumps'>
 ): ValidationErrors {
   const errors: ValidationErrors = {}
 
+  // Income stream validation against profile
   for (const stream of income.incomeStreams) {
     if (stream.endAge > profile.lifeExpectancy) {
       errors[`incomeStream_${stream.id}_endAge`] =
         `End age (${stream.endAge}) cannot exceed life expectancy (${profile.lifeExpectancy})`
+    }
+    if (stream.startAge >= stream.endAge) {
+      errors[`incomeStream_${stream.id}_startAge`] =
+        `Start age must be less than end age`
+    }
+  }
+
+  // Life event validation against profile
+  if (income.lifeEventsEnabled) {
+    for (const event of income.lifeEvents) {
+      if (event.endAge > profile.lifeExpectancy) {
+        errors[`lifeEvent_${event.id}_endAge`] =
+          `End age (${event.endAge}) cannot exceed life expectancy (${profile.lifeExpectancy})`
+      }
+      if (event.startAge >= event.endAge) {
+        errors[`lifeEvent_${event.id}_startAge`] =
+          `Start age must be less than end age`
+      }
+    }
+  }
+
+  // Promotion jump ages within working years
+  for (let i = 0; i < income.promotionJumps.length; i++) {
+    const jump = income.promotionJumps[i]
+    if (jump.age < profile.currentAge) {
+      errors[`promotionJump_${i}_age`] =
+        `Promotion age (${jump.age}) must be >= current age (${profile.currentAge})`
+    }
+    if (jump.age > profile.retirementAge) {
+      errors[`promotionJump_${i}_age`] =
+        `Promotion age (${jump.age}) must be <= retirement age (${profile.retirementAge})`
     }
   }
 
