@@ -30,7 +30,7 @@ const GROUP_COLUMNS: Record<ColumnGroup, string[]> = {
   incomeBreakdown: ['salary', 'rentalIncome', 'investmentIncome', 'businessIncome', 'governmentIncome', 'totalGross'],
   taxCpf: ['sgTax', 'cpfEmployee', 'cpfEmployer', 'totalNet'],
   cpfBalances: ['cpfOA', 'cpfSA', 'cpfMA'],
-  portfolio: ['portfolioReturnPct', 'cumulativeSavings'],
+  portfolio: ['portfolioReturnPct', 'withdrawalAmount', 'maxPermittedWithdrawal', 'withdrawalExcess', 'cumulativeSavings'],
 }
 
 function currencyCell(value: number): string {
@@ -189,6 +189,21 @@ export function ProjectionPage() {
       id: 'portfolioReturnPct',
       header: 'Return %',
       cell: (info) => formatPercent(info.getValue(), 2),
+    }),
+    columnHelper.accessor('withdrawalAmount', {
+      id: 'withdrawalAmount',
+      header: 'Actual Draw',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('maxPermittedWithdrawal', {
+      id: 'maxPermittedWithdrawal',
+      header: 'Max Withdrawal',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('withdrawalExcess', {
+      id: 'withdrawalExcess',
+      header: 'Excess',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
     }),
     columnHelper.accessor('cumulativeSavings', {
       id: 'cumulativeSavings',

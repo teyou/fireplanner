@@ -238,11 +238,14 @@ describe('generateProjection', () => {
   })
 
   describe('post-retirement income offsets withdrawal', () => {
-    it('rental income reduces net portfolio draw', () => {
+    it('rental income reduces actual portfolio draw when gap < strategy', () => {
+      // expenses = $10K, passive = $5K, strategy = $8K (200K * 0.04)
+      // expenseGap = $10K - $5K = $5K, actualDraw = min($5K, $8K) = $5K
       const rentalIncome = 5000
       const params = makeParams({
         currentAge: 60, retirementAge: 60, lifeExpectancy: 62,
         expectedReturn: 0, initialLiquidNW: 200000,
+        annualExpenses: 10000,
         swr: 0.04,
       })
       params.incomeProjection = generateMockIncomeProjection({
@@ -256,19 +259,21 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
-      // initialWithdrawal = 200K * 0.04 = 8K
-      // Year 0: withdrawal = 8K, postRetIncome = 5K, netWithdrawal = 3K
-      // savingsOrWithdrawal = -3K (only 3K drawn from portfolio, not 8K)
-      expect(result.rows[0].withdrawalAmount).toBeCloseTo(8000, 2)
-      expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(-3000, 2)
-      expect(result.rows[0].liquidNW).toBeCloseTo(197000, 2) // 200K - 3K
+      // maxPermitted = 8K, actualDraw = 5K, excess = 3K
+      expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(8000, 2)
+      expect(result.rows[0].withdrawalAmount).toBeCloseTo(5000, 2)
+      expect(result.rows[0].withdrawalExcess).toBeCloseTo(3000, 2)
+      expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(-5000, 2)
+      expect(result.rows[0].liquidNW).toBeCloseTo(195000, 2) // 200K - 5K
     })
 
-    it('surplus income (income > withdrawal) is reinvested', () => {
+    it('surplus passive income is reinvested when exceeding expenses', () => {
+      // expenses = $10K, passive = $20K → surplus $10K reinvested, no draw
       const rentalIncome = 20000
       const params = makeParams({
         currentAge: 60, retirementAge: 60, lifeExpectancy: 61,
         expectedReturn: 0, initialLiquidNW: 200000,
+        annualExpenses: 10000,
         swr: 0.04,
       })
       params.incomeProjection = generateMockIncomeProjection({
@@ -282,11 +287,39 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
-      // initialWithdrawal = 200K * 0.04 = 8K
-      // postRetIncome = 20K, netWithdrawal = 8K - 20K = -12K
-      // liquidNW = (200K - (-12K)) * 1.0 = 212K (surplus reinvested)
-      expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(12000, 2) // positive = saving
-      expect(result.rows[0].liquidNW).toBeCloseTo(212000, 2)
+      // expenseGap = 0, actualDraw = 0, surplus = $10K reinvested
+      expect(result.rows[0].withdrawalAmount).toBe(0)
+      expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(8000, 2)
+      expect(result.rows[0].withdrawalExcess).toBeCloseTo(8000, 2)
+      expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(10000, 2) // positive = surplus reinvested
+      expect(result.rows[0].liquidNW).toBeCloseTo(210000, 2) // 200K + 10K surplus
+    })
+
+    it('draw is capped at expenses when strategy exceeds expenses', () => {
+      // expenses = $5K, passive = $0, strategy = $20K (500K * 0.04)
+      const params = makeParams({
+        currentAge: 60, retirementAge: 60, lifeExpectancy: 61,
+        expectedReturn: 0, initialLiquidNW: 500000,
+        annualExpenses: 5000,
+        swr: 0.04,
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 60, retirementAge: 60, lifeExpectancy: 61,
+        annualSavings: 0,
+      })
+      params.strategyParams = {
+        ...DEFAULT_STRATEGY_PARAMS,
+        constant_dollar: { swr: 0.04 },
+      }
+
+      const result = generateProjection(params)
+
+      // maxPermitted = 20K, but only need $5K for expenses
+      expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(20000, 2)
+      expect(result.rows[0].withdrawalAmount).toBeCloseTo(5000, 2)
+      expect(result.rows[0].withdrawalExcess).toBeCloseTo(15000, 2)
+      expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(-5000, 2)
+      expect(result.rows[0].liquidNW).toBeCloseTo(495000, 2) // 500K - 5K
     })
   })
 

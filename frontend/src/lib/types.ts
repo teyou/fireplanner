@@ -565,6 +565,8 @@ export interface ProjectionRow {
   cpfMA: number
   // Expanded: withdrawal detail
   withdrawalAmount: number
+  maxPermittedWithdrawal: number
+  withdrawalExcess: number
   // Expanded: other
   cumulativeSavings: number
   activeLifeEvents: string[]

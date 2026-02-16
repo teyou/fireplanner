@@ -213,6 +213,8 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
 
     const startLiquidNW = liquidNW
     let withdrawalAmount = 0
+    let maxPermittedWithdrawal = 0
+    let withdrawalExcess = 0
     let portfolioReturnDollar: number
     let savingsOrWithdrawal: number
     let totalIncome: number
@@ -239,27 +241,35 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       const postRetirementIncome = incomeRow.rentalIncome + incomeRow.investmentIncome +
         incomeRow.businessIncome + incomeRow.governmentIncome
 
-      // Compute withdrawal if portfolio has funds
+      // Compute max permitted withdrawal from strategy
+      let strategyWithdrawal = 0
       if (startLiquidNW > 0) {
         const remainingYears = lifeExpectancy - age
-        withdrawalAmount = computeWithdrawal(
+        strategyWithdrawal = computeWithdrawal(
           startLiquidNW, retirementYear, withdrawalStrategy, strategyParams,
           initialWithdrawal, prevWithdrawal, inflation, remainingYears,
         )
         // Can't withdraw more than portfolio
-        withdrawalAmount = Math.min(withdrawalAmount, startLiquidNW)
+        strategyWithdrawal = Math.min(strategyWithdrawal, startLiquidNW)
       }
 
-      // Net draw from portfolio: positive = drawing, negative = surplus reinvested
-      const netWithdrawal = withdrawalAmount - postRetirementIncome
+      // Actual draw = min(expense gap after passive income, strategy max)
+      const expenseGap = Math.max(0, inflationAdjustedExpenses - postRetirementIncome)
+      const actualDraw = Math.min(expenseGap, strategyWithdrawal)
+      const surplusIncome = Math.max(0, postRetirementIncome - inflationAdjustedExpenses)
 
-      // Portfolio grows after net withdrawal
-      const afterNetWithdrawal = startLiquidNW - netWithdrawal
-      portfolioReturnDollar = afterNetWithdrawal * returnRate
-      liquidNW = Math.max(0, afterNetWithdrawal * (1 + returnRate))
+      // Portfolio: loses actual draw, gains surplus passive income
+      const netPortfolioDraw = actualDraw - surplusIncome
+      const afterDraw = startLiquidNW - netPortfolioDraw
+      portfolioReturnDollar = afterDraw * returnRate
+      liquidNW = Math.max(0, afterDraw * (1 + returnRate))
 
-      prevWithdrawal = withdrawalAmount
-      savingsOrWithdrawal = -netWithdrawal
+      // Feed uncapped strategy amount back for strategy continuity
+      prevWithdrawal = strategyWithdrawal
+      withdrawalAmount = actualDraw
+      maxPermittedWithdrawal = strategyWithdrawal
+      withdrawalExcess = strategyWithdrawal - actualDraw
+      savingsOrWithdrawal = -netPortfolioDraw
       totalIncome = postRetirementIncome
     }
 
@@ -313,6 +323,8 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       cpfSA: incomeRow.cpfSA,
       cpfMA: incomeRow.cpfMA,
       withdrawalAmount,
+      maxPermittedWithdrawal,
+      withdrawalExcess,
       cumulativeSavings: incomeRow.cumulativeSavings,
       activeLifeEvents: incomeRow.activeLifeEvents,
     })
