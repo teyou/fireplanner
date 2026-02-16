@@ -389,6 +389,67 @@ export interface SimulationState {
 }
 
 // ============================================================
+// Withdrawal Strategies (W5)
+// ============================================================
+
+export interface WithdrawalResult {
+  year: number
+  age: number
+  portfolio: number
+  withdrawal: number
+}
+
+export interface WithdrawalSummary {
+  strategyName: string
+  avgWithdrawal: number
+  minWithdrawal: number
+  maxWithdrawal: number
+  stdDevWithdrawal: number
+  terminalPortfolio: number
+  survived: boolean
+}
+
+export interface WithdrawalState {
+  selectedStrategies: WithdrawalStrategyType[]
+  strategyParams: StrategyParamsMap
+  validationErrors: ValidationErrors
+}
+
+// ============================================================
+// Sequence Risk (W5)
+// ============================================================
+
+export interface CrisisScenario {
+  id: string
+  name: string
+  region: string
+  startYear: number
+  peakDrawdown: number
+  durationYears: number
+  recoveryYears: number
+  equityReturnSequence: number[]
+  description: string
+}
+
+export interface SequenceRiskResult {
+  normalSuccessRate: number
+  crisisSuccessRate: number
+  successDegradation: number
+  normalBands: PercentileBands
+  crisisBands: PercentileBands
+  mitigations: MitigationImpact[]
+  computationTimeMs: number
+}
+
+export interface MitigationImpact {
+  strategy: string
+  description: string
+  normalSuccessRate: number
+  crisisSuccessRate: number
+  successImprovement: number
+}
+
+// ============================================================
 // Validation
 // ============================================================
 

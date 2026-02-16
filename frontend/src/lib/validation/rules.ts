@@ -1,4 +1,4 @@
-import type { ValidationErrors, ProfileState, IncomeState, AllocationState } from '@/lib/types'
+import type { ValidationErrors, ProfileState, IncomeState, AllocationState, WithdrawalState } from '@/lib/types'
 
 /**
  * Cross-field validation rules within the profile store.
@@ -99,6 +99,28 @@ export function validateAllocationCrossStoreRules(
     if (Math.abs(targetSum - 1) >= 0.001) {
       errors.targetWeights = 'Target weights must sum to 100% when glide path is enabled'
     }
+  }
+
+  return errors
+}
+
+/**
+ * Cross-store validation: withdrawal store rules that depend on profile store.
+ */
+export function validateWithdrawalCrossStoreRules(
+  profile: Pick<ProfileState, 'annualExpenses' | 'retirementAge' | 'lifeExpectancy'>,
+  withdrawal: Pick<WithdrawalState, 'strategyParams'>
+): ValidationErrors {
+  const errors: ValidationErrors = {}
+
+  const fc = withdrawal.strategyParams.floor_ceiling
+  if (fc.floor > profile.annualExpenses * 3) {
+    errors['floor_ceiling.floor'] = 'Floor seems too high relative to annual expenses'
+  }
+
+  const duration = profile.lifeExpectancy - profile.retirementAge
+  if (duration <= 0) {
+    errors.duration = 'Retirement duration must be positive'
   }
 
   return errors
