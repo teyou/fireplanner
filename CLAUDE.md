@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Singapore FIRE (Financial Independence, Retire Early) + Property + Investment Retirement Planner. A full-stack web application for comprehensive retirement planning tailored to Singapore residents.
 
-**Status:** Pre-build. No code has been written yet.
+**Status:** W1 Foundation complete. Profile page with live FIRE calculations working.
 
-**Current Phase: W1 — Foundation**
+**Current Phase: W2 — Income Engine**
 Update this marker as phases complete.
 
 **Source of truth:** When the master plan (`FIRE_PLANNER_MASTER_PLAN_v2.md`) and this file conflict, the master plan wins for calculation logic, formulas, Singapore-specific rules, and domain requirements. This file wins for technology choices, architecture decisions, and implementation patterns.
