@@ -1,8 +1,47 @@
 import { useMemo } from 'react'
-import type { IncomeProjectionRow, IncomeSummaryStats } from '@/lib/types'
+import type { IncomeProjectionRow, IncomeSummaryStats, ProfileState, IncomeState } from '@/lib/types'
+import type { IncomeProjectionParams } from '@/lib/calculations/income'
 import { generateIncomeProjection, calculateIncomeSummary } from '@/lib/calculations/income'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
+
+/**
+ * Build projection params from store state (non-hook helper).
+ * Returns null if either store has validation errors.
+ */
+export function buildProjectionParams(
+  profile: ProfileState,
+  income: IncomeState
+): IncomeProjectionParams | null {
+  const profileErrors = profile.validationErrors
+  const incomeErrors = income.validationErrors
+  if (Object.keys(profileErrors).length > 0 || Object.keys(incomeErrors).length > 0) {
+    return null
+  }
+  return {
+    currentAge: profile.currentAge,
+    retirementAge: profile.retirementAge,
+    lifeExpectancy: profile.lifeExpectancy,
+    salaryModel: income.salaryModel,
+    annualSalary: income.annualSalary,
+    salaryGrowthRate: income.salaryGrowthRate,
+    realisticPhases: income.realisticPhases,
+    promotionJumps: income.promotionJumps,
+    momEducation: income.momEducation,
+    momAdjustment: income.momAdjustment,
+    employerCpfEnabled: income.employerCpfEnabled,
+    incomeStreams: income.incomeStreams,
+    lifeEvents: income.lifeEvents,
+    lifeEventsEnabled: income.lifeEventsEnabled,
+    annualExpenses: profile.annualExpenses,
+    inflation: profile.inflation,
+    personalReliefs: income.personalReliefs,
+    srsAnnualContribution: profile.srsAnnualContribution,
+    initialCpfOA: profile.cpfOA,
+    initialCpfSA: profile.cpfSA,
+    initialCpfMA: profile.cpfMA,
+  }
+}
 
 interface IncomeProjectionResult {
   projection: IncomeProjectionRow[] | null
