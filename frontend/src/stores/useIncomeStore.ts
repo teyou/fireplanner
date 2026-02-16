@@ -15,6 +15,11 @@ interface IncomeActions {
   reset: () => void
 }
 
+const INCOME_DATA_KEYS = [
+  'salaryModel', 'annualSalary', 'salaryGrowthRate', 'employerCpfEnabled',
+  'incomeStreams', 'lifeEvents',
+] as const
+
 const DEFAULT_INCOME: Omit<IncomeState, 'validationErrors'> = {
   salaryModel: 'simple',
   annualSalary: 72000,
@@ -22,6 +27,14 @@ const DEFAULT_INCOME: Omit<IncomeState, 'validationErrors'> = {
   employerCpfEnabled: true,
   incomeStreams: [],
   lifeEvents: [],
+}
+
+function extractIncomeData(state: IncomeState & IncomeActions): Omit<IncomeState, 'validationErrors'> {
+  const data: Record<string, unknown> = {}
+  for (const key of INCOME_DATA_KEYS) {
+    data[key] = state[key]
+  }
+  return data as Omit<IncomeState, 'validationErrors'>
 }
 
 function computeValidationErrors(
@@ -48,23 +61,11 @@ export const useIncomeStore = create<IncomeState & IncomeActions>()(
 
       setField: (field, value) =>
         set((state) => {
-          const updated = { ...state, [field]: value }
-          const {
-            validationErrors: _ve,
-            setField: _sf,
-            reset: _r,
-            addIncomeStream: _ais,
-            removeIncomeStream: _ris,
-            updateIncomeStream: _uis,
-            addLifeEvent: _ale,
-            removeLifeEvent: _rle,
-            ...stateOnly
-          } = updated
+          const stateData = extractIncomeData(state)
+          const updated = { ...stateData, [field]: value }
           return {
             [field]: value,
-            validationErrors: computeValidationErrors(
-              stateOnly as Omit<IncomeState, 'validationErrors'>
-            ),
+            validationErrors: computeValidationErrors(updated),
           }
         }),
 
@@ -105,35 +106,16 @@ export const useIncomeStore = create<IncomeState & IncomeActions>()(
       name: 'fireplanner-income',
       version: 1,
       partialize: (state) => {
-        const {
-          validationErrors: _ve,
-          setField: _sf,
-          reset: _r,
-          addIncomeStream: _ais,
-          removeIncomeStream: _ris,
-          updateIncomeStream: _uis,
-          addLifeEvent: _ale,
-          removeLifeEvent: _rle,
-          ...persisted
-        } = state
-        return persisted as Omit<IncomeState, 'validationErrors'>
+        const data: Record<string, unknown> = {}
+        for (const key of INCOME_DATA_KEYS) {
+          data[key] = state[key]
+        }
+        return data
       },
       onRehydrateStorage: () => (state) => {
         if (state) {
-          const {
-            validationErrors: _ve,
-            setField: _sf,
-            reset: _r,
-            addIncomeStream: _ais,
-            removeIncomeStream: _ris,
-            updateIncomeStream: _uis,
-            addLifeEvent: _ale,
-            removeLifeEvent: _rle,
-            ...stateOnly
-          } = state
-          state.validationErrors = computeValidationErrors(
-            stateOnly as Omit<IncomeState, 'validationErrors'>
-          )
+          const stateData = extractIncomeData(state)
+          state.validationErrors = computeValidationErrors(stateData)
         }
       },
     }

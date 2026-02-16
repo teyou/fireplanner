@@ -12,6 +12,13 @@ interface ProfileActions {
   reset: () => void
 }
 
+const PROFILE_DATA_KEYS = [
+  'currentAge', 'retirementAge', 'lifeExpectancy', 'lifeStage', 'maritalStatus',
+  'residencyStatus', 'annualIncome', 'annualExpenses', 'liquidNetWorth',
+  'cpfOA', 'cpfSA', 'cpfMA', 'srsBalance', 'srsAnnualContribution',
+  'fireType', 'swr', 'expectedReturn', 'inflation', 'expenseRatio', 'rebalanceFrequency',
+] as const
+
 const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   currentAge: 30,
   retirementAge: 65,
@@ -19,7 +26,6 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   lifeStage: 'pre-fire',
   maritalStatus: 'single',
   residencyStatus: 'citizen',
-
   annualIncome: 72000,
   annualExpenses: 48000,
   liquidNetWorth: 0,
@@ -28,14 +34,20 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   cpfMA: 0,
   srsBalance: 0,
   srsAnnualContribution: 0,
-
   fireType: 'regular',
   swr: 0.04,
-
   expectedReturn: 0.07,
   inflation: 0.025,
   expenseRatio: 0.003,
   rebalanceFrequency: 'annual',
+}
+
+function extractProfileData(state: ProfileState & ProfileActions): Omit<ProfileState, 'validationErrors'> {
+  const data: Record<string, unknown> = {}
+  for (const key of PROFILE_DATA_KEYS) {
+    data[key] = state[key]
+  }
+  return data as Omit<ProfileState, 'validationErrors'>
 }
 
 function computeValidationErrors(
@@ -43,13 +55,11 @@ function computeValidationErrors(
 ): ValidationErrors {
   const errors: ValidationErrors = {}
 
-  // Per-field validation
   for (const [field, value] of Object.entries(state)) {
     const err = validateProfileField(field, value)
     if (err) errors[field] = err
   }
 
-  // Cross-field consistency
   const crossErrors = validateProfileConsistency(state)
   Object.assign(errors, crossErrors)
 
@@ -64,11 +74,11 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
 
       setField: (field, value) =>
         set((state) => {
-          const updated = { ...state, [field]: value }
-          const { validationErrors: _prev, setField: _sf, reset: _r, ...stateOnly } = updated
+          const stateData = extractProfileData(state)
+          const updated = { ...stateData, [field]: value }
           return {
             [field]: value,
-            validationErrors: computeValidationErrors(stateOnly as Omit<ProfileState, 'validationErrors'>),
+            validationErrors: computeValidationErrors(updated),
           }
         }),
 
@@ -82,15 +92,16 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
       name: 'fireplanner-profile',
       version: 1,
       partialize: (state) => {
-        const { validationErrors: _ve, setField: _sf, reset: _r, ...persisted } = state
-        return persisted as Omit<ProfileState, 'validationErrors'>
+        const data: Record<string, unknown> = {}
+        for (const key of PROFILE_DATA_KEYS) {
+          data[key] = state[key]
+        }
+        return data
       },
       onRehydrateStorage: () => (state) => {
         if (state) {
-          const { validationErrors: _ve, setField: _sf, reset: _r, ...stateOnly } = state
-          state.validationErrors = computeValidationErrors(
-            stateOnly as Omit<ProfileState, 'validationErrors'>
-          )
+          const stateData = extractProfileData(state)
+          state.validationErrors = computeValidationErrors(stateData)
         }
       },
     }

@@ -64,7 +64,7 @@ export function calculateCpfExtraInterest(
   oaBalance: number,
   saBalance: number,
   maBalance: number,
-  _age: number
+  _age: number // Will use age-specific extra interest rules in W2
 ): number {
   // Step 1: Determine how much OA qualifies (max $20K)
   const oaQualifying = Math.min(oaBalance, EXTRA_INTEREST_OA_CAP)
