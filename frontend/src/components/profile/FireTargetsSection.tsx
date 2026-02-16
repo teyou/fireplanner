@@ -4,14 +4,22 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useFireCalculations } from '@/hooks/useFireCalculations'
+import { useProjection } from '@/hooks/useProjection'
 import { PercentInput } from '@/components/shared/PercentInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 import type { FireType, FireNumberBasis } from '@/lib/types'
 
 export function FireTargetsSection() {
-  const { fireType, swr, fireNumberBasis, inflation, retirementAge, setField, validationErrors } = useProfileStore()
+  const { fireType, swr, fireNumberBasis, inflation, retirementAge, currentAge, setField, validationErrors } = useProfileStore()
   const { metrics, hasErrors } = useFireCalculations()
+  const { summary: projSummary } = useProjection()
+
+  // Prefer projection's simulated FIRE age over NPER estimate
+  const projFireAge = projSummary?.fireAchievedAge ?? null
+  const effectiveFireAge = projFireAge ?? (metrics ? metrics.fireAge : null)
+  const effectiveYearsToFire = effectiveFireAge !== null ? Math.max(0, effectiveFireAge - currentAge) : null
+  const isSimulated = projFireAge !== null
 
   return (
     <Card>
@@ -108,21 +116,30 @@ export function FireTargetsSection() {
               <MetricCard
                 label="Years to FIRE"
                 value={
-                  metrics.yearsToFire === 0
+                  effectiveYearsToFire !== null && effectiveYearsToFire === 0
                     ? 'Achieved!'
-                    : isFinite(metrics.yearsToFire)
-                      ? Math.ceil(metrics.yearsToFire).toString()
-                      : 'N/A'
+                    : effectiveYearsToFire !== null && isFinite(effectiveYearsToFire)
+                      ? Math.ceil(effectiveYearsToFire).toString()
+                      : isFinite(metrics.yearsToFire)
+                        ? Math.ceil(metrics.yearsToFire).toString()
+                        : 'N/A'
                 }
-                tooltip="NPER formula using net real return"
+                subtitle={isSimulated ? 'simulated' : 'estimate'}
+                tooltip={isSimulated
+                  ? "Year-by-year projection with income growth, CPF, and tax"
+                  : "NPER formula using constant savings and net real return"
+                }
               />
               <MetricCard
                 label="FIRE Age"
                 value={
-                  isFinite(metrics.fireAge)
-                    ? Math.ceil(metrics.fireAge).toString()
-                    : 'N/A'
+                  effectiveFireAge !== null && isFinite(effectiveFireAge)
+                    ? Math.ceil(effectiveFireAge).toString()
+                    : isFinite(metrics.fireAge)
+                      ? Math.ceil(metrics.fireAge).toString()
+                      : 'N/A'
                 }
+                subtitle={isSimulated ? 'simulated' : 'estimate'}
               />
               <MetricCard
                 label="Savings Rate"

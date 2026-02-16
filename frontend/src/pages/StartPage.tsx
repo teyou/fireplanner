@@ -2,10 +2,20 @@ import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useFireCalculations } from '@/hooks/useFireCalculations'
+import { useProjection } from '@/hooks/useProjection'
+import { useProfileStore } from '@/stores/useProfileStore'
 import { formatCurrency } from '@/lib/utils'
 
 export function StartPage() {
   const { metrics } = useFireCalculations()
+  const { summary: projSummary } = useProjection()
+  const currentAge = useProfileStore((s) => s.currentAge)
+
+  // Prefer projection's simulated FIRE age over NPER estimate
+  const projFireAge = projSummary?.fireAchievedAge ?? null
+  const yearsToFire = projFireAge !== null
+    ? Math.max(0, projFireAge - currentAge)
+    : metrics?.yearsToFire ?? null
 
   return (
     <div className="space-y-8">
@@ -31,10 +41,10 @@ export function StartPage() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-primary">
-                  {metrics.yearsToFire === 0
+                  {yearsToFire !== null && yearsToFire === 0
                     ? 'Achieved!'
-                    : isFinite(metrics.yearsToFire)
-                      ? `${Math.ceil(metrics.yearsToFire)} years`
+                    : yearsToFire !== null && isFinite(yearsToFire)
+                      ? `${Math.ceil(yearsToFire)} years`
                       : '—'}
                 </div>
                 <div className="text-sm text-muted-foreground">Years to FIRE</div>
