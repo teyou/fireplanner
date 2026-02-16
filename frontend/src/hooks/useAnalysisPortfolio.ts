@@ -58,10 +58,15 @@ export function useAnalysisPortfolio(): AnalysisPortfolioResult {
     }
 
     if (analysisMode === 'projectedNW') {
-      const effectiveReturns = ASSET_CLASSES.map((ac, i) =>
-        allocation.returnOverrides[i] ?? ac.expectedReturn
-      )
-      const portfolioReturn = calculatePortfolioReturn(retirementWeights, effectiveReturns)
+      // Respect the usePortfolioReturn toggle: derive from allocation or use manual value
+      let portfolioReturn = profile.expectedReturn
+      const allocationValid = Object.keys(allocation.validationErrors).length === 0
+      if (profile.usePortfolioReturn && allocationValid) {
+        const effectiveReturns = ASSET_CLASSES.map((ac, i) =>
+          allocation.returnOverrides[i] ?? ac.expectedReturn
+        )
+        portfolioReturn = calculatePortfolioReturn(retirementWeights, effectiveReturns)
+      }
       const netRealReturn = portfolioReturn - profile.inflation - profile.expenseRatio
       const annualSavings = profile.annualIncome - profile.annualExpenses
 
@@ -99,12 +104,15 @@ export function useAnalysisPortfolio(): AnalysisPortfolioResult {
     profile.retirementAge,
     profile.annualIncome,
     profile.annualExpenses,
+    profile.expectedReturn,
+    profile.usePortfolioReturn,
     profile.inflation,
     profile.expenseRatio,
     allocation.currentWeights,
     allocation.targetWeights,
     allocation.glidePathConfig,
     allocation.returnOverrides,
+    allocation.validationErrors,
     metrics?.fireNumber,
   ])
 }
