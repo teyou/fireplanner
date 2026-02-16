@@ -1,4 +1,11 @@
-import type { MonteCarloParams, MonteCarloResult } from '@/lib/types'
+import type {
+  MonteCarloParams,
+  MonteCarloResult,
+  CrisisScenario,
+  SequenceRiskResult,
+  WithdrawalStrategyType,
+  StrategyParamsMap,
+} from '@/lib/types'
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
 
@@ -83,4 +90,81 @@ function toMcRequest(params: MonteCarloParams): Record<string, unknown> {
 
 export async function runMonteCarlo(params: MonteCarloParams): Promise<MonteCarloResult> {
   return post<MonteCarloResult>('/api/monte-carlo', toMcRequest(params))
+}
+
+/** Convert strategy params to snake_case for sequence risk API */
+function toStrategyParamsSnake(sp: StrategyParamsMap): Record<string, Record<string, unknown>> {
+  return {
+    constant_dollar: { swr: sp.constant_dollar.swr },
+    vpw: {
+      expected_real_return: sp.vpw.expectedRealReturn,
+      target_end_value: sp.vpw.targetEndValue,
+    },
+    guardrails: {
+      initial_rate: sp.guardrails.initialRate,
+      ceiling_trigger: sp.guardrails.ceilingTrigger,
+      floor_trigger: sp.guardrails.floorTrigger,
+      adjustment_size: sp.guardrails.adjustmentSize,
+    },
+    vanguard_dynamic: {
+      swr: sp.vanguard_dynamic.swr,
+      ceiling: sp.vanguard_dynamic.ceiling,
+      floor: sp.vanguard_dynamic.floor,
+    },
+    cape_based: {
+      base_rate: sp.cape_based.baseRate,
+      cape_weight: sp.cape_based.capeWeight,
+      current_cape: sp.cape_based.currentCape,
+    },
+    floor_ceiling: {
+      floor: sp.floor_ceiling.floor,
+      ceiling: sp.floor_ceiling.ceiling,
+      target_rate: sp.floor_ceiling.targetRate,
+    },
+  }
+}
+
+export interface SequenceRiskParams {
+  initialPortfolio: number
+  allocationWeights: number[]
+  expectedReturns: number[]
+  stdDevs: number[]
+  correlationMatrix: number[][]
+  retirementAge: number
+  lifeExpectancy: number
+  withdrawalStrategy: WithdrawalStrategyType
+  strategyParams: StrategyParamsMap
+  crisis: CrisisScenario
+  nSimulations: number
+  seed?: number
+  expenseRatio: number
+  inflation: number
+  postRetirementIncome: number[]
+}
+
+export async function runSequenceRisk(params: SequenceRiskParams): Promise<SequenceRiskResult> {
+  const body = {
+    initial_portfolio: params.initialPortfolio,
+    allocation_weights: params.allocationWeights,
+    expected_returns: params.expectedReturns,
+    std_devs: params.stdDevs,
+    correlation_matrix: params.correlationMatrix,
+    retirement_age: params.retirementAge,
+    life_expectancy: params.lifeExpectancy,
+    withdrawal_strategy: params.withdrawalStrategy,
+    strategy_params: toStrategyParamsSnake(params.strategyParams),
+    crisis: {
+      id: params.crisis.id,
+      name: params.crisis.name,
+      equity_return_sequence: params.crisis.equityReturnSequence,
+      duration_years: params.crisis.durationYears,
+    },
+    n_simulations: params.nSimulations,
+    seed: params.seed,
+    expense_ratio: params.expenseRatio,
+    inflation: params.inflation,
+    post_retirement_income: params.postRetirementIncome,
+  }
+
+  return post<SequenceRiskResult>('/api/sequence-risk', body)
 }
