@@ -8,6 +8,8 @@ import { calculatePortfolioReturn } from '@/lib/calculations/portfolio'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
+import { useSimulationStore } from '@/stores/useSimulationStore'
+import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 import { validateWithdrawalCrossStoreRules } from '@/lib/validation/rules'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
 
@@ -25,6 +27,8 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
   const profile = useProfileStore()
   const allocation = useAllocationStore()
   const withdrawal = useWithdrawalStore()
+  const analysisMode = useSimulationStore((s) => s.analysisMode)
+  const analysisPortfolio = useAnalysisPortfolio()
 
   return useMemo(() => {
     const profileErrors = profile.validationErrors
@@ -53,8 +57,14 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
       expectedReturn = calculatePortfolioReturn(allocation.currentWeights, effectiveReturns)
     }
 
+    // In currentNW mode, use liquidNetWorth only (CPF not freely withdrawable).
+    // In other modes, use the analysis hook's computed portfolio.
+    const initialPortfolio = analysisMode === 'currentNW'
+      ? profile.liquidNetWorth
+      : analysisPortfolio.initialPortfolio
+
     const results = runDeterministicComparison({
-      initialPortfolio: profile.liquidNetWorth,
+      initialPortfolio,
       retirementAge: profile.retirementAge,
       lifeExpectancy: profile.lifeExpectancy,
       expectedReturn,
@@ -82,6 +92,8 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
     withdrawal.selectedStrategies,
     withdrawal.strategyParams,
     withdrawal.validationErrors,
+    analysisMode,
+    analysisPortfolio.initialPortfolio,
   ])
 }
 

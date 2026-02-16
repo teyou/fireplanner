@@ -3,12 +3,15 @@ import { StrategyParamsSection } from '@/components/withdrawal/StrategyParamsSec
 import { ComparisonTable } from '@/components/withdrawal/ComparisonTable'
 import { WithdrawalChart } from '@/components/withdrawal/WithdrawalChart'
 import { PortfolioComparisonChart } from '@/components/withdrawal/PortfolioComparisonChart'
+import { AnalysisModeToggle } from '@/components/shared/AnalysisModeToggle'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import { useWithdrawalComparison } from '@/hooks/useWithdrawalComparison'
+import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 
 export function WithdrawalPage() {
   const reset = useWithdrawalStore((s) => s.reset)
   const { results, hasErrors, errors } = useWithdrawalComparison()
+  const { portfolioLabel } = useAnalysisPortfolio()
 
   return (
     <div className="space-y-6">
@@ -23,6 +26,8 @@ export function WithdrawalPage() {
           Reset to Defaults
         </Button>
       </div>
+
+      <AnalysisModeToggle portfolioLabel={portfolioLabel} />
 
       {hasErrors && (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
