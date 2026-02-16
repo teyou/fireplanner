@@ -104,6 +104,39 @@ export function calculateProgress(currentNW: number, fireNumber: number): number
 }
 
 /**
+ * Project portfolio value at retirement using FV of lump sum + FV of annuity in real terms.
+ *
+ * projectedNW = currentNW × (1+r)^n + annualSavings × ((1+r)^n - 1) / r
+ * where r = expectedReturn - inflation - expenseRatio, n = retirementAge - currentAge
+ *
+ * Edge cases:
+ * - n <= 0 (already at/past retirement): returns currentNW
+ * - r ≈ 0: linear approximation (currentNW + annualSavings × n)
+ * - Result clamped to max(0, ...)
+ */
+export function projectPortfolioAtRetirement(params: {
+  currentNW: number
+  annualSavings: number
+  netRealReturn: number
+  yearsToRetirement: number
+}): number {
+  const { currentNW, annualSavings, netRealReturn: r, yearsToRetirement: n } = params
+
+  if (n <= 0) return currentNW
+
+  if (Math.abs(r) < 1e-10) {
+    // r ≈ 0: linear
+    return Math.max(0, currentNW + annualSavings * n)
+  }
+
+  const growthFactor = Math.pow(1 + r, n)
+  const fvLumpSum = currentNW * growthFactor
+  const fvAnnuity = annualSavings * (growthFactor - 1) / r
+
+  return Math.max(0, fvLumpSum + fvAnnuity)
+}
+
+/**
  * Calculate all FIRE metrics from profile inputs.
  */
 export function calculateAllFireMetrics(params: {

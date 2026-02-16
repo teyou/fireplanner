@@ -22,7 +22,7 @@ interface SimulationActions {
 }
 
 const SIMULATION_DATA_KEYS = [
-  'mcMethod', 'selectedStrategy', 'strategyParams', 'nSimulations',
+  'mcMethod', 'selectedStrategy', 'strategyParams', 'nSimulations', 'analysisMode',
 ] as const
 
 const DEFAULT_STRATEGY_PARAMS: StrategyParamsMap = {
@@ -39,6 +39,7 @@ const DEFAULT_SIMULATION: Omit<SimulationState, 'validationErrors'> = {
   selectedStrategy: 'constant_dollar',
   strategyParams: DEFAULT_STRATEGY_PARAMS,
   nSimulations: 10000,
+  analysisMode: 'currentNW',
 }
 
 function extractSimulationData(

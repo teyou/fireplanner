@@ -8,6 +8,7 @@ export type MaritalStatus = 'single' | 'married'
 export type ResidencyStatus = 'citizen' | 'pr' | 'foreigner'
 export type SalaryModel = 'simple' | 'realistic' | 'data-driven'
 export type RebalanceFrequency = 'annual' | 'semi-annual' | 'quarterly'
+export type AnalysisMode = 'currentNW' | 'fireNumber' | 'projectedNW'
 export type IncomeStreamType = 'employment' | 'rental' | 'investment' | 'business' | 'government'
 export type GrowthModel = 'fixed' | 'inflation-linked' | 'none'
 export type TaxTreatment = 'taxable' | 'tax-exempt' | 'cpf' | 'srs'
@@ -385,6 +386,7 @@ export interface SimulationState {
   selectedStrategy: WithdrawalStrategyType
   strategyParams: StrategyParamsMap
   nSimulations: number
+  analysisMode: AnalysisMode
   validationErrors: ValidationErrors
 }
 
