@@ -112,6 +112,41 @@ export const incomeSchema = z.object({
 })
 
 // ============================================================
+// Allocation Schema
+// ============================================================
+
+export const allocationWeightSchema = z.number().min(0).max(1)
+
+export const allocationWeightsSchema = z
+  .array(allocationWeightSchema)
+  .length(8)
+  .refine(
+    (arr) => Math.abs(arr.reduce((a, b) => a + b, 0) - 1) < 0.001,
+    { message: 'Weights must sum to 100%' }
+  )
+
+export const glidePathConfigSchema = z.object({
+  enabled: z.boolean(),
+  method: z.enum(['linear', 'slowStart', 'fastStart']),
+  startAge: z.number().int().min(18).max(120),
+  endAge: z.number().int().min(18).max(120),
+}).refine(
+  (data) => data.startAge < data.endAge,
+  { message: 'Start age must be less than end age', path: ['startAge'] }
+)
+
+export const allocationSchema = z.object({
+  currentWeights: allocationWeightsSchema,
+  targetWeights: allocationWeightsSchema,
+  selectedTemplate: z.enum([
+    'conservative', 'balanced', 'aggressive', 'allWeather', 'singaporeCentric', 'cpfHeavy', 'custom',
+  ]),
+  returnOverrides: z.array(z.number().nullable()).length(8),
+  stdDevOverrides: z.array(z.number().nullable()).length(8),
+  glidePathConfig: glidePathConfigSchema,
+})
+
+// ============================================================
 // Schema-to-field mapping for single-field validation
 // ============================================================
 
@@ -156,6 +191,24 @@ export function validateIncomeField(
     salaryGrowthRate: salaryGrowthSchema,
     momAdjustment: momAdjustmentSchema,
     personalReliefs: personalReliefsSchema,
+  }
+
+  const schema = fieldSchemas[field]
+  if (!schema) return null
+
+  const result = schema.safeParse(value)
+  if (result.success) return null
+  return result.error.issues[0]?.message ?? 'Invalid value'
+}
+
+/** Validate a single allocation field and return error message or null */
+export function validateAllocationField(
+  field: string,
+  value: unknown
+): string | null {
+  const fieldSchemas: Record<string, z.ZodType> = {
+    currentWeights: allocationWeightsSchema,
+    targetWeights: allocationWeightsSchema,
   }
 
   const schema = fieldSchemas[field]

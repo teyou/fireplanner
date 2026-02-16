@@ -215,6 +215,51 @@ export interface MomSalaryEntry {
 }
 
 // ============================================================
+// Asset Allocation
+// ============================================================
+
+export type AssetClass = 'usEquities' | 'sgEquities' | 'intlEquities' | 'bonds' | 'reits' | 'gold' | 'cash' | 'cpf'
+
+export type AllocationTemplate = 'conservative' | 'balanced' | 'aggressive' | 'allWeather' | 'singaporeCentric' | 'cpfHeavy' | 'custom'
+
+export type GlidePathMethod = 'linear' | 'slowStart' | 'fastStart'
+
+export interface AssetClassData {
+  key: AssetClass
+  label: string
+  expectedReturn: number
+  stdDev: number
+}
+
+export interface GlidePathConfig {
+  enabled: boolean
+  method: GlidePathMethod
+  startAge: number
+  endAge: number
+}
+
+export interface PortfolioStats {
+  expectedReturn: number
+  realReturn: number
+  netReturn: number
+  stdDev: number
+  sharpe: number
+  var95: number
+  var99: number
+  diversificationRatio: number
+}
+
+export interface AllocationState {
+  currentWeights: number[]
+  targetWeights: number[]
+  selectedTemplate: AllocationTemplate
+  returnOverrides: (number | null)[]
+  stdDevOverrides: (number | null)[]
+  glidePathConfig: GlidePathConfig
+  validationErrors: ValidationErrors
+}
+
+// ============================================================
 // Validation
 // ============================================================
 
