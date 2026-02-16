@@ -1,0 +1,149 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { usePropertyStore } from '@/stores/usePropertyStore'
+import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import type { PropertyType } from '@/lib/types'
+
+export function PropertyInputForm() {
+  const store = usePropertyStore()
+  const errors = store.validationErrors
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Property Details</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label>
+              Property Type
+              <InfoTooltip text="HDB, Condo, or Landed. Affects ABSD and LTV calculations." />
+            </Label>
+            <Select
+              value={store.propertyType}
+              onValueChange={(v) => store.setField('propertyType', v as PropertyType)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hdb">HDB</SelectItem>
+                <SelectItem value="condo">Condo</SelectItem>
+                <SelectItem value="landed">Landed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Purchase Price ($)</Label>
+            <Input
+              type="number"
+              value={store.purchasePrice}
+              onChange={(e) => store.setField('purchasePrice', Number(e.target.value))}
+            />
+            {errors.purchasePrice && <p className="text-xs text-destructive">{errors.purchasePrice}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label>
+              Lease (years)
+              <InfoTooltip text="99-year leasehold is standard for condos. 999 or freehold for some landed." />
+            </Label>
+            <Input
+              type="number"
+              value={store.leaseYears}
+              onChange={(e) => store.setField('leaseYears', Number(e.target.value))}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <Label>Appreciation Rate (%)</Label>
+            <Input
+              type="number"
+              step={0.5}
+              value={(store.appreciationRate * 100).toFixed(1)}
+              onChange={(e) => store.setField('appreciationRate', Number(e.target.value) / 100)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Rental Yield (%)</Label>
+            <Input
+              type="number"
+              step={0.5}
+              value={(store.rentalYield * 100).toFixed(1)}
+              onChange={(e) => store.setField('rentalYield', Number(e.target.value) / 100)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Mortgage Rate (%)</Label>
+            <Input
+              type="number"
+              step={0.1}
+              value={(store.mortgageRate * 100).toFixed(1)}
+              onChange={(e) => store.setField('mortgageRate', Number(e.target.value) / 100)}
+            />
+            {errors.mortgageRate && <p className="text-xs text-destructive">{errors.mortgageRate}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Mortgage Term (years)</Label>
+            <Input
+              type="number"
+              value={store.mortgageTerm}
+              onChange={(e) => store.setField('mortgageTerm', Number(e.target.value))}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label>LTV (%)</Label>
+            <Input
+              type="number"
+              value={(store.ltv * 100).toFixed(0)}
+              onChange={(e) => store.setField('ltv', Number(e.target.value) / 100)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Residency (for ABSD)</Label>
+            <Select
+              value={store.residencyForAbsd}
+              onValueChange={(v) => store.setField('residencyForAbsd', v as 'citizen' | 'pr' | 'foreigner')}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="citizen">Singapore Citizen</SelectItem>
+                <SelectItem value="pr">Permanent Resident</SelectItem>
+                <SelectItem value="foreigner">Foreigner</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>
+              Existing Properties
+              <InfoTooltip text="Number of properties already owned. Affects ABSD rate." />
+            </Label>
+            <Input
+              type="number"
+              min={0}
+              max={10}
+              value={store.propertyCount}
+              onChange={(e) => store.setField('propertyCount', Number(e.target.value))}
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
