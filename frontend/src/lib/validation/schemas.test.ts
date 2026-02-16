@@ -172,6 +172,14 @@ describe('incomeSchema', () => {
     employerCpfEnabled: true,
     incomeStreams: [],
     lifeEvents: [],
+    realisticPhases: [
+      { label: 'Early Career', minAge: 22, maxAge: 30, growthRate: 0.08 },
+    ],
+    promotionJumps: [],
+    momEducation: 'degree' as const,
+    momAdjustment: 1.0,
+    lifeEventsEnabled: false,
+    personalReliefs: 20000,
   }
 
   it('accepts valid income state', () => {
@@ -265,8 +273,11 @@ describe('validateCrossStoreRules', () => {
             startAge: 25,
             endAge: 95,
             growthRate: 0.03,
-            isTaxable: true,
+            type: 'employment',
+            growthModel: 'fixed',
+            taxTreatment: 'taxable',
             isCpfApplicable: true,
+            isActive: true,
           },
         ],
       }
@@ -286,8 +297,11 @@ describe('validateCrossStoreRules', () => {
             startAge: 25,
             endAge: 90,
             growthRate: 0.03,
-            isTaxable: true,
+            type: 'employment',
+            growthModel: 'fixed',
+            taxTreatment: 'taxable',
             isCpfApplicable: true,
+            isActive: true,
           },
         ],
       }

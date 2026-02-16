@@ -8,6 +8,10 @@ export type MaritalStatus = 'single' | 'married'
 export type ResidencyStatus = 'citizen' | 'pr' | 'foreigner'
 export type SalaryModel = 'simple' | 'realistic' | 'data-driven'
 export type RebalanceFrequency = 'annual' | 'semi-annual' | 'quarterly'
+export type IncomeStreamType = 'employment' | 'rental' | 'investment' | 'business' | 'government'
+export type GrowthModel = 'fixed' | 'inflation-linked' | 'none'
+export type TaxTreatment = 'taxable' | 'tax-exempt' | 'cpf' | 'srs'
+export type EducationLevel = 'belowSecondary' | 'secondary' | 'postSecondary' | 'diploma' | 'degree'
 
 // ============================================================
 // Profile Store
@@ -50,6 +54,18 @@ export interface ProfileState {
 // Income Store
 // ============================================================
 
+export interface CareerPhase {
+  label: string
+  minAge: number
+  maxAge: number
+  growthRate: number
+}
+
+export interface PromotionJump {
+  age: number
+  increasePercent: number
+}
+
 export interface IncomeStream {
   id: string
   name: string
@@ -57,17 +73,22 @@ export interface IncomeStream {
   startAge: number
   endAge: number
   growthRate: number
-  isTaxable: boolean
+  type: IncomeStreamType
+  growthModel: GrowthModel
+  taxTreatment: TaxTreatment
   isCpfApplicable: boolean
+  isActive: boolean
 }
 
 export interface LifeEvent {
   id: string
   name: string
-  age: number
-  amount: number
-  isRecurring: boolean
-  endAge?: number
+  startAge: number
+  endAge: number
+  incomeImpact: number
+  affectedStreamIds: string[]
+  savingsPause: boolean
+  cpfPause: boolean
 }
 
 export interface IncomeState {
@@ -77,7 +98,44 @@ export interface IncomeState {
   employerCpfEnabled: boolean
   incomeStreams: IncomeStream[]
   lifeEvents: LifeEvent[]
+  realisticPhases: CareerPhase[]
+  promotionJumps: PromotionJump[]
+  momEducation: EducationLevel
+  momAdjustment: number
+  lifeEventsEnabled: boolean
+  personalReliefs: number
   validationErrors: ValidationErrors
+}
+
+export interface IncomeProjectionRow {
+  year: number
+  age: number
+  salary: number
+  rentalIncome: number
+  investmentIncome: number
+  businessIncome: number
+  governmentIncome: number
+  totalGross: number
+  sgTax: number
+  cpfEmployee: number
+  cpfEmployer: number
+  totalNet: number
+  annualSavings: number
+  cumulativeSavings: number
+  cpfOA: number
+  cpfSA: number
+  cpfMA: number
+  isRetired: boolean
+  activeLifeEvents: string[]
+}
+
+export interface IncomeSummaryStats {
+  peakEarningAge: number
+  peakEarningAmount: number
+  lifetimeEarnings: number
+  averageSavingsRate: number
+  totalCpfContributions: number
+  incomeReplacementRatio: number
 }
 
 // ============================================================

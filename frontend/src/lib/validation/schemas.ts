@@ -55,6 +55,22 @@ export const profileSchema = z.object({
 // Income Schema
 // ============================================================
 
+export const momAdjustmentSchema = z.number().min(0.1).max(3.0)
+export const personalReliefsSchema = z.number().min(0).max(200000)
+export const incomeImpactSchema = z.number().min(0).max(2)
+
+export const careerPhaseSchema = z.object({
+  label: z.string().min(1),
+  minAge: z.number().int().min(18).max(100),
+  maxAge: z.number().int().min(18).max(100),
+  growthRate: z.number().min(-0.5).max(0.5),
+})
+
+export const promotionJumpSchema = z.object({
+  age: z.number().int().min(18).max(100),
+  increasePercent: z.number().min(0.01).max(2.0),
+})
+
 export const incomeStreamSchema = z.object({
   id: z.string(),
   name: z.string().min(1),
@@ -62,17 +78,22 @@ export const incomeStreamSchema = z.object({
   startAge: ageSchema,
   endAge: z.number().int().min(18).max(120),
   growthRate: salaryGrowthSchema,
-  isTaxable: z.boolean(),
+  type: z.enum(['employment', 'rental', 'investment', 'business', 'government']),
+  growthModel: z.enum(['fixed', 'inflation-linked', 'none']),
+  taxTreatment: z.enum(['taxable', 'tax-exempt', 'cpf', 'srs']),
   isCpfApplicable: z.boolean(),
+  isActive: z.boolean(),
 })
 
 export const lifeEventSchema = z.object({
   id: z.string(),
   name: z.string().min(1),
-  age: ageSchema,
-  amount: z.number(),
-  isRecurring: z.boolean(),
-  endAge: z.number().int().min(18).max(120).optional(),
+  startAge: ageSchema,
+  endAge: z.number().int().min(18).max(120),
+  incomeImpact: incomeImpactSchema,
+  affectedStreamIds: z.array(z.string()),
+  savingsPause: z.boolean(),
+  cpfPause: z.boolean(),
 })
 
 export const incomeSchema = z.object({
@@ -82,6 +103,12 @@ export const incomeSchema = z.object({
   employerCpfEnabled: z.boolean(),
   incomeStreams: z.array(incomeStreamSchema),
   lifeEvents: z.array(lifeEventSchema),
+  realisticPhases: z.array(careerPhaseSchema),
+  promotionJumps: z.array(promotionJumpSchema),
+  momEducation: z.enum(['belowSecondary', 'secondary', 'postSecondary', 'diploma', 'degree']),
+  momAdjustment: momAdjustmentSchema,
+  lifeEventsEnabled: z.boolean(),
+  personalReliefs: personalReliefsSchema,
 })
 
 // ============================================================
@@ -109,6 +136,26 @@ export function validateProfileField(
     expectedReturn: returnSchema,
     inflation: inflationSchema,
     expenseRatio: expenseRatioSchema,
+  }
+
+  const schema = fieldSchemas[field]
+  if (!schema) return null
+
+  const result = schema.safeParse(value)
+  if (result.success) return null
+  return result.error.issues[0]?.message ?? 'Invalid value'
+}
+
+/** Validate a single income field and return error message or null */
+export function validateIncomeField(
+  field: string,
+  value: unknown
+): string | null {
+  const fieldSchemas: Record<string, z.ZodType> = {
+    annualSalary: nonNegativeSchema,
+    salaryGrowthRate: salaryGrowthSchema,
+    momAdjustment: momAdjustmentSchema,
+    personalReliefs: personalReliefsSchema,
   }
 
   const schema = fieldSchemas[field]
