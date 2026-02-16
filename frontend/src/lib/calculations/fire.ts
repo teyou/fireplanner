@@ -1,4 +1,13 @@
-import type { FireMetrics } from '@/lib/types'
+import type { FireMetrics, FireType } from '@/lib/types'
+
+/** Expense multiplier for each FIRE type */
+const FIRE_TYPE_MULTIPLIERS: Record<FireType, number> = {
+  regular: 1.0,
+  lean: 0.6,
+  fat: 1.5,
+  coast: 1.0,
+  barista: 1.0,
+}
 
 /**
  * FIRE Number = annual expenses / SWR
@@ -108,6 +117,7 @@ export function calculateAllFireMetrics(params: {
   expectedReturn: number
   inflation: number
   expenseRatio: number
+  fireType?: FireType
 }): FireMetrics {
   const {
     currentAge,
@@ -120,13 +130,19 @@ export function calculateAllFireMetrics(params: {
     expectedReturn,
     inflation,
     expenseRatio,
+    fireType = 'regular',
   } = params
 
   const totalNetWorth = liquidNetWorth + cpfTotal
   const annualSavings = annualIncome - annualExpenses
   const savingsRate = annualIncome > 0 ? annualSavings / annualIncome : 0
 
-  const fireNumber = calculateFireNumber(annualExpenses, swr)
+  // Apply FIRE type multiplier to expenses for the main FIRE number
+  const multiplier = FIRE_TYPE_MULTIPLIERS[fireType]
+  const effectiveExpenses = annualExpenses * multiplier
+
+  const fireNumber = calculateFireNumber(effectiveExpenses, swr)
+  // Lean/Fat reference values always use base expenses
   const leanFireNumber = calculateLeanFire(annualExpenses, swr)
   const fatFireNumber = calculateFatFire(annualExpenses, swr)
 
@@ -143,7 +159,7 @@ export function calculateAllFireMetrics(params: {
   const fireAge = currentAge + yearsToFire
 
   const coastFireNumber = calculateCoastFire(fireNumber, netRealReturn, yearsToRetirement)
-  const baristaFireIncome = calculateBaristaFireIncome(annualExpenses, liquidNetWorth, swr)
+  const baristaFireIncome = calculateBaristaFireIncome(effectiveExpenses, liquidNetWorth, swr)
   const progress = calculateProgress(totalNetWorth, fireNumber)
 
   return {

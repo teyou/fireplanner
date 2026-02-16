@@ -186,6 +186,101 @@ describe('calculateAllFireMetrics', () => {
     expect(m.yearsToFire).toBe(0)
     expect(m.progress).toBe(1)
   })
+
+  it('Lean FIRE uses 60% of expenses for FIRE number', () => {
+    const m = calculateAllFireMetrics({
+      currentAge: 30,
+      retirementAge: 60,
+      annualIncome: 100000,
+      annualExpenses: 50000,
+      liquidNetWorth: 200000,
+      cpfTotal: 0,
+      swr: 0.04,
+      expectedReturn: 0.07,
+      inflation: 0.025,
+      expenseRatio: 0.003,
+      fireType: 'lean',
+    })
+
+    // FIRE number: (50000 * 0.6) / 0.04 = 750,000
+    expect(m.fireNumber).toBe(750000)
+    // Lean/Fat reference values always use base expenses
+    expect(m.leanFireNumber).toBe(750000) // same as FIRE number when lean
+    expect(m.fatFireNumber).toBe(1875000) // 50000 * 1.5 / 0.04
+  })
+
+  it('Fat FIRE uses 150% of expenses for FIRE number', () => {
+    const m = calculateAllFireMetrics({
+      currentAge: 30,
+      retirementAge: 60,
+      annualIncome: 100000,
+      annualExpenses: 50000,
+      liquidNetWorth: 200000,
+      cpfTotal: 0,
+      swr: 0.04,
+      expectedReturn: 0.07,
+      inflation: 0.025,
+      expenseRatio: 0.003,
+      fireType: 'fat',
+    })
+
+    // FIRE number: (50000 * 1.5) / 0.04 = 1,875,000
+    expect(m.fireNumber).toBe(1875000)
+    expect(m.leanFireNumber).toBe(750000) // reference: 50000 * 0.6 / 0.04
+    expect(m.fatFireNumber).toBe(1875000) // same as FIRE number when fat
+  })
+
+  it('Coast and Barista FIRE types do not change FIRE number', () => {
+    const baseParams = {
+      currentAge: 30,
+      retirementAge: 60,
+      annualIncome: 100000,
+      annualExpenses: 50000,
+      liquidNetWorth: 200000,
+      cpfTotal: 0,
+      swr: 0.04,
+      expectedReturn: 0.07,
+      inflation: 0.025,
+      expenseRatio: 0.003,
+    }
+
+    const regular = calculateAllFireMetrics({ ...baseParams, fireType: 'regular' })
+    const coast = calculateAllFireMetrics({ ...baseParams, fireType: 'coast' })
+    const barista = calculateAllFireMetrics({ ...baseParams, fireType: 'barista' })
+
+    expect(coast.fireNumber).toBe(regular.fireNumber)
+    expect(barista.fireNumber).toBe(regular.fireNumber)
+  })
+
+  it('defaults to regular when fireType is omitted', () => {
+    const withType = calculateAllFireMetrics({
+      currentAge: 30,
+      retirementAge: 60,
+      annualIncome: 100000,
+      annualExpenses: 50000,
+      liquidNetWorth: 200000,
+      cpfTotal: 0,
+      swr: 0.04,
+      expectedReturn: 0.07,
+      inflation: 0.025,
+      expenseRatio: 0.003,
+      fireType: 'regular',
+    })
+    const without = calculateAllFireMetrics({
+      currentAge: 30,
+      retirementAge: 60,
+      annualIncome: 100000,
+      annualExpenses: 50000,
+      liquidNetWorth: 200000,
+      cpfTotal: 0,
+      swr: 0.04,
+      expectedReturn: 0.07,
+      inflation: 0.025,
+      expenseRatio: 0.003,
+    })
+
+    expect(without.fireNumber).toBe(withType.fireNumber)
+  })
 })
 
 describe('property-based tests', () => {

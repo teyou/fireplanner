@@ -70,7 +70,20 @@ export function FireTargetsSection() {
               <MetricCard
                 label="FIRE Number"
                 value={formatCurrency(metrics.fireNumber)}
-                tooltip="Annual expenses / SWR"
+                subtitle={
+                  fireType === 'lean'
+                    ? '60% of expenses'
+                    : fireType === 'fat'
+                      ? '150% of expenses'
+                      : undefined
+                }
+                tooltip={
+                  fireType === 'lean'
+                    ? 'Lean FIRE: 60% of annual expenses / SWR'
+                    : fireType === 'fat'
+                      ? 'Fat FIRE: 150% of annual expenses / SWR'
+                      : 'Annual expenses / SWR'
+                }
               />
               <MetricCard
                 label="Years to FIRE"
@@ -108,14 +121,18 @@ export function FireTargetsSection() {
               />
             </div>
 
-            {/* Lean / Fat badges */}
+            {/* Lean / Fat reference badges — hide the one matching current fireType */}
             <div className="flex gap-2 flex-wrap">
-              <Badge variant="secondary">
-                Lean FIRE: {formatCurrency(metrics.leanFireNumber)}
-              </Badge>
-              <Badge variant="secondary">
-                Fat FIRE: {formatCurrency(metrics.fatFireNumber)}
-              </Badge>
+              {fireType !== 'lean' && (
+                <Badge variant="secondary">
+                  Lean FIRE: {formatCurrency(metrics.leanFireNumber)}
+                </Badge>
+              )}
+              {fireType !== 'fat' && (
+                <Badge variant="secondary">
+                  Fat FIRE: {formatCurrency(metrics.fatFireNumber)}
+                </Badge>
+              )}
             </div>
           </div>
         ) : null}
@@ -127,10 +144,12 @@ export function FireTargetsSection() {
 function MetricCard({
   label,
   value,
+  subtitle,
   tooltip,
 }: {
   label: string
   value: string
+  subtitle?: string
   tooltip?: string
 }) {
   return (
@@ -140,6 +159,9 @@ function MetricCard({
         {tooltip && <InfoTooltip text={tooltip} />}
       </div>
       <div className="text-lg font-semibold mt-0.5">{value}</div>
+      {subtitle && (
+        <div className="text-xs text-muted-foreground">{subtitle}</div>
+      )}
     </div>
   )
 }
