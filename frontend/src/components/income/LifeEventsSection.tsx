@@ -1,0 +1,264 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { PercentInput } from '@/components/shared/PercentInput'
+import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { useIncomeStore } from '@/stores/useIncomeStore'
+import { cn } from '@/lib/utils'
+import type { LifeEvent } from '@/lib/types'
+
+const MAX_EVENTS = 4
+
+function createEvent(id: string): LifeEvent {
+  return {
+    id,
+    name: '',
+    startAge: 35,
+    endAge: 36,
+    incomeImpact: 0,
+    affectedStreamIds: [],
+    savingsPause: false,
+    cpfPause: false,
+  }
+}
+
+const EVENT_TEMPLATES: Record<string, Omit<LifeEvent, 'id'>> = {
+  'Career Break at 35': {
+    name: 'Career Break',
+    startAge: 35,
+    endAge: 36,
+    incomeImpact: 0,
+    affectedStreamIds: [],
+    savingsPause: true,
+    cpfPause: true,
+  },
+  'Part-time 40-45': {
+    name: 'Part-time Work',
+    startAge: 40,
+    endAge: 45,
+    incomeImpact: 0.5,
+    affectedStreamIds: [],
+    savingsPause: false,
+    cpfPause: false,
+  },
+  'Retrenchment at 50': {
+    name: 'Retrenchment',
+    startAge: 50,
+    endAge: 51,
+    incomeImpact: 0,
+    affectedStreamIds: [],
+    savingsPause: true,
+    cpfPause: true,
+  },
+  'Childcare Leave': {
+    name: 'Childcare Leave',
+    startAge: 32,
+    endAge: 34,
+    incomeImpact: 0,
+    affectedStreamIds: [],
+    savingsPause: true,
+    cpfPause: true,
+  },
+}
+
+export function LifeEventsSection() {
+  const income = useIncomeStore()
+  const errors = income.validationErrors
+
+  const addEvent = () => {
+    if (income.lifeEvents.length >= MAX_EVENTS) return
+    const id = `event-${Date.now()}`
+    income.addLifeEvent(createEvent(id))
+  }
+
+  const applyTemplate = (templateName: string) => {
+    const template = EVENT_TEMPLATES[templateName]
+    if (!template) return
+    if (income.lifeEvents.length >= MAX_EVENTS) return
+    const id = `event-${Date.now()}`
+    income.addLifeEvent({ ...template, id })
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center">
+            Life Events
+            <InfoTooltip text="Career breaks, part-time periods, or other income disruptions" />
+          </CardTitle>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={income.lifeEventsEnabled}
+              onChange={(e) => income.setField('lifeEventsEnabled', e.target.checked)}
+            />
+            Enable
+          </label>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {!income.lifeEventsEnabled ? (
+          <p className="text-sm text-muted-foreground">
+            Life events are disabled. Enable them to model career breaks, part-time work, etc.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Label className="text-sm text-muted-foreground">Templates:</Label>
+              {Object.keys(EVENT_TEMPLATES).map((name) => (
+                <Button
+                  key={name}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => applyTemplate(name)}
+                  disabled={income.lifeEvents.length >= MAX_EVENTS}
+                >
+                  {name}
+                </Button>
+              ))}
+            </div>
+
+            {income.lifeEvents.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground mb-2">No life events configured.</p>
+                <Button variant="outline" size="sm" onClick={addEvent}>
+                  Add Custom Event
+                </Button>
+              </div>
+            ) : (
+              <>
+                {income.lifeEvents.map((event) => (
+                  <EventRow
+                    key={event.id}
+                    event={event}
+                    errors={errors}
+                    streamNames={income.incomeStreams.map((s) => ({ id: s.id, name: s.name || 'Unnamed' }))}
+                    onUpdate={(updates) => income.updateLifeEvent(event.id, updates)}
+                    onRemove={() => income.removeLifeEvent(event.id)}
+                  />
+                ))}
+                {income.lifeEvents.length < MAX_EVENTS && (
+                  <Button variant="outline" size="sm" onClick={addEvent}>
+                    Add Event
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function EventRow({
+  event, errors, streamNames, onUpdate, onRemove,
+}: {
+  event: LifeEvent
+  errors: Record<string, string>
+  streamNames: { id: string; name: string }[]
+  onUpdate: (updates: Partial<LifeEvent>) => void
+  onRemove: () => void
+}) {
+  const prefix = `lifeEvent_${event.id}`
+
+  const toggleStream = (streamId: string) => {
+    const current = event.affectedStreamIds
+    const updated = current.includes(streamId)
+      ? current.filter((id) => id !== streamId)
+      : [...current, streamId]
+    onUpdate({ affectedStreamIds: updated })
+  }
+
+  return (
+    <div className="p-3 border rounded-md space-y-3">
+      <div className="flex items-center justify-between">
+        <Input
+          value={event.name}
+          onChange={(e) => onUpdate({ name: e.target.value })}
+          placeholder="Event name"
+          className="w-48 border-blue-300"
+        />
+        <Button variant="ghost" size="sm" onClick={onRemove}>Remove</Button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="space-y-1">
+          <Label className="text-xs">Start Age</Label>
+          <Input
+            type="number"
+            value={event.startAge}
+            onChange={(e) => onUpdate({ startAge: parseInt(e.target.value) || 0 })}
+            className={cn('border-blue-300', errors[`${prefix}_startAge`] && 'border-destructive')}
+          />
+          {errors[`${prefix}_startAge`] && (
+            <p className="text-xs text-destructive">{errors[`${prefix}_startAge`]}</p>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-xs">End Age</Label>
+          <Input
+            type="number"
+            value={event.endAge}
+            onChange={(e) => onUpdate({ endAge: parseInt(e.target.value) || 0 })}
+            className={cn('border-blue-300', errors[`${prefix}_endAge`] && 'border-destructive')}
+          />
+          {errors[`${prefix}_endAge`] && (
+            <p className="text-xs text-destructive">{errors[`${prefix}_endAge`]}</p>
+          )}
+        </div>
+
+        <PercentInput
+          label="Income Impact"
+          value={event.incomeImpact}
+          onChange={(v) => onUpdate({ incomeImpact: v })}
+          error={errors[`${prefix}_incomeImpact`]}
+          tooltip="0% = no income, 50% = half income, 100% = full income"
+          step={5}
+        />
+
+        <div className="flex flex-col gap-1 justify-end">
+          <label className="flex items-center gap-1 text-sm">
+            <input
+              type="checkbox"
+              checked={event.savingsPause}
+              onChange={(e) => onUpdate({ savingsPause: e.target.checked })}
+            />
+            Pause Savings
+          </label>
+          <label className="flex items-center gap-1 text-sm">
+            <input
+              type="checkbox"
+              checked={event.cpfPause}
+              onChange={(e) => onUpdate({ cpfPause: e.target.checked })}
+            />
+            Pause CPF
+          </label>
+        </div>
+      </div>
+
+      {streamNames.length > 0 && (
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">
+            Affected Streams (empty = all)
+          </Label>
+          <div className="flex gap-2 flex-wrap">
+            {streamNames.map(({ id, name }) => (
+              <label key={id} className="flex items-center gap-1 text-sm">
+                <input
+                  type="checkbox"
+                  checked={event.affectedStreamIds.includes(id)}
+                  onChange={() => toggleStream(id)}
+                />
+                {name}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
