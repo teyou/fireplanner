@@ -94,7 +94,7 @@ function PositionPicker() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="p-1 rounded hover:bg-accent/50 text-muted-foreground hover:text-foreground transition-colors"
+        className="p-1.5 rounded hover:bg-accent/50 text-muted-foreground hover:text-foreground transition-colors"
         aria-label="Change stats position"
       >
         <Settings2 className="h-3.5 w-3.5" />
@@ -168,7 +168,7 @@ export function FireStatsStrip({ position }: { position: StatsPosition }) {
         {stats.map((stat) => (
           <div key={stat.label} className="flex items-center gap-1.5 shrink-0">
             <span className="text-xs text-muted-foreground whitespace-nowrap">{stat.label}:</span>
-            <span className="text-xs font-semibold whitespace-nowrap">{stat.value}</span>
+            <span className="text-sm font-semibold whitespace-nowrap">{stat.value}</span>
           </div>
         ))}
       </div>
