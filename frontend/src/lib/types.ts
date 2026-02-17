@@ -171,6 +171,9 @@ export interface FireMetrics {
   savingsRate: number
   annualSavings: number
   totalNetWorth: number
+  cpfDependency: boolean
+  liquidBridgeGapYears: number | null
+  liquidDepletionAge: number | null
 }
 
 export interface CpfContribution {

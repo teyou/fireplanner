@@ -137,6 +137,34 @@ export function projectPortfolioAtRetirement(params: {
 }
 
 /**
+ * Calculate the age at which liquid-only portfolio depletes,
+ * assuming annual withdrawals of `annualExpenses` starting at `retirementAge`.
+ * Returns null if liquid portfolio never depletes before `lifeExpectancy`.
+ */
+export function calculateLiquidBridgeGap(
+  liquidNW: number,
+  annualExpenses: number,
+  retirementAge: number,
+  cpfLifeStartAge: number,
+  realReturn: number,
+  lifeExpectancy: number
+): { liquidDepletionAge: number | null; liquidBridgeGapYears: number | null } {
+  if (liquidNW <= 0) {
+    return { liquidDepletionAge: retirementAge, liquidBridgeGapYears: Math.max(0, cpfLifeStartAge - retirementAge) }
+  }
+
+  let balance = liquidNW
+  for (let age = retirementAge; age <= lifeExpectancy; age++) {
+    balance = balance * (1 + realReturn) - annualExpenses
+    if (balance <= 0) {
+      const gapYears = age < cpfLifeStartAge ? cpfLifeStartAge - age : null
+      return { liquidDepletionAge: age, liquidBridgeGapYears: gapYears }
+    }
+  }
+  return { liquidDepletionAge: null, liquidBridgeGapYears: null }
+}
+
+/**
  * Calculate all FIRE metrics from profile inputs.
  */
 export function calculateAllFireMetrics(params: {
@@ -152,6 +180,8 @@ export function calculateAllFireMetrics(params: {
   expenseRatio: number
   fireType?: FireType
   fireNumberBasis?: FireNumberBasis
+  cpfLifeStartAge?: number
+  lifeExpectancy?: number
 }): FireMetrics {
   const {
     currentAge,
@@ -166,6 +196,8 @@ export function calculateAllFireMetrics(params: {
     expenseRatio,
     fireType = 'regular',
     fireNumberBasis = 'today',
+    cpfLifeStartAge = 65,
+    lifeExpectancy = 90,
   } = params
 
   const totalNetWorth = liquidNetWorth + cpfTotal
@@ -235,6 +267,26 @@ export function calculateAllFireMetrics(params: {
   const baristaFireIncome = calculateBaristaFireIncome(effectiveExpenses, liquidNetWorth, swr)
   const progress = calculateProgress(totalNetWorth, fireNumber)
 
+  // CPF dependency detection
+  const liquidProgress = fireNumber > 0 ? liquidNetWorth / fireNumber : 0
+  const cpfDependency = liquidProgress < 1 && progress >= 1
+
+  // Bridge gap analysis (only relevant when CPF-dependent)
+  let liquidBridgeGapYears: number | null = null
+  let liquidDepletionAge: number | null = null
+  if (cpfDependency) {
+    const bridgeResult = calculateLiquidBridgeGap(
+      liquidNetWorth,
+      effectiveExpenses,
+      retirementAge,
+      cpfLifeStartAge,
+      netRealReturn,
+      lifeExpectancy
+    )
+    liquidBridgeGapYears = bridgeResult.liquidBridgeGapYears
+    liquidDepletionAge = bridgeResult.liquidDepletionAge
+  }
+
   return {
     fireNumber,
     leanFireNumber,
@@ -247,5 +299,8 @@ export function calculateAllFireMetrics(params: {
     savingsRate,
     annualSavings,
     totalNetWorth,
+    cpfDependency,
+    liquidBridgeGapYears,
+    liquidDepletionAge,
   }
 }

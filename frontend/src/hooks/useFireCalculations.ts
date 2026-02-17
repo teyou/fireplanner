@@ -101,6 +101,8 @@ export function useFireCalculations(): FireCalculationsResult {
       expenseRatio: profile.expenseRatio,
       fireType: profile.fireType,
       fireNumberBasis: profile.fireNumberBasis,
+      cpfLifeStartAge: profile.cpfLifeStartAge,
+      lifeExpectancy: profile.lifeExpectancy,
     })
 
     return { metrics, hasErrors: false, errors: {} }
