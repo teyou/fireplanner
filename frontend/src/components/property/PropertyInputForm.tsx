@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { usePropertyStore } from '@/stores/usePropertyStore'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import type { PropertyType } from '@/lib/types'
@@ -37,15 +38,12 @@ export function PropertyInputForm() {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Purchase Price ($)</Label>
-            <Input
-              type="number"
-              value={store.purchasePrice}
-              onChange={(e) => store.setField('purchasePrice', Number(e.target.value))}
-            />
-            {errors.purchasePrice && <p className="text-xs text-destructive">{errors.purchasePrice}</p>}
-          </div>
+          <CurrencyInput
+            label="Purchase Price"
+            value={store.purchasePrice}
+            onChange={(v) => store.setField('purchasePrice', v)}
+            error={errors.purchasePrice}
+          />
 
           <div className="space-y-2">
             <Label>
@@ -62,33 +60,45 @@ export function PropertyInputForm() {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-2">
-            <Label>Appreciation Rate (%)</Label>
-            <Input
-              type="number"
-              step={0.5}
-              value={(store.appreciationRate * 100).toFixed(1)}
-              onChange={(e) => store.setField('appreciationRate', Number(e.target.value) / 100)}
-            />
+            <Label>Appreciation Rate</Label>
+            <div className="relative">
+              <Input
+                type="number"
+                step={0.5}
+                className="pr-7"
+                value={(store.appreciationRate * 100).toFixed(1)}
+                onChange={(e) => store.setField('appreciationRate', Number(e.target.value) / 100)}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Rental Yield (%)</Label>
-            <Input
-              type="number"
-              step={0.5}
-              value={(store.rentalYield * 100).toFixed(1)}
-              onChange={(e) => store.setField('rentalYield', Number(e.target.value) / 100)}
-            />
+            <Label>Rental Yield</Label>
+            <div className="relative">
+              <Input
+                type="number"
+                step={0.5}
+                className="pr-7"
+                value={(store.rentalYield * 100).toFixed(1)}
+                onChange={(e) => store.setField('rentalYield', Number(e.target.value) / 100)}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Mortgage Rate (%)</Label>
-            <Input
-              type="number"
-              step={0.1}
-              value={(store.mortgageRate * 100).toFixed(1)}
-              onChange={(e) => store.setField('mortgageRate', Number(e.target.value) / 100)}
-            />
+            <Label>Mortgage Rate</Label>
+            <div className="relative">
+              <Input
+                type="number"
+                step={0.1}
+                className="pr-7"
+                value={(store.mortgageRate * 100).toFixed(1)}
+                onChange={(e) => store.setField('mortgageRate', Number(e.target.value) / 100)}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+            </div>
             {errors.mortgageRate && <p className="text-xs text-destructive">{errors.mortgageRate}</p>}
           </div>
 
@@ -104,12 +114,16 @@ export function PropertyInputForm() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label>LTV (%)</Label>
-            <Input
-              type="number"
-              value={(store.ltv * 100).toFixed(0)}
-              onChange={(e) => store.setField('ltv', Number(e.target.value) / 100)}
-            />
+            <Label>LTV</Label>
+            <div className="relative">
+              <Input
+                type="number"
+                className="pr-7"
+                value={(store.ltv * 100).toFixed(0)}
+                onChange={(e) => store.setField('ltv', Number(e.target.value) / 100)}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+            </div>
           </div>
 
           <div className="space-y-2">
