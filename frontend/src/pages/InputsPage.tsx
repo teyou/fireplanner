@@ -386,6 +386,7 @@ function PropertyContent() {
   const [propertyStatus, setPropertyStatus] = useState<PropertyStatus>(() =>
     derivePropertyStatus(ownsProperty, existingMortgageBalance, existingMonthlyPayment)
   )
+  const [showNewPurchase, setShowNewPurchase] = useState(false)
 
   const handleStatusChange = (status: PropertyStatus) => {
     setPropertyStatus(status)
@@ -481,9 +482,26 @@ function PropertyContent() {
         </CardContent>
       </Card>
 
-      <h3 className="text-xl font-semibold">New Purchase Analysis</h3>
-      <PropertyInputForm />
-      <PropertyAnalysisPanel />
+      <Card>
+        <CardContent className="pt-4 pb-4">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={showNewPurchase}
+              onChange={(e) => setShowNewPurchase(e.target.checked)}
+            />
+            I'm considering purchasing a new property
+          </label>
+        </CardContent>
+      </Card>
+
+      {showNewPurchase && (
+        <>
+          <h3 className="text-xl font-semibold">New Purchase Analysis</h3>
+          <PropertyInputForm />
+          <PropertyAnalysisPanel />
+        </>
+      )}
     </>
   )
 }
