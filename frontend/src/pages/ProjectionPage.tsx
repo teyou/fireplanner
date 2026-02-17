@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import {
   useReactTable,
   getCoreRowModel,
@@ -72,9 +73,10 @@ export function ProjectionPage() {
     })
   }
 
+  const isMobile = useMediaQuery('(max-width: 767px)')
+
   const columnVisibility = useMemo((): VisibilityState => {
     const vis: VisibilityState = {}
-    const isMobile = window.innerWidth < 768
     for (const [group, cols] of Object.entries(GROUP_COLUMNS)) {
       const visible = activeGroups.has(group as ColumnGroup)
       for (const col of cols) {
@@ -88,7 +90,7 @@ export function ProjectionPage() {
       vis['fireProgress'] = vis['fireProgress'] || false
     }
     return vis
-  }, [activeGroups])
+  }, [activeGroups, isMobile])
 
   const columns = useMemo((): ColumnDef<ProjectionRow, number | string>[] => [
     // Default columns (always visible)
