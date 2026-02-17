@@ -323,8 +323,10 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     }
 
     // At age 55, determine retirement sum from SA balance vs projected FRS
+    // Use params.currentAge (not 55) so BRS/FRS/ERS are projected forward
+    // from today to when THIS person turns 55, not the 2024 base values
     if (age === 55) {
-      const projected = calculateBrsFrsErs(55)
+      const projected = calculateBrsFrsErs(params.currentAge)
       // Use the lesser of actual SA balance and the retirement sum level amount
       const levelAmount = cpfRetirementSum === 'brs' ? projected.brs
         : cpfRetirementSum === 'ers' ? projected.ers

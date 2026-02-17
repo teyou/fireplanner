@@ -676,6 +676,62 @@ describe('integration tests', () => {
     expect(row70.cpfLifePayout).toBeGreaterThan(0)
   })
 
+  it('CPF LIFE payout differs by BRS/FRS/ERS selection (young age)', () => {
+    // Use currentAge=30 so BRS/FRS/ERS are projected 25 years forward
+    // with high SA so capping doesn't mask the difference
+    const baseParams = {
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 70,
+      salaryModel: 'simple' as const,
+      annualSalary: 200000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree' as const,
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 200000,
+      initialCpfSA: 500000,
+      initialCpfMA: 50000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard' as const,
+    }
+
+    const rowsBrs = generateIncomeProjection({ ...baseParams, cpfRetirementSum: 'brs' as const })
+    const rowsFrs = generateIncomeProjection({ ...baseParams, cpfRetirementSum: 'frs' as const })
+    const rowsErs = generateIncomeProjection({ ...baseParams, cpfRetirementSum: 'ers' as const })
+
+    const payoutBrs = rowsBrs.find((r) => r.age === 65)!.cpfLifePayout
+    const payoutFrs = rowsFrs.find((r) => r.age === 65)!.cpfLifePayout
+    const payoutErs = rowsErs.find((r) => r.age === 65)!.cpfLifePayout
+
+    // All should produce payouts
+    expect(payoutBrs).toBeGreaterThan(0)
+    expect(payoutFrs).toBeGreaterThan(0)
+    expect(payoutErs).toBeGreaterThan(0)
+
+    // FRS payout should be ~2x BRS, ERS should be ~2x FRS (4x BRS)
+    expect(payoutFrs).toBeGreaterThan(payoutBrs * 1.9)
+    expect(payoutFrs).toBeLessThan(payoutBrs * 2.1)
+    expect(payoutErs).toBeGreaterThan(payoutFrs * 1.9)
+    expect(payoutErs).toBeLessThan(payoutFrs * 2.1)
+
+    // Verify payouts use projected values (not 2024 base)
+    // BRS_2024 = $106,500. For age 30, projected BRS at 55 = $106,500 * 1.035^25 ≈ $251,500
+    // Standard payout = 6.3% of retirement sum
+    // If bug existed (using 2024 values), BRS payout would be ~$106,500 * 0.063 = ~$6,710
+    // With correct projection, BRS payout should be ~$251,500 * 0.063 = ~$15,845
+    expect(payoutBrs).toBeGreaterThan(10000) // Would fail with the 2024-base-value bug
+  })
+
   it('CPF LIFE escalating plan grows 2%/yr in projection', () => {
     const rows = generateIncomeProjection({
       currentAge: 60,
