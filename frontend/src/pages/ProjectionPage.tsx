@@ -57,7 +57,7 @@ function optionalCurrencyCell(value: number): string {
 }
 
 export function ProjectionPage() {
-  const { rows, summary, hasErrors, errors } = useProjection()
+  const { rows, summary, hasErrors } = useProjection()
   const retirementAge = useProfileStore((s) => s.retirementAge)
   const activeStrategy = useSimulationStore((s) => s.selectedStrategy)
 
