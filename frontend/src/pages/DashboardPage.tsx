@@ -5,6 +5,7 @@ import { AccumulationChart } from '@/components/dashboard/AccumulationChart'
 import { RiskDashboard } from '@/components/dashboard/RiskDashboard'
 import { EmptyDashboardState } from '@/components/dashboard/EmptyDashboardState'
 import { StrategyCard } from '@/components/dashboard/StrategyCard'
+import { PassiveIncomePanel } from '@/components/dashboard/PassiveIncomePanel'
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics'
 import { useSectionCompletion, type SectionId } from '@/hooks/useSectionCompletion'
 
@@ -57,6 +58,7 @@ export function DashboardPage() {
         <>
           <StatusPanel {...metrics} />
           <StrategyCard />
+          <PassiveIncomePanel />
           <AccumulationChart />
           <RiskDashboard />
         </>
