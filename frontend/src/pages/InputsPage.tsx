@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
-import { ChevronDown, ChevronUp, CheckCircle2, Circle } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ChevronDown, ChevronUp, CheckCircle2, Circle, ArrowRight } from 'lucide-react'
 
 // Profile sections
 import { PersonalSection } from '@/components/profile/PersonalSection'
@@ -753,6 +754,32 @@ export function InputsPage() {
           </section>
         )
       })}
+
+      {/* What's Next CTA */}
+      <Card className="bg-primary/5 border-primary/20">
+        <CardContent className="pt-6 pb-6">
+          <h3 className="text-lg font-semibold mb-1">
+            {completedCount >= 5 ? 'Looking good! Ready to test your plan?' : 'Explore your projections'}
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            {completedCount >= 5
+              ? 'Your inputs are well-customized. See how your plan holds up under different scenarios.'
+              : 'You can view projections at any time — even with default values. Customize more sections for personalized results.'}
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild>
+              <Link to="/projection">
+                View Projection <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/stress-test">
+                Stress Test <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <ConfirmDialog
         open={pendingReset !== null}
