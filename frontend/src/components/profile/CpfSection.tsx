@@ -47,9 +47,10 @@ export function CpfSection() {
   const totalCpf = cpfOA + cpfSA + cpfMA
 
   return (
+    <>
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">CPF Overview</CardTitle>
+        <CardTitle className="text-lg">Current CPF Status</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Current rates */}
@@ -121,9 +122,14 @@ export function CpfSection() {
             </div>
           </div>
         </div>
+      </CardContent>
+    </Card>
 
-        <Separator />
-
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">CPF Planning</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
         {/* BRS/FRS/ERS projections */}
         <div>
           <h4 className="text-sm font-medium flex items-center mb-2">
@@ -320,5 +326,6 @@ export function CpfSection() {
         </div>
       </CardContent>
     </Card>
+    </>
   )
 }
