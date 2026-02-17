@@ -25,7 +25,8 @@ export function AppLayout() {
           <main
             className={cn(
               'flex-1 overflow-auto min-h-0',
-              showStats && isBottom && 'pb-14 md:pb-10'
+              'pb-14 md:pb-0', // clear mobile bottom nav
+              showStats && isBottom && 'pb-24 md:pb-10' // extra space for stats strip above nav
             )}
           >
             <div className="container py-6 max-w-6xl">
