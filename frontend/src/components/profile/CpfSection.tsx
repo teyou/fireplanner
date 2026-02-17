@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Label } from '@/components/ui/label'
 import { NumberInput } from '@/components/shared/NumberInput'
+import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { calculateCpfContribution, calculateBrsFrsErs, estimateCpfLifePayout, calculateCpfLifePayoutAtAge, getRetirementSumAmount } from '@/lib/calculations/cpf'
@@ -16,9 +17,14 @@ export function CpfSection() {
     currentAge, retirementAge, annualIncome, cpfOA, cpfSA, cpfMA,
     cpfLifeStartAge, cpfLifePlan, cpfRetirementSum,
     cpfHousingMode, cpfHousingMonthly, cpfMortgageYearsLeft,
+    lifeStage, retirementPhase, cpfLifeActualMonthlyPayout,
     validationErrors, setField,
   } = useProfileStore()
   const incomeStreams = useIncomeStore((s) => s.incomeStreams)
+
+  // Phase-aware rendering only applies to post-fire users
+  const isPostFire = lifeStage === 'post-fire'
+  const effectivePhase = isPostFire ? retirementPhase : null
 
   const rates = getCpfRatesForAge(currentAge)
   const contribution = calculateCpfContribution(annualIncome, currentAge)
@@ -47,6 +53,104 @@ export function CpfSection() {
 
   const totalCpf = cpfOA + cpfSA + cpfMA
 
+  // 65+ phase: single card with monthly payout input
+  if (effectivePhase === '65-plus') {
+    const annualPayout = cpfLifeActualMonthlyPayout * 12
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            Monthly CPF LIFE Payout
+            <InfoTooltip text="Enter the actual monthly payout amount from your CPF LIFE statement. This will be used directly in income projections instead of estimating from retirement sum." />
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="max-w-sm">
+            <CurrencyInput
+              label="Monthly Payout"
+              value={cpfLifeActualMonthlyPayout}
+              onChange={(v) => setField('cpfLifeActualMonthlyPayout', v)}
+              error={validationErrors.cpfLifeActualMonthlyPayout}
+              tooltip="Your actual CPF LIFE monthly payout amount"
+            />
+          </div>
+          {cpfLifeActualMonthlyPayout > 0 && (
+            <div className="p-2 bg-muted/50 rounded text-sm">
+              <span className="text-muted-foreground">Annual CPF LIFE income: </span>
+              <span className="font-semibold">{formatCurrency(annualPayout)}/yr</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // 55-64 phase: simplified — retirement sum + CPF LIFE config + projected payout
+  if (effectivePhase === '55-to-64') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">CPF LIFE Configuration</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Start Age (65-75)</Label>
+              <NumberInput
+                integer
+                min={65}
+                max={75}
+                value={cpfLifeStartAge}
+                onChange={(v) => setField('cpfLifeStartAge', v)}
+                className="h-8 border-blue-300"
+              />
+              {validationErrors.cpfLifeStartAge && (
+                <p className="text-xs text-destructive">{validationErrors.cpfLifeStartAge}</p>
+              )}
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Plan Type</Label>
+              <select
+                value={cpfLifePlan}
+                onChange={(e) => setField('cpfLifePlan', e.target.value as CpfLifePlan)}
+                className="flex h-8 w-full rounded-md border border-blue-300 bg-background px-2 py-1 text-sm"
+              >
+                <option value="basic">Basic (~5.4%)</option>
+                <option value="standard">Standard (~6.3%)</option>
+                <option value="escalating">Escalating (~4.8%, +2%/yr)</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Retirement Sum</Label>
+              <select
+                value={cpfRetirementSum}
+                onChange={(e) => setField('cpfRetirementSum', e.target.value as CpfRetirementSum)}
+                className="flex h-8 w-full rounded-md border border-blue-300 bg-background px-2 py-1 text-sm"
+              >
+                <option value="brs">BRS ({formatCurrency(brsFrsErs.brs)})</option>
+                <option value="frs">FRS ({formatCurrency(brsFrsErs.frs)})</option>
+                <option value="ers">ERS ({formatCurrency(brsFrsErs.ers)})</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="p-2 bg-muted/50 rounded text-sm">
+            <span className="text-muted-foreground">Projected annual payout: </span>
+            <span className="font-semibold">{formatCurrency(projectedPayout)}/yr</span>
+            <span className="text-muted-foreground"> ({formatCurrency(projectedPayout / 12)}/mo)</span>
+          </div>
+
+          {hasManualCpfLife && (
+            <div className="p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded text-sm text-amber-800 dark:text-amber-200">
+              Manual CPF LIFE income stream detected — automated CPF LIFE calculation is skipped to avoid double-counting.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Default: full CPF section (null phase, before-55, or pre-fire users)
   return (
     <>
     <Card>
