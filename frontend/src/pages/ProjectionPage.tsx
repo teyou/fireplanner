@@ -18,6 +18,8 @@ import { Button } from '@/components/ui/button'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { Link } from 'react-router-dom'
+import { NWChartView } from '@/components/projection/NWChartView'
+import { TableIcon, BarChart3 } from 'lucide-react'
 
 const STRATEGY_SHORT_LABELS: Record<WithdrawalStrategyType, string> = {
   constant_dollar: '4% Rule',
@@ -59,6 +61,7 @@ export function ProjectionPage() {
   const retirementAge = useProfileStore((s) => s.retirementAge)
   const activeStrategy = useSimulationStore((s) => s.selectedStrategy)
 
+  const [viewMode, setViewMode] = useState<'table' | 'chart'>('table')
   const [activeGroups, setActiveGroups] = useState<Set<ColumnGroup>>(new Set())
 
   const toggleGroup = (group: ColumnGroup) => {
@@ -336,8 +339,30 @@ export function ProjectionPage() {
 
       {rows && rows.length > 0 && (
         <>
-          <div className="flex flex-wrap gap-2">
-            {COLUMN_GROUPS.map((group) => (
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+              <button
+                onClick={() => setViewMode('table')}
+                className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  viewMode === 'table'
+                    ? 'bg-background shadow-sm text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <TableIcon className="h-3.5 w-3.5" /> Table
+              </button>
+              <button
+                onClick={() => setViewMode('chart')}
+                className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  viewMode === 'chart'
+                    ? 'bg-background shadow-sm text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <BarChart3 className="h-3.5 w-3.5" /> Chart
+              </button>
+            </div>
+            {viewMode === 'table' && COLUMN_GROUPS.map((group) => (
               <Button
                 key={group.key}
                 variant={activeGroups.has(group.key) ? 'default' : 'outline'}
@@ -349,6 +374,10 @@ export function ProjectionPage() {
             ))}
           </div>
 
+          {viewMode === 'chart' ? (
+            <NWChartView rows={rows} retirementAge={retirementAge} />
+          ) : (
+          <>
           <p className="text-xs text-muted-foreground md:hidden">Tap toggles to show more columns</p>
           <div className="border rounded-md overflow-auto max-h-[70vh]">
             <table className="w-full text-sm">
@@ -402,6 +431,8 @@ export function ProjectionPage() {
               </tbody>
             </table>
           </div>
+          </>
+          )}
         </>
       )}
     </div>
