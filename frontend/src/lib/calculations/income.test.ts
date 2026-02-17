@@ -633,6 +633,197 @@ describe('integration tests', () => {
     expect(rows[0].totalGross).toBe(180000)
   })
 
+  it('CPF LIFE payout appears in projection at correct age (automated)', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 55,
+      retirementAge: 58,
+      lifeExpectancy: 75,
+      salaryModel: 'simple',
+      annualSalary: 200000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 80000,
+      inflation: 0.025,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 100000,
+      initialCpfSA: 200000,
+      initialCpfMA: 50000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+    })
+
+    // Before 65: no CPF LIFE payout
+    const row60 = rows.find((r) => r.age === 60)!
+    expect(row60.cpfLifePayout).toBe(0)
+    expect(row60.governmentIncome).toBe(0)
+
+    // At 65: CPF LIFE kicks in
+    const row65 = rows.find((r) => r.age === 65)!
+    expect(row65.cpfLifePayout).toBeGreaterThan(0)
+    expect(row65.governmentIncome).toBe(row65.cpfLifePayout)
+
+    // At 70: still receiving
+    const row70 = rows.find((r) => r.age === 70)!
+    expect(row70.cpfLifePayout).toBeGreaterThan(0)
+  })
+
+  it('CPF LIFE escalating plan grows 2%/yr in projection', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 60,
+      retirementAge: 60,
+      lifeExpectancy: 75,
+      salaryModel: 'simple',
+      annualSalary: 0,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: false,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0.025,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 50000,
+      initialCpfSA: 200000,
+      initialCpfMA: 30000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'escalating',
+      cpfRetirementSum: 'frs',
+    })
+
+    const row65 = rows.find((r) => r.age === 65)!
+    const row66 = rows.find((r) => r.age === 66)!
+
+    // Escalating payout at year 1 should be ~2% higher than year 0
+    expect(row66.cpfLifePayout).toBeCloseTo(row65.cpfLifePayout * 1.02, 0)
+  })
+
+  it('OA housing deduction reduces OA balance', () => {
+    const withoutHousing = generateIncomeProjection({
+      currentAge: 30,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 30000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 100000,
+      initialCpfSA: 50000,
+      initialCpfMA: 20000,
+      cpfHousingMode: 'none',
+    })
+
+    const withHousing = generateIncomeProjection({
+      currentAge: 30,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 30000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 100000,
+      initialCpfSA: 50000,
+      initialCpfMA: 20000,
+      cpfHousingMode: 'simple',
+      cpfHousingMonthly: 1000,
+      cpfHousingEndAge: 55,
+    })
+
+    // OA should be lower with housing deduction
+    const noHousing35 = withoutHousing.find((r) => r.age === 35)!
+    const housing35 = withHousing.find((r) => r.age === 35)!
+    expect(housing35.cpfOA).toBeLessThan(noHousing35.cpfOA)
+
+    // Housing deduction should be $12K/yr
+    const row30 = withHousing.find((r) => r.age === 30)!
+    expect(row30.cpfOaHousingDeduction).toBe(12000)
+
+    // After housing end age, no more deductions
+    const row56 = withHousing.find((r) => r.age === 56)!
+    expect(row56.cpfOaHousingDeduction).toBe(0)
+  })
+
+  it('manual CPF LIFE stream takes precedence over automated', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 60,
+      retirementAge: 60,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 0,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: false,
+      incomeStreams: [{
+        id: 'manual-cpf',
+        name: 'CPF LIFE',
+        annualAmount: 15000,
+        startAge: 65,
+        endAge: 90,
+        growthRate: 0,
+        type: 'government',
+        growthModel: 'none',
+        taxTreatment: 'tax-exempt',
+        isCpfApplicable: false,
+        isActive: true,
+      }],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0,
+      personalReliefs: 0,
+      srsAnnualContribution: 0,
+      initialCpfOA: 50000,
+      initialCpfSA: 200000,
+      initialCpfMA: 30000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+    })
+
+    const row65 = rows.find((r) => r.age === 65)!
+    // Should use manual stream (15000), not automated
+    expect(row65.cpfLifePayout).toBe(0) // automated is skipped
+    expect(row65.governmentIncome).toBe(15000) // manual stream value
+  })
+
   it('Pre-Retiree: government income stream appears at correct age', () => {
     const cpfLifeStream: IncomeStream = {
       id: 'cpf-life',

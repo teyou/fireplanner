@@ -253,6 +253,31 @@ describe('getRetirementSumAmount', () => {
   })
 })
 
+describe('calculateCpfLifePayoutAtAge (integration)', () => {
+  it('full projection: payout at 65, escalating grows, matches at start', () => {
+    const frs = 213000
+    const startAge = 65
+
+    // Standard plan: same payout every year
+    const std65 = calculateCpfLifePayoutAtAge(frs, 'standard', startAge, 65)
+    const std75 = calculateCpfLifePayoutAtAge(frs, 'standard', startAge, 75)
+    expect(std65).toBe(std75) // flat
+
+    // Escalating plan: grows 2%/yr
+    const esc65 = calculateCpfLifePayoutAtAge(frs, 'escalating', startAge, 65)
+    const esc75 = calculateCpfLifePayoutAtAge(frs, 'escalating', startAge, 75)
+    expect(esc75).toBeGreaterThan(esc65)
+    expect(esc75 / esc65).toBeCloseTo(Math.pow(1.02, 10), 2)
+
+    // Standard always matches estimateCpfLifePayout at start age
+    expect(std65).toBe(estimateCpfLifePayout(frs, 'standard'))
+
+    // Deferred start (age 70): still returns 0 before 70
+    expect(calculateCpfLifePayoutAtAge(frs, 'standard', 70, 68)).toBe(0)
+    expect(calculateCpfLifePayoutAtAge(frs, 'standard', 70, 70)).toBeGreaterThan(0)
+  })
+})
+
 describe('autoDetectRetirementSum', () => {
   const frsAt55 = 213000
 

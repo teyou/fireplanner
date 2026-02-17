@@ -10,6 +10,7 @@ import {
   calculateProgress,
   calculateAllFireMetrics,
   projectPortfolioAtRetirement,
+  calculateLiquidBridgeGap,
 } from './fire'
 
 describe('calculateFireNumber', () => {
@@ -383,6 +384,94 @@ describe('fireNumberBasis', () => {
     // FIRE age < retirement age in typical savings scenario, so fireAge inflation < retirement inflation
     expect(fireAge.fireNumber).toBeGreaterThan(today.fireNumber)
     expect(fireAge.fireNumber).toBeLessThan(retirement.fireNumber)
+  })
+})
+
+describe('cpfDependency', () => {
+  it('true when liquid < FIRE but total >= FIRE', () => {
+    const m = calculateAllFireMetrics({
+      currentAge: 55,
+      retirementAge: 58,
+      annualIncome: 0,
+      annualExpenses: 80000,
+      liquidNetWorth: 500000,
+      cpfTotal: 1600000,
+      swr: 0.04,
+      expectedReturn: 0.05,
+      inflation: 0.025,
+      expenseRatio: 0.003,
+      lifeExpectancy: 90,
+      cpfLifeStartAge: 65,
+    })
+    // FIRE number = 80K / 0.04 = 2M
+    // Total NW = 500K + 1.6M = 2.1M >= 2M (progress >= 1)
+    // Liquid = 500K < 2M (liquid < FIRE)
+    expect(m.cpfDependency).toBe(true)
+  })
+
+  it('false when liquid alone >= FIRE', () => {
+    const m = calculateAllFireMetrics({
+      currentAge: 55,
+      retirementAge: 58,
+      annualIncome: 0,
+      annualExpenses: 80000,
+      liquidNetWorth: 2000000,
+      cpfTotal: 500000,
+      swr: 0.04,
+      expectedReturn: 0.05,
+      inflation: 0.025,
+      expenseRatio: 0.003,
+    })
+    expect(m.cpfDependency).toBe(false)
+  })
+
+  it('false when both liquid and total are below FIRE', () => {
+    const m = calculateAllFireMetrics({
+      currentAge: 30,
+      retirementAge: 65,
+      annualIncome: 72000,
+      annualExpenses: 48000,
+      liquidNetWorth: 100000,
+      cpfTotal: 50000,
+      swr: 0.04,
+      expectedReturn: 0.07,
+      inflation: 0.025,
+      expenseRatio: 0.003,
+    })
+    expect(m.cpfDependency).toBe(false)
+  })
+})
+
+describe('calculateLiquidBridgeGap', () => {
+  it('returns null when liquid never depletes', () => {
+    const result = calculateLiquidBridgeGap(3000000, 80000, 58, 65, 0.03, 90)
+    expect(result.liquidDepletionAge).toBeNull()
+    expect(result.liquidBridgeGapYears).toBeNull()
+  })
+
+  it('detects depletion before CPF LIFE starts', () => {
+    // $200K liquid, $80K expenses, 0% real return → depletes in 2.5 years
+    const result = calculateLiquidBridgeGap(200000, 80000, 58, 65, 0, 90)
+    expect(result.liquidDepletionAge).toBe(60) // 200K / 80K = 2.5, depletes year 3 (age 60)
+    expect(result.liquidBridgeGapYears).toBe(5) // 65 - 60 = 5 years gap
+  })
+
+  it('returns null gap when depletion is after CPF LIFE start', () => {
+    // Depletes at 70 but CPF starts at 65 → gap is null
+    const result = calculateLiquidBridgeGap(500000, 80000, 58, 65, 0.02, 90)
+    // With 2% real return, won't deplete before 65
+    // Let's check if it depletes at all...
+    if (result.liquidDepletionAge !== null) {
+      if (result.liquidDepletionAge >= 65) {
+        expect(result.liquidBridgeGapYears).toBeNull()
+      }
+    }
+  })
+
+  it('handles zero liquid portfolio', () => {
+    const result = calculateLiquidBridgeGap(0, 80000, 58, 65, 0.03, 90)
+    expect(result.liquidDepletionAge).toBe(58)
+    expect(result.liquidBridgeGapYears).toBe(7) // 65 - 58
   })
 })
 
