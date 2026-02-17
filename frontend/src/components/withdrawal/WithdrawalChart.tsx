@@ -39,7 +39,8 @@ export function WithdrawalChart({ results }: WithdrawalChartProps) {
         <CardTitle>Annual Withdrawal by Strategy</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={350}>
+        <div className="h-56 md:h-72 lg:h-[350px]">
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="age" label={{ value: 'Age', position: 'insideBottom', offset: -5 }} />
@@ -58,6 +59,7 @@ export function WithdrawalChart({ results }: WithdrawalChartProps) {
             ))}
           </LineChart>
         </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   )

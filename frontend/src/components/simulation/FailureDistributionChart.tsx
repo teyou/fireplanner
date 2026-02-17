@@ -24,7 +24,8 @@ export function FailureDistributionChart({ distribution, nSimulations }: Failure
         <CardTitle>Failure Distribution by Decade</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={250}>
+        <div className="h-48 md:h-56 lg:h-[250px]">
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
             <XAxis dataKey="name" fontSize={12} />
@@ -38,6 +39,7 @@ export function FailureDistributionChart({ distribution, nSimulations }: Failure
             <Bar dataKey="failures" fill="#ef4444" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   )
