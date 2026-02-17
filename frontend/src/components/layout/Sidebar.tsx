@@ -301,7 +301,7 @@ export function Sidebar() {
             onClick={() => setDrawerOpen(false)}
           />
           {/* Drawer */}
-          <aside className="md:hidden fixed top-0 left-0 bottom-0 w-64 bg-background border-r z-[70] p-4 overflow-y-auto animate-in slide-in-from-left duration-200">
+          <aside role="dialog" aria-modal="true" aria-label="Navigation menu" className="md:hidden fixed top-0 left-0 bottom-0 w-64 bg-background border-r z-[70] p-4 overflow-y-auto animate-in slide-in-from-left duration-200">
             <div className="flex items-center justify-between mb-4">
               <div className="font-bold text-lg">FIRE Planner</div>
               <button
@@ -320,11 +320,11 @@ export function Sidebar() {
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t flex justify-around py-3 z-50">
         {[
-          { label: 'Start', path: '/', icon: <HomeIcon className="h-5 w-5" /> },
           { label: 'Inputs', path: '/inputs', icon: <Settings2 className="h-5 w-5" /> },
           { label: 'Plan', path: '/projection', icon: <TableProperties className="h-5 w-5" /> },
           { label: 'Test', path: '/stress-test', icon: <ShieldAlert className="h-5 w-5" /> },
           { label: 'Dash', path: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
+          { label: 'Guide', path: '/reference', icon: <BookOpen className="h-5 w-5" /> },
         ].map((item) => (
           <NavLink
             key={item.path}
