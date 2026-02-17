@@ -7,13 +7,25 @@ import {
   type ColumnDef,
   type VisibilityState,
 } from '@tanstack/react-table'
-import type { ProjectionRow } from '@/lib/types'
+import type { ProjectionRow, WithdrawalStrategyType } from '@/lib/types'
 import { useProjection } from '@/hooks/useProjection'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { useSimulationStore } from '@/stores/useSimulationStore'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { Link } from 'react-router-dom'
+
+const STRATEGY_SHORT_LABELS: Record<WithdrawalStrategyType, string> = {
+  constant_dollar: '4% Rule',
+  vpw: 'VPW',
+  guardrails: 'Guardrails',
+  vanguard_dynamic: 'Vanguard Dynamic',
+  cape_based: 'CAPE-Based',
+  floor_ceiling: 'Floor & Ceiling',
+}
 
 const columnHelper = createColumnHelper<ProjectionRow>()
 
@@ -44,6 +56,7 @@ function optionalCurrencyCell(value: number): string {
 export function ProjectionPage() {
   const { rows, summary, hasErrors, errors } = useProjection()
   const retirementAge = useProfileStore((s) => s.retirementAge)
+  const activeStrategy = useSimulationStore((s) => s.selectedStrategy)
 
   const [activeGroups, setActiveGroups] = useState<Set<ColumnGroup>>(new Set())
 
@@ -230,6 +243,14 @@ export function ProjectionPage() {
           Deterministic trajectory showing income, portfolio growth, and FIRE progress.
           Verify your inputs produce sensible numbers before running Monte Carlo analysis.
         </p>
+        <div className="mt-2 flex items-center gap-2">
+          <Badge variant="outline" className="text-xs">
+            Strategy: {STRATEGY_SHORT_LABELS[activeStrategy]}
+          </Badge>
+          <Link to="/withdrawal" className="text-xs text-primary hover:underline">
+            Change
+          </Link>
+        </div>
       </div>
 
       {hasErrors && (
