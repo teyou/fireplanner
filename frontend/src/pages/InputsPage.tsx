@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -56,6 +56,7 @@ import { useIncomeProjection } from '@/hooks/useIncomeProjection'
 import { useWithdrawalComparison } from '@/hooks/useWithdrawalComparison'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { formatCurrency } from '@/lib/utils'
 import type { WithdrawalStrategyType } from '@/lib/types'
 
@@ -541,11 +542,11 @@ export function InputsPage() {
   const resetWithdrawalRaw = useWithdrawalStore((s) => s.reset)
   const resetPropertyRaw = usePropertyStore((s) => s.reset)
 
-  const confirmReset = (label: string, action: () => void) => {
-    if (window.confirm(`Reset all ${label} settings to defaults? This cannot be undone.`)) {
-      action()
-    }
-  }
+  const [pendingReset, setPendingReset] = useState<{ label: string; action: () => void } | null>(null)
+
+  const confirmReset = useCallback((label: string, action: () => void) => {
+    setPendingReset({ label, action })
+  }, [])
 
   const resetProfile = () => confirmReset('Profile', resetProfileRaw)
   const resetIncome = () => confirmReset('Income', resetIncomeRaw)
@@ -729,6 +730,18 @@ export function InputsPage() {
           </section>
         )
       })}
+
+      <ConfirmDialog
+        open={pendingReset !== null}
+        title={`Reset ${pendingReset?.label ?? ''}`}
+        description={`Reset all ${pendingReset?.label ?? ''} settings to defaults? This cannot be undone.`}
+        confirmLabel="Reset"
+        onConfirm={() => {
+          pendingReset?.action()
+          setPendingReset(null)
+        }}
+        onCancel={() => setPendingReset(null)}
+      />
     </div>
   )
 }
