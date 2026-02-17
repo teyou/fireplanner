@@ -6,6 +6,7 @@ import { useUIStore } from '@/stores/useUIStore'
 import { useSectionCompletion, type SectionId } from '@/hooks/useSectionCompletion'
 import { exportToJson, importFromJson } from '@/lib/exportImport'
 import { ScenarioManager } from './ScenarioManager'
+import { ThemeToggle } from './ThemeToggle'
 import {
   User,
   DollarSign,
@@ -353,6 +354,7 @@ export function Sidebar() {
         <div className="mt-auto border-t pt-3 space-y-2">
           <ScenarioManager />
           <DataActions />
+          <ThemeToggle />
         </div>
       </aside>
 
@@ -389,6 +391,7 @@ export function Sidebar() {
             <div className="mt-6 border-t pt-3 space-y-2">
               <ScenarioManager />
               <DataActions />
+              <ThemeToggle />
             </div>
           </aside>
         </>

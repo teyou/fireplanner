@@ -1,7 +1,7 @@
 import { toast } from 'sonner'
 
 let undoTimer: ReturnType<typeof setTimeout> | null = null
-let undoRestore: (() => void) | null = null
+let undoRestoreFn: (() => void) | null = null
 
 export function pushUndo(description: string, restore: () => void, durationMs = 5000) {
   // Cancel any previous undo
@@ -9,16 +9,16 @@ export function pushUndo(description: string, restore: () => void, durationMs = 
     clearTimeout(undoTimer)
     undoTimer = null
   }
-  undoRestore = restore
+  undoRestoreFn = restore
 
   toast(description, {
     duration: durationMs,
     action: {
       label: 'Undo',
       onClick: () => {
-        if (undoRestore) {
-          undoRestore()
-          undoRestore = null
+        if (undoRestoreFn) {
+          undoRestoreFn()
+          undoRestoreFn = null
         }
         if (undoTimer) {
           clearTimeout(undoTimer)
@@ -29,7 +29,20 @@ export function pushUndo(description: string, restore: () => void, durationMs = 
   })
 
   undoTimer = setTimeout(() => {
-    undoRestore = null
+    undoRestoreFn = null
     undoTimer = null
   }, durationMs)
+}
+
+/** Attempt to undo the last action. Returns true if an undo was available. */
+export function tryUndo(): boolean {
+  if (!undoRestoreFn) return false
+  undoRestoreFn()
+  undoRestoreFn = null
+  if (undoTimer) {
+    clearTimeout(undoTimer)
+    undoTimer = null
+  }
+  toast.success('Undone')
+  return true
 }
