@@ -17,7 +17,8 @@ export function AccumulationChart() {
         <CardTitle>Portfolio Projection</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={350}>
+        <div className="h-56 md:h-72 lg:h-[350px]">
+        <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={accumulationData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="age" label={{ value: 'Age', position: 'insideBottom', offset: -5 }} />
@@ -46,6 +47,7 @@ export function AccumulationChart() {
             />
           </AreaChart>
         </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   )

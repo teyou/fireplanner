@@ -25,7 +25,8 @@ export function CrisisComparisonChart({ normalBands, crisisBands }: CrisisCompar
         <CardTitle>Normal vs Crisis Portfolio Path</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={400}>
+        <div className="h-64 md:h-80 lg:h-[400px]">
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="age" label={{ value: 'Age', position: 'insideBottom', offset: -5 }} />
@@ -40,6 +41,7 @@ export function CrisisComparisonChart({ normalBands, crisisBands }: CrisisCompar
             <Line type="monotone" dataKey="crisisP75" name="Crisis (p75)" stroke="#dc2626" strokeWidth={1} strokeDasharray="4 4" dot={false} />
           </LineChart>
         </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   )

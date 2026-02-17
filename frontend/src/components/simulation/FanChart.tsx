@@ -36,7 +36,8 @@ export function FanChart({ bands, retirementAge }: FanChartProps) {
         <CardTitle>Portfolio Balance Fan Chart</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={400}>
+        <div className="h-64 md:h-80 lg:h-[400px]">
+        <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={sampled} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
             <XAxis
@@ -76,6 +77,7 @@ export function FanChart({ bands, retirementAge }: FanChartProps) {
             <Line type="monotone" dataKey="p50" stroke="#16a34a" strokeWidth={2} dot={false} />
           </AreaChart>
         </ResponsiveContainer>
+        </div>
         <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <span className="inline-block w-3 h-3 rounded bg-green-400" /> Median (p50)
