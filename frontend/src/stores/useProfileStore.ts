@@ -110,7 +110,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
           state.cpfHousingMonthly = state.cpfHousingMonthly ?? 0
           state.cpfHousingEndAge = state.cpfHousingEndAge ?? 65
         }
-        return state as ProfileState & ProfileActions
+        return state
       },
       partialize: (state) => {
         const data: Record<string, unknown> = {}

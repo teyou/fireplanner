@@ -228,11 +228,19 @@ describe('validateProfileField', () => {
 })
 
 describe('validateProfileConsistency', () => {
+  const cpfDefaults = {
+    cpfLifeStartAge: 65,
+    cpfHousingEndAge: 65,
+    cpfHousingMode: 'none' as const,
+    cpfRetirementSum: 'frs' as const,
+  }
+
   it('returns empty for valid profile', () => {
     const errors = validateProfileConsistency({
       currentAge: 30,
       retirementAge: 65,
       lifeExpectancy: 90,
+      ...cpfDefaults,
     })
     expect(Object.keys(errors)).toHaveLength(0)
   })
@@ -242,6 +250,7 @@ describe('validateProfileConsistency', () => {
       currentAge: 30,
       retirementAge: 30,
       lifeExpectancy: 90,
+      ...cpfDefaults,
     })
     expect(errors.retirementAge).toBeTruthy()
   })
@@ -251,6 +260,7 @@ describe('validateProfileConsistency', () => {
       currentAge: 30,
       retirementAge: 65,
       lifeExpectancy: 65,
+      ...cpfDefaults,
     })
     expect(errors.lifeExpectancy).toBeTruthy()
   })
@@ -260,6 +270,7 @@ describe('validateProfileConsistency', () => {
       currentAge: 65,
       retirementAge: 30,
       lifeExpectancy: 30,
+      ...cpfDefaults,
     })
     expect(Object.keys(errors).length).toBeGreaterThanOrEqual(2)
   })
