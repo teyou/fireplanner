@@ -761,7 +761,7 @@ describe('integration tests', () => {
       initialCpfMA: 20000,
       cpfHousingMode: 'simple',
       cpfHousingMonthly: 1000,
-      cpfHousingEndAge: 55,
+      cpfMortgageYearsLeft: 25,
     })
 
     // OA should be lower with housing deduction

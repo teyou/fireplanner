@@ -14,7 +14,7 @@ export function CpfSection() {
   const {
     currentAge, annualIncome, cpfOA, cpfSA, cpfMA,
     cpfLifeStartAge, cpfLifePlan, cpfRetirementSum,
-    cpfHousingMode, cpfHousingMonthly, cpfHousingEndAge,
+    cpfHousingMode, cpfHousingMonthly, cpfMortgageYearsLeft,
     validationErrors, setField,
   } = useProfileStore()
   const incomeStreams = useIncomeStore((s) => s.incomeStreams)
@@ -291,17 +291,20 @@ export function CpfSection() {
                   )}
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">End Age</Label>
+                  <Label className="text-xs">Mortgage Years Remaining</Label>
                   <Input
                     type="number"
-                    min={18}
-                    max={100}
-                    value={cpfHousingEndAge}
-                    onChange={(e) => setField('cpfHousingEndAge', parseInt(e.target.value) || 55)}
+                    min={0}
+                    max={40}
+                    value={cpfMortgageYearsLeft}
+                    onChange={(e) => setField('cpfMortgageYearsLeft', parseInt(e.target.value) || 0)}
                     className="h-8 border-blue-300"
                   />
-                  {validationErrors.cpfHousingEndAge && (
-                    <p className="text-xs text-destructive">{validationErrors.cpfHousingEndAge}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Deductions end at age {currentAge + cpfMortgageYearsLeft}
+                  </p>
+                  {validationErrors.cpfMortgageYearsLeft && (
+                    <p className="text-xs text-destructive">{validationErrors.cpfMortgageYearsLeft}</p>
                   )}
                 </div>
               </div>

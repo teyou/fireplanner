@@ -233,7 +233,7 @@ export interface IncomeProjectionParams {
   // CPF OA Housing deduction
   cpfHousingMode?: CpfHousingMode
   cpfHousingMonthly?: number
-  cpfHousingEndAge?: number
+  cpfMortgageYearsLeft?: number
 }
 
 /**
@@ -252,7 +252,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
   const cpfRetirementSum = params.cpfRetirementSum ?? 'frs'
   const cpfHousingMode = params.cpfHousingMode ?? 'none'
   const cpfHousingMonthly = params.cpfHousingMonthly ?? 0
-  const cpfHousingEndAge = params.cpfHousingEndAge ?? 55
+  const cpfHousingEndAge = params.currentAge + (params.cpfMortgageYearsLeft ?? 25)
 
   // Check if user has a manual CPF LIFE government income stream
   const hasManualCpfLife = params.incomeStreams.some(

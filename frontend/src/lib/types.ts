@@ -59,7 +59,7 @@ export interface ProfileState {
   cpfRetirementSum: CpfRetirementSum
   cpfHousingMode: CpfHousingMode
   cpfHousingMonthly: number
-  cpfHousingEndAge: number
+  cpfMortgageYearsLeft: number
 
   // Validation
   validationErrors: ValidationErrors

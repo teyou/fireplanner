@@ -5,7 +5,7 @@ import type { ValidationErrors, ProfileState, IncomeState, AllocationState, With
  * Returns a map of field names to error messages.
  */
 export function validateProfileConsistency(
-  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'cpfLifeStartAge' | 'cpfHousingEndAge' | 'cpfHousingMode' | 'cpfRetirementSum'>
+  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'cpfLifeStartAge' | 'cpfMortgageYearsLeft' | 'cpfHousingMode' | 'cpfRetirementSum'>
 ): ValidationErrors {
   const errors: ValidationErrors = {}
 
@@ -21,8 +21,11 @@ export function validateProfileConsistency(
     errors.cpfLifeStartAge = 'CPF LIFE start age must be less than life expectancy'
   }
 
-  if (profile.cpfHousingMode !== 'none' && profile.cpfHousingEndAge > profile.retirementAge) {
-    errors.cpfHousingEndAge = `Housing deduction end age (${profile.cpfHousingEndAge}) exceeds retirement age (${profile.retirementAge})`
+  if (profile.cpfHousingMode !== 'none') {
+    const housingEndAge = profile.currentAge + profile.cpfMortgageYearsLeft
+    if (housingEndAge > profile.retirementAge) {
+      errors.cpfMortgageYearsLeft = `Mortgage ends at age ${housingEndAge} which exceeds retirement age (${profile.retirementAge})`
+    }
   }
 
   return errors

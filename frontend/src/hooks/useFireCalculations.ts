@@ -68,7 +68,7 @@ export function useFireCalculations(): FireCalculationsResult {
         cpfRetirementSum: profile.cpfRetirementSum,
         cpfHousingMode: profile.cpfHousingMode,
         cpfHousingMonthly: profile.cpfHousingMonthly,
-        cpfHousingEndAge: profile.cpfHousingEndAge,
+        cpfMortgageYearsLeft: profile.cpfMortgageYearsLeft,
       })
 
       if (projection.length > 0) {
@@ -129,7 +129,7 @@ export function useFireCalculations(): FireCalculationsResult {
     profile.cpfRetirementSum,
     profile.cpfHousingMode,
     profile.cpfHousingMonthly,
-    profile.cpfHousingEndAge,
+    profile.cpfMortgageYearsLeft,
     profile.validationErrors,
     income.salaryModel,
     income.annualSalary,
