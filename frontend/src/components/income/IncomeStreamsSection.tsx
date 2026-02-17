@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { PercentInput } from '@/components/shared/PercentInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
@@ -113,17 +114,21 @@ function StreamRow({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="space-y-1">
           <Label className="text-xs">Type</Label>
-          <select
+          <Select
             value={stream.type}
-            onChange={(e) => onUpdate({ type: e.target.value as IncomeStreamType })}
-            className="flex h-9 w-full rounded-md border border-blue-300 bg-background px-2 py-1 text-sm"
+            onValueChange={(v) => onUpdate({ type: v as IncomeStreamType })}
           >
-            <option value="employment">Employment</option>
-            <option value="rental">Rental</option>
-            <option value="investment">Investment</option>
-            <option value="business">Business</option>
-            <option value="government">Government</option>
-          </select>
+            <SelectTrigger className="h-9 border-blue-300">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="employment">Employment</SelectItem>
+              <SelectItem value="rental">Rental</SelectItem>
+              <SelectItem value="investment">Investment</SelectItem>
+              <SelectItem value="business">Business</SelectItem>
+              <SelectItem value="government">Government</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <CurrencyInput
@@ -135,15 +140,19 @@ function StreamRow({
 
         <div className="space-y-1">
           <Label className="text-xs">Growth Model</Label>
-          <select
+          <Select
             value={stream.growthModel}
-            onChange={(e) => onUpdate({ growthModel: e.target.value as GrowthModel })}
-            className="flex h-9 w-full rounded-md border border-blue-300 bg-background px-2 py-1 text-sm"
+            onValueChange={(v) => onUpdate({ growthModel: v as GrowthModel })}
           >
-            <option value="fixed">Fixed Rate</option>
-            <option value="inflation-linked">Inflation-Linked</option>
-            <option value="none">No Growth</option>
-          </select>
+            <SelectTrigger className="h-9 border-blue-300">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fixed">Fixed Rate</SelectItem>
+              <SelectItem value="inflation-linked">Inflation-Linked</SelectItem>
+              <SelectItem value="none">No Growth</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <PercentInput
@@ -183,16 +192,20 @@ function StreamRow({
 
         <div className="space-y-1">
           <Label className="text-xs">Tax Treatment</Label>
-          <select
+          <Select
             value={stream.taxTreatment}
-            onChange={(e) => onUpdate({ taxTreatment: e.target.value as TaxTreatment })}
-            className="flex h-9 w-full rounded-md border border-blue-300 bg-background px-2 py-1 text-sm"
+            onValueChange={(v) => onUpdate({ taxTreatment: v as TaxTreatment })}
           >
-            <option value="taxable">Taxable</option>
-            <option value="tax-exempt">Tax-Exempt</option>
-            <option value="cpf">CPF</option>
-            <option value="srs">SRS</option>
-          </select>
+            <SelectTrigger className="h-9 border-blue-300">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="taxable">Taxable</SelectItem>
+              <SelectItem value="tax-exempt">Tax-Exempt</SelectItem>
+              <SelectItem value="cpf">CPF</SelectItem>
+              <SelectItem value="srs">SRS</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex items-end pb-1">

@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { PercentInput } from '@/components/shared/PercentInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
@@ -28,15 +29,19 @@ export function SalaryModelSection() {
       <CardContent className="space-y-4">
         <div className="space-y-1">
           <Label className="text-sm">Model</Label>
-          <select
+          <Select
             value={income.salaryModel}
-            onChange={(e) => income.setField('salaryModel', e.target.value as SalaryModel)}
-            className="flex h-10 w-full rounded-md border border-blue-300 bg-background px-3 py-2 text-sm"
+            onValueChange={(v) => income.setField('salaryModel', v as SalaryModel)}
           >
-            <option value="simple">Simple (fixed annual growth)</option>
-            <option value="realistic">Realistic (career phases + promotions)</option>
-            <option value="data-driven">Data-Driven (MOM benchmarks)</option>
-          </select>
+            <SelectTrigger className="border-blue-300">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="simple">Simple (fixed annual growth)</SelectItem>
+              <SelectItem value="realistic">Realistic (career phases + promotions)</SelectItem>
+              <SelectItem value="data-driven">Data-Driven (MOM benchmarks)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {income.salaryModel === 'simple' && (
@@ -266,15 +271,19 @@ function DataDrivenPanel({
           Education Level
           <InfoTooltip text="MOM salary data is segmented by education level" />
         </Label>
-        <select
+        <Select
           value={education}
-          onChange={(e) => onEducationChange(e.target.value as 'belowSecondary' | 'secondary' | 'postSecondary' | 'diploma' | 'degree')}
-          className="flex h-10 w-full rounded-md border border-blue-300 bg-background px-3 py-2 text-sm"
+          onValueChange={(v) => onEducationChange(v as 'belowSecondary' | 'secondary' | 'postSecondary' | 'diploma' | 'degree')}
         >
-          {Object.entries(educationLabels).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
+          <SelectTrigger className="border-blue-300">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(educationLabels).map(([value, label]) => (
+              <SelectItem key={value} value={value}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <PercentInput
