@@ -9,7 +9,7 @@ import { usePropertyStore } from '@/stores/usePropertyStore'
 
 export function SaveIndicator() {
   const [visible, setVisible] = useState(false)
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const initialRef = useRef(true)
 
   useEffect(() => {
