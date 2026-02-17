@@ -42,6 +42,7 @@ function StatRow({ label, tooltip, formula, current, target, format, higherIsBet
 
 export function PortfolioStatsPanel() {
   const { currentStats, targetStats, hasErrors } = usePortfolioStats()
+  const [expanded, setExpanded] = useState(false)
 
   if (hasErrors || !currentStats || !targetStats) {
     return (
@@ -57,8 +58,6 @@ export function PortfolioStatsPanel() {
       </Card>
     )
   }
-
-  const [expanded, setExpanded] = useState(false)
 
   return (
     <Card>
