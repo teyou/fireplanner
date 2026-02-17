@@ -7,6 +7,8 @@ import {
   expensesSchema,
   inflationSchema,
   expenseRatioSchema,
+  retirementPhaseSchema,
+  cpfLifeActualMonthlyPayoutSchema,
   profileSchema,
   incomeSchema,
   careerPhaseSchema,
@@ -118,6 +120,45 @@ describe('field schemas', () => {
 
     it('rejects above 3%', () => {
       expect(expenseRatioSchema.safeParse(0.031).success).toBe(false)
+    })
+  })
+
+  describe('retirementPhaseSchema', () => {
+    it('accepts valid phases', () => {
+      expect(retirementPhaseSchema.safeParse('before-55').success).toBe(true)
+      expect(retirementPhaseSchema.safeParse('55-to-64').success).toBe(true)
+      expect(retirementPhaseSchema.safeParse('65-plus').success).toBe(true)
+    })
+
+    it('accepts null (pre-fire users)', () => {
+      expect(retirementPhaseSchema.safeParse(null).success).toBe(true)
+    })
+
+    it('rejects invalid string values', () => {
+      expect(retirementPhaseSchema.safeParse('unknown').success).toBe(false)
+      expect(retirementPhaseSchema.safeParse('before55').success).toBe(false)
+      expect(retirementPhaseSchema.safeParse('').success).toBe(false)
+    })
+
+    it('rejects non-string/null values', () => {
+      expect(retirementPhaseSchema.safeParse(55).success).toBe(false)
+      expect(retirementPhaseSchema.safeParse(undefined).success).toBe(false)
+    })
+  })
+
+  describe('cpfLifeActualMonthlyPayoutSchema', () => {
+    it('accepts zero', () => {
+      expect(cpfLifeActualMonthlyPayoutSchema.safeParse(0).success).toBe(true)
+    })
+
+    it('accepts positive values', () => {
+      expect(cpfLifeActualMonthlyPayoutSchema.safeParse(1500).success).toBe(true)
+      expect(cpfLifeActualMonthlyPayoutSchema.safeParse(3000).success).toBe(true)
+    })
+
+    it('rejects negative values', () => {
+      expect(cpfLifeActualMonthlyPayoutSchema.safeParse(-1).success).toBe(false)
+      expect(cpfLifeActualMonthlyPayoutSchema.safeParse(-100).success).toBe(false)
     })
   })
 })

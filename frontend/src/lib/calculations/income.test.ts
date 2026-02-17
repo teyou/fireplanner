@@ -880,6 +880,117 @@ describe('integration tests', () => {
     expect(row65.governmentIncome).toBe(15000) // manual stream value
   })
 
+  it('65+ direct payout: cpfLifeActualMonthlyPayout overrides projected payout', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 65,
+      retirementAge: 65,
+      lifeExpectancy: 75,
+      salaryModel: 'simple',
+      annualSalary: 0,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: false,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0,
+      personalReliefs: 0,
+      srsAnnualContribution: 0,
+      initialCpfOA: 50000,
+      initialCpfSA: 200000,
+      initialCpfMA: 30000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+      cpfLifeActualMonthlyPayout: 1500,
+    })
+
+    // At 65: should use $1500/mo * 12 = $18,000/yr, not projected value
+    const row65 = rows.find((r) => r.age === 65)!
+    expect(row65.cpfLifePayout).toBe(18000)
+    expect(row65.governmentIncome).toBe(18000)
+
+    // At 70: same direct payout (no escalation)
+    const row70 = rows.find((r) => r.age === 70)!
+    expect(row70.cpfLifePayout).toBe(18000)
+  })
+
+  it('65+ direct payout with zero falls back to projection', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 65,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 0,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: false,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0,
+      personalReliefs: 0,
+      srsAnnualContribution: 0,
+      initialCpfOA: 50000,
+      initialCpfSA: 200000,
+      initialCpfMA: 30000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+      cpfLifeActualMonthlyPayout: 0,
+    })
+
+    // Should fall back to calculated projection
+    const row65 = rows.find((r) => r.age === 65)!
+    expect(row65.cpfLifePayout).toBeGreaterThan(0)
+    // Projected payout should NOT be $0 (it uses calculateCpfLifePayoutAtAge)
+    expect(row65.cpfLifePayout).not.toBe(0)
+  })
+
+  it('65+ direct payout overrides escalating plan', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 65,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 0,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: false,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0,
+      personalReliefs: 0,
+      srsAnnualContribution: 0,
+      initialCpfOA: 50000,
+      initialCpfSA: 200000,
+      initialCpfMA: 30000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'escalating',
+      cpfRetirementSum: 'frs',
+      cpfLifeActualMonthlyPayout: 2000,
+    })
+
+    // All years should have the same payout (no escalation when using direct payout)
+    const row65 = rows.find((r) => r.age === 65)!
+    const row66 = rows.find((r) => r.age === 66)!
+    expect(row65.cpfLifePayout).toBe(24000) // $2000 * 12
+    expect(row66.cpfLifePayout).toBe(24000) // Same, not escalated
+  })
+
   it('Pre-Retiree: government income stream appears at correct age', () => {
     const cpfLifeStream: IncomeStream = {
       id: 'cpf-life',
