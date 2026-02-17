@@ -252,7 +252,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
   const cpfRetirementSum = params.cpfRetirementSum ?? 'frs'
   const cpfHousingMode = params.cpfHousingMode ?? 'none'
   const cpfHousingMonthly = params.cpfHousingMonthly ?? 0
-  const cpfHousingEndAge = params.cpfHousingEndAge ?? 65
+  const cpfHousingEndAge = params.cpfHousingEndAge ?? 55
 
   // Check if user has a manual CPF LIFE government income stream
   const hasManualCpfLife = params.incomeStreams.some(

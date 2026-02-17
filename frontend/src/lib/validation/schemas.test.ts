@@ -230,7 +230,7 @@ describe('validateProfileField', () => {
 describe('validateProfileConsistency', () => {
   const cpfDefaults = {
     cpfLifeStartAge: 65,
-    cpfHousingEndAge: 65,
+    cpfHousingEndAge: 55,
     cpfHousingMode: 'none' as const,
     cpfRetirementSum: 'frs' as const,
   }

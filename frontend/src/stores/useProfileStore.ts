@@ -48,7 +48,7 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   cpfRetirementSum: 'frs',
   cpfHousingMode: 'none',
   cpfHousingMonthly: 0,
-  cpfHousingEndAge: 65,
+  cpfHousingEndAge: 55,
 }
 
 function extractProfileData(state: ProfileState & ProfileActions): Omit<ProfileState, 'validationErrors'> {
@@ -108,7 +108,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
           state.cpfRetirementSum = state.cpfRetirementSum ?? 'frs'
           state.cpfHousingMode = state.cpfHousingMode ?? 'none'
           state.cpfHousingMonthly = state.cpfHousingMonthly ?? 0
-          state.cpfHousingEndAge = state.cpfHousingEndAge ?? 65
+          state.cpfHousingEndAge = state.cpfHousingEndAge ?? 55
         }
         return state
       },

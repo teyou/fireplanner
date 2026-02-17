@@ -297,7 +297,7 @@ export function CpfSection() {
                     min={18}
                     max={100}
                     value={cpfHousingEndAge}
-                    onChange={(e) => setField('cpfHousingEndAge', parseInt(e.target.value) || 65)}
+                    onChange={(e) => setField('cpfHousingEndAge', parseInt(e.target.value) || 55)}
                     className="h-8 border-blue-300"
                   />
                   {validationErrors.cpfHousingEndAge && (
