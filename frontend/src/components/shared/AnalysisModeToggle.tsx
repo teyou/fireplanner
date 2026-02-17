@@ -35,6 +35,8 @@ export function AnalysisModeToggle({ portfolioLabel }: AnalysisModeToggleProps) 
   const analysisMode = useSimulationStore((s) => s.analysisMode)
   const setField = useSimulationStore((s) => s.setField)
 
+  const activeMode = MODES.find((m) => m.value === analysisMode)
+
   return (
     <div className="space-y-1.5">
       <TooltipProvider delayDuration={200}>
@@ -61,9 +63,14 @@ export function AnalysisModeToggle({ portfolioLabel }: AnalysisModeToggleProps) 
           ))}
         </div>
       </TooltipProvider>
-      <Badge variant="outline" className="text-xs font-normal">
-        {portfolioLabel}
-      </Badge>
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="outline" className="text-xs font-normal">
+          {portfolioLabel}
+        </Badge>
+        {activeMode && (
+          <p className="text-xs text-muted-foreground">{activeMode.tooltip}</p>
+        )}
+      </div>
     </div>
   )
 }

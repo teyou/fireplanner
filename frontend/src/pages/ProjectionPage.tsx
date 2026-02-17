@@ -343,6 +343,33 @@ export function ProjectionPage() {
         </div>
       )}
 
+      {summary && (() => {
+        const { fireAchievedAge, peakTotalNW, peakTotalNWAge, portfolioDepletedAge, terminalTotalNW } = summary
+        const depleted = portfolioDepletedAge !== null
+
+        let narrative: string
+        if (fireAchievedAge !== null && !depleted) {
+          narrative = `At your current savings rate, you reach financial independence at age ${fireAchievedAge}. Your portfolio peaks at ${formatCurrency(peakTotalNW)} at age ${peakTotalNWAge} and ends at ${formatCurrency(terminalTotalNW)}.`
+        } else if (fireAchievedAge !== null && depleted) {
+          narrative = `You reach financial independence at age ${fireAchievedAge}, but your portfolio depletes at age ${portfolioDepletedAge}. Consider reducing spending or adjusting your withdrawal strategy.`
+        } else if (!depleted) {
+          narrative = `Your portfolio does not reach the FIRE target within the projection period, but never depletes. It peaks at ${formatCurrency(peakTotalNW)} at age ${peakTotalNWAge}.`
+        } else {
+          narrative = `Your portfolio does not reach the FIRE target and depletes at age ${portfolioDepletedAge}. Consider increasing savings or extending your working years.`
+        }
+
+        return (
+          <p className={cn(
+            'text-sm rounded-md p-3 border',
+            depleted
+              ? 'text-destructive bg-destructive/5 border-destructive/20'
+              : 'text-green-800 dark:text-green-200 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+          )}>
+            {narrative}
+          </p>
+        )
+      })()}
+
       {rows && rows.length > 0 && (
         <>
           <div className="flex flex-wrap items-center gap-2">
