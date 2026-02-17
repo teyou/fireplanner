@@ -21,11 +21,20 @@ class ApiError extends Error {
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+  } catch {
+    // Network error — backend unreachable
+    throw new ApiError(
+      0,
+      'Could not connect to the backend server. Start it with: uvicorn app.main:app --reload'
+    )
+  }
 
   if (!response.ok) {
     const text = await response.text().catch(() => 'Unknown error')
