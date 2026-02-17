@@ -247,7 +247,7 @@ export function ProjectionPage() {
           <Badge variant="outline" className="text-xs">
             Strategy: {STRATEGY_SHORT_LABELS[activeStrategy]}
           </Badge>
-          <Link to="/withdrawal" className="text-xs text-primary hover:underline">
+          <Link to="/spending" className="text-xs text-primary hover:underline">
             Change
           </Link>
         </div>

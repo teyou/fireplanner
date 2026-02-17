@@ -5,7 +5,7 @@ import { ProfilePage } from '@/pages/ProfilePage'
 import { IncomePage } from '@/pages/IncomePage'
 import { AllocationPage } from '@/pages/AllocationPage'
 import { ProjectionPage } from '@/pages/ProjectionPage'
-import { WithdrawalPage } from '@/pages/WithdrawalPage'
+import { SpendingPage } from '@/pages/SpendingPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { PropertyPage } from '@/pages/PropertyPage'
 import { ReferencePage } from '@/pages/ReferencePage'
@@ -22,7 +22,8 @@ export const router = createBrowserRouter([
       { path: '/cpf', element: <CpfPage /> },
       { path: '/allocation', element: <AllocationPage /> },
       { path: '/projection', element: <ProjectionPage /> },
-      { path: '/withdrawal', element: <WithdrawalPage /> },
+      { path: '/spending', element: <SpendingPage /> },
+      { path: '/withdrawal', element: <Navigate to="/spending" replace /> },
       { path: '/stress-test', element: <StressTestPage /> },
       { path: '/dashboard', element: <DashboardPage /> },
       { path: '/property', element: <PropertyPage /> },
