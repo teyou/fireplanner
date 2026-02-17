@@ -18,7 +18,10 @@ interface ProjectionTableProps {
 
 export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
   const [expanded, setExpanded] = useState(false)
-  const displayData = expanded ? data : data.slice(0, 5)
+  const displayData = useMemo(
+    () => expanded ? data : data.slice(0, 5),
+    [expanded, data]
+  )
 
   const columns = useMemo(() => [
     columnHelper.accessor('age', {
