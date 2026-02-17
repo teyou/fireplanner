@@ -12,7 +12,7 @@ import { formatCurrency, formatPercent } from '@/lib/utils'
 
 export function CpfSection() {
   const {
-    currentAge, annualIncome, cpfOA, cpfSA, cpfMA,
+    currentAge, retirementAge, annualIncome, cpfOA, cpfSA, cpfMA,
     cpfLifeStartAge, cpfLifePlan, cpfRetirementSum,
     cpfHousingMode, cpfHousingMonthly, cpfMortgageYearsLeft,
     validationErrors, setField,
@@ -303,8 +303,10 @@ export function CpfSection() {
                   <p className="text-xs text-muted-foreground">
                     Deductions end at age {currentAge + cpfMortgageYearsLeft}
                   </p>
-                  {validationErrors.cpfMortgageYearsLeft && (
-                    <p className="text-xs text-destructive">{validationErrors.cpfMortgageYearsLeft}</p>
+                  {currentAge + cpfMortgageYearsLeft > retirementAge && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      Mortgage extends {currentAge + cpfMortgageYearsLeft - retirementAge} years past retirement (age {retirementAge}). Post-retirement payments will draw from CPF OA or liquid portfolio.
+                    </p>
                   )}
                 </div>
               </div>
