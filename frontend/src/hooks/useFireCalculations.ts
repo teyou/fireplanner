@@ -63,6 +63,12 @@ export function useFireCalculations(): FireCalculationsResult {
         initialCpfOA: profile.cpfOA,
         initialCpfSA: profile.cpfSA,
         initialCpfMA: profile.cpfMA,
+        cpfLifeStartAge: profile.cpfLifeStartAge,
+        cpfLifePlan: profile.cpfLifePlan,
+        cpfRetirementSum: profile.cpfRetirementSum,
+        cpfHousingMode: profile.cpfHousingMode,
+        cpfHousingMonthly: profile.cpfHousingMonthly,
+        cpfHousingEndAge: profile.cpfHousingEndAge,
       })
 
       if (projection.length > 0) {
@@ -116,6 +122,12 @@ export function useFireCalculations(): FireCalculationsResult {
     profile.fireType,
     profile.fireNumberBasis,
     profile.srsAnnualContribution,
+    profile.cpfLifeStartAge,
+    profile.cpfLifePlan,
+    profile.cpfRetirementSum,
+    profile.cpfHousingMode,
+    profile.cpfHousingMonthly,
+    profile.cpfHousingEndAge,
     profile.validationErrors,
     income.salaryModel,
     income.annualSalary,

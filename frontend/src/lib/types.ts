@@ -142,6 +142,8 @@ export interface IncomeProjectionRow {
   cpfMA: number
   isRetired: boolean
   activeLifeEvents: string[]
+  cpfLifePayout: number
+  cpfOaHousingDeduction: number
 }
 
 export interface IncomeSummaryStats {

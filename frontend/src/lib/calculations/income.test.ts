@@ -432,9 +432,9 @@ describe('calculateIncomeSummary', () => {
 
   it('computes correct peak earning for simple projection', () => {
     const rows: IncomeProjectionRow[] = [
-      { year: 0, age: 30, salary: 72000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 72000, sgTax: 2000, cpfEmployee: 14400, cpfEmployer: 12240, totalNet: 55600, annualSavings: 7600, cumulativeSavings: 7600, cpfOA: 16560, cpfSA: 4320, cpfMA: 5760, isRetired: false, activeLifeEvents: [] },
-      { year: 1, age: 31, salary: 80000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 80000, sgTax: 3000, cpfEmployee: 16000, cpfEmployer: 13600, totalNet: 61000, annualSavings: 13000, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, isRetired: false, activeLifeEvents: [] },
-      { year: 2, age: 32, salary: 0, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0, cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, isRetired: true, activeLifeEvents: [] },
+      { year: 0, age: 30, salary: 72000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 72000, sgTax: 2000, cpfEmployee: 14400, cpfEmployer: 12240, totalNet: 55600, annualSavings: 7600, cumulativeSavings: 7600, cpfOA: 16560, cpfSA: 4320, cpfMA: 5760, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0 },
+      { year: 1, age: 31, salary: 80000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 80000, sgTax: 3000, cpfEmployee: 16000, cpfEmployer: 13600, totalNet: 61000, annualSavings: 13000, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0 },
+      { year: 2, age: 32, salary: 0, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0, cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, isRetired: true, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0 },
     ]
 
     const summary = calculateIncomeSummary(rows, 48000)

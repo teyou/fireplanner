@@ -7,9 +7,12 @@ import type {
   IncomeSummaryStats,
   SalaryModel,
   EducationLevel,
+  CpfLifePlan,
+  CpfRetirementSum,
+  CpfHousingMode,
 } from '@/lib/types'
 import { getMomSalary } from '@/lib/data/momSalary'
-import { calculateCpfContribution, calculateCpfExtraInterest } from './cpf'
+import { calculateCpfContribution, calculateCpfExtraInterest, calculateCpfLifePayoutAtAge, calculateBrsFrsErs, getRetirementSumAmount } from './cpf'
 import { calculateChargeableIncome, calculateProgressiveTax } from './tax'
 import {
   OA_INTEREST_RATE,
@@ -223,6 +226,14 @@ export interface IncomeProjectionParams {
   initialCpfOA: number
   initialCpfSA: number
   initialCpfMA: number
+  // CPF LIFE configuration
+  cpfLifeStartAge?: number
+  cpfLifePlan?: CpfLifePlan
+  cpfRetirementSum?: CpfRetirementSum
+  // CPF OA Housing deduction
+  cpfHousingMode?: CpfHousingMode
+  cpfHousingMonthly?: number
+  cpfHousingEndAge?: number
 }
 
 /**
@@ -235,9 +246,34 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
   let cpfMA = params.initialCpfMA
   let cumulativeSavings = 0
 
+  // CPF LIFE configuration (defaults for backward compat)
+  const cpfLifeStartAge = params.cpfLifeStartAge ?? 65
+  const cpfLifePlan = params.cpfLifePlan ?? 'standard'
+  const cpfRetirementSum = params.cpfRetirementSum ?? 'frs'
+  const cpfHousingMode = params.cpfHousingMode ?? 'none'
+  const cpfHousingMonthly = params.cpfHousingMonthly ?? 0
+  const cpfHousingEndAge = params.cpfHousingEndAge ?? 65
+
+  // Check if user has a manual CPF LIFE government income stream
+  const hasManualCpfLife = params.incomeStreams.some(
+    (s) => s.type === 'government' && s.isActive && s.name.toLowerCase().includes('cpf life')
+  )
+
+  // Determine the retirement sum amount for CPF LIFE payout calculation
+  // We use the projected sum at the user's current age (will be recalculated at 55 if needed)
+  let retirementSumAt55 = getRetirementSumAmount(cpfRetirementSum, params.currentAge)
+
   for (let age = params.currentAge; age <= params.lifeExpectancy; age++) {
     const year = age - params.currentAge
     const isRetired = age > params.retirementAge
+
+    // CPF OA Housing deduction (before contributions and interest)
+    let cpfOaHousingDeduction = 0
+    if (cpfHousingMode !== 'none' && cpfHousingMonthly > 0 && age < cpfHousingEndAge) {
+      const annualDeduction = cpfHousingMonthly * 12
+      cpfOaHousingDeduction = Math.min(annualDeduction, cpfOA)
+      cpfOA = Math.max(0, cpfOA - cpfOaHousingDeduction)
+    }
 
     // Salary (only pre-retirement employment income)
     let salary = 0
@@ -284,6 +320,23 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
           salary += amount
           break
       }
+    }
+
+    // At age 55, determine retirement sum from SA balance vs projected FRS
+    if (age === 55) {
+      const projected = calculateBrsFrsErs(55)
+      // Use the lesser of actual SA balance and the retirement sum level amount
+      const levelAmount = cpfRetirementSum === 'brs' ? projected.brs
+        : cpfRetirementSum === 'ers' ? projected.ers
+        : projected.frs
+      retirementSumAt55 = Math.min(cpfSA, levelAmount)
+    }
+
+    // Automated CPF LIFE payout (skip if user has manual stream)
+    let cpfLifePayout = 0
+    if (!hasManualCpfLife && age >= cpfLifeStartAge) {
+      cpfLifePayout = calculateCpfLifePayoutAtAge(retirementSumAt55, cpfLifePlan, cpfLifeStartAge, age)
+      governmentIncome += cpfLifePayout
     }
 
     const totalGross = salary + rentalIncome + investmentIncome + businessIncome + governmentIncome
@@ -357,6 +410,8 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       cpfMA,
       isRetired,
       activeLifeEvents,
+      cpfLifePayout,
+      cpfOaHousingDeduction,
     })
   }
 

@@ -40,6 +40,12 @@ export function buildProjectionParams(
     initialCpfOA: profile.cpfOA,
     initialCpfSA: profile.cpfSA,
     initialCpfMA: profile.cpfMA,
+    cpfLifeStartAge: profile.cpfLifeStartAge,
+    cpfLifePlan: profile.cpfLifePlan,
+    cpfRetirementSum: profile.cpfRetirementSum,
+    cpfHousingMode: profile.cpfHousingMode,
+    cpfHousingMonthly: profile.cpfHousingMonthly,
+    cpfHousingEndAge: profile.cpfHousingEndAge,
   }
 }
 
@@ -90,6 +96,12 @@ export function useIncomeProjection(): IncomeProjectionResult {
       initialCpfOA: profile.cpfOA,
       initialCpfSA: profile.cpfSA,
       initialCpfMA: profile.cpfMA,
+      cpfLifeStartAge: profile.cpfLifeStartAge,
+      cpfLifePlan: profile.cpfLifePlan,
+      cpfRetirementSum: profile.cpfRetirementSum,
+      cpfHousingMode: profile.cpfHousingMode,
+      cpfHousingMonthly: profile.cpfHousingMonthly,
+      cpfHousingEndAge: profile.cpfHousingEndAge,
     })
 
     const summary = calculateIncomeSummary(projection, profile.annualExpenses)
@@ -105,6 +117,12 @@ export function useIncomeProjection(): IncomeProjectionResult {
     profile.cpfOA,
     profile.cpfSA,
     profile.cpfMA,
+    profile.cpfLifeStartAge,
+    profile.cpfLifePlan,
+    profile.cpfRetirementSum,
+    profile.cpfHousingMode,
+    profile.cpfHousingMonthly,
+    profile.cpfHousingEndAge,
     profile.validationErrors,
     income.salaryModel,
     income.annualSalary,
