@@ -181,6 +181,18 @@ export function FireTargetsSection() {
               </div>
             )}
 
+            {/* FIRE Age > Retirement Age Warning */}
+            {effectiveFireAge !== null && isFinite(effectiveFireAge) && effectiveFireAge > retirementAge && (
+              <div className="p-3 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-sm space-y-1">
+                <p className="font-medium text-amber-800 dark:text-amber-200">
+                  FIRE age ({Math.ceil(effectiveFireAge)}) is after retirement age ({retirementAge})
+                </p>
+                <p className="text-amber-700 dark:text-amber-300">
+                  You may not have enough saved when you retire. Consider reducing retirement spending, increasing savings, or adjusting your retirement age.
+                </p>
+              </div>
+            )}
+
             {/* Lean / Fat reference badges — hide the one matching current fireType */}
             <div className="flex gap-2 flex-wrap">
               {fireType !== 'lean' && (

@@ -38,7 +38,7 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   srsAnnualContribution: 0,
   fireType: 'regular',
   swr: 0.04,
-  fireNumberBasis: 'today',
+  fireNumberBasis: 'fireAge',
   retirementSpendingAdjustment: 1.0,
   expectedReturn: 0.07,
   usePortfolioReturn: true,
