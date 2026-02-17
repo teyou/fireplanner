@@ -11,7 +11,7 @@ import { formatCurrency, formatPercent } from '@/lib/utils'
 import type { FireType, FireNumberBasis } from '@/lib/types'
 
 export function FireTargetsSection() {
-  const { fireType, swr, fireNumberBasis, inflation, retirementAge, currentAge, setField, validationErrors } = useProfileStore()
+  const { fireType, swr, fireNumberBasis, inflation, retirementAge, currentAge, liquidNetWorth, setField, validationErrors } = useProfileStore()
   const { metrics, hasErrors } = useFireCalculations()
   const { summary: projSummary } = useProjection()
 
@@ -163,6 +163,23 @@ export function FireTargetsSection() {
                 tooltip="Part-time income needed if you stop saving but portfolio covers partial expenses"
               />
             </div>
+
+            {/* CPF Dependency Warning */}
+            {metrics.cpfDependency && (
+              <div className="p-3 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-sm space-y-1">
+                <p className="font-medium text-amber-800 dark:text-amber-200">
+                  FIRE depends on CPF — liquid portfolio covers {formatPercent(metrics.fireNumber > 0 ? liquidNetWorth / metrics.fireNumber : 0)} of target
+                </p>
+                <p className="text-amber-700 dark:text-amber-300">
+                  CPF funds are not freely accessible before 55 and are subject to withdrawal limits. Your liquid portfolio alone does not meet your FIRE number.
+                </p>
+                {metrics.liquidBridgeGapYears !== null && metrics.liquidBridgeGapYears > 0 && metrics.liquidDepletionAge !== null && (
+                  <p className="text-amber-700 dark:text-amber-300">
+                    Liquid portfolio may deplete at age {metrics.liquidDepletionAge}, which is {metrics.liquidBridgeGapYears} years before CPF LIFE starts. Consider building a larger liquid buffer.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Lean / Fat reference badges — hide the one matching current fireType */}
             <div className="flex gap-2 flex-wrap">
