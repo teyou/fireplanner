@@ -234,6 +234,8 @@ export interface IncomeProjectionParams {
   cpfHousingMode?: CpfHousingMode
   cpfHousingMonthly?: number
   cpfMortgageYearsLeft?: number
+  // 65+ users can enter their actual CPF LIFE payout directly
+  cpfLifeActualMonthlyPayout?: number
 }
 
 /**
@@ -253,6 +255,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
   const cpfHousingMode = params.cpfHousingMode ?? 'none'
   const cpfHousingMonthly = params.cpfHousingMonthly ?? 0
   const cpfHousingEndAge = params.currentAge + (params.cpfMortgageYearsLeft ?? 25)
+  const cpfLifeActualMonthlyPayout = params.cpfLifeActualMonthlyPayout ?? 0
 
   // Check if user has a manual CPF LIFE government income stream
   const hasManualCpfLife = params.incomeStreams.some(
@@ -337,7 +340,12 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     // Automated CPF LIFE payout (skip if user has manual stream)
     let cpfLifePayout = 0
     if (!hasManualCpfLife && age >= cpfLifeStartAge) {
-      cpfLifePayout = calculateCpfLifePayoutAtAge(retirementSumAt55, cpfLifePlan, cpfLifeStartAge, age)
+      if (cpfLifeActualMonthlyPayout > 0) {
+        // 65+ users enter their known monthly payout directly
+        cpfLifePayout = cpfLifeActualMonthlyPayout * 12
+      } else {
+        cpfLifePayout = calculateCpfLifePayoutAtAge(retirementSumAt55, cpfLifePlan, cpfLifeStartAge, age)
+      }
       governmentIncome += cpfLifePayout
     }
 
