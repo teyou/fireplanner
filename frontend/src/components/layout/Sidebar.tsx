@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/stores/useUIStore'
+import { useSectionCompletion, type SectionId } from '@/hooks/useSectionCompletion'
 import {
   User,
   DollarSign,
@@ -151,11 +152,25 @@ function useActiveSection() {
   return { activeSection: isInputsPage ? activeSection : null, isInputsPage }
 }
 
+function StatusDot({ sectionId, sections }: { sectionId: string; sections: ReturnType<typeof useSectionCompletion>['sections'] }) {
+  const section = sections[sectionId as SectionId]
+  if (!section) return null
+
+  if (section.status === 'error') {
+    return <span className="ml-auto h-2 w-2 rounded-full bg-destructive shrink-0" title={`${section.errorCount} error(s)`} />
+  }
+  if (section.status === 'customized') {
+    return <span className="ml-auto h-2 w-2 rounded-full bg-green-500 shrink-0" title="Customized" />
+  }
+  return <span className="ml-auto h-2 w-2 rounded-full bg-muted-foreground/30 shrink-0" title="Using defaults" />
+}
+
 function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation()
   const navigate = useNavigate()
   const sectionOrder = useUIStore((s) => s.sectionOrder)
   const { activeSection, isInputsPage } = useActiveSection()
+  const { sections } = useSectionCompletion()
 
   const inputSections = sectionOrder === 'goal-first'
     ? GOAL_FIRST_SECTIONS
@@ -225,6 +240,7 @@ function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
             >
               {item.icon}
               {item.label}
+              <StatusDot sectionId={item.sectionId} sections={sections} />
             </button>
           ))}
         </div>

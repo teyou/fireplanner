@@ -17,14 +17,14 @@ export const router = createBrowserRouter([
       { path: '/stress-test', element: <StressTestPage /> },
       { path: '/dashboard', element: <DashboardPage /> },
       { path: '/reference', element: <ReferencePage /> },
-      // Redirects: old input pages → /inputs
-      { path: '/profile', element: <Navigate to="/inputs" replace /> },
-      { path: '/income', element: <Navigate to="/inputs" replace /> },
-      { path: '/cpf', element: <Navigate to="/inputs" replace /> },
-      { path: '/property', element: <Navigate to="/inputs" replace /> },
-      { path: '/allocation', element: <Navigate to="/inputs" replace /> },
-      { path: '/spending', element: <Navigate to="/inputs" replace /> },
-      { path: '/withdrawal', element: <Navigate to="/inputs" replace /> },
+      // Redirects: old input pages → /inputs with section anchors
+      { path: '/profile', element: <Navigate to="/inputs#section-personal" replace /> },
+      { path: '/income', element: <Navigate to="/inputs#section-income" replace /> },
+      { path: '/cpf', element: <Navigate to="/inputs#section-cpf" replace /> },
+      { path: '/property', element: <Navigate to="/inputs#section-property" replace /> },
+      { path: '/allocation', element: <Navigate to="/inputs#section-allocation" replace /> },
+      { path: '/spending', element: <Navigate to="/inputs#section-expenses" replace /> },
+      { path: '/withdrawal', element: <Navigate to="/inputs#section-expenses" replace /> },
       // Redirects for old bookmarked URLs
       { path: '/monte-carlo', element: <Navigate to="/stress-test" replace /> },
       { path: '/backtest', element: <Navigate to="/stress-test" replace /> },
