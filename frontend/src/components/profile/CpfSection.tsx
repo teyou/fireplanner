@@ -8,6 +8,7 @@ import { calculateCpfContribution, calculateBrsFrsErs, estimateCpfLifePayout, ca
 import type { CpfLifePlan, CpfRetirementSum, CpfHousingMode } from '@/lib/types'
 import { getCpfRatesForAge, BRS_2024, FRS_2024, ERS_2024 } from '@/lib/data/cpfRates'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { CpfProjectionTable } from '@/components/cpf/CpfProjectionTable'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 
 export function CpfSection() {
@@ -323,6 +324,17 @@ export function CpfSection() {
               </p>
             )}
           </div>
+        </div>
+
+        <Separator />
+
+        {/* CPF Projection Table */}
+        <div>
+          <h4 className="text-sm font-medium flex items-center mb-2">
+            Year-by-Year CPF Projection
+            <InfoTooltip text="Projected CPF balances based on your income model, contribution rates, and CPF LIFE configuration. Milestone rows are highlighted when balances cross BRS/FRS/ERS thresholds." />
+          </h4>
+          <CpfProjectionTable />
         </div>
       </CardContent>
     </Card>
