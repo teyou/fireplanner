@@ -100,7 +100,10 @@ function PositionPicker() {
         <Settings2 className="h-3.5 w-3.5" />
       </button>
       {open && (
-        <div className="absolute right-0 bottom-full mb-1 bg-background border rounded-md shadow-lg py-1 z-50 min-w-[130px]">
+        <div className={cn(
+          "absolute right-0 bg-background border rounded-md shadow-lg py-1 z-50 min-w-[130px]",
+          statsPosition === 'top' ? 'top-full mt-1' : 'bottom-full mb-1'
+        )}>
           {options.map((opt) => (
             <button
               key={opt.value}
