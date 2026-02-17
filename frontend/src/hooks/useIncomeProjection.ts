@@ -4,6 +4,7 @@ import type { IncomeProjectionParams } from '@/lib/calculations/income'
 import { generateIncomeProjection, calculateIncomeSummary } from '@/lib/calculations/income'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
+import { validateCrossStoreRules } from '@/lib/validation/rules'
 
 /**
  * Build projection params from store state (non-hook helper).
@@ -69,7 +70,20 @@ export function useIncomeProjection(): IncomeProjectionResult {
   return useMemo(() => {
     const profileErrors = profile.validationErrors
     const incomeErrors = income.validationErrors
-    const allErrors = { ...profileErrors, ...incomeErrors }
+    const crossStoreErrors = validateCrossStoreRules(
+      {
+        currentAge: profile.currentAge,
+        retirementAge: profile.retirementAge,
+        lifeExpectancy: profile.lifeExpectancy,
+      },
+      {
+        incomeStreams: income.incomeStreams,
+        lifeEvents: income.lifeEvents,
+        lifeEventsEnabled: income.lifeEventsEnabled,
+        promotionJumps: income.promotionJumps,
+      }
+    )
+    const allErrors = { ...profileErrors, ...incomeErrors, ...crossStoreErrors }
 
     if (Object.keys(allErrors).length > 0) {
       return { projection: null, summary: null, hasErrors: true, errors: allErrors }
