@@ -7,7 +7,7 @@
 const STORAGE_KEY = 'fireplanner-scenarios'
 const MAX_SCENARIOS = 5
 
-interface ScenarioMetadata {
+export interface ScenarioMetadata {
   id: string
   name: string
   createdAt: string
@@ -86,8 +86,8 @@ export function saveScenario(name: string): string {
   return id
 }
 
-/** Load a scenario by ID. Restores all store state and reloads the page. */
-export function loadScenario(id: string): boolean {
+/** Load a scenario by ID. Restores all store state via rehydration (no page reload). */
+export function loadScenario(id: string, rehydrate?: () => void): boolean {
   const scenarios = readAll()
   const scenario = scenarios.find((s) => s.metadata.id === id)
   if (!scenario) return false
@@ -97,8 +97,12 @@ export function loadScenario(id: string): boolean {
     localStorage.setItem(key, JSON.stringify(value))
   }
 
-  // Reload to pick up new state
-  window.location.reload()
+  // Rehydrate stores if callback provided, otherwise fall back to reload
+  if (rehydrate) {
+    rehydrate()
+  } else {
+    window.location.reload()
+  }
   return true
 }
 

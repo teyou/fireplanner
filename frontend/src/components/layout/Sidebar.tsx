@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { useUIStore } from '@/stores/useUIStore'
 import { useSectionCompletion, type SectionId } from '@/hooks/useSectionCompletion'
 import { exportToJson, importFromJson } from '@/lib/exportImport'
+import { ScenarioManager } from './ScenarioManager'
 import {
   User,
   DollarSign,
@@ -349,7 +350,8 @@ export function Sidebar() {
       <aside className="hidden md:flex flex-col w-60 border-r bg-muted/30 p-4 gap-6 h-screen overflow-y-auto shrink-0">
         <div className="font-bold text-lg px-2">FIRE Planner</div>
         <NavGroups />
-        <div className="mt-auto border-t pt-3">
+        <div className="mt-auto border-t pt-3 space-y-2">
+          <ScenarioManager />
           <DataActions />
         </div>
       </aside>
@@ -384,7 +386,8 @@ export function Sidebar() {
               </button>
             </div>
             <NavGroups onNavigate={() => setDrawerOpen(false)} />
-            <div className="mt-6 border-t pt-3">
+            <div className="mt-6 border-t pt-3 space-y-2">
+              <ScenarioManager />
               <DataActions />
             </div>
           </aside>
