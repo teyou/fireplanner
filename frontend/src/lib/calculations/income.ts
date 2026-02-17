@@ -237,7 +237,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
 
   for (let age = params.currentAge; age <= params.lifeExpectancy; age++) {
     const year = age - params.currentAge
-    const isRetired = age >= params.retirementAge
+    const isRetired = age > params.retirementAge
 
     // Salary (only pre-retirement employment income)
     let salary = 0

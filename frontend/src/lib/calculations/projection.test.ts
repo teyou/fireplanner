@@ -72,7 +72,7 @@ function generateMockIncomeProjection(params: {
 
   for (let age = currentAge; age <= lifeExpectancy; age++) {
     const year = age - currentAge
-    const isRetired = age >= retirementAge
+    const isRetired = age > retirementAge
 
     rows.push(mockIncomeRow({
       year,
@@ -204,18 +204,19 @@ describe('generateProjection', () => {
   describe('transition to decumulation at retirement age', () => {
     it('switches from savings to withdrawal at retirementAge', () => {
       const result = generateProjection(makeParams({
-        currentAge: 30, retirementAge: 33, lifeExpectancy: 34,
+        currentAge: 30, retirementAge: 33, lifeExpectancy: 35,
         expectedReturn: 0, initialLiquidNW: 100000,
       }))
 
-      // Pre-retirement rows: savingsOrWithdrawal > 0
-      expect(result.rows[0].savingsOrWithdrawal).toBe(20000)
-      expect(result.rows[1].savingsOrWithdrawal).toBe(20000)
-      expect(result.rows[2].savingsOrWithdrawal).toBe(20000)
+      // Pre-retirement rows (ages 30-33): savingsOrWithdrawal > 0
+      expect(result.rows[0].savingsOrWithdrawal).toBe(20000) // age 30
+      expect(result.rows[1].savingsOrWithdrawal).toBe(20000) // age 31
+      expect(result.rows[2].savingsOrWithdrawal).toBe(20000) // age 32
+      expect(result.rows[3].savingsOrWithdrawal).toBe(20000) // age 33 (last working year)
 
-      // Post-retirement: savingsOrWithdrawal <= 0
-      expect(result.rows[3].savingsOrWithdrawal).toBeLessThanOrEqual(0)
+      // Post-retirement (ages 34+): savingsOrWithdrawal <= 0
       expect(result.rows[4].savingsOrWithdrawal).toBeLessThanOrEqual(0)
+      expect(result.rows[5].savingsOrWithdrawal).toBeLessThanOrEqual(0)
     })
 
     it('withdrawalAmount is 0 pre-retirement and > 0 post-retirement', () => {
@@ -243,13 +244,13 @@ describe('generateProjection', () => {
       // expenseGap = $10K - $5K = $5K, actualDraw = min($5K, $8K) = $5K
       const rentalIncome = 5000
       const params = makeParams({
-        currentAge: 60, retirementAge: 60, lifeExpectancy: 62,
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 62,
         expectedReturn: 0, initialLiquidNW: 200000,
         annualExpenses: 10000,
         swr: 0.04,
       })
       params.incomeProjection = generateMockIncomeProjection({
-        currentAge: 60, retirementAge: 60, lifeExpectancy: 62,
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 62,
         annualSavings: 0, rentalIncome,
       })
       params.strategyParams = {
@@ -271,13 +272,13 @@ describe('generateProjection', () => {
       // expenses = $10K, passive = $20K → surplus $10K reinvested, no draw
       const rentalIncome = 20000
       const params = makeParams({
-        currentAge: 60, retirementAge: 60, lifeExpectancy: 61,
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 61,
         expectedReturn: 0, initialLiquidNW: 200000,
         annualExpenses: 10000,
         swr: 0.04,
       })
       params.incomeProjection = generateMockIncomeProjection({
-        currentAge: 60, retirementAge: 60, lifeExpectancy: 61,
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 61,
         annualSavings: 0, rentalIncome,
       })
       params.strategyParams = {
@@ -298,13 +299,13 @@ describe('generateProjection', () => {
     it('draw is capped at expenses when strategy exceeds expenses', () => {
       // expenses = $5K, passive = $0, strategy = $20K (500K * 0.04)
       const params = makeParams({
-        currentAge: 60, retirementAge: 60, lifeExpectancy: 61,
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 61,
         expectedReturn: 0, initialLiquidNW: 500000,
         annualExpenses: 5000,
         swr: 0.04,
       })
       params.incomeProjection = generateMockIncomeProjection({
-        currentAge: 60, retirementAge: 60, lifeExpectancy: 61,
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 61,
         annualSavings: 0,
       })
       params.strategyParams = {
@@ -326,12 +327,12 @@ describe('generateProjection', () => {
   describe('portfolio depletion', () => {
     it('clamps liquidNW to 0 when depleted', () => {
       const params = makeParams({
-        currentAge: 60, retirementAge: 60, lifeExpectancy: 64,
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 64,
         expectedReturn: 0, initialLiquidNW: 10000,
         swr: 0.50,
       })
       params.incomeProjection = generateMockIncomeProjection({
-        currentAge: 60, retirementAge: 60, lifeExpectancy: 64,
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 64,
         annualSavings: 0,
       })
       params.strategyParams = {
@@ -354,12 +355,12 @@ describe('generateProjection', () => {
 
     it('reports portfolioDepletedAge in summary', () => {
       const params = makeParams({
-        currentAge: 60, retirementAge: 60, lifeExpectancy: 64,
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 64,
         expectedReturn: 0, initialLiquidNW: 10000,
         swr: 0.50,
       })
       params.incomeProjection = generateMockIncomeProjection({
-        currentAge: 60, retirementAge: 60, lifeExpectancy: 64,
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 64,
         annualSavings: 0,
       })
       params.strategyParams = {
@@ -378,7 +379,7 @@ describe('generateProjection', () => {
   describe('glide path changes return rate', () => {
     it('uses portfolio return with interpolated weights during glide path', () => {
       const params = makeParams({
-        currentAge: 60, retirementAge: 60, lifeExpectancy: 62,
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 62,
         usePortfolioReturn: true,
         expectedReturn: 0.07,
         expenseRatio: 0,
@@ -396,7 +397,7 @@ describe('generateProjection', () => {
         },
       })
       params.incomeProjection = generateMockIncomeProjection({
-        currentAge: 60, retirementAge: 60, lifeExpectancy: 62,
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 62,
         annualSavings: 0,
       })
 
@@ -494,18 +495,17 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
-      // Pre-ret: 100K→120K→140K→160K
-      // Retirement (age 33): initial withdrawal = 160K * 0.10 = 16K
-      // Year 3: liquidNW = 160K - 16K = 144K
-      // Year 4: withdrawal = 16K, liquidNW = 144K - 16K = 128K
-      // Year 5: withdrawal = 16K, liquidNW = 128K - 16K = 112K
+      // Pre-ret: 100K→120K→140K→160K→180K (age 33 is last working year)
+      // Retirement (age 34): initial withdrawal = 180K * 0.10 = 18K
+      // Year 4: liquidNW = 180K - 18K = 162K
+      // Year 5: withdrawal = 18K, liquidNW = 162K - 18K = 144K
 
       // Peak is at retirement transition
-      expect(result.summary.peakTotalNW).toBeCloseTo(160000, 0)
-      expect(result.summary.peakTotalNWAge).toBe(32)
+      expect(result.summary.peakTotalNW).toBeCloseTo(180000, 0)
+      expect(result.summary.peakTotalNWAge).toBe(33)
 
       // Terminal (age 35)
-      expect(result.summary.terminalLiquidNW).toBeCloseTo(112000, 0)
+      expect(result.summary.terminalLiquidNW).toBeCloseTo(144000, 0)
     })
 
     it('reports fireAchievedAge as null when never reached', () => {
@@ -525,12 +525,12 @@ describe('generateProjection', () => {
 
     it('reports portfolioDepletedAge as null when portfolio survives', () => {
       const params = makeParams({
-        currentAge: 60, retirementAge: 60, lifeExpectancy: 62,
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 62,
         expectedReturn: 0.10, initialLiquidNW: 1000000,
         swr: 0.02,
       })
       params.incomeProjection = generateMockIncomeProjection({
-        currentAge: 60, retirementAge: 60, lifeExpectancy: 62,
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 62,
         annualSavings: 0,
       })
       params.strategyParams = {

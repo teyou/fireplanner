@@ -192,7 +192,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
   for (let i = 0; i <= totalYears; i++) {
     const age = currentAge + i
     const year = i
-    const isRetired = age >= retirementAge
+    const isRetired = age > retirementAge
     const incomeRow = incomeProjection[i]
     if (!incomeRow) break
 

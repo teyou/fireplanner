@@ -335,7 +335,8 @@ describe('generateIncomeProjection', () => {
 
   it('retirement rows have zero salary', () => {
     const rows = generateIncomeProjection(freshGradParams)
-    const retiredRow = rows.find((r) => r.age === 65)!
+    // retirementAge 65 means age 65 is last working year, age 66 is first retired year
+    const retiredRow = rows.find((r) => r.age === 66)!
     expect(retiredRow.salary).toBe(0)
     expect(retiredRow.isRetired).toBe(true)
     expect(retiredRow.cpfEmployee).toBe(0)
