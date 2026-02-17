@@ -1,3 +1,4 @@
+import { useRef, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { runMonteCarlo } from '@/lib/api'
 import type { MonteCarloParams, MonteCarloResult } from '@/lib/types'
@@ -17,6 +18,7 @@ interface UseMonteCarloQueryResult {
   reset: () => void
   canRun: boolean
   validationErrors: Record<string, string>
+  isStale: boolean
 }
 
 export function useMonteCarloQuery(): UseMonteCarloQueryResult {
@@ -33,8 +35,39 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
   const allErrors = { ...profileErrors, ...allocationErrors, ...simulationErrors }
   const canRun = Object.keys(allErrors).length === 0
 
+  // Stale detection: snapshot params at run time, compare to current
+  const lastRunParamsRef = useRef<string | null>(null)
+
+  const currentParamsSig = useMemo(() => JSON.stringify({
+    initialPortfolio: analysisPortfolio.initialPortfolio,
+    allocationWeights: analysisPortfolio.allocationWeights,
+    skipAccumulation: analysisPortfolio.skipAccumulation,
+    currentAge: profile.currentAge,
+    retirementAge: profile.retirementAge,
+    lifeExpectancy: profile.lifeExpectancy,
+    mcMethod: simulation.mcMethod,
+    nSimulations: simulation.nSimulations,
+    selectedStrategy: simulation.selectedStrategy,
+    strategyParams: simulation.strategyParams,
+    expenseRatio: profile.expenseRatio,
+    inflation: profile.inflation,
+    returnOverrides: allocation.returnOverrides,
+    stdDevOverrides: allocation.stdDevOverrides,
+    annualSalary: income.annualSalary,
+    salaryModel: income.salaryModel,
+    incomeStreams: income.incomeStreams,
+  }), [
+    analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights, analysisPortfolio.skipAccumulation,
+    profile.currentAge, profile.retirementAge, profile.lifeExpectancy, profile.expenseRatio, profile.inflation,
+    simulation.mcMethod, simulation.nSimulations, simulation.selectedStrategy, simulation.strategyParams,
+    allocation.returnOverrides, allocation.stdDevOverrides,
+    income.annualSalary, income.salaryModel, income.incomeStreams,
+  ])
+
   const mutation = useMutation({
     mutationFn: async () => {
+      lastRunParamsRef.current = currentParamsSig
+
       const projectionParams = buildProjectionParams(profile, income)
 
       // Build annual savings array from income projection
@@ -89,6 +122,8 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     },
   })
 
+  const isStale = mutation.data !== undefined && lastRunParamsRef.current !== currentParamsSig
+
   return {
     mutate: () => mutation.mutate(),
     data: mutation.data,
@@ -97,5 +132,6 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     reset: mutation.reset,
     canRun,
     validationErrors: allErrors,
+    isStale,
   }
 }

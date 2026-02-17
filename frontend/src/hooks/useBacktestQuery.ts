@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { runBacktest } from '@/lib/api'
 import type { BacktestResult, BacktestDataset, WithdrawalStrategyType } from '@/lib/types'
@@ -25,6 +25,7 @@ interface UseBacktestQueryResult {
   validationErrors: Record<string, string>
   config: BacktestConfig
   setConfig: (update: Partial<BacktestConfig>) => void
+  isStale: boolean
 }
 
 const DEFAULT_CONFIG: BacktestConfig = {
@@ -53,8 +54,26 @@ export function useBacktestQuery(): UseBacktestQueryResult {
 
   const strategy: WithdrawalStrategyType = withdrawal.selectedStrategies[0] ?? 'constant_dollar'
 
+  // Stale detection
+  const lastRunParamsRef = useRef<string | null>(null)
+
+  const currentParamsSig = useMemo(() => JSON.stringify({
+    initialPortfolio: analysisPortfolio.initialPortfolio,
+    allocationWeights: analysisPortfolio.allocationWeights,
+    config,
+    expenseRatio: profile.expenseRatio,
+    strategy,
+    strategyParams: withdrawal.strategyParams,
+    inflation: profile.inflation,
+  }), [
+    analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights,
+    config, profile.expenseRatio, strategy, withdrawal.strategyParams, profile.inflation,
+  ])
+
   const mutation = useMutation({
     mutationFn: async () => {
+      lastRunParamsRef.current = currentParamsSig
+
       return runBacktest({
         initialPortfolio: analysisPortfolio.initialPortfolio,
         allocationWeights: analysisPortfolio.allocationWeights,
@@ -71,6 +90,8 @@ export function useBacktestQuery(): UseBacktestQueryResult {
     },
   })
 
+  const isStale = mutation.data !== undefined && lastRunParamsRef.current !== currentParamsSig
+
   return {
     mutate: () => mutation.mutate(),
     data: mutation.data,
@@ -81,5 +102,6 @@ export function useBacktestQuery(): UseBacktestQueryResult {
     validationErrors: allErrors,
     config,
     setConfig,
+    isStale,
   }
 }

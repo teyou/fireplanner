@@ -1,3 +1,4 @@
+import { useRef, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { runSequenceRisk } from '@/lib/api'
 import type { CrisisScenario, SequenceRiskResult } from '@/lib/types'
@@ -17,6 +18,7 @@ interface UseSequenceRiskQueryResult {
   reset: () => void
   canRun: boolean
   validationErrors: Record<string, string>
+  isStale: boolean
 }
 
 export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
@@ -32,8 +34,37 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
   const allErrors = { ...profileErrors, ...allocationErrors, ...withdrawalErrors }
   const canRun = Object.keys(allErrors).length === 0
 
+  // Stale detection
+  const lastRunParamsRef = useRef<string | null>(null)
+
+  const strategy = withdrawal.selectedStrategies[0] ?? 'constant_dollar'
+
+  const currentParamsSig = useMemo(() => JSON.stringify({
+    initialPortfolio: analysisPortfolio.initialPortfolio,
+    allocationWeights: analysisPortfolio.allocationWeights,
+    retirementAge: profile.retirementAge,
+    lifeExpectancy: profile.lifeExpectancy,
+    returnOverrides: allocation.returnOverrides,
+    stdDevOverrides: allocation.stdDevOverrides,
+    strategy,
+    strategyParams: withdrawal.strategyParams,
+    expenseRatio: profile.expenseRatio,
+    inflation: profile.inflation,
+  }), [
+    analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights,
+    profile.retirementAge, profile.lifeExpectancy, profile.expenseRatio, profile.inflation,
+    allocation.returnOverrides, allocation.stdDevOverrides,
+    strategy, withdrawal.strategyParams,
+  ])
+
   const mutation = useMutation({
     mutationFn: async (crisis: CrisisScenario) => {
+      // Include crisis id in the snapshot so switching crisis also triggers stale
+      lastRunParamsRef.current = JSON.stringify({
+        params: JSON.parse(currentParamsSig),
+        crisisId: crisis.id,
+      })
+
       const projectionParams = buildProjectionParams(profile, income)
       const postRetirementIncome: number[] = []
 
@@ -56,9 +87,6 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
         allocation.stdDevOverrides[i] ?? ac.stdDev
       )
 
-      // Use first selected strategy
-      const strategy = withdrawal.selectedStrategies[0] ?? 'constant_dollar'
-
       return runSequenceRisk({
         initialPortfolio: analysisPortfolio.initialPortfolio,
         allocationWeights: analysisPortfolio.allocationWeights,
@@ -78,6 +106,13 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
     },
   })
 
+  // For sequence risk, stale means either params changed OR we can't compare crisis
+  // (since crisis is passed at call time). We check if lastRunParamsRef starts with current params.
+  const isStale = mutation.data !== undefined && (
+    lastRunParamsRef.current === null ||
+    !lastRunParamsRef.current.startsWith(`{"params":${currentParamsSig}`)
+  )
+
   return {
     mutate: (crisis: CrisisScenario) => mutation.mutate(crisis),
     data: mutation.data,
@@ -86,5 +121,6 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
     reset: mutation.reset,
     canRun,
     validationErrors: allErrors,
+    isStale,
   }
 }

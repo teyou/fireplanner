@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { AlertTriangle } from 'lucide-react'
 import { AnalysisModeToggle } from '@/components/shared/AnalysisModeToggle'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 
@@ -30,7 +31,7 @@ import { formatPercent } from '@/lib/utils'
 import type { CrisisScenario } from '@/lib/types'
 
 function MonteCarloTab() {
-  const { mutate, data, isPending, error, canRun, validationErrors } = useMonteCarloQuery()
+  const { mutate, data, isPending, error, canRun, validationErrors, isStale } = useMonteCarloQuery()
   const retirementAge = useProfileStore((s) => s.retirementAge)
 
   return (
@@ -57,6 +58,20 @@ function MonteCarloTab() {
         </div>
       )}
 
+      {data && isStale && (
+        <div className="flex items-center justify-between rounded-md border border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-700 p-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0" />
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              Results may be outdated — your inputs have changed since the last run.
+            </p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => mutate()} disabled={isPending}>
+            Re-run
+          </Button>
+        </div>
+      )}
+
       {data && (
         <>
           <ResultsSummary result={data} />
@@ -72,7 +87,7 @@ function MonteCarloTab() {
 }
 
 function BacktestTab() {
-  const { mutate, data, isPending, error, canRun, validationErrors, config, setConfig } = useBacktestQuery()
+  const { mutate, data, isPending, error, canRun, validationErrors, config, setConfig, isStale } = useBacktestQuery()
 
   return (
     <div className="space-y-6">
@@ -99,6 +114,20 @@ function BacktestTab() {
         </div>
       )}
 
+      {data && isStale && (
+        <div className="flex items-center justify-between rounded-md border border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-700 p-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0" />
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              Results may be outdated — your inputs have changed since the last run.
+            </p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => mutate()} disabled={isPending}>
+            Re-run
+          </Button>
+        </div>
+      )}
+
       {data && (
         <>
           <SummaryPanel summary={data.summary} computationTimeMs={data.computation_time_ms} />
@@ -112,7 +141,7 @@ function BacktestTab() {
 
 function SequenceRiskTab() {
   const [selectedCrisis, setSelectedCrisis] = useState<CrisisScenario>(CRISIS_SCENARIOS[0])
-  const { mutate, data, isPending, error, canRun, validationErrors } = useSequenceRiskQuery()
+  const { mutate, data, isPending, error, canRun, validationErrors, isStale } = useSequenceRiskQuery()
 
   const errorMessages = Object.values(validationErrors)
   const disabledReason = !canRun
@@ -181,6 +210,20 @@ function SequenceRiskTab() {
           )}
         </CardContent>
       </Card>
+
+      {data && isStale && (
+        <div className="flex items-center justify-between rounded-md border border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-700 p-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0" />
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              Results may be outdated — your inputs have changed since the last run.
+            </p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => mutate(selectedCrisis)} disabled={isPending}>
+            Re-run
+          </Button>
+        </div>
+      )}
 
       {data && (
         <>
