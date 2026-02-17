@@ -14,6 +14,8 @@ const PROPERTY_DATA_KEYS = [
   'propertyType', 'purchasePrice', 'leaseYears', 'appreciationRate',
   'rentalYield', 'mortgageRate', 'mortgageTerm', 'ltv',
   'residencyForAbsd', 'propertyCount',
+  'ownsProperty', 'existingPropertyValue', 'existingMortgageBalance',
+  'existingMonthlyPayment', 'existingRentalIncome',
 ] as const
 
 const DEFAULT_PROPERTY: Omit<PropertyState, 'validationErrors'> = {
@@ -27,6 +29,11 @@ const DEFAULT_PROPERTY: Omit<PropertyState, 'validationErrors'> = {
   ltv: 0.75,
   residencyForAbsd: 'citizen',
   propertyCount: 0,
+  ownsProperty: false,
+  existingPropertyValue: 0,
+  existingMortgageBalance: 0,
+  existingMonthlyPayment: 0,
+  existingRentalIncome: 0,
 }
 
 function extractPropertyData(
@@ -60,6 +67,21 @@ function computeValidationErrors(
     errors.ltv = 'LTV must be between 0% and 100%'
   }
 
+  if (state.ownsProperty) {
+    if (state.existingPropertyValue < 0) {
+      errors.existingPropertyValue = 'Property value cannot be negative'
+    }
+    if (state.existingMortgageBalance < 0) {
+      errors.existingMortgageBalance = 'Mortgage balance cannot be negative'
+    }
+    if (state.existingMonthlyPayment < 0) {
+      errors.existingMonthlyPayment = 'Monthly payment cannot be negative'
+    }
+    if (state.existingRentalIncome < 0) {
+      errors.existingRentalIncome = 'Rental income cannot be negative'
+    }
+  }
+
   return errors
 }
 
@@ -87,7 +109,18 @@ export const usePropertyStore = create<PropertyState & PropertyActions>()(
     }),
     {
       name: 'fireplanner-property',
-      version: 1,
+      version: 2,
+      migrate: (persisted, version) => {
+        const state = persisted as Record<string, unknown>
+        if (version < 2) {
+          state.ownsProperty = state.ownsProperty ?? false
+          state.existingPropertyValue = state.existingPropertyValue ?? 0
+          state.existingMortgageBalance = state.existingMortgageBalance ?? 0
+          state.existingMonthlyPayment = state.existingMonthlyPayment ?? 0
+          state.existingRentalIncome = state.existingRentalIncome ?? 0
+        }
+        return state
+      },
       partialize: (state) => {
         const data: Record<string, unknown> = {}
         for (const key of PROPERTY_DATA_KEYS) {

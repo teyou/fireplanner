@@ -532,6 +532,7 @@ export interface BacktestResult {
 export type PropertyType = 'hdb' | 'condo' | 'landed'
 
 export interface PropertyState {
+  // New purchase analysis
   propertyType: PropertyType
   purchasePrice: number
   leaseYears: number
@@ -542,6 +543,12 @@ export interface PropertyState {
   ltv: number
   residencyForAbsd: 'citizen' | 'pr' | 'foreigner'
   propertyCount: number
+  // Existing property
+  ownsProperty: boolean
+  existingPropertyValue: number
+  existingMortgageBalance: number
+  existingMonthlyPayment: number
+  existingRentalIncome: number
   validationErrors: ValidationErrors
 }
 
