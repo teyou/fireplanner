@@ -1,13 +1,26 @@
+import { Link } from 'react-router-dom'
+import { Info } from 'lucide-react'
 import { StatusPanel } from '@/components/dashboard/StatusPanel'
 import { AccumulationChart } from '@/components/dashboard/AccumulationChart'
 import { RiskDashboard } from '@/components/dashboard/RiskDashboard'
 import { EmptyDashboardState } from '@/components/dashboard/EmptyDashboardState'
 import { StrategyCard } from '@/components/dashboard/StrategyCard'
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics'
+import { useSectionCompletion, type SectionId } from '@/hooks/useSectionCompletion'
+
+const KEY_SECTIONS: { id: SectionId; label: string }[] = [
+  { id: 'section-personal', label: 'Personal Details' },
+  { id: 'section-income', label: 'Income' },
+  { id: 'section-expenses', label: 'Expenses' },
+  { id: 'section-net-worth', label: 'Net Worth' },
+]
 
 export function DashboardPage() {
   const metrics = useDashboardMetrics()
   const isEmpty = metrics.fireNumber === null
+  const { sections } = useSectionCompletion()
+
+  const uncustomized = KEY_SECTIONS.filter((s) => !sections[s.id].isComplete)
 
   return (
     <div className="space-y-6">
@@ -17,6 +30,26 @@ export function DashboardPage() {
           Your financial independence snapshot. All metrics are computed from your profile, income, and allocation settings.
         </p>
       </div>
+
+      {!isEmpty && uncustomized.length > 0 && (
+        <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 p-3">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+          <div className="text-sm text-blue-800 dark:text-blue-200">
+            <p>Some sections are using default values. Personalize your inputs for accurate results:</p>
+            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+              {uncustomized.map((s) => (
+                <Link
+                  key={s.id}
+                  to={`/inputs#${s.id}`}
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                >
+                  {s.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {isEmpty ? (
         <EmptyDashboardState />

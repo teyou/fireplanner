@@ -7,11 +7,12 @@ import { useProjection } from '@/hooks/useProjection'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useUIStore } from '@/stores/useUIStore'
 import { formatCurrency } from '@/lib/utils'
-import { Target, TrendingUp, CheckCircle, Clock, CalendarClock, Landmark, ArrowRight } from 'lucide-react'
+import { Target, TrendingUp, CheckCircle, Clock, CalendarClock, Landmark, ArrowRight, Info } from 'lucide-react'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { Label } from '@/components/ui/label'
 import type { RetirementPhase } from '@/lib/types'
+import { useSectionCompletion } from '@/hooks/useSectionCompletion'
 
 type ActivePathway = 'goal-first' | 'story-first' | 'already-fire' | null
 
@@ -39,6 +40,7 @@ const PHASE_CARDS: { phase: RetirementPhase; label: string; description: string;
 export function StartPage() {
   const { metrics } = useFireCalculations()
   const { summary: projSummary } = useProjection()
+  const { sections } = useSectionCompletion()
   const profileStore = useProfileStore()
   const setUIField = useUIStore((s) => s.setField)
   const navigate = useNavigate()
@@ -49,6 +51,11 @@ export function StartPage() {
   const [draftRetirementAge, setDraftRetirementAge] = useState(profileStore.retirementAge)
   const [draftIncome, setDraftIncome] = useState(profileStore.annualIncome)
   const [draftNetWorth, setDraftNetWorth] = useState(profileStore.liquidNetWorth)
+
+  const usingDefaults = !sections['section-personal'].isComplete
+    && !sections['section-income'].isComplete
+    && !sections['section-expenses'].isComplete
+    && !sections['section-net-worth'].isComplete
 
   // Prefer projection's simulated FIRE age over NPER estimate
   const projFireAge = projSummary?.fireAchievedAge ?? null
@@ -138,7 +145,15 @@ export function StartPage() {
       {metrics && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Quick Overview</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              Quick Overview
+              {usingDefaults && (
+                <span className="inline-flex items-center gap-1 text-xs font-normal text-muted-foreground">
+                  <Info className="h-3 w-3" />
+                  based on defaults
+                </span>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 text-center">
