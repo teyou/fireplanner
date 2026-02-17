@@ -6,6 +6,7 @@ import { ProjectionPage } from '@/pages/ProjectionPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { ReferencePage } from '@/pages/ReferencePage'
 import { StressTestPage } from '@/pages/StressTestPage'
+import { ChecklistPage } from '@/pages/ChecklistPage'
 
 export const router = createBrowserRouter([
   {
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
       { path: '/stress-test', element: <StressTestPage /> },
       { path: '/dashboard', element: <DashboardPage /> },
       { path: '/reference', element: <ReferencePage /> },
+      { path: '/checklist', element: <ChecklistPage /> },
       // Redirects: old input pages → /inputs with section anchors
       { path: '/profile', element: <Navigate to="/inputs#section-personal" replace /> },
       { path: '/income', element: <Navigate to="/inputs#section-income" replace /> },

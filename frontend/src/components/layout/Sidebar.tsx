@@ -26,6 +26,7 @@ import {
   Settings2,
   Download,
   Upload,
+  CheckSquare,
 } from 'lucide-react'
 
 interface NavItem {
@@ -105,6 +106,7 @@ const AFTER_INPUTS_GROUPS: { title: string; items: NavItem[] }[] = [
     title: 'REFERENCE',
     items: [
       { label: 'Reference Guide', path: '/reference', icon: <BookOpen className="h-4 w-4" /> },
+      { label: 'Checklist', path: '/checklist', icon: <CheckSquare className="h-4 w-4" /> },
     ],
   },
 ]
