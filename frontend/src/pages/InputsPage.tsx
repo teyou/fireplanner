@@ -57,6 +57,7 @@ import { useWithdrawalComparison } from '@/hooks/useWithdrawalComparison'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { pushUndo } from '@/lib/undo'
 import { formatCurrency } from '@/lib/utils'
 import type { WithdrawalStrategyType } from '@/lib/types'
 
@@ -542,17 +543,22 @@ export function InputsPage() {
   const resetWithdrawalRaw = useWithdrawalStore((s) => s.reset)
   const resetPropertyRaw = usePropertyStore((s) => s.reset)
 
-  const [pendingReset, setPendingReset] = useState<{ label: string; action: () => void } | null>(null)
+  const [pendingReset, setPendingReset] = useState<{ label: string; action: () => void; snapshotStore: () => Record<string, unknown>; restoreStore: (snapshot: Record<string, unknown>) => void } | null>(null)
 
-  const confirmReset = useCallback((label: string, action: () => void) => {
-    setPendingReset({ label, action })
+  const confirmReset = useCallback((
+    label: string,
+    action: () => void,
+    snapshotStore: () => Record<string, unknown>,
+    restoreStore: (snapshot: Record<string, unknown>) => void,
+  ) => {
+    setPendingReset({ label, action, snapshotStore, restoreStore })
   }, [])
 
-  const resetProfile = () => confirmReset('Profile', resetProfileRaw)
-  const resetIncome = () => confirmReset('Income', resetIncomeRaw)
-  const resetAllocation = () => confirmReset('Allocation', resetAllocationRaw)
-  const resetWithdrawal = () => confirmReset('Withdrawal', resetWithdrawalRaw)
-  const resetProperty = () => confirmReset('Property', resetPropertyRaw)
+  const resetProfile = () => confirmReset('Profile', resetProfileRaw, () => ({ ...useProfileStore.getState() }), (s) => useProfileStore.setState(s))
+  const resetIncome = () => confirmReset('Income', resetIncomeRaw, () => ({ ...useIncomeStore.getState() }), (s) => useIncomeStore.setState(s))
+  const resetAllocation = () => confirmReset('Allocation', resetAllocationRaw, () => ({ ...useAllocationStore.getState() }), (s) => useAllocationStore.setState(s))
+  const resetWithdrawal = () => confirmReset('Withdrawal', resetWithdrawalRaw, () => ({ ...useWithdrawalStore.getState() }), (s) => useWithdrawalStore.setState(s))
+  const resetProperty = () => confirmReset('Property', resetPropertyRaw, () => ({ ...usePropertyStore.getState() }), (s) => usePropertyStore.setState(s))
 
   const [collapsedSections, setCollapsedSections] = useState<Set<SectionId>>(() => {
     if (sectionOrder === 'already-fire') {
@@ -737,7 +743,12 @@ export function InputsPage() {
         description={`Reset all ${pendingReset?.label ?? ''} settings to defaults? This cannot be undone.`}
         confirmLabel="Reset"
         onConfirm={() => {
-          pendingReset?.action()
+          if (pendingReset) {
+            const snapshot = pendingReset.snapshotStore()
+            const { restoreStore } = pendingReset
+            pendingReset.action()
+            pushUndo(`${pendingReset.label} reset to defaults`, () => restoreStore(snapshot))
+          }
           setPendingReset(null)
         }}
         onCancel={() => setPendingReset(null)}

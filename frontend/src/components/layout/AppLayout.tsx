@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import { Sidebar } from './Sidebar'
 import { FireStatsStrip } from './FireStatsStrip'
 import { useUIStore } from '@/stores/useUIStore'
@@ -18,6 +19,7 @@ export function AppLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden">
+      <Toaster position="bottom-right" />
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {showStats && isTop && <FireStatsStrip position="top" />}
