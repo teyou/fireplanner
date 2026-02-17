@@ -17,6 +17,7 @@ const PROFILE_DATA_KEYS = [
   'residencyStatus', 'annualIncome', 'annualExpenses', 'liquidNetWorth',
   'cpfOA', 'cpfSA', 'cpfMA', 'srsBalance', 'srsAnnualContribution',
   'fireType', 'swr', 'fireNumberBasis', 'expectedReturn', 'usePortfolioReturn', 'inflation', 'expenseRatio', 'rebalanceFrequency',
+  'cpfLifeStartAge', 'cpfLifePlan', 'cpfRetirementSum', 'cpfHousingMode', 'cpfHousingMonthly', 'cpfHousingEndAge',
 ] as const
 
 const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
@@ -42,6 +43,12 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   inflation: 0.025,
   expenseRatio: 0.003,
   rebalanceFrequency: 'annual',
+  cpfLifeStartAge: 65,
+  cpfLifePlan: 'standard',
+  cpfRetirementSum: 'frs',
+  cpfHousingMode: 'none',
+  cpfHousingMonthly: 0,
+  cpfHousingEndAge: 65,
 }
 
 function extractProfileData(state: ProfileState & ProfileActions): Omit<ProfileState, 'validationErrors'> {
@@ -92,7 +99,19 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 1,
+      version: 2,
+      migrate: (persisted, version) => {
+        const state = persisted as Record<string, unknown>
+        if (version < 2) {
+          state.cpfLifeStartAge = state.cpfLifeStartAge ?? 65
+          state.cpfLifePlan = state.cpfLifePlan ?? 'standard'
+          state.cpfRetirementSum = state.cpfRetirementSum ?? 'frs'
+          state.cpfHousingMode = state.cpfHousingMode ?? 'none'
+          state.cpfHousingMonthly = state.cpfHousingMonthly ?? 0
+          state.cpfHousingEndAge = state.cpfHousingEndAge ?? 65
+        }
+        return state as ProfileState & ProfileActions
+      },
       partialize: (state) => {
         const data: Record<string, unknown> = {}
         for (const key of PROFILE_DATA_KEYS) {

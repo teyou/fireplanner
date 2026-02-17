@@ -14,6 +14,9 @@ export type IncomeStreamType = 'employment' | 'rental' | 'investment' | 'busines
 export type GrowthModel = 'fixed' | 'inflation-linked' | 'none'
 export type TaxTreatment = 'taxable' | 'tax-exempt' | 'cpf' | 'srs'
 export type EducationLevel = 'belowSecondary' | 'secondary' | 'postSecondary' | 'diploma' | 'degree'
+export type CpfLifePlan = 'basic' | 'standard' | 'escalating'
+export type CpfRetirementSum = 'brs' | 'frs' | 'ers'
+export type CpfHousingMode = 'none' | 'simple' | 'property-linked'
 
 // ============================================================
 // Profile Store
@@ -49,6 +52,14 @@ export interface ProfileState {
   inflation: number
   expenseRatio: number
   rebalanceFrequency: RebalanceFrequency
+
+  // CPF LIFE Configuration
+  cpfLifeStartAge: number
+  cpfLifePlan: CpfLifePlan
+  cpfRetirementSum: CpfRetirementSum
+  cpfHousingMode: CpfHousingMode
+  cpfHousingMonthly: number
+  cpfHousingEndAge: number
 
   // Validation
   validationErrors: ValidationErrors

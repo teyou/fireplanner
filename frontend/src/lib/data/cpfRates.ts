@@ -90,7 +90,8 @@ export const BRS_GROWTH_RATE = 0.035 // 3.5% p.a.
 export const CPF_LIFE_BASIC_RATE = 0.054 // ~5.4%
 export const CPF_LIFE_STANDARD_RATE = 0.063 // ~6.3%
 export const CPF_LIFE_ESCALATING_RATE = 0.048 // ~4.8% initial, increases 2%/yr
-export const CPF_LIFE_START_AGE = 65
+export const CPF_LIFE_ESCALATING_INCREASE = 0.02 // 2% annual increase for escalating plan
+export const CPF_LIFE_START_AGE = 65 // Default; user can configure 65-75 via cpfLifeStartAge
 
 /**
  * Get CPF contribution rates for a given age.
