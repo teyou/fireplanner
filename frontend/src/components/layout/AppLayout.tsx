@@ -21,10 +21,10 @@ export function AppLayout() {
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {showStats && isTop && <FireStatsStrip position="top" />}
-        <div className="flex-1 flex">
+        <div className="flex-1 flex min-h-0">
           <main
             className={cn(
-              'flex-1 overflow-auto',
+              'flex-1 overflow-auto min-h-0',
               showStats && isBottom && 'pb-14 md:pb-10'
             )}
           >
