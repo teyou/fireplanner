@@ -97,6 +97,7 @@ export function PercentInput({
       <div className="relative">
         <Input
           type="number"
+          inputMode="decimal"
           value={localValue}
           onChange={handleChange}
           onFocus={handleFocus}

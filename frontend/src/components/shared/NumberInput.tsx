@@ -82,6 +82,7 @@ export function NumberInput({
   return (
     <Input
       type="number"
+      inputMode={integer ? "numeric" : "decimal"}
       value={localValue}
       onChange={handleChange}
       onFocus={handleFocus}
