@@ -2,6 +2,7 @@ import { StatusPanel } from '@/components/dashboard/StatusPanel'
 import { AccumulationChart } from '@/components/dashboard/AccumulationChart'
 import { RiskDashboard } from '@/components/dashboard/RiskDashboard'
 import { EmptyDashboardState } from '@/components/dashboard/EmptyDashboardState'
+import { StrategyCard } from '@/components/dashboard/StrategyCard'
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics'
 
 export function DashboardPage() {
@@ -22,6 +23,7 @@ export function DashboardPage() {
       ) : (
         <>
           <StatusPanel {...metrics} />
+          <StrategyCard />
           <AccumulationChart />
           <RiskDashboard />
         </>
