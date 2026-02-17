@@ -74,11 +74,18 @@ export function ProjectionPage() {
 
   const columnVisibility = useMemo((): VisibilityState => {
     const vis: VisibilityState = {}
+    const isMobile = window.innerWidth < 768
     for (const [group, cols] of Object.entries(GROUP_COLUMNS)) {
       const visible = activeGroups.has(group as ColumnGroup)
       for (const col of cols) {
         vis[col] = visible
       }
+    }
+    // Hide less-essential default columns on mobile to reduce horizontal scroll
+    if (isMobile) {
+      vis['portfolioReturnDollar'] = vis['portfolioReturnDollar'] || false
+      vis['cpfTotal'] = vis['cpfTotal'] || false
+      vis['fireProgress'] = vis['fireProgress'] || false
     }
     return vis
   }, [activeGroups])
@@ -340,7 +347,8 @@ export function ProjectionPage() {
             ))}
           </div>
 
-          <div className="border rounded-md overflow-auto max-h-[600px]">
+          <p className="text-xs text-muted-foreground md:hidden">Tap toggles to show more columns</p>
+          <div className="border rounded-md overflow-auto max-h-[70vh]">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-background border-b z-10">
                 {table.getHeaderGroups().map((headerGroup) => (
