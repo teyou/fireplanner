@@ -1,21 +1,29 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { useFireCalculations } from '@/hooks/useFireCalculations'
 import { useProjection } from '@/hooks/useProjection'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { useUIStore } from '@/stores/useUIStore'
 import { formatCurrency } from '@/lib/utils'
+import { Target, TrendingUp } from 'lucide-react'
 
 export function StartPage() {
   const { metrics } = useFireCalculations()
   const { summary: projSummary } = useProjection()
   const currentAge = useProfileStore((s) => s.currentAge)
+  const setUIField = useUIStore((s) => s.setField)
+  const navigate = useNavigate()
 
   // Prefer projection's simulated FIRE age over NPER estimate
   const projFireAge = projSummary?.fireAchievedAge ?? null
   const yearsToFire = projFireAge !== null
     ? Math.max(0, projFireAge - currentAge)
     : metrics?.yearsToFire ?? null
+
+  const handlePathway = (order: 'goal-first' | 'story-first') => {
+    setUIField('sectionOrder', order)
+    navigate('/inputs')
+  }
 
   return (
     <div className="space-y-8">
@@ -54,22 +62,58 @@ export function StartPage() {
         </Card>
       )}
 
+      {/* Pathway cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Link to="/profile">
-          <Button variant="outline" className="w-full h-auto py-4 justify-start">
-            <div className="text-left">
-              <div className="font-semibold">FIRE Profile</div>
-              <div className="text-sm text-muted-foreground">Set your age, income, expenses, and FIRE targets</div>
-            </div>
-          </Button>
-        </Link>
-        <Link to="/income">
-          <Button variant="outline" className="w-full h-auto py-4 justify-start">
-            <div className="text-left">
-              <div className="font-semibold">Income Engine</div>
-              <div className="text-sm text-muted-foreground">Model your salary, streams, and tax</div>
-            </div>
-          </Button>
+        <button
+          onClick={() => handlePathway('goal-first')}
+          className="text-left"
+        >
+          <Card className="h-full hover:border-primary/50 hover:shadow-md transition-all cursor-pointer">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="rounded-lg bg-primary/10 p-3">
+                  <Target className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <div className="font-semibold text-lg">I know when I want to retire</div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Set your FIRE targets first, then fill in your financial details to see if you're on track.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </button>
+
+        <button
+          onClick={() => handlePathway('story-first')}
+          className="text-left"
+        >
+          <Card className="h-full hover:border-primary/50 hover:shadow-md transition-all cursor-pointer">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="rounded-lg bg-primary/10 p-3">
+                  <TrendingUp className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <div className="font-semibold text-lg">Show me what's possible</div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Enter your financial situation and see what retirement age the numbers support.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </button>
+      </div>
+
+      {/* Continue link for returning users */}
+      <div className="text-center">
+        <Link
+          to="/inputs"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Continue planning &rarr;
         </Link>
       </div>
     </div>

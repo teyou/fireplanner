@@ -1,15 +1,41 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
+import { FireStatsStrip } from './FireStatsStrip'
+import { useUIStore } from '@/stores/useUIStore'
+import { cn } from '@/lib/utils'
+
+// Pages that show the stats strip (inputs and analysis pages, not start/reference)
+const STATS_ROUTES = ['/inputs', '/projection', '/stress-test', '/dashboard']
 
 export function AppLayout() {
+  const statsPosition = useUIStore((s) => s.statsPosition)
+  const location = useLocation()
+
+  const showStats = STATS_ROUTES.includes(location.pathname)
+  const isSidebar = statsPosition === 'sidebar'
+  const isBottom = statsPosition === 'bottom'
+  const isTop = statsPosition === 'top'
+
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
-        <div className="container py-6 max-w-6xl">
-          <Outlet />
+      <div className="flex-1 flex flex-col min-w-0">
+        {showStats && isTop && <FireStatsStrip position="top" />}
+        <div className="flex-1 flex">
+          <main
+            className={cn(
+              'flex-1 overflow-auto',
+              showStats && isBottom && 'pb-14 md:pb-10'
+            )}
+          >
+            <div className="container py-6 max-w-6xl">
+              <Outlet />
+            </div>
+          </main>
+          {showStats && isSidebar && <FireStatsStrip position="sidebar" />}
         </div>
-      </main>
+        {showStats && isBottom && <FireStatsStrip position="bottom" />}
+      </div>
     </div>
   )
 }

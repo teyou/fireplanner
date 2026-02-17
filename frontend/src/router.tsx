@@ -1,15 +1,10 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { StartPage } from '@/pages/StartPage'
-import { ProfilePage } from '@/pages/ProfilePage'
-import { IncomePage } from '@/pages/IncomePage'
-import { AllocationPage } from '@/pages/AllocationPage'
+import { InputsPage } from '@/pages/InputsPage'
 import { ProjectionPage } from '@/pages/ProjectionPage'
-import { SpendingPage } from '@/pages/SpendingPage'
 import { DashboardPage } from '@/pages/DashboardPage'
-import { PropertyPage } from '@/pages/PropertyPage'
 import { ReferencePage } from '@/pages/ReferencePage'
-import { CpfPage } from '@/pages/CpfPage'
 import { StressTestPage } from '@/pages/StressTestPage'
 
 export const router = createBrowserRouter([
@@ -17,17 +12,19 @@ export const router = createBrowserRouter([
     element: <AppLayout />,
     children: [
       { path: '/', element: <StartPage /> },
-      { path: '/profile', element: <ProfilePage /> },
-      { path: '/income', element: <IncomePage /> },
-      { path: '/cpf', element: <CpfPage /> },
-      { path: '/allocation', element: <AllocationPage /> },
+      { path: '/inputs', element: <InputsPage /> },
       { path: '/projection', element: <ProjectionPage /> },
-      { path: '/spending', element: <SpendingPage /> },
-      { path: '/withdrawal', element: <Navigate to="/spending" replace /> },
       { path: '/stress-test', element: <StressTestPage /> },
       { path: '/dashboard', element: <DashboardPage /> },
-      { path: '/property', element: <PropertyPage /> },
       { path: '/reference', element: <ReferencePage /> },
+      // Redirects: old input pages → /inputs
+      { path: '/profile', element: <Navigate to="/inputs" replace /> },
+      { path: '/income', element: <Navigate to="/inputs" replace /> },
+      { path: '/cpf', element: <Navigate to="/inputs" replace /> },
+      { path: '/property', element: <Navigate to="/inputs" replace /> },
+      { path: '/allocation', element: <Navigate to="/inputs" replace /> },
+      { path: '/spending', element: <Navigate to="/inputs" replace /> },
+      { path: '/withdrawal', element: <Navigate to="/inputs" replace /> },
       // Redirects for old bookmarked URLs
       { path: '/monte-carlo', element: <Navigate to="/stress-test" replace /> },
       { path: '/backtest', element: <Navigate to="/stress-test" replace /> },
