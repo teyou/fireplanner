@@ -36,6 +36,7 @@ export interface ProjectionParams {
   inflation: number
   expenseRatio: number
   annualExpenses: number
+  retirementSpendingAdjustment: number
   fireNumber: number
   currentWeights: number[]
   targetWeights: number[]
@@ -168,6 +169,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     inflation,
     expenseRatio,
     annualExpenses,
+    retirementSpendingAdjustment,
     fireNumber,
     currentWeights,
     targetWeights,
@@ -219,7 +221,8 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     let savingsOrWithdrawal: number
     let totalIncome: number
 
-    const inflationAdjustedExpenses = annualExpenses * Math.pow(1 + inflation, year)
+    const baseExpenses = isRetired ? annualExpenses * retirementSpendingAdjustment : annualExpenses
+    const inflationAdjustedExpenses = baseExpenses * Math.pow(1 + inflation, year)
 
     if (!isRetired) {
       // Pre-retirement: accumulation

@@ -120,6 +120,7 @@ function makeParams(overrides: Partial<ProjectionParams> = {}): ProjectionParams
     inflation: 0,
     expenseRatio: 0,
     annualExpenses: 50000,
+    retirementSpendingAdjustment: 1.0,
     fireNumber: 1250000, // 50000 / 0.04
     currentWeights: [0.60, 0.40],
     targetWeights: [0.30, 0.70],

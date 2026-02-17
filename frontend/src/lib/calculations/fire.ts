@@ -182,6 +182,7 @@ export function calculateAllFireMetrics(params: {
   fireNumberBasis?: FireNumberBasis
   cpfLifeStartAge?: number
   lifeExpectancy?: number
+  retirementSpendingAdjustment?: number
 }): FireMetrics {
   const {
     currentAge,
@@ -198,15 +199,16 @@ export function calculateAllFireMetrics(params: {
     fireNumberBasis = 'today',
     cpfLifeStartAge = 65,
     lifeExpectancy = 90,
+    retirementSpendingAdjustment = 1.0,
   } = params
 
   const totalNetWorth = liquidNetWorth + cpfTotal
   const annualSavings = annualIncome - annualExpenses
   const savingsRate = annualIncome > 0 ? annualSavings / annualIncome : 0
 
-  // Apply FIRE type multiplier to expenses for the main FIRE number
+  // Apply retirement spending adjustment and FIRE type multiplier to expenses for the FIRE number
   const multiplier = FIRE_TYPE_MULTIPLIERS[fireType]
-  let effectiveExpenses = annualExpenses * multiplier
+  let effectiveExpenses = annualExpenses * retirementSpendingAdjustment * multiplier
 
   // Net real return = nominal - inflation - expense ratio
   const netRealReturn = expectedReturn - inflation - expenseRatio
@@ -241,9 +243,9 @@ export function calculateAllFireMetrics(params: {
   }
 
   const fireNumber = calculateFireNumber(effectiveExpenses, swr)
-  // Lean/Fat reference values also inflate when using retirement or fireAge basis
-  let leanExpenses = annualExpenses
-  let fatExpenses = annualExpenses
+  // Lean/Fat reference values also include retirement adjustment and inflate when using retirement or fireAge basis
+  let leanExpenses = annualExpenses * retirementSpendingAdjustment
+  let fatExpenses = annualExpenses * retirementSpendingAdjustment
   if (fireNumberBasis === 'retirement' && yearsToRetirement > 0 && inflation > 0) {
     const retirementInflationFactor = Math.pow(1 + inflation, yearsToRetirement)
     leanExpenses *= retirementInflationFactor

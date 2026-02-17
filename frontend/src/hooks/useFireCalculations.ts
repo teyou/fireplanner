@@ -103,6 +103,7 @@ export function useFireCalculations(): FireCalculationsResult {
       fireNumberBasis: profile.fireNumberBasis,
       cpfLifeStartAge: profile.cpfLifeStartAge,
       lifeExpectancy: profile.lifeExpectancy,
+      retirementSpendingAdjustment: profile.retirementSpendingAdjustment,
     })
 
     return { metrics, hasErrors: false, errors: {} }
@@ -123,6 +124,7 @@ export function useFireCalculations(): FireCalculationsResult {
     profile.expenseRatio,
     profile.fireType,
     profile.fireNumberBasis,
+    profile.retirementSpendingAdjustment,
     profile.srsAnnualContribution,
     profile.cpfLifeStartAge,
     profile.cpfLifePlan,
