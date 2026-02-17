@@ -1,17 +1,19 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import * as d3 from 'd3'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { CORRELATION_MATRIX } from '@/lib/data/historicalReturns'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 
 const LABELS = ['US Eq', 'SG Eq', 'Intl', 'Bonds', 'REITs', 'Gold', 'Cash', 'CPF']
 
 export function CorrelationHeatmap() {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
-    if (!svgRef.current || !containerRef.current) return
+    if (!expanded || !svgRef.current || !containerRef.current) return
 
     const containerWidth = containerRef.current.clientWidth
     const size = Math.min(containerWidth, 500)
@@ -118,7 +120,7 @@ export function CorrelationHeatmap() {
       svg.selectAll('*').remove()
       d3.select(container).selectAll('.d3-tooltip').remove()
     }
-  }, [])
+  }, [expanded])
 
   return (
     <Card>
@@ -128,13 +130,25 @@ export function CorrelationHeatmap() {
           <InfoTooltip
             text="Pairwise correlations between asset classes. Low or negative correlations provide diversification benefit."
           />
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="ml-auto flex items-center gap-1 text-sm font-normal text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {expanded ? (
+              <>Hide <ChevronUp className="h-4 w-4" /></>
+            ) : (
+              <>Show <ChevronDown className="h-4 w-4" /></>
+            )}
+          </button>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div ref={containerRef} className="relative">
-          <svg ref={svgRef} />
-        </div>
-      </CardContent>
+      {expanded && (
+        <CardContent>
+          <div ref={containerRef} className="relative">
+            <svg ref={svgRef} />
+          </div>
+        </CardContent>
+      )}
     </Card>
   )
 }

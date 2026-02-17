@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,6 +15,7 @@ import { useProfileStore } from '@/stores/useProfileStore'
 import { usePortfolioStats } from '@/hooks/usePortfolioStats'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
 import { cn } from '@/lib/utils'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { GlidePathMethod } from '@/lib/types'
 
 const METHOD_LABELS: Record<GlidePathMethod, string> = {
@@ -28,10 +30,13 @@ const METHOD_DESCRIPTIONS: Record<GlidePathMethod, string> = {
   fastStart: 'Changes quickly at first, then decelerates toward the target',
 }
 
+const PREVIEW_ROWS = 5
+
 export function GlidePathSection() {
   const { glidePathConfig, setGlidePathConfig, validationErrors } = useAllocationStore()
   const retirementAge = useProfileStore((s) => s.retirementAge)
   const { glidePathAllocations } = usePortfolioStats()
+  const [tableExpanded, setTableExpanded] = useState(false)
 
   function toggleEnabled() {
     setGlidePathConfig({
@@ -152,7 +157,7 @@ export function GlidePathSection() {
           {glidePathAllocations.length > 0 && (
             <div className="space-y-2">
               <Label className="text-sm font-medium">Year-by-Year Allocation Preview</Label>
-              <div className="overflow-x-auto max-h-[400px] overflow-y-auto border rounded-md">
+              <div className="overflow-x-auto border rounded-md">
                 <table className="w-full text-xs">
                   <thead className="sticky top-0 bg-background">
                     <tr className="border-b">
@@ -171,7 +176,7 @@ export function GlidePathSection() {
                     </tr>
                   </thead>
                   <tbody>
-                    {glidePathAllocations.map(({ age, weights }) => (
+                    {(tableExpanded ? glidePathAllocations : glidePathAllocations.slice(0, PREVIEW_ROWS)).map(({ age, weights }) => (
                       <tr key={age} className="border-b last:border-b-0 hover:bg-muted/50">
                         <td className="py-1 px-2 font-medium">{age}</td>
                         {weights.map((w, i) => (
@@ -184,6 +189,18 @@ export function GlidePathSection() {
                   </tbody>
                 </table>
               </div>
+              {glidePathAllocations.length > PREVIEW_ROWS && (
+                <button
+                  onClick={() => setTableExpanded(!tableExpanded)}
+                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {tableExpanded ? (
+                    <>Show less <ChevronUp className="h-4 w-4" /></>
+                  ) : (
+                    <>Show all {glidePathAllocations.length} years <ChevronDown className="h-4 w-4" /></>
+                  )}
+                </button>
+              )}
             </div>
           )}
         </CardContent>

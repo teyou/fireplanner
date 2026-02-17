@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { usePortfolioStats } from '@/hooks/usePortfolioStats'
 import { formatPercent, cn } from '@/lib/utils'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 
 interface StatRowProps {
   label: string
@@ -56,6 +58,8 @@ export function PortfolioStatsPanel() {
     )
   }
 
+  const [expanded, setExpanded] = useState(false)
+
   return (
     <Card>
       <CardHeader>
@@ -91,50 +95,64 @@ export function PortfolioStatsPanel() {
                 target={targetStats.realReturn}
                 format={(v) => formatPercent(v, 2)}
               />
-              <StatRow
-                label="Net Return"
-                tooltip="Real return minus expense ratio"
-                formula="Real Return - Expense Ratio"
-                current={currentStats.netReturn}
-                target={targetStats.netReturn}
-                format={(v) => formatPercent(v, 2)}
-              />
-              <StatRow
-                label="Std Deviation"
-                tooltip="Portfolio volatility (risk). Lower is less risky."
-                formula="√(w'Σw)"
-                current={currentStats.stdDev}
-                target={targetStats.stdDev}
-                format={(v) => formatPercent(v, 2)}
-                higherIsBetter={false}
-              />
-              <StatRow
-                label="Sharpe Ratio"
-                tooltip="Risk-adjusted return. Higher means more return per unit of risk."
-                formula="(Net Return - Risk Free) / Std Dev"
-                current={currentStats.sharpe}
-                target={targetStats.sharpe}
-                format={(v) => isFinite(v) ? v.toFixed(3) : '\u221E'}
-              />
-              <StatRow
-                label="VaR 95%"
-                tooltip="Value at Risk: worst expected annual return with 95% confidence"
-                formula="Return - 1.645 × Std Dev"
-                current={currentStats.var95}
-                target={targetStats.var95}
-                format={(v) => formatPercent(v, 2)}
-              />
-              <StatRow
-                label="Diversification"
-                tooltip="Ratio > 1 indicates diversification benefit. Higher is better."
-                formula="Σ(wᵢ × σᵢ) / σ_portfolio"
-                current={currentStats.diversificationRatio}
-                target={targetStats.diversificationRatio}
-                format={(v) => v.toFixed(3)}
-              />
+              {expanded && (
+                <>
+                  <StatRow
+                    label="Net Return"
+                    tooltip="Real return minus expense ratio"
+                    formula="Real Return - Expense Ratio"
+                    current={currentStats.netReturn}
+                    target={targetStats.netReturn}
+                    format={(v) => formatPercent(v, 2)}
+                  />
+                  <StatRow
+                    label="Std Deviation"
+                    tooltip="Portfolio volatility (risk). Lower is less risky."
+                    formula="√(w'Σw)"
+                    current={currentStats.stdDev}
+                    target={targetStats.stdDev}
+                    format={(v) => formatPercent(v, 2)}
+                    higherIsBetter={false}
+                  />
+                  <StatRow
+                    label="Sharpe Ratio"
+                    tooltip="Risk-adjusted return. Higher means more return per unit of risk."
+                    formula="(Net Return - Risk Free) / Std Dev"
+                    current={currentStats.sharpe}
+                    target={targetStats.sharpe}
+                    format={(v) => isFinite(v) ? v.toFixed(3) : '\u221E'}
+                  />
+                  <StatRow
+                    label="VaR 95%"
+                    tooltip="Value at Risk: worst expected annual return with 95% confidence"
+                    formula="Return - 1.645 × Std Dev"
+                    current={currentStats.var95}
+                    target={targetStats.var95}
+                    format={(v) => formatPercent(v, 2)}
+                  />
+                  <StatRow
+                    label="Diversification"
+                    tooltip="Ratio > 1 indicates diversification benefit. Higher is better."
+                    formula="Σ(wᵢ × σᵢ) / σ_portfolio"
+                    current={currentStats.diversificationRatio}
+                    target={targetStats.diversificationRatio}
+                    format={(v) => v.toFixed(3)}
+                  />
+                </>
+              )}
             </tbody>
           </table>
         </div>
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mt-2"
+        >
+          {expanded ? (
+            <>Hide details <ChevronUp className="h-4 w-4" /></>
+          ) : (
+            <>Show all stats <ChevronDown className="h-4 w-4" /></>
+          )}
+        </button>
       </CardContent>
     </Card>
   )
