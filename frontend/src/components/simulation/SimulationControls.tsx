@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useSimulationStore } from '@/stores/useSimulationStore'
+import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import type { MonteCarloMethod, WithdrawalStrategyType } from '@/lib/types'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { AnalysisModeToggle } from '@/components/shared/AnalysisModeToggle'
@@ -126,11 +127,18 @@ export function SimulationControls({ onRun, isPending, canRun, validationErrors 
 
 function StrategyParams() {
   const simulation = useSimulationStore()
+  const withdrawalStore = useWithdrawalStore()
   const strategy = simulation.selectedStrategy
   const params = simulation.strategyParams[strategy]
 
   const setParam = (field: string, value: number) => {
     simulation.setStrategyParam(
+      strategy,
+      field as keyof typeof params,
+      value
+    )
+    // Keep withdrawal store in sync so deterministic comparison uses same params
+    withdrawalStore.setStrategyParam(
       strategy,
       field as keyof typeof params,
       value

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
+import { useSimulationStore } from '@/stores/useSimulationStore'
 import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import type { WithdrawalStrategyType } from '@/lib/types'
@@ -65,10 +66,17 @@ export function StrategyParamsSection() {
 
 function StrategyParamCard({ strategy }: { strategy: WithdrawalStrategyType }) {
   const withdrawal = useWithdrawalStore()
+  const simulation = useSimulationStore()
   const params = withdrawal.strategyParams[strategy]
 
   const setParam = (field: string, value: number) => {
     withdrawal.setStrategyParam(
+      strategy,
+      field as keyof typeof params,
+      value
+    )
+    // Keep simulation store in sync so Monte Carlo uses same params
+    simulation.setStrategyParam(
       strategy,
       field as keyof typeof params,
       value
