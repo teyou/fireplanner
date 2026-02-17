@@ -535,11 +535,23 @@ export function InputsPage() {
   const sectionOrder = useUIStore((s) => s.sectionOrder)
   const setSectionOrder = useUIStore((s) => s.setField)
 
-  const resetProfile = useProfileStore((s) => s.reset)
-  const resetIncome = useIncomeStore((s) => s.reset)
-  const resetAllocation = useAllocationStore((s) => s.reset)
-  const resetWithdrawal = useWithdrawalStore((s) => s.reset)
-  const resetProperty = usePropertyStore((s) => s.reset)
+  const resetProfileRaw = useProfileStore((s) => s.reset)
+  const resetIncomeRaw = useIncomeStore((s) => s.reset)
+  const resetAllocationRaw = useAllocationStore((s) => s.reset)
+  const resetWithdrawalRaw = useWithdrawalStore((s) => s.reset)
+  const resetPropertyRaw = usePropertyStore((s) => s.reset)
+
+  const confirmReset = (label: string, action: () => void) => {
+    if (window.confirm(`Reset all ${label} settings to defaults? This cannot be undone.`)) {
+      action()
+    }
+  }
+
+  const resetProfile = () => confirmReset('Profile', resetProfileRaw)
+  const resetIncome = () => confirmReset('Income', resetIncomeRaw)
+  const resetAllocation = () => confirmReset('Allocation', resetAllocationRaw)
+  const resetWithdrawal = () => confirmReset('Withdrawal', resetWithdrawalRaw)
+  const resetProperty = () => confirmReset('Property', resetPropertyRaw)
 
   const [collapsedSections, setCollapsedSections] = useState<Set<SectionId>>(() => {
     if (sectionOrder === 'already-fire') {
