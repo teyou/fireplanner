@@ -49,19 +49,34 @@ export function FanChart({ bands, retirementAge }: FanChartProps) {
               width={90}
             />
             <Tooltip
-              formatter={(value: number, name: string) => {
-                const labels: Record<string, string> = {
-                  p5: '5th Percentile',
-                  band_5_10: '10th Percentile',
-                  band_10_25: '25th Percentile',
-                  band_25_50: '50th (Median)',
-                  band_50_75: '75th Percentile',
-                  band_75_90: '90th Percentile',
-                  band_90_95: '95th Percentile',
-                }
-                return [formatCurrency(value), labels[name] ?? name]
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null
+                const row = payload[0]?.payload as Record<string, number> | undefined
+                if (!row) return null
+                const age = label as number
+                const percentiles = [
+                  { key: 'p95', label: '95th' },
+                  { key: 'p90', label: '90th' },
+                  { key: 'p75', label: '75th' },
+                  { key: 'p50', label: '50th (Median)' },
+                  { key: 'p25', label: '25th' },
+                  { key: 'p10', label: '10th' },
+                  { key: 'p5', label: '5th' },
+                ]
+                return (
+                  <div className="rounded-lg border bg-background p-2 shadow-md text-xs">
+                    <p className="font-medium mb-1">
+                      Age {age}{age === retirementAge ? ' (Retirement)' : ''}
+                    </p>
+                    {percentiles.map(({ key, label: pLabel }) => (
+                      <div key={key} className="flex justify-between gap-4">
+                        <span className="text-muted-foreground">{pLabel}</span>
+                        <span className="font-mono">{formatCurrency(row[key])}</span>
+                      </div>
+                    ))}
+                  </div>
+                )
               }}
-              labelFormatter={(age: number) => `Age ${age}${age === retirementAge ? ' (Retirement)' : ''}`}
             />
 
             {/* Stacked area bands from p5 up */}
