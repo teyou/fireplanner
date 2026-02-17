@@ -1,5 +1,6 @@
 import { Label } from '@/components/ui/label'
 import { NumberInput } from '@/components/shared/NumberInput'
+import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { cn } from '@/lib/utils'
 
 interface CurrencyInputProps {
@@ -25,14 +26,7 @@ export function CurrencyInput({
     <div className={cn('space-y-1', className)}>
       <Label className="text-sm flex items-center gap-1">
         {label}
-        {tooltip && (
-          <span
-            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-muted text-muted-foreground text-xs cursor-help"
-            title={tooltip}
-          >
-            i
-          </span>
-        )}
+        {tooltip && <InfoTooltip text={tooltip} />}
       </Label>
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">

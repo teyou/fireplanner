@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { cn } from '@/lib/utils'
 
 interface PercentInputProps {
@@ -84,14 +85,7 @@ export function PercentInput({
       {label && (
         <Label className="text-sm flex items-center gap-1">
           {label}
-          {tooltip && (
-            <span
-              className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-muted text-muted-foreground text-xs cursor-help"
-              title={tooltip}
-            >
-              i
-            </span>
-          )}
+          {tooltip && <InfoTooltip text={tooltip} />}
         </Label>
       )}
       <div className="relative">
