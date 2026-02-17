@@ -16,3 +16,6 @@ venv/
 *.egg-info/
 .pytest_cache/
 htmlcov/
+
+# Worktrees
+.worktrees/
