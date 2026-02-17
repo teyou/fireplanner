@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import Markdown from 'react-markdown'
@@ -344,16 +344,12 @@ export function ReferencePage() {
   const hashId = location.hash.slice(1)
   const validHash = SECTIONS.some((s) => s.id === hashId) ? hashId : null
 
-  // Default open sections: always 'fire', plus the hash target if any
-  const defaultOpen = validHash ? ['fire', validHash] : ['fire']
-  const [openValues, setOpenValues] = useState<string[]>(defaultOpen)
+  // Include hash target in initial open set; also open on hash changes via key reset
+  const openDefault = validHash ? ['fire', validHash] : ['fire']
 
-  // When hash changes, open and scroll to that section
+  // Scroll to hash target after mount/hash change
   useEffect(() => {
     if (!validHash) return
-    setOpenValues((prev) =>
-      prev.includes(validHash) ? prev : [...prev, validHash]
-    )
     requestAnimationFrame(() => {
       document.getElementById(`ref-${validHash}`)?.scrollIntoView({ behavior: 'smooth' })
     })
@@ -368,7 +364,7 @@ export function ReferencePage() {
         </p>
       </div>
 
-      <Accordion type="multiple" value={openValues} onValueChange={setOpenValues}>
+      <Accordion type="multiple" key={validHash ?? 'default'} defaultValue={openDefault}>
         {SECTIONS.map((section) => (
           <AccordionItem key={section.id} value={section.id} id={`ref-${section.id}`}>
             <AccordionTrigger className="text-left font-medium">

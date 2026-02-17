@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { useProjection } from '@/hooks/useProjection'
-import { useProfileStore } from '@/stores/useProfileStore'
 
 export interface PassiveIncomeSource {
   label: string
@@ -33,7 +32,6 @@ export interface PassiveIncomeSummary {
  */
 export function usePassiveIncomeSummary(): PassiveIncomeSummary | null {
   const { rows } = useProjection()
-  const retirementAge = useProfileStore((s) => s.retirementAge)
 
   return useMemo(() => {
     if (!rows || rows.length === 0) return null
@@ -83,5 +81,5 @@ export function usePassiveIncomeSummary(): PassiveIncomeSummary | null {
       sources,
       yearlyBreakdown,
     }
-  }, [rows, retirementAge])
+  }, [rows])
 }
