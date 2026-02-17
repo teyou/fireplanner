@@ -3,7 +3,6 @@ import { PersonalSection } from '@/components/profile/PersonalSection'
 import { FinancialSection } from '@/components/profile/FinancialSection'
 import { FireTargetsSection } from '@/components/profile/FireTargetsSection'
 import { AssumptionsSection } from '@/components/profile/AssumptionsSection'
-import { CpfSection } from '@/components/profile/CpfSection'
 import { useProfileStore } from '@/stores/useProfileStore'
 
 export function ProfilePage() {
@@ -27,7 +26,6 @@ export function ProfilePage() {
       <FinancialSection />
       <FireTargetsSection />
       <AssumptionsSection />
-      <CpfSection />
     </div>
   )
 }

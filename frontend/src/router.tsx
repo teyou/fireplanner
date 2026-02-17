@@ -12,6 +12,7 @@ import { BacktestPage } from '@/pages/BacktestPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { PropertyPage } from '@/pages/PropertyPage'
 import { ReferencePage } from '@/pages/ReferencePage'
+import { CpfPage } from '@/pages/CpfPage'
 
 export const router = createBrowserRouter([
   {
@@ -20,8 +21,10 @@ export const router = createBrowserRouter([
       { path: '/', element: <StartPage /> },
       { path: '/profile', element: <ProfilePage /> },
       { path: '/income', element: <IncomePage /> },
+      { path: '/cpf', element: <CpfPage /> },
       { path: '/allocation', element: <AllocationPage /> },
       { path: '/projection', element: <ProjectionPage /> },
+      // Keep old pages active until Phase 3 replaces them with StressTestPage
       { path: '/monte-carlo', element: <MonteCarloPage /> },
       { path: '/withdrawal', element: <WithdrawalPage /> },
       { path: '/sequence-risk', element: <SequenceRiskPage /> },
