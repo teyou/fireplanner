@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { useProfileStore } from '@/stores/useProfileStore'
@@ -110,27 +111,35 @@ export function CpfSection() {
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Plan Type</Label>
-              <select
+              <Select
                 value={cpfLifePlan}
-                onChange={(e) => setField('cpfLifePlan', e.target.value as CpfLifePlan)}
-                className="flex h-8 w-full rounded-md border border-blue-300 bg-background px-2 py-1 text-sm"
+                onValueChange={(v) => setField('cpfLifePlan', v as CpfLifePlan)}
               >
-                <option value="basic">Basic (~5.4%)</option>
-                <option value="standard">Standard (~6.3%)</option>
-                <option value="escalating">Escalating (~4.8%, +2%/yr)</option>
-              </select>
+                <SelectTrigger className="h-8 border-blue-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="basic">Basic (~5.4%)</SelectItem>
+                  <SelectItem value="standard">Standard (~6.3%)</SelectItem>
+                  <SelectItem value="escalating">Escalating (~4.8%, +2%/yr)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Retirement Sum</Label>
-              <select
+              <Select
                 value={cpfRetirementSum}
-                onChange={(e) => setField('cpfRetirementSum', e.target.value as CpfRetirementSum)}
-                className="flex h-8 w-full rounded-md border border-blue-300 bg-background px-2 py-1 text-sm"
+                onValueChange={(v) => setField('cpfRetirementSum', v as CpfRetirementSum)}
               >
-                <option value="brs">BRS ({formatCurrency(brsFrsErs.brs)})</option>
-                <option value="frs">FRS ({formatCurrency(brsFrsErs.frs)})</option>
-                <option value="ers">ERS ({formatCurrency(brsFrsErs.ers)})</option>
-              </select>
+                <SelectTrigger className="h-8 border-blue-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="brs">BRS ({formatCurrency(brsFrsErs.brs)})</SelectItem>
+                  <SelectItem value="frs">FRS ({formatCurrency(brsFrsErs.frs)})</SelectItem>
+                  <SelectItem value="ers">ERS ({formatCurrency(brsFrsErs.ers)})</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -323,27 +332,35 @@ export function CpfSection() {
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Plan Type</Label>
-              <select
+              <Select
                 value={cpfLifePlan}
-                onChange={(e) => setField('cpfLifePlan', e.target.value as CpfLifePlan)}
-                className="flex h-8 w-full rounded-md border border-blue-300 bg-background px-2 py-1 text-sm"
+                onValueChange={(v) => setField('cpfLifePlan', v as CpfLifePlan)}
               >
-                <option value="basic">Basic (~5.4%)</option>
-                <option value="standard">Standard (~6.3%)</option>
-                <option value="escalating">Escalating (~4.8%, +2%/yr)</option>
-              </select>
+                <SelectTrigger className="h-8 border-blue-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="basic">Basic (~5.4%)</SelectItem>
+                  <SelectItem value="standard">Standard (~6.3%)</SelectItem>
+                  <SelectItem value="escalating">Escalating (~4.8%, +2%/yr)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Retirement Sum</Label>
-              <select
+              <Select
                 value={cpfRetirementSum}
-                onChange={(e) => setField('cpfRetirementSum', e.target.value as CpfRetirementSum)}
-                className="flex h-8 w-full rounded-md border border-blue-300 bg-background px-2 py-1 text-sm"
+                onValueChange={(v) => setField('cpfRetirementSum', v as CpfRetirementSum)}
               >
-                <option value="brs">BRS ({formatCurrency(brsFrsErs.brs)})</option>
-                <option value="frs">FRS ({formatCurrency(brsFrsErs.frs)})</option>
-                <option value="ers">ERS ({formatCurrency(brsFrsErs.ers)})</option>
-              </select>
+                <SelectTrigger className="h-8 border-blue-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="brs">BRS ({formatCurrency(brsFrsErs.brs)})</SelectItem>
+                  <SelectItem value="frs">FRS ({formatCurrency(brsFrsErs.frs)})</SelectItem>
+                  <SelectItem value="ers">ERS ({formatCurrency(brsFrsErs.ers)})</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -375,15 +392,19 @@ export function CpfSection() {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label className="text-xs">Mode</Label>
-              <select
+              <Select
                 value={cpfHousingMode}
-                onChange={(e) => setField('cpfHousingMode', e.target.value as CpfHousingMode)}
-                className="flex h-8 w-full rounded-md border border-blue-300 bg-background px-2 py-1 text-sm"
+                onValueChange={(v) => setField('cpfHousingMode', v as CpfHousingMode)}
               >
-                <option value="none">None</option>
-                <option value="simple">Simple (fixed monthly amount)</option>
-                <option value="property-linked">Property-linked (from property analysis)</option>
-              </select>
+                <SelectTrigger className="h-8 border-blue-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="simple">Simple (fixed monthly amount)</SelectItem>
+                  <SelectItem value="property-linked">Property-linked (from property analysis)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {cpfHousingMode === 'simple' && (
