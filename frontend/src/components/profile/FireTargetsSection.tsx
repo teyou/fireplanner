@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useFireCalculations } from '@/hooks/useFireCalculations'
 import { useProjection } from '@/hooks/useProjection'
@@ -34,17 +35,21 @@ export function FireTargetsSection() {
               FIRE Type
               <InfoTooltip text="Regular: full expenses. Lean: 60%. Fat: 150%. Coast: let portfolio grow. Barista: part-time income." />
             </Label>
-            <select
+            <Select
               value={fireType}
-              onChange={(e) => setField('fireType', e.target.value as FireType)}
-              className="flex h-10 w-full rounded-md border border-blue-300 bg-background px-3 py-2 text-sm"
+              onValueChange={(v) => setField('fireType', v as FireType)}
             >
-              <option value="regular">Regular FIRE</option>
-              <option value="lean">Lean FIRE (60%)</option>
-              <option value="fat">Fat FIRE (150%)</option>
-              <option value="coast">Coast FIRE</option>
-              <option value="barista">Barista FIRE</option>
-            </select>
+              <SelectTrigger className="border-blue-300">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="regular">Regular FIRE</SelectItem>
+                <SelectItem value="lean">Lean FIRE (60%)</SelectItem>
+                <SelectItem value="fat">Fat FIRE (150%)</SelectItem>
+                <SelectItem value="coast">Coast FIRE</SelectItem>
+                <SelectItem value="barista">Barista FIRE</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <PercentInput
@@ -61,15 +66,19 @@ export function FireTargetsSection() {
               FIRE Number Basis
               <InfoTooltip text="Today's $: current expenses. At Retirement: inflation-adjusted to retirement age. At FIRE Age: inflation-adjusted to when you actually reach FIRE." />
             </Label>
-            <select
+            <Select
               value={fireNumberBasis}
-              onChange={(e) => setField('fireNumberBasis', e.target.value as FireNumberBasis)}
-              className="flex h-10 w-full rounded-md border border-blue-300 bg-background px-3 py-2 text-sm"
+              onValueChange={(v) => setField('fireNumberBasis', v as FireNumberBasis)}
             >
-              <option value="today">Today's $</option>
-              <option value="retirement">At Retirement</option>
-              <option value="fireAge">At FIRE Age</option>
-            </select>
+              <SelectTrigger className="border-blue-300">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Today's $</SelectItem>
+                <SelectItem value="retirement">At Retirement</SelectItem>
+                <SelectItem value="fireAge">At FIRE Age</SelectItem>
+              </SelectContent>
+            </Select>
             {fireNumberBasis === 'retirement' && (
               <p className="text-xs text-muted-foreground">
                 Inflation-adjusted to age {retirementAge} at {(inflation * 100).toFixed(1)}%

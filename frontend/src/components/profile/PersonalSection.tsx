@@ -1,5 +1,6 @@
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { NumberInput } from '@/components/shared/NumberInput'
@@ -77,26 +78,34 @@ export function PersonalSection() {
               Life Stage
               <InfoTooltip text="Pre-FIRE: accumulating wealth. Post-FIRE: living off portfolio." />
             </Label>
-            <select
+            <Select
               value={lifeStage}
-              onChange={(e) => setField('lifeStage', e.target.value as 'pre-fire' | 'post-fire')}
-              className="flex h-10 w-full rounded-md border border-blue-300 bg-background px-3 py-2 text-sm"
+              onValueChange={(v) => setField('lifeStage', v as 'pre-fire' | 'post-fire')}
             >
-              <option value="pre-fire">Pre-FIRE (Accumulating)</option>
-              <option value="post-fire">Post-FIRE (Withdrawing)</option>
-            </select>
+              <SelectTrigger className="border-blue-300">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pre-fire">Pre-FIRE (Accumulating)</SelectItem>
+                <SelectItem value="post-fire">Post-FIRE (Withdrawing)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-1">
             <Label className="text-sm">Marital Status</Label>
-            <select
+            <Select
               value={maritalStatus}
-              onChange={(e) => setField('maritalStatus', e.target.value as 'single' | 'married')}
-              className="flex h-10 w-full rounded-md border border-blue-300 bg-background px-3 py-2 text-sm"
+              onValueChange={(v) => setField('maritalStatus', v as 'single' | 'married')}
             >
-              <option value="single">Single</option>
-              <option value="married">Married</option>
-            </select>
+              <SelectTrigger className="border-blue-300">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="single">Single</SelectItem>
+                <SelectItem value="married">Married</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </CardContent>

@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { PercentInput } from '@/components/shared/PercentInput'
@@ -125,17 +126,19 @@ export function AssumptionsSection() {
               Rebalancing Frequency
               <InfoTooltip text="How often you rebalance your portfolio. Note: simulations use annual steps regardless of this setting." />
             </Label>
-            <select
+            <Select
               value={store.rebalanceFrequency}
-              onChange={(e) =>
-                store.setField('rebalanceFrequency', e.target.value as RebalanceFrequency)
-              }
-              className="flex h-10 w-full rounded-md border border-blue-300 bg-background px-3 py-2 text-sm"
+              onValueChange={(v) => store.setField('rebalanceFrequency', v as RebalanceFrequency)}
             >
-              <option value="annual">Annual</option>
-              <option value="semi-annual">Semi-Annual</option>
-              <option value="quarterly">Quarterly</option>
-            </select>
+              <SelectTrigger className="border-blue-300">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="annual">Annual</SelectItem>
+                <SelectItem value="semi-annual">Semi-Annual</SelectItem>
+                <SelectItem value="quarterly">Quarterly</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
