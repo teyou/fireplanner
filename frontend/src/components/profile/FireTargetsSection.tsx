@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Label } from '@/components/ui/label'
@@ -52,14 +53,20 @@ export function FireTargetsSection() {
             </Select>
           </div>
 
-          <PercentInput
-            label="Safe Withdrawal Rate (SWR)"
-            value={swr}
-            onChange={(v) => setField('swr', v)}
-            error={validationErrors.swr}
-            tooltip="The percentage of your portfolio you withdraw annually in retirement. 4% is the classic rule."
-            step={0.1}
-          />
+          <div>
+            <PercentInput
+              label="Safe Withdrawal Rate (SWR)"
+              value={swr}
+              onChange={(v) => setField('swr', v)}
+              error={validationErrors.swr}
+              tooltip="The percentage of your portfolio you withdraw annually in retirement. 4% is the classic rule."
+              step={0.1}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              This rate determines your FIRE Number — lower SWR = larger target.{' '}
+              <Link to="/reference#swr" className="underline text-primary">Learn more</Link>
+            </p>
+          </div>
 
           <div className="space-y-1">
             <Label className="text-sm flex items-center">

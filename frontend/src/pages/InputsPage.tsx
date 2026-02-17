@@ -312,7 +312,8 @@ function ExpensesContent() {
               </Select>
             </div>
             <p className="text-xs text-muted-foreground">
-              This strategy is used in your Projection and Stress Tests.
+              This strategy is used in your Projection and{' '}
+              <Link to="/stress-test" className="underline text-primary">Stress Tests</Link>.
             </p>
           </div>
         </CardContent>

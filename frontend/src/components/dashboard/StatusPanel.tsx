@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { formatCurrency, formatPercent } from '@/lib/utils'
@@ -14,15 +15,15 @@ interface StatusPanelProps {
 }
 
 export function StatusPanel(props: StatusPanelProps) {
-  const cards = [
-    { label: 'FIRE Number', value: props.fireNumber != null ? formatCurrency(props.fireNumber) : '—' },
+  const cards: { label: string; value: string; progress?: number | null; href?: string }[] = [
+    { label: 'FIRE Number', value: props.fireNumber != null ? formatCurrency(props.fireNumber) : '—', href: '/inputs#section-fire-settings' },
     { label: 'Progress', value: props.progress != null ? formatPercent(props.progress) : '—', progress: props.progress },
     { label: 'Years to FIRE', value: props.yearsToFire != null ? `${props.yearsToFire} years` : '—' },
     { label: 'FIRE Age', value: props.fireAge != null ? `Age ${props.fireAge}` : '—' },
     { label: 'Coast FIRE Number', value: props.coastFireNumber != null ? formatCurrency(props.coastFireNumber) : '—' },
     { label: 'Barista FIRE Income', value: props.baristaFireIncome != null ? `${formatCurrency(props.baristaFireIncome)}/yr` : '—' },
     { label: 'Savings Rate', value: props.savingsRate != null ? formatPercent(props.savingsRate) : '—' },
-    { label: 'Total Net Worth', value: props.totalNetWorth != null ? formatCurrency(props.totalNetWorth) : '—' },
+    { label: 'Total Net Worth', value: props.totalNetWorth != null ? formatCurrency(props.totalNetWorth) : '—', href: '/inputs#section-net-worth' },
   ]
 
   return (
@@ -31,7 +32,13 @@ export function StatusPanel(props: StatusPanelProps) {
         <Card key={card.label}>
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground mb-1">{card.label}</p>
-            <p className="text-xl font-bold">{card.value}</p>
+            {card.href ? (
+              <Link to={card.href} className="text-xl font-bold hover:underline">
+                {card.value}
+              </Link>
+            ) : (
+              <p className="text-xl font-bold">{card.value}</p>
+            )}
             {card.progress != null && (
               <Progress value={Math.min(card.progress * 100, 100)} className="mt-2 h-2" />
             )}
