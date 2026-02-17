@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp, CheckCircle2, Circle } from 'lucide-react'
 
 // Profile sections
 import { PersonalSection } from '@/components/profile/PersonalSection'
@@ -52,6 +53,7 @@ import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useUIStore } from '@/stores/useUIStore'
 
 // Hooks
+import { useSectionCompletion } from '@/hooks/useSectionCompletion'
 import { useIncomeProjection } from '@/hooks/useIncomeProjection'
 import { useWithdrawalComparison } from '@/hooks/useWithdrawalComparison'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
@@ -536,6 +538,7 @@ function AllocationContent() {
 export function InputsPage() {
   const sectionOrder = useUIStore((s) => s.sectionOrder)
   const setSectionOrder = useUIStore((s) => s.setField)
+  const { sections: sectionCompletion, completedCount, totalSections } = useSectionCompletion()
 
   const resetProfileRaw = useProfileStore((s) => s.reset)
   const resetIncomeRaw = useIncomeStore((s) => s.reset)
@@ -661,6 +664,13 @@ export function InputsPage() {
           <p className="text-muted-foreground text-sm">
             Fill in your financial details below. All changes save automatically.
           </p>
+          <div className="mt-3 space-y-1">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{completedCount} of {totalSections} sections customized</span>
+              <span>{Math.round((completedCount / totalSections) * 100)}%</span>
+            </div>
+            <Progress value={(completedCount / totalSections) * 100} className="h-2" />
+          </div>
         </div>
         <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
           <button
@@ -718,7 +728,14 @@ export function InputsPage() {
                   <ChevronUp className="h-5 w-5 text-muted-foreground shrink-0" />
                 )}
                 <div>
-                  <h2 className="text-2xl font-bold">{section.title}</h2>
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
+                    {section.title}
+                    {sectionCompletion[sectionId]?.isComplete ? (
+                      <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                    ) : (
+                      <Circle className="h-5 w-5 text-muted-foreground/40 shrink-0" />
+                    )}
+                  </h2>
                   <p className="text-muted-foreground text-sm">{section.description}</p>
                 </div>
               </button>
