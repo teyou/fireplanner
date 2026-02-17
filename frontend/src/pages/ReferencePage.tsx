@@ -1,4 +1,5 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import Markdown from 'react-markdown'
 
 const SECTIONS = [
   {
@@ -140,21 +141,17 @@ The fan chart shows percentile bands (p5 to p95) of portfolio paths over time.`,
   {
     id: 'how-to',
     title: 'How to Use This Tool',
-    content: `**Step 1: Profile** — Enter your age, income, expenses, and existing savings. Set your FIRE type and SWR.
+    content: `**Step 1: Start Here** — Choose a pathway (Goal-first, Story-first, or Already FIRE) to set up your initial profile.
 
-**Step 2: Income** — Configure salary model, additional income streams, and life events. Review year-by-year projections.
+**Step 2: Inputs** — Fill in your financial details across 8 sections: Personal, FIRE Settings, Income, Expenses & Withdrawal, Net Worth, CPF, Property, and Asset Allocation. All changes save automatically.
 
-**Step 3: Allocation** — Choose a template or customize asset class weights. Review portfolio statistics.
+**Step 3: Projection** — Review the year-by-year deterministic trajectory. Toggle column groups to see income breakdowns, tax/CPF, balances, and portfolio details.
 
-**Step 4: Monte Carlo** — Run simulations to test your plan's success probability. Experiment with different methods and strategies.
+**Step 4: Stress Test** — Run Monte Carlo simulations (10K paths), historical backtests, and sequence risk crisis scenarios to pressure-test your plan.
 
-**Step 5: Withdrawal** — Compare withdrawal strategies on a deterministic path. Find the right balance of income stability and portfolio preservation.
+**Step 5: Dashboard** — Review your complete FIRE picture: status, portfolio projection, and risk assessment in one place.
 
-**Step 6: Sequence Risk** — Stress-test against historical crises. Evaluate mitigation strategies.
-
-**Step 7: Backtest** — See how your plan would have performed in every historical period.
-
-**Step 8: Dashboard** — Review your complete FIRE picture with all metrics in one place.`,
+**Step 6: Reference Guide** — You're here! Learn about FIRE concepts and Singapore-specific considerations.`,
   },
   {
     id: 'glossary',
@@ -192,8 +189,8 @@ export function ReferencePage() {
               {section.title}
             </AccordionTrigger>
             <AccordionContent>
-              <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-line">
-                {section.content}
+              <div className="prose prose-sm max-w-none text-muted-foreground">
+                <Markdown>{section.content}</Markdown>
               </div>
             </AccordionContent>
           </AccordionItem>
