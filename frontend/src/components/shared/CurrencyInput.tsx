@@ -1,5 +1,5 @@
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { NumberInput } from '@/components/shared/NumberInput'
 import { cn } from '@/lib/utils'
 
 interface CurrencyInputProps {
@@ -38,10 +38,9 @@ export function CurrencyInput({
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
           $
         </span>
-        <Input
-          type="number"
+        <NumberInput
           value={value}
-          onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+          onChange={onChange}
           className={cn(
             'pl-7 border-blue-300',
             error && 'border-destructive'

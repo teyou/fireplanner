@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/shared/NumberInput'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { calculateCpfContribution, calculateBrsFrsErs, estimateCpfLifePayout, calculateCpfLifePayoutAtAge, getRetirementSumAmount } from '@/lib/calculations/cpf'
@@ -198,12 +198,12 @@ export function CpfSection() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="space-y-1">
               <Label className="text-xs">Start Age (65-75)</Label>
-              <Input
-                type="number"
+              <NumberInput
+                integer
                 min={65}
                 max={75}
                 value={cpfLifeStartAge}
-                onChange={(e) => setField('cpfLifeStartAge', parseInt(e.target.value) || 65)}
+                onChange={(v) => setField('cpfLifeStartAge', v)}
                 className="h-8 border-blue-300"
               />
               {validationErrors.cpfLifeStartAge && (
@@ -279,11 +279,10 @@ export function CpfSection() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">Monthly OA Deduction ($)</Label>
-                  <Input
-                    type="number"
+                  <NumberInput
                     min={0}
                     value={cpfHousingMonthly}
-                    onChange={(e) => setField('cpfHousingMonthly', parseFloat(e.target.value) || 0)}
+                    onChange={(v) => setField('cpfHousingMonthly', v)}
                     className="h-8 border-blue-300"
                   />
                   {validationErrors.cpfHousingMonthly && (
@@ -292,12 +291,12 @@ export function CpfSection() {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Mortgage Years Remaining</Label>
-                  <Input
-                    type="number"
+                  <NumberInput
+                    integer
                     min={0}
                     max={40}
                     value={cpfMortgageYearsLeft}
-                    onChange={(e) => setField('cpfMortgageYearsLeft', parseInt(e.target.value) || 0)}
+                    onChange={(v) => setField('cpfMortgageYearsLeft', v)}
                     className="h-8 border-blue-300"
                   />
                   <p className="text-xs text-muted-foreground">

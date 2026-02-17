@@ -1,8 +1,8 @@
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { NumberInput } from '@/components/shared/NumberInput'
 import { cn } from '@/lib/utils'
 
 export function PersonalSection() {
@@ -21,10 +21,10 @@ export function PersonalSection() {
               Current Age
               <InfoTooltip text="Your current age in years" />
             </Label>
-            <Input
-              type="number"
+            <NumberInput
+              integer
               value={currentAge}
-              onChange={(e) => setField('currentAge', parseInt(e.target.value) || 0)}
+              onChange={(v) => setField('currentAge', v)}
               min={18}
               max={100}
               className={cn('border-blue-300', validationErrors.currentAge && 'border-destructive')}
@@ -41,10 +41,10 @@ export function PersonalSection() {
                 text="The age you plan to stop working and start withdrawing from your portfolio"
               />
             </Label>
-            <Input
-              type="number"
+            <NumberInput
+              integer
               value={retirementAge}
-              onChange={(e) => setField('retirementAge', parseInt(e.target.value) || 0)}
+              onChange={(v) => setField('retirementAge', v)}
               min={30}
               max={100}
               className={cn('border-blue-300', validationErrors.retirementAge && 'border-destructive')}
@@ -59,10 +59,10 @@ export function PersonalSection() {
               Life Expectancy
               <InfoTooltip text="The age you plan for your portfolio to last until. Higher is more conservative." />
             </Label>
-            <Input
-              type="number"
+            <NumberInput
+              integer
               value={lifeExpectancy}
-              onChange={(e) => setField('lifeExpectancy', parseInt(e.target.value) || 0)}
+              onChange={(v) => setField('lifeExpectancy', v)}
               min={50}
               max={120}
               className={cn('border-blue-300', validationErrors.lifeExpectancy && 'border-destructive')}
