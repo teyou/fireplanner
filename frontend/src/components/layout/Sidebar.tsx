@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/stores/useUIStore'
 import { useSectionCompletion, type SectionId } from '@/hooks/useSectionCompletion'
+import { exportToJson, importFromJson } from '@/lib/exportImport'
 import {
   User,
   DollarSign,
@@ -20,6 +22,8 @@ import {
   Target,
   Wallet,
   Settings2,
+  Download,
+  Upload,
 } from 'lucide-react'
 
 interface NavItem {
@@ -276,6 +280,54 @@ function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
+function DataActions() {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleExport = () => {
+    exportToJson()
+    toast.success('Data exported')
+  }
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const ok = await importFromJson(file)
+    if (!ok) {
+      toast.error('Failed to import — invalid file format')
+    }
+    // Reset so the same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  return (
+    <div className="flex items-center gap-1 px-2">
+      <button
+        onClick={handleExport}
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        title="Export data as JSON"
+      >
+        <Download className="h-3.5 w-3.5" />
+        Export
+      </button>
+      <button
+        onClick={() => fileInputRef.current?.click()}
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        title="Import data from JSON"
+      >
+        <Upload className="h-3.5 w-3.5" />
+        Import
+      </button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        className="hidden"
+        onChange={handleImport}
+      />
+    </div>
+  )
+}
+
 export function Sidebar() {
   const location = useLocation()
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -297,6 +349,9 @@ export function Sidebar() {
       <aside className="hidden md:flex flex-col w-60 border-r bg-muted/30 p-4 gap-6 h-screen overflow-y-auto shrink-0">
         <div className="font-bold text-lg px-2">FIRE Planner</div>
         <NavGroups />
+        <div className="mt-auto border-t pt-3">
+          <DataActions />
+        </div>
       </aside>
 
       {/* Mobile hamburger button */}
@@ -329,6 +384,9 @@ export function Sidebar() {
               </button>
             </div>
             <NavGroups onNavigate={() => setDrawerOpen(false)} />
+            <div className="mt-6 border-t pt-3">
+              <DataActions />
+            </div>
           </aside>
         </>
       )}
