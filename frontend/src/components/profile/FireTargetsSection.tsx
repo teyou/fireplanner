@@ -53,7 +53,7 @@ export function FireTargetsSection() {
             onChange={(v) => setField('swr', v)}
             error={validationErrors.swr}
             tooltip="The percentage of your portfolio you withdraw annually in retirement. 4% is the classic rule."
-            step={0.5}
+            step={0.1}
           />
 
           <div className="space-y-1">

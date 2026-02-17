@@ -117,7 +117,7 @@ export function AssumptionsSection() {
             onChange={(v) => store.setField('expenseRatio', v)}
             error={store.validationErrors.expenseRatio}
             tooltip="Weighted average expense ratio of your portfolio funds. Typically 0.1%-0.5%."
-            step={0.05}
+            step={0.01}
           />
 
           <div className="space-y-1">
