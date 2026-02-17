@@ -43,6 +43,13 @@ export const profileSchema = z.object({
   inflation: inflationSchema,
   expenseRatio: expenseRatioSchema,
   rebalanceFrequency: z.enum(['annual', 'semi-annual', 'quarterly']),
+
+  cpfLifeStartAge: z.number().int().min(65).max(75),
+  cpfLifePlan: z.enum(['basic', 'standard', 'escalating']),
+  cpfRetirementSum: z.enum(['brs', 'frs', 'ers']),
+  cpfHousingMode: z.enum(['none', 'simple', 'property-linked']),
+  cpfHousingMonthly: nonNegativeSchema,
+  cpfHousingEndAge: z.number().int().min(18).max(100),
 }).refine(
   (data) => data.retirementAge > data.currentAge,
   { message: 'Retirement age must be greater than current age', path: ['retirementAge'] }
@@ -171,6 +178,9 @@ export function validateProfileField(
     expectedReturn: returnSchema,
     inflation: inflationSchema,
     expenseRatio: expenseRatioSchema,
+    cpfLifeStartAge: z.number().int().min(65).max(75),
+    cpfHousingMonthly: nonNegativeSchema,
+    cpfHousingEndAge: z.number().int().min(18).max(100),
   }
 
   const schema = fieldSchemas[field]

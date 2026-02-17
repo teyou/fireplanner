@@ -6,6 +6,9 @@ import {
   projectCpfBalances,
   calculateBrsFrsErs,
   estimateCpfLifePayout,
+  calculateCpfLifePayoutAtAge,
+  getRetirementSumAmount,
+  autoDetectRetirementSum,
 } from './cpf'
 
 describe('calculateCpfContribution', () => {
@@ -164,5 +167,112 @@ describe('estimateCpfLifePayout', () => {
     // $213,000 * 6.3% = $13,419 (CLAUDE.md says ~$13,400)
     expect(payout).toBeCloseTo(13419, 0)
     expect(Math.abs(payout - 13400)).toBeLessThan(100)
+  })
+})
+
+describe('calculateCpfLifePayoutAtAge', () => {
+  it('returns 0 before start age', () => {
+    expect(calculateCpfLifePayoutAtAge(213000, 'standard', 65, 60)).toBe(0)
+    expect(calculateCpfLifePayoutAtAge(213000, 'standard', 65, 64)).toBe(0)
+  })
+
+  it('returns payout at start age', () => {
+    const payout = calculateCpfLifePayoutAtAge(213000, 'standard', 65, 65)
+    expect(payout).toBeCloseTo(13419, 0)
+  })
+
+  it('standard plan payout is flat regardless of age past start', () => {
+    const at65 = calculateCpfLifePayoutAtAge(213000, 'standard', 65, 65)
+    const at75 = calculateCpfLifePayoutAtAge(213000, 'standard', 65, 75)
+    expect(at65).toBe(at75)
+  })
+
+  it('basic plan payout is flat regardless of age past start', () => {
+    const at65 = calculateCpfLifePayoutAtAge(213000, 'basic', 65, 65)
+    const at75 = calculateCpfLifePayoutAtAge(213000, 'basic', 65, 75)
+    expect(at65).toBe(at75)
+  })
+
+  it('escalating plan compounds 2%/yr from start', () => {
+    const at65 = calculateCpfLifePayoutAtAge(213000, 'escalating', 65, 65)
+    const at66 = calculateCpfLifePayoutAtAge(213000, 'escalating', 65, 66)
+    const at75 = calculateCpfLifePayoutAtAge(213000, 'escalating', 65, 75)
+
+    // Year 0 = base payout
+    expect(at65).toBeCloseTo(213000 * 0.048, 0)
+    // Year 1 = base * 1.02
+    expect(at66).toBeCloseTo(213000 * 0.048 * 1.02, 0)
+    // Year 10 = base * 1.02^10
+    expect(at75).toBeCloseTo(213000 * 0.048 * Math.pow(1.02, 10), 0)
+  })
+
+  it('matches estimateCpfLifePayout for standard plan at age 65', () => {
+    const fromOld = estimateCpfLifePayout(213000, 'standard')
+    const fromNew = calculateCpfLifePayoutAtAge(213000, 'standard', 65, 65)
+    expect(fromNew).toBe(fromOld)
+  })
+
+  it('matches estimateCpfLifePayout for basic plan at age 65', () => {
+    const fromOld = estimateCpfLifePayout(213000, 'basic')
+    const fromNew = calculateCpfLifePayoutAtAge(213000, 'basic', 65, 65)
+    expect(fromNew).toBe(fromOld)
+  })
+
+  it('returns 0 for zero retirement sum', () => {
+    expect(calculateCpfLifePayoutAtAge(0, 'standard', 65, 65)).toBe(0)
+  })
+
+  it('handles configurable start age (e.g., 70)', () => {
+    expect(calculateCpfLifePayoutAtAge(213000, 'standard', 70, 65)).toBe(0)
+    expect(calculateCpfLifePayoutAtAge(213000, 'standard', 70, 70)).toBeCloseTo(13419, 0)
+  })
+})
+
+describe('getRetirementSumAmount', () => {
+  it('returns projected BRS/FRS/ERS at age 55', () => {
+    const brs = getRetirementSumAmount('brs', 55)
+    const frs = getRetirementSumAmount('frs', 55)
+    const ers = getRetirementSumAmount('ers', 55)
+    expect(brs).toBeCloseTo(106500, 0)
+    expect(frs).toBeCloseTo(213000, 0)
+    expect(ers).toBeCloseTo(426000, 0)
+  })
+
+  it('returns grown values for younger ages', () => {
+    const frs = getRetirementSumAmount('frs', 30)
+    const growthFactor = Math.pow(1.035, 25)
+    expect(frs).toBeCloseTo(213000 * growthFactor, 0)
+  })
+
+  it('ERS = 2x FRS, BRS = 0.5x FRS at any age', () => {
+    const brs = getRetirementSumAmount('brs', 40)
+    const frs = getRetirementSumAmount('frs', 40)
+    const ers = getRetirementSumAmount('ers', 40)
+    expect(ers).toBeCloseTo(frs * 2, 0)
+    expect(brs).toBeCloseTo(frs / 2, 0)
+  })
+})
+
+describe('autoDetectRetirementSum', () => {
+  const frsAt55 = 213000
+
+  it('returns ERS when SA exceeds 2x FRS', () => {
+    expect(autoDetectRetirementSum(500000, frsAt55, false)).toBe('ers')
+  })
+
+  it('returns FRS when SA meets FRS but not ERS', () => {
+    expect(autoDetectRetirementSum(250000, frsAt55, false)).toBe('frs')
+  })
+
+  it('returns BRS when SA meets BRS with property', () => {
+    expect(autoDetectRetirementSum(110000, frsAt55, true)).toBe('brs')
+  })
+
+  it('returns FRS when SA meets BRS but no property', () => {
+    expect(autoDetectRetirementSum(110000, frsAt55, false)).toBe('frs')
+  })
+
+  it('returns FRS when SA is below BRS even with property', () => {
+    expect(autoDetectRetirementSum(50000, frsAt55, true)).toBe('frs')
   })
 })

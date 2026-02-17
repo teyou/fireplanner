@@ -144,6 +144,12 @@ describe('profileSchema', () => {
     inflation: 0.025,
     expenseRatio: 0.003,
     rebalanceFrequency: 'annual' as const,
+    cpfLifeStartAge: 65,
+    cpfLifePlan: 'standard' as const,
+    cpfRetirementSum: 'frs' as const,
+    cpfHousingMode: 'none' as const,
+    cpfHousingMonthly: 0,
+    cpfHousingEndAge: 65,
   }
 
   it('accepts valid profile', () => {

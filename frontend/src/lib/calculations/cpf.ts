@@ -1,4 +1,4 @@
-import type { CpfContribution, CpfProjection } from '@/lib/types'
+import type { CpfContribution, CpfProjection, CpfLifePlan, CpfRetirementSum } from '@/lib/types'
 import {
   getCpfRatesForAge,
   OW_CEILING_ANNUAL,
@@ -16,7 +16,11 @@ import {
   CPF_LIFE_BASIC_RATE,
   CPF_LIFE_STANDARD_RATE,
   CPF_LIFE_ESCALATING_RATE,
+  CPF_LIFE_ESCALATING_INCREASE,
 } from '@/lib/data/cpfRates'
+
+// Re-export CpfLifePlan from types for backward compatibility
+export type { CpfLifePlan } from '@/lib/types'
 
 /**
  * Calculate annual CPF contribution for a given salary and age.
@@ -157,8 +161,6 @@ export function calculateBrsFrsErs(
   }
 }
 
-export type CpfLifePlan = 'basic' | 'standard' | 'escalating'
-
 /**
  * Estimate annual CPF LIFE payout starting at age 65.
  * Based on retirement sum at age 55 and selected plan.
@@ -177,4 +179,62 @@ export function estimateCpfLifePayout(
     escalating: CPF_LIFE_ESCALATING_RATE,
   }
   return retirementSumAt55 * rates[plan]
+}
+
+/**
+ * Calculate CPF LIFE payout at a specific age, accounting for start age and plan type.
+ * Returns 0 before cpfLifeStartAge.
+ * For escalating plan, compounds 2%/yr from the start age.
+ */
+export function calculateCpfLifePayoutAtAge(
+  retirementSumAt55: number,
+  plan: CpfLifePlan,
+  startAge: number,
+  currentAge: number
+): number {
+  if (currentAge < startAge) return 0
+  if (retirementSumAt55 <= 0) return 0
+
+  const basePayout = estimateCpfLifePayout(retirementSumAt55, plan)
+
+  if (plan === 'escalating') {
+    const yearsFromStart = currentAge - startAge
+    return basePayout * Math.pow(1 + CPF_LIFE_ESCALATING_INCREASE, yearsFromStart)
+  }
+
+  return basePayout
+}
+
+/**
+ * Get the dollar amount for a retirement sum level, projected to age 55.
+ */
+export function getRetirementSumAmount(
+  level: CpfRetirementSum,
+  currentAge: number
+): number {
+  const projected = calculateBrsFrsErs(currentAge)
+  switch (level) {
+    case 'brs': return projected.brs
+    case 'frs': return projected.frs
+    case 'ers': return projected.ers
+  }
+}
+
+/**
+ * Auto-detect which retirement sum level fits the user's projected SA at 55.
+ * BRS requires property ownership with long remaining lease.
+ */
+export function autoDetectRetirementSum(
+  projectedSAAt55: number,
+  projectedFRSAt55: number,
+  ownsPropertyWithLongLease: boolean
+): CpfRetirementSum {
+  // ERS = 2x FRS, BRS = 0.5x FRS
+  const projectedERS = projectedFRSAt55 * 2
+  const projectedBRS = projectedFRSAt55 * 0.5
+
+  if (projectedSAAt55 >= projectedERS) return 'ers'
+  if (projectedSAAt55 >= projectedFRSAt55) return 'frs'
+  if (ownsPropertyWithLongLease && projectedSAAt55 >= projectedBRS) return 'brs'
+  return 'frs' // Default to FRS if SA doesn't meet BRS or no property
 }
