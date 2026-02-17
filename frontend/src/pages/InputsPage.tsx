@@ -365,6 +365,15 @@ function CpfContent() {
 
 type PropertyStatus = 'none' | 'fully-paid' | 'with-mortgage'
 
+function derivePropertyStatus(
+  ownsProperty: boolean,
+  mortgageBalance: number,
+  monthlyPayment: number,
+): PropertyStatus {
+  if (!ownsProperty) return 'none'
+  return (mortgageBalance === 0 && monthlyPayment === 0) ? 'fully-paid' : 'with-mortgage'
+}
+
 function PropertyContent() {
   const ownsProperty = usePropertyStore((s) => s.ownsProperty)
   const existingPropertyValue = usePropertyStore((s) => s.existingPropertyValue)
@@ -374,13 +383,12 @@ function PropertyContent() {
   const setField = usePropertyStore((s) => s.setField)
   const validationErrors = usePropertyStore((s) => s.validationErrors)
 
-  const propertyStatus: PropertyStatus = !ownsProperty
-    ? 'none'
-    : (existingMortgageBalance === 0 && existingMonthlyPayment === 0)
-      ? 'fully-paid'
-      : 'with-mortgage'
+  const [propertyStatus, setPropertyStatus] = useState<PropertyStatus>(() =>
+    derivePropertyStatus(ownsProperty, existingMortgageBalance, existingMonthlyPayment)
+  )
 
   const handleStatusChange = (status: PropertyStatus) => {
+    setPropertyStatus(status)
     if (status === 'none') {
       setField('ownsProperty', false)
     } else if (status === 'fully-paid') {
