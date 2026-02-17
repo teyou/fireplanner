@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { runSequenceRisk } from '@/lib/api'
 import type { CrisisScenario, SequenceRiskResult } from '@/lib/types'
@@ -35,7 +35,7 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
   const canRun = Object.keys(allErrors).length === 0
 
   // Stale detection
-  const lastRunParamsRef = useRef<string | null>(null)
+  const [lastRunParams, setLastRunParams] = useState<string | null>(null)
 
   const strategy = withdrawal.selectedStrategies[0] ?? 'constant_dollar'
 
@@ -60,10 +60,10 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
   const mutation = useMutation({
     mutationFn: async (crisis: CrisisScenario) => {
       // Include crisis id in the snapshot so switching crisis also triggers stale
-      lastRunParamsRef.current = JSON.stringify({
+      setLastRunParams(JSON.stringify({
         params: JSON.parse(currentParamsSig),
         crisisId: crisis.id,
-      })
+      }))
 
       const projectionParams = buildProjectionParams(profile, income)
       const postRetirementIncome: number[] = []
@@ -107,10 +107,10 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
   })
 
   // For sequence risk, stale means either params changed OR we can't compare crisis
-  // (since crisis is passed at call time). We check if lastRunParamsRef starts with current params.
+  // (since crisis is passed at call time). We check if lastRunParams starts with current params.
   const isStale = mutation.data !== undefined && (
-    lastRunParamsRef.current === null ||
-    !lastRunParamsRef.current.startsWith(`{"params":${currentParamsSig}`)
+    lastRunParams === null ||
+    !lastRunParams.startsWith(`{"params":${currentParamsSig}`)
   )
 
   return {

@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { runMonteCarlo } from '@/lib/api'
 import type { MonteCarloParams, MonteCarloResult } from '@/lib/types'
@@ -36,7 +36,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
   const canRun = Object.keys(allErrors).length === 0
 
   // Stale detection: snapshot params at run time, compare to current
-  const lastRunParamsRef = useRef<string | null>(null)
+  const [lastRunParams, setLastRunParams] = useState<string | null>(null)
 
   const currentParamsSig = useMemo(() => JSON.stringify({
     initialPortfolio: analysisPortfolio.initialPortfolio,
@@ -66,7 +66,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      lastRunParamsRef.current = currentParamsSig
+      setLastRunParams(currentParamsSig)
 
       const projectionParams = buildProjectionParams(profile, income)
 
@@ -122,7 +122,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     },
   })
 
-  const isStale = mutation.data !== undefined && lastRunParamsRef.current !== currentParamsSig
+  const isStale = mutation.data !== undefined && lastRunParams !== currentParamsSig
 
   return {
     mutate: () => mutation.mutate(),
