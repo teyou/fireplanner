@@ -123,11 +123,12 @@ export function PortfolioStatsPanel() {
                   />
                   <StatRow
                     label="VaR 95%"
-                    tooltip="Value at Risk: worst expected annual return with 95% confidence"
+                    tooltip="Value at Risk: worst expected annual return with 95% confidence. Less negative is better."
                     formula="Return - 1.645 × Std Dev"
                     current={currentStats.var95}
                     target={targetStats.var95}
                     format={(v) => formatPercent(v, 2)}
+                    higherIsBetter={false}
                   />
                   <StatRow
                     label="Diversification"
