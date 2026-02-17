@@ -11,6 +11,7 @@ from app.core.monte_carlo import (
     _compute_withdrawals_for_year,
     _generate_returns_parametric,
 )
+from app.core.withdrawal_strategies import resolve_initial_rate
 
 
 def _run_single_scenario(
@@ -50,10 +51,13 @@ def _run_single_scenario(
     failure_year = np.full(n_sims, n_years_decum)
 
     prev_withdrawal = np.zeros(n_sims)
-    swr = strategy_params.get("swr", 0.04)
+    swr = resolve_initial_rate(strategy_params)
     initial_withdrawal_amount = initial_portfolio * swr
 
     for t in range(n_years_decum):
+        # Pass previous year's return for Guyton-Klinger PMR
+        pyr = all_returns[:, t - 1] if t > 0 else None
+
         withdrawal = _compute_withdrawals_for_year(
             strategy=strategy,
             portfolio=balances[:, t],
@@ -63,6 +67,7 @@ def _run_single_scenario(
             prev_withdrawals=prev_withdrawal,
             inflation=inflation,
             strategy_params=strategy_params,
+            prev_year_return=pyr,
         )
 
         income = post_retirement_income[t] if t < len(post_retirement_income) else 0.0
@@ -122,10 +127,11 @@ def _run_mitigation(
     crisis_returns: np.ndarray | None,
     mitigation_name: str,
     mitigation_desc: str,
+    baseline_crisis_rate: float,
     modified_weights: np.ndarray | None = None,
     modified_strategy_params: dict | None = None,
 ) -> dict:
-    """Run a single mitigation scenario and return impact."""
+    """Run a single mitigation scenario and return impact vs unmitigated baseline."""
     eff_weights = modified_weights if modified_weights is not None else weights
     eff_params = modified_strategy_params if modified_strategy_params is not None else strategy_params
 
@@ -168,7 +174,7 @@ def _run_mitigation(
         "description": mitigation_desc,
         "normal_success_rate": normal["success_rate"],
         "crisis_success_rate": crisis["success_rate"],
-        "success_improvement": crisis["success_rate"] - normal["success_rate"],
+        "success_improvement": crisis["success_rate"] - baseline_crisis_rate,
     }
 
 
@@ -256,6 +262,8 @@ def run_sequence_risk(params: dict) -> dict:
             bond_tent_weights[i] -= reduction
         bond_tent_weights[3] += shift
 
+    baseline_crisis_rate = crisis_result["success_rate"]
+
     mitigations.append(_run_mitigation(
         rng=np.random.default_rng(rng.integers(0, 2**32)),
         n_sims=n_sims,
@@ -271,12 +279,13 @@ def run_sequence_risk(params: dict) -> dict:
         expense_ratio=expense_ratio,
         post_retirement_income=post_retirement_income,
         crisis_returns=crisis_returns,
-        mitigation_name="Bond Tent",
-        mitigation_desc="Shift 20% from equities to bonds in early retirement years to reduce sequence risk exposure.",
+        mitigation_name="Conservative Allocation",
+        mitigation_desc="Shift 20% from equities to bonds throughout retirement to reduce volatility exposure.",
+        baseline_crisis_rate=baseline_crisis_rate,
     ))
 
     # 2. Cash buffer: hold 2 years expenses in cash (reduce portfolio, zero-risk buffer)
-    annual_expense_est = initial_portfolio * strategy_params.get("swr", 0.04)
+    annual_expense_est = initial_portfolio * resolve_initial_rate(strategy_params)
     cash_buffer = annual_expense_est * 2
     reduced_portfolio = max(initial_portfolio - cash_buffer, initial_portfolio * 0.5)
 
@@ -297,6 +306,7 @@ def run_sequence_risk(params: dict) -> dict:
         crisis_returns=crisis_returns,
         mitigation_name="Cash Buffer (2 Years)",
         mitigation_desc="Hold 2 years of expenses in cash outside the portfolio, drawing from buffer in early crisis years.",
+        baseline_crisis_rate=baseline_crisis_rate,
     ))
 
     # 3. Flexible spending: reduce SWR by 15%
@@ -325,6 +335,7 @@ def run_sequence_risk(params: dict) -> dict:
         crisis_returns=crisis_returns,
         mitigation_name="Flexible Spending (-15%)",
         mitigation_desc="Reduce withdrawal rate by 15% to preserve capital during market downturns.",
+        baseline_crisis_rate=baseline_crisis_rate,
         modified_strategy_params=flexible_params,
     ))
 

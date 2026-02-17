@@ -8,6 +8,18 @@ Formulas from FIRE_PLANNER_MASTER_PLAN_v2.md Section 7.
 import numpy as np
 
 
+def resolve_initial_rate(strategy_params: dict, default: float = 0.04) -> float:
+    """Resolve the effective withdrawal rate from strategy params.
+    Mirrors frontend: sp.swr ?? sp.initialRate ?? sp.targetRate ?? swr
+    """
+    return (
+        strategy_params.get("swr")
+        or strategy_params.get("initial_rate")
+        or strategy_params.get("target_rate")
+        or default
+    )
+
+
 def constant_dollar(
     portfolio: np.ndarray | float,
     year: int,
@@ -61,20 +73,30 @@ def guardrails(
     ceiling_trigger: float = 1.20,
     floor_trigger: float = 0.80,
     adjustment_size: float = 0.10,
+    prev_year_return: np.ndarray | float | None = None,
     **kwargs,
 ) -> np.ndarray | float:
     """Strategy 3: Guardrails (Guyton-Klinger).
     Inflation-adjust previous withdrawal, then check capital preservation
     and prosperity rules.
+
+    Includes Portfolio Management Rule (PMR): skip inflation adjustment
+    in years following a negative portfolio return.
     """
     if year == 0:
         return initial_withdrawal
 
-    inflation_adjusted = prev_withdrawal * (1 + inflation)
+    # PMR: skip inflation adjustment if prior year return was negative
+    if prev_year_return is not None and isinstance(portfolio, np.ndarray):
+        base = np.where(prev_year_return < 0, prev_withdrawal, prev_withdrawal * (1 + inflation))
+    elif prev_year_return is not None and prev_year_return < 0:
+        base = prev_withdrawal
+    else:
+        base = prev_withdrawal * (1 + inflation)
 
     # Avoid division by zero
     safe_portfolio = np.maximum(portfolio, 1.0) if isinstance(portfolio, np.ndarray) else max(portfolio, 1.0)
-    current_rate = inflation_adjusted / safe_portfolio
+    current_rate = base / safe_portfolio
 
     # Capital Preservation Rule: cut if spending rate too high
     ceiling = initial_rate * ceiling_trigger
@@ -82,18 +104,18 @@ def guardrails(
     floor = initial_rate * floor_trigger
 
     if isinstance(portfolio, np.ndarray):
-        result = inflation_adjusted * np.ones_like(portfolio)
+        result = base * np.ones_like(portfolio)
         cut_mask = current_rate > ceiling
         raise_mask = current_rate < floor
-        result = np.where(cut_mask, inflation_adjusted * (1 - adjustment_size), result)
-        result = np.where(raise_mask, inflation_adjusted * (1 + adjustment_size), result)
+        result = np.where(cut_mask, base * (1 - adjustment_size), result)
+        result = np.where(raise_mask, base * (1 + adjustment_size), result)
         return result
     else:
         if current_rate > ceiling:
-            return inflation_adjusted * (1 - adjustment_size)
+            return base * (1 - adjustment_size)
         elif current_rate < floor:
-            return inflation_adjusted * (1 + adjustment_size)
-        return inflation_adjusted
+            return base * (1 + adjustment_size)
+        return base
 
 
 def vanguard_dynamic(

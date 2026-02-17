@@ -58,22 +58,27 @@ export function guardrails(
   ceilingTrigger: number = 1.20,
   floorTrigger: number = 0.80,
   adjustmentSize: number = 0.10,
+  prevYearReturn?: number,
 ): number {
   if (year === 0) return initialWithdrawal
 
-  const inflationAdjusted = prevWithdrawal * (1 + inflation)
+  // PMR: skip inflation adjustment if prior year return was negative
+  const base = (prevYearReturn !== undefined && prevYearReturn < 0)
+    ? prevWithdrawal
+    : prevWithdrawal * (1 + inflation)
+
   const safePortfolio = Math.max(portfolio, 1)
-  const currentRate = inflationAdjusted / safePortfolio
+  const currentRate = base / safePortfolio
 
   const ceiling = initialRate * ceilingTrigger
   const floor = initialRate * floorTrigger
 
   if (currentRate > ceiling) {
-    return inflationAdjusted * (1 - adjustmentSize)
+    return base * (1 - adjustmentSize)
   } else if (currentRate < floor) {
-    return inflationAdjusted * (1 + adjustmentSize)
+    return base * (1 + adjustmentSize)
   }
-  return inflationAdjusted
+  return base
 }
 
 // ============================================================

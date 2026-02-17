@@ -48,7 +48,7 @@ export const CRISIS_SCENARIOS: CrisisScenario[] = [
     region: 'US',
     startYear: 2000,
     peakDrawdown: -0.49,
-    durationYears: 3,
+    durationYears: 9,
     recoveryYears: 7,
     equityReturnSequence: [-0.091, -0.119, -0.221, 0.287, 0.109, 0.049, 0.158, 0.055, -0.370],
     description: 'Technology bubble burst. S&P 500 fell 49% over 3 years. Many retirees who started withdrawing in 2000 faced devastating sequence risk.',
@@ -72,7 +72,7 @@ export const CRISIS_SCENARIOS: CrisisScenario[] = [
     peakDrawdown: -0.34,
     durationYears: 1,
     recoveryYears: 1,
-    equityReturnSequence: [-0.125, 0.285, -0.182, 0.264],
+    equityReturnSequence: [0.184, 0.287, -0.182, 0.264],
     description: 'Fastest 30%+ drawdown in history (23 trading days). Unprecedented monetary stimulus drove the fastest recovery in history.',
   },
   {

@@ -14,6 +14,7 @@ from app.core.withdrawal_strategies import (
     constant_dollar,
     floor_ceiling,
     guardrails,
+    resolve_initial_rate,
     vanguard_dynamic,
     vpw,
 )
@@ -85,7 +86,15 @@ def _generate_returns_fat_tail(
     expected_returns: np.ndarray,
     std_devs: np.ndarray,
 ) -> np.ndarray:
-    """Generate portfolio returns using Student-t distribution (df=5) for fat tails."""
+    """Generate portfolio returns using Student-t distribution (df=5) for fat tails.
+
+    NOTE: This generates univariate portfolio-level returns (Student-t), unlike the
+    parametric method which generates correlated multivariate normal returns across
+    all 8 asset classes. Cross-asset correlations are implicitly captured through
+    the portfolio-level moments (weighted mean/std) but not modeled individually.
+    This is an accepted simplification for planning tools — the fat-tail method
+    prioritizes capturing extreme events over modeling per-asset correlation structure.
+    """
     port_return = float(np.dot(weights, expected_returns))
     port_std = float(np.sqrt(weights @ np.diag(std_devs**2) @ weights))
 
@@ -107,6 +116,7 @@ def _compute_withdrawals_for_year(
     prev_withdrawals: np.ndarray,
     inflation: float,
     strategy_params: dict,
+    prev_year_return: np.ndarray | None = None,
 ) -> np.ndarray:
     """Compute withdrawal amounts for all simulations at a given decumulation year."""
     decum_year = year
@@ -140,6 +150,7 @@ def _compute_withdrawals_for_year(
             ceiling_trigger=strategy_params.get("ceiling_trigger", 1.20),
             floor_trigger=strategy_params.get("floor_trigger", 0.80),
             adjustment_size=strategy_params.get("adjustment_size", 0.10),
+            prev_year_return=prev_year_return,
         )
 
     elif strategy == "vanguard_dynamic":
@@ -243,7 +254,7 @@ def run_monte_carlo(params: dict) -> dict:
 
     # Track withdrawals for strategies that need previous withdrawal
     prev_withdrawal = np.zeros(n_sims)
-    swr = strategy_params.get("swr", 0.04)
+    swr = resolve_initial_rate(strategy_params)
     initial_withdrawal_amount = 0.0  # Will be set at retirement
 
     for t in range(n_years_total):
@@ -261,6 +272,9 @@ def run_monte_carlo(params: dict) -> dict:
                 # Set initial withdrawal at start of retirement
                 initial_withdrawal_amount = float(np.median(balances[:, t])) * swr
 
+            # Pass previous year's return for Guyton-Klinger PMR
+            pyr = portfolio_returns[:, t - 1] if decum_year > 0 else None
+
             withdrawal = _compute_withdrawals_for_year(
                 strategy=strategy,
                 portfolio=balances[:, t],
@@ -270,6 +284,7 @@ def run_monte_carlo(params: dict) -> dict:
                 prev_withdrawals=prev_withdrawal,
                 inflation=inflation,
                 strategy_params=strategy_params,
+                prev_year_return=pyr,
             )
 
             # Subtract post-retirement income

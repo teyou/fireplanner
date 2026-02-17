@@ -141,6 +141,51 @@ class TestGuardrails:
         assert result == pytest.approx(102_500 * 1.10, rel=1e-6)
 
 
+    def test_pmr_negative_return_skips_inflation(self):
+        """PMR: after a negative return year, do NOT apply inflation adjustment."""
+        result = guardrails(
+            PORTFOLIO, year=1,
+            initial_withdrawal=100_000, prev_withdrawal=100_000,
+            inflation=INFLATION, initial_rate=0.05,
+            prev_year_return=-0.20,
+        )
+        # base = prev_withdrawal (no inflation), within guardrails → return base
+        assert result == pytest.approx(100_000.0, rel=1e-6)
+
+    def test_pmr_positive_return_applies_inflation(self):
+        """PMR: after a positive return year, inflation adjustment applies normally."""
+        result = guardrails(
+            PORTFOLIO, year=1,
+            initial_withdrawal=100_000, prev_withdrawal=100_000,
+            inflation=INFLATION, initial_rate=0.05,
+            prev_year_return=0.10,
+        )
+        assert result == pytest.approx(102_500.0, rel=1e-6)
+
+    def test_pmr_none_return_applies_inflation(self):
+        """PMR: when prev_year_return is None (default), inflation adjustment applies."""
+        result = guardrails(
+            PORTFOLIO, year=1,
+            initial_withdrawal=100_000, prev_withdrawal=100_000,
+            inflation=INFLATION, initial_rate=0.05,
+        )
+        assert result == pytest.approx(102_500.0, rel=1e-6)
+
+    def test_pmr_vectorized_negative_return(self):
+        """PMR: vectorized — negative returns skip inflation for those sims."""
+        portfolios = np.array([2_000_000, 2_000_000, 2_000_000])
+        prev_returns = np.array([-0.10, 0.05, -0.30])
+        result = guardrails(
+            portfolios, year=1,
+            initial_withdrawal=100_000, prev_withdrawal=100_000,
+            inflation=INFLATION, initial_rate=0.05,
+            prev_year_return=prev_returns,
+        )
+        # Sim 0: neg return → base=100K, Sim 1: pos → base=102.5K, Sim 2: neg → base=100K
+        # All within guardrails for $2M portfolio
+        np.testing.assert_allclose(result, [100_000, 102_500, 100_000], rtol=1e-6)
+
+
 class TestVanguardDynamic:
     def test_year_0(self):
         result = vanguard_dynamic(

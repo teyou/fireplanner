@@ -102,6 +102,24 @@ describe('guardrails', () => {
   })
 })
 
+describe('guardrails PMR', () => {
+  it('negative return: skips inflation adjustment', () => {
+    const result = guardrails(PORTFOLIO, 1, 100_000, 100_000, INFLATION, 0.05, 1.20, 0.80, 0.10, -0.20)
+    // base = prev_withdrawal (no inflation), within guardrails → return base
+    expect(result).toBeCloseTo(100_000, 0)
+  })
+
+  it('positive return: applies inflation normally', () => {
+    const result = guardrails(PORTFOLIO, 1, 100_000, 100_000, INFLATION, 0.05, 1.20, 0.80, 0.10, 0.10)
+    expect(result).toBeCloseTo(102_500, 0)
+  })
+
+  it('undefined return: applies inflation normally (backward compat)', () => {
+    const result = guardrails(PORTFOLIO, 1, 100_000, 100_000, INFLATION, 0.05, 1.20, 0.80, 0.10)
+    expect(result).toBeCloseTo(102_500, 0)
+  })
+})
+
 describe('vanguardDynamic', () => {
   it('year 0: returns initial withdrawal', () => {
     expect(vanguardDynamic(PORTFOLIO, 0, INITIAL_WITHDRAWAL, 0, INFLATION)).toBeCloseTo(INITIAL_WITHDRAWAL, 0)
