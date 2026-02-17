@@ -13,14 +13,6 @@ export function FinancialSection() {
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <CurrencyInput
-            label="Annual Income"
-            value={store.annualIncome}
-            onChange={(v) => store.setField('annualIncome', v)}
-            error={store.validationErrors.annualIncome}
-            tooltip="Total gross annual income from employment before CPF and tax"
-          />
-
-          <CurrencyInput
             label="Liquid Net Worth"
             value={store.liquidNetWorth}
             onChange={(v) => store.setField('liquidNetWorth', v)}

@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SalaryModelSection } from '@/components/income/SalaryModelSection'
 import { IncomeStreamsSection } from '@/components/income/IncomeStreamsSection'
 import { LifeEventsSection } from '@/components/income/LifeEventsSection'
@@ -44,6 +45,27 @@ export function IncomePage() {
           </ul>
         </div>
       )}
+
+      {/* Current Income */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Current Income</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="max-w-sm">
+            <CurrencyInput
+              label="Annual Income"
+              value={profile.annualIncome}
+              onChange={(v) => profile.setField('annualIncome', v)}
+              error={profile.validationErrors.annualIncome}
+              tooltip="Total gross annual income from employment before CPF and tax"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Future Income Plan */}
+      <h2 className="text-xl font-semibold">Future Income Plan</h2>
 
       <SalaryModelSection />
 
