@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { Label } from '@/components/ui/label'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
@@ -22,9 +23,10 @@ export function CurrencyInput({
   className,
   disabled,
 }: CurrencyInputProps) {
+  const inputId = useId()
   return (
     <div className={cn('space-y-1', className)}>
-      <Label className="text-sm flex items-center gap-1">
+      <Label htmlFor={inputId} className="text-sm flex items-center gap-1">
         {label}
         {tooltip && <InfoTooltip text={tooltip} />}
       </Label>
@@ -33,6 +35,7 @@ export function CurrencyInput({
           $
         </span>
         <NumberInput
+          id={inputId}
           value={value}
           onChange={onChange}
           className={cn(

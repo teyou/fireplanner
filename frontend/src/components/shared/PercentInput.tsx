@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useId } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
@@ -30,6 +30,7 @@ export function PercentInput({
   step = 0.1,
   disabled,
 }: PercentInputProps) {
+  const inputId = useId()
   const [localValue, setLocalValue] = useState(() => toDisplay(value))
   const [prevValue, setPrevValue] = useState(value)
   const [isFocused, setIsFocused] = useState(false)
@@ -83,13 +84,14 @@ export function PercentInput({
   return (
     <div className={cn('space-y-1', className)}>
       {label && (
-        <Label className="text-sm flex items-center gap-1">
+        <Label htmlFor={inputId} className="text-sm flex items-center gap-1">
           {label}
           {tooltip && <InfoTooltip text={tooltip} />}
         </Label>
       )}
       <div className="relative">
         <Input
+          id={inputId}
           type="number"
           inputMode="decimal"
           value={localValue}

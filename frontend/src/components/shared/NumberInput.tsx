@@ -11,6 +11,7 @@ interface NumberInputProps {
   step?: number
   className?: string
   disabled?: boolean
+  id?: string
 }
 
 /**
@@ -28,6 +29,7 @@ export function NumberInput({
   step,
   className,
   disabled,
+  id,
 }: NumberInputProps) {
   const format = (v: number) => (integer ? String(Math.round(v)) : String(v))
 
@@ -81,6 +83,7 @@ export function NumberInput({
 
   return (
     <Input
+      id={id}
       type="number"
       inputMode={integer ? "numeric" : "decimal"}
       value={localValue}
