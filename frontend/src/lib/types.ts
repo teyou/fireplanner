@@ -17,6 +17,7 @@ export type EducationLevel = 'belowSecondary' | 'secondary' | 'postSecondary' | 
 export type CpfLifePlan = 'basic' | 'standard' | 'escalating'
 export type CpfRetirementSum = 'brs' | 'frs' | 'ers'
 export type CpfHousingMode = 'none' | 'simple' | 'property-linked'
+export type RetirementPhase = 'before-55' | '55-to-64' | '65-plus'
 
 // ============================================================
 // Profile Store
@@ -55,6 +56,10 @@ export interface ProfileState {
   inflation: number
   expenseRatio: number
   rebalanceFrequency: RebalanceFrequency
+
+  // Retirement phase (Already FIRE pathway)
+  retirementPhase: RetirementPhase | null  // null for pre-fire users
+  cpfLifeActualMonthlyPayout: number       // 65+ users enter known payout
 
   // CPF LIFE Configuration
   cpfLifeStartAge: number

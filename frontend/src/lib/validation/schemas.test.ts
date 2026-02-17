@@ -141,6 +141,8 @@ describe('profileSchema', () => {
     fireType: 'regular' as const,
     swr: 0.04,
     retirementSpendingAdjustment: 1.0,
+    retirementPhase: null,
+    cpfLifeActualMonthlyPayout: 0,
     expectedReturn: 0.07,
     inflation: 0.025,
     expenseRatio: 0.003,

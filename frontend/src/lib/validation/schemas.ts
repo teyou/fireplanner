@@ -19,6 +19,9 @@ export const salaryGrowthSchema = z.number().min(-0.10).max(0.30)
 // Profile Schema
 // ============================================================
 
+export const retirementPhaseSchema = z.enum(['before-55', '55-to-64', '65-plus']).nullable()
+export const cpfLifeActualMonthlyPayoutSchema = nonNegativeSchema
+
 export const profileSchema = z.object({
   currentAge: ageSchema,
   retirementAge: retirementAgeSchema,
@@ -44,6 +47,9 @@ export const profileSchema = z.object({
   inflation: inflationSchema,
   expenseRatio: expenseRatioSchema,
   rebalanceFrequency: z.enum(['annual', 'semi-annual', 'quarterly']),
+
+  retirementPhase: retirementPhaseSchema,
+  cpfLifeActualMonthlyPayout: cpfLifeActualMonthlyPayoutSchema,
 
   cpfLifeStartAge: z.number().int().min(65).max(75),
   cpfLifePlan: z.enum(['basic', 'standard', 'escalating']),
@@ -180,6 +186,7 @@ export function validateProfileField(
     expectedReturn: returnSchema,
     inflation: inflationSchema,
     expenseRatio: expenseRatioSchema,
+    cpfLifeActualMonthlyPayout: cpfLifeActualMonthlyPayoutSchema,
     cpfLifeStartAge: z.number().int().min(65).max(75),
     cpfHousingMonthly: nonNegativeSchema,
     cpfMortgageYearsLeft: z.number().int().min(0).max(40),
