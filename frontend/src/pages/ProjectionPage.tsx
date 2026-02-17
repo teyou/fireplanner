@@ -268,13 +268,19 @@ export function ProjectionPage() {
       {hasErrors && (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
           <p className="text-sm text-destructive font-medium">
-            Fix upstream validation errors in Profile, Income, or Allocation before the projection can be computed.
+            Fix upstream validation errors before the projection can be computed.
           </p>
-          <ul className="text-sm text-destructive mt-1 list-disc list-inside">
-            {Object.entries(errors).slice(0, 5).map(([field, msg]) => (
-              <li key={field}>{field}: {msg}</li>
-            ))}
-          </ul>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+            <Link to="/inputs#section-personal" className="text-sm text-destructive hover:underline font-medium">
+              Fix in Personal Details &rarr;
+            </Link>
+            <Link to="/inputs#section-income" className="text-sm text-destructive hover:underline font-medium">
+              Fix in Income &rarr;
+            </Link>
+            <Link to="/inputs#section-allocation" className="text-sm text-destructive hover:underline font-medium">
+              Fix in Allocation &rarr;
+            </Link>
+          </div>
         </div>
       )}
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -96,6 +97,17 @@ function BacktestTab() {
           <p className="text-sm text-destructive font-medium">
             Fix validation errors before running backtest.
           </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+            <Link to="/inputs#section-personal" className="text-sm text-destructive hover:underline font-medium">
+              Personal Details &rarr;
+            </Link>
+            <Link to="/inputs#section-expenses" className="text-sm text-destructive hover:underline font-medium">
+              Expenses &rarr;
+            </Link>
+            <Link to="/inputs#section-allocation" className="text-sm text-destructive hover:underline font-medium">
+              Allocation &rarr;
+            </Link>
+          </div>
         </div>
       )}
 
@@ -155,6 +167,17 @@ function SequenceRiskTab() {
           <p className="text-sm text-destructive font-medium">
             Fix validation errors before running stress tests.
           </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+            <Link to="/inputs#section-personal" className="text-sm text-destructive hover:underline font-medium">
+              Personal Details &rarr;
+            </Link>
+            <Link to="/inputs#section-expenses" className="text-sm text-destructive hover:underline font-medium">
+              Expenses &rarr;
+            </Link>
+            <Link to="/inputs#section-allocation" className="text-sm text-destructive hover:underline font-medium">
+              Allocation &rarr;
+            </Link>
+          </div>
         </div>
       )}
 
