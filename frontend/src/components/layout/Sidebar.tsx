@@ -190,7 +190,7 @@ function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
                 to={item.path}
                 onClick={onNavigate}
                 className={cn(
-                  'flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors',
+                  'flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-colors',
                   location.pathname === item.path
                     ? 'bg-primary text-primary-foreground'
                     : 'hover:bg-accent'
@@ -215,7 +215,7 @@ function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
               key={item.sectionId}
               onClick={() => handleSectionClick(item.sectionId)}
               className={cn(
-                'flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors text-left w-full',
+                'flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-colors text-left w-full',
                 isInputsPage && activeSection === item.sectionId
                   ? 'bg-primary text-primary-foreground'
                   : isInputsPage
@@ -243,7 +243,7 @@ function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
                 to={item.path}
                 onClick={onNavigate}
                 className={cn(
-                  'flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors',
+                  'flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-colors',
                   location.pathname === item.path
                     ? 'bg-primary text-primary-foreground'
                     : 'hover:bg-accent'
@@ -286,7 +286,7 @@ export function Sidebar() {
       {/* Mobile hamburger button */}
       <button
         onClick={() => setDrawerOpen(true)}
-        className="md:hidden fixed top-3 left-3 z-50 p-2 rounded-md bg-background border shadow-sm"
+        className="md:hidden fixed top-3 left-3 z-50 p-2.5 rounded-md bg-background border shadow-sm"
         aria-label="Open navigation menu"
       >
         <Menu className="h-5 w-5" />
@@ -306,7 +306,7 @@ export function Sidebar() {
               <div className="font-bold text-lg">FIRE Planner</div>
               <button
                 onClick={() => setDrawerOpen(false)}
-                className="p-1 rounded-md hover:bg-accent"
+                className="p-2 rounded-md hover:bg-accent"
                 aria-label="Close navigation menu"
               >
                 <X className="h-5 w-5" />
@@ -318,7 +318,7 @@ export function Sidebar() {
       )}
 
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t flex justify-around py-2 z-50">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t flex justify-around py-3 z-50">
         {[
           { label: 'Start', path: '/', icon: <HomeIcon className="h-5 w-5" /> },
           { label: 'Inputs', path: '/inputs', icon: <Settings2 className="h-5 w-5" /> },
@@ -330,7 +330,7 @@ export function Sidebar() {
             key={item.path}
             to={item.path}
             className={cn(
-              'flex flex-col items-center gap-0.5 text-xs',
+              'flex flex-col items-center gap-0.5 text-xs min-w-[48px]',
               location.pathname === item.path
                 ? 'text-primary'
                 : 'text-muted-foreground'

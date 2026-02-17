@@ -161,7 +161,7 @@ export function FireStatsStrip({ position }: { position: StatsPosition }) {
         'bg-background/95 backdrop-blur border-b flex items-center gap-4 px-4 py-2 z-30',
         isTop ? 'sticky top-0' : 'fixed bottom-0 left-0 right-0 border-t border-b-0 md:left-60',
         // On mobile with bottom nav, need to be above it
-        !isTop && 'mb-0 md:mb-0 bottom-12 md:bottom-0'
+        !isTop && 'mb-0 md:mb-0 bottom-14 md:bottom-0'
       )}
     >
       <div className="flex items-center gap-4 overflow-x-auto flex-1 min-w-0">
