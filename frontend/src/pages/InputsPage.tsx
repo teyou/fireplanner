@@ -1,6 +1,9 @@
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 
 // Profile sections
 import { PersonalSection } from '@/components/profile/PersonalSection'
@@ -130,6 +133,13 @@ function IncomeContent() {
   const profile = useProfileStore()
   const { projection, summary, hasErrors, errors } = useIncomeProjection()
 
+  // Sync salary model's annualSalary → profile.annualIncome
+  useEffect(() => {
+    if (income.annualSalary !== profile.annualIncome) {
+      profile.setField('annualIncome', income.annualSalary)
+    }
+  }, [income.annualSalary])
+
   return (
     <>
       {hasErrors && Object.keys(errors).length > 0 && (
@@ -147,25 +157,6 @@ function IncomeContent() {
           </ul>
         </div>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Current Income</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="max-w-sm">
-            <CurrencyInput
-              label="Annual Income"
-              value={profile.annualIncome}
-              onChange={(v) => profile.setField('annualIncome', v)}
-              error={profile.validationErrors.annualIncome}
-              tooltip="Total gross annual income from employment before CPF and tax"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <h3 className="text-xl font-semibold">Future Income Plan</h3>
 
       <SalaryModelSection />
 
@@ -220,6 +211,8 @@ function ExpensesContent() {
   const { results, hasErrors, errors } = useWithdrawalComparison()
   const { portfolioLabel } = useAnalysisPortfolio()
 
+  const [strategyExpanded, setStrategyExpanded] = useState(false)
+
   const handleActiveStrategyChange = (value: string) => {
     setSimField('selectedStrategy', value as WithdrawalStrategyType)
   }
@@ -270,7 +263,21 @@ function ExpensesContent() {
         </CardContent>
       </Card>
 
-      <h3 className="text-xl font-semibold">Withdrawal Strategy</h3>
+      <Separator className="my-2" />
+
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-semibold">Withdrawal Strategy</h3>
+        <button
+          onClick={() => setStrategyExpanded(!strategyExpanded)}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {strategyExpanded ? (
+            <>Hide strategies <ChevronUp className="h-4 w-4" /></>
+          ) : (
+            <>Show withdrawal strategies <ChevronDown className="h-4 w-4" /></>
+          )}
+        </button>
+      </div>
 
       <Card>
         <CardContent className="pt-4 pb-4">
@@ -310,15 +317,19 @@ function ExpensesContent() {
         </div>
       )}
 
-      <StrategyParamsSection />
-
-      {results && (
+      {strategyExpanded && (
         <>
-          <ComparisonTable results={results} />
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <WithdrawalChart results={results} />
-            <PortfolioComparisonChart results={results} />
-          </div>
+          <StrategyParamsSection />
+
+          {results && (
+            <>
+              <ComparisonTable results={results} />
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <WithdrawalChart results={results} />
+                <PortfolioComparisonChart results={results} />
+              </div>
+            </>
+          )}
         </>
       )}
     </>
@@ -558,7 +569,7 @@ export function InputsPage() {
       </div>
 
       {/* Render sections in chosen order */}
-      {order.map((sectionId) => {
+      {order.map((sectionId, index) => {
         const section = sections[sectionId]
         return (
           <section
@@ -566,9 +577,10 @@ export function InputsPage() {
             id={sectionId}
             className="scroll-mt-16"
           >
+            {index > 0 && <div className="border-t-2 border-border mb-6" />}
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-xl font-bold">{section.title}</h2>
+                <h2 className="text-2xl font-bold">{section.title}</h2>
                 <p className="text-muted-foreground text-sm">{section.description}</p>
               </div>
               <Button variant="outline" size="sm" onClick={section.onReset}>

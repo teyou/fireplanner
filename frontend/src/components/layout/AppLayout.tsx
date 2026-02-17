@@ -17,9 +17,9 @@ export function AppLayout() {
   const isTop = statsPosition === 'top'
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {showStats && isTop && <FireStatsStrip position="top" />}
         <div className="flex-1 flex">
           <main

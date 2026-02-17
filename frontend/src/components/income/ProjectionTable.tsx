@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
@@ -17,6 +17,9 @@ interface ProjectionTableProps {
 }
 
 export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
+  const [expanded, setExpanded] = useState(false)
+  const displayData = expanded ? data : data.slice(0, 5)
+
   const columns = useMemo(() => [
     columnHelper.accessor('age', {
       header: 'Age',
@@ -79,51 +82,61 @@ export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
   ], [])
 
   const table = useReactTable({
-    data,
+    data: displayData,
     columns,
     getCoreRowModel: getCoreRowModel(),
   })
 
   return (
-    <div className="border rounded-md overflow-auto max-h-[600px]">
-      <table className="w-full text-sm">
-        <thead className="sticky top-0 bg-background border-b">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th key={header.id} className="px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">
-                  {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => {
-            const isRetirementRow = row.original.age === retirementAge
-            const hasEvents = row.original.activeLifeEvents.length > 0
-
-            return (
-              <tr
-                key={row.id}
-                className={cn(
-                  'border-b hover:bg-muted/50',
-                  row.original.isRetired && 'bg-muted/30',
-                  isRetirementRow && 'border-t-2 border-t-orange-400',
-                  hasEvents && 'bg-yellow-50 dark:bg-yellow-900/10'
-                )}
-                title={hasEvents ? `Active: ${row.original.activeLifeEvents.join(', ')}` : undefined}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-2 py-1.5 whitespace-nowrap tabular-nums">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
+    <div>
+      <div className={cn('border rounded-md overflow-auto', expanded && 'max-h-[600px]')}>
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 bg-background border-b">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th key={header.id} className="px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  </th>
                 ))}
               </tr>
-            )
-          })}
-        </tbody>
-      </table>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.map((row) => {
+              const isRetirementRow = row.original.age === retirementAge
+              const hasEvents = row.original.activeLifeEvents.length > 0
+
+              return (
+                <tr
+                  key={row.id}
+                  className={cn(
+                    'border-b hover:bg-muted/50',
+                    row.original.isRetired && 'bg-muted/30',
+                    isRetirementRow && 'border-t-2 border-t-orange-400',
+                    hasEvents && 'bg-yellow-50 dark:bg-yellow-900/10'
+                  )}
+                  title={hasEvents ? `Active: ${row.original.activeLifeEvents.join(', ')}` : undefined}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-2 py-1.5 whitespace-nowrap tabular-nums">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      {data.length > 5 && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="mt-2 text-sm text-primary hover:underline"
+        >
+          {expanded ? 'Show less' : `Show all ${data.length} rows`}
+        </button>
+      )}
     </div>
   )
 }

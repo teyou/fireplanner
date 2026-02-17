@@ -263,7 +263,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-60 border-r bg-muted/30 p-4 gap-6">
+      <aside className="hidden md:flex flex-col w-60 border-r bg-muted/30 p-4 gap-6 h-screen overflow-y-auto shrink-0">
         <div className="font-bold text-lg px-2">FIRE Planner</div>
         <NavGroups />
       </aside>
