@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-type SectionOrder = 'goal-first' | 'story-first'
+type SectionOrder = 'goal-first' | 'story-first' | 'already-fire'
 type StatsPosition = 'bottom' | 'top' | 'sidebar'
 
 interface UIState {

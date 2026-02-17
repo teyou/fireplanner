@@ -109,6 +109,17 @@ const STORY_FIRST_ORDER: SectionId[] = [
   'section-fire-settings',
 ]
 
+const ALREADY_FIRE_ORDER: SectionId[] = [
+  'section-personal',
+  'section-net-worth',
+  'section-expenses',
+  'section-allocation',
+  'section-fire-settings',
+  'section-cpf',
+  'section-property',
+  'section-income',
+]
+
 // --- Individual section content components ---
 
 function PersonalContent() {
@@ -532,7 +543,11 @@ export function InputsPage() {
     },
   }
 
-  const order = sectionOrder === 'goal-first' ? GOAL_FIRST_ORDER : STORY_FIRST_ORDER
+  const order = sectionOrder === 'goal-first'
+    ? GOAL_FIRST_ORDER
+    : sectionOrder === 'already-fire'
+      ? ALREADY_FIRE_ORDER
+      : STORY_FIRST_ORDER
 
   return (
     <div className="space-y-10">
@@ -564,6 +579,16 @@ export function InputsPage() {
             }`}
           >
             Story first
+          </button>
+          <button
+            onClick={() => setSectionOrder('sectionOrder', 'already-fire')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              sectionOrder === 'already-fire'
+                ? 'bg-background shadow-sm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Already FIRE
           </button>
         </div>
       </div>

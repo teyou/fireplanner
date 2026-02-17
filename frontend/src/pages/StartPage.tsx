@@ -5,7 +5,7 @@ import { useProjection } from '@/hooks/useProjection'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useUIStore } from '@/stores/useUIStore'
 import { formatCurrency } from '@/lib/utils'
-import { Target, TrendingUp } from 'lucide-react'
+import { Target, TrendingUp, CheckCircle } from 'lucide-react'
 
 export function StartPage() {
   const { metrics } = useFireCalculations()
@@ -20,8 +20,13 @@ export function StartPage() {
     ? Math.max(0, projFireAge - currentAge)
     : metrics?.yearsToFire ?? null
 
-  const handlePathway = (order: 'goal-first' | 'story-first') => {
+  const setProfileField = useProfileStore((s) => s.setField)
+
+  const handlePathway = (order: 'goal-first' | 'story-first' | 'already-fire') => {
     setUIField('sectionOrder', order)
+    if (order === 'already-fire') {
+      setProfileField('lifeStage', 'post-fire')
+    }
     navigate('/inputs')
   }
 
@@ -63,7 +68,7 @@ export function StartPage() {
       )}
 
       {/* Pathway cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <button
           onClick={() => handlePathway('goal-first')}
           className="text-left"
@@ -99,6 +104,27 @@ export function StartPage() {
                   <div className="font-semibold text-lg">Show me what's possible</div>
                   <p className="text-sm text-muted-foreground mt-1">
                     Enter your financial situation and see what retirement age the numbers support.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </button>
+
+        <button
+          onClick={() => handlePathway('already-fire')}
+          className="text-left"
+        >
+          <Card className="h-full hover:border-primary/50 hover:shadow-md transition-all cursor-pointer">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="rounded-lg bg-primary/10 p-3">
+                  <CheckCircle className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <div className="font-semibold text-lg">I already have enough</div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    You've reached or are close to FIRE. Focus on making your money last — withdrawal strategies, allocation, and spending.
                   </p>
                 </div>
               </div>
