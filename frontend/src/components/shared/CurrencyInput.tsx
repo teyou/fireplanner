@@ -27,7 +27,7 @@ export function CurrencyInput({
         {label}
         {tooltip && (
           <span
-            className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted text-muted-foreground text-xs cursor-help"
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-muted text-muted-foreground text-xs cursor-help"
             title={tooltip}
           >
             i
