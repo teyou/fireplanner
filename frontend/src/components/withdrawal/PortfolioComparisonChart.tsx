@@ -38,7 +38,7 @@ export function PortfolioComparisonChart({ results }: PortfolioComparisonChartPr
         <CardTitle>Portfolio Balance Over Time</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-56 md:h-72 lg:h-[350px]">
+        <div className="h-56 md:h-72 lg:h-[350px]" role="img" aria-label="Line chart comparing portfolio balance across withdrawal strategies">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />

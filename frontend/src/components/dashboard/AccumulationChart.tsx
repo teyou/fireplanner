@@ -17,7 +17,7 @@ export function AccumulationChart() {
         <CardTitle>Portfolio Projection</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-56 md:h-72 lg:h-[350px]">
+        <div className="h-56 md:h-72 lg:h-[350px]" role="img" aria-label="Portfolio projection chart showing liquid and CPF net worth over time">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={accumulationData}>
             <CartesianGrid strokeDasharray="3 3" />

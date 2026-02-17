@@ -24,7 +24,7 @@ export function FailureDistributionChart({ distribution, nSimulations }: Failure
         <CardTitle>Failure Distribution by Decade</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-48 md:h-56 lg:h-[250px]">
+        <div className="h-48 md:h-56 lg:h-[250px]" role="img" aria-label="Bar chart showing failure distribution by decade of retirement">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />

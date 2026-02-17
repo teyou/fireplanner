@@ -25,7 +25,7 @@ export function CrisisComparisonChart({ normalBands, crisisBands }: CrisisCompar
         <CardTitle>Normal vs Crisis Portfolio Path</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-64 md:h-80 lg:h-[400px]">
+        <div className="h-64 md:h-80 lg:h-[400px]" role="img" aria-label="Chart comparing normal portfolio path versus crisis scenario">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
