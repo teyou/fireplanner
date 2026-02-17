@@ -58,11 +58,11 @@ const STORY_FIRST_SECTIONS: InputSectionItem[] = [
 const ALREADY_FIRE_SECTIONS: InputSectionItem[] = [
   { label: 'Personal', sectionId: 'section-personal', icon: <User className="h-4 w-4" /> },
   { label: 'Net Worth', sectionId: 'section-net-worth', icon: <Wallet className="h-4 w-4" /> },
+  { label: 'Property', sectionId: 'section-property', icon: <Building className="h-4 w-4" /> },
   { label: 'Expenses', sectionId: 'section-expenses', icon: <TrendingDown className="h-4 w-4" /> },
   { label: 'Allocation', sectionId: 'section-allocation', icon: <PieChart className="h-4 w-4" /> },
   { label: 'FIRE Settings', sectionId: 'section-fire-settings', icon: <Target className="h-4 w-4" /> },
   { label: 'CPF', sectionId: 'section-cpf', icon: <Landmark className="h-4 w-4" /> },
-  { label: 'Property', sectionId: 'section-property', icon: <Building className="h-4 w-4" /> },
   { label: 'Income', sectionId: 'section-income', icon: <DollarSign className="h-4 w-4" /> },
 ]
 

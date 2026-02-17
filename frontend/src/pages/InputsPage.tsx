@@ -112,11 +112,11 @@ const STORY_FIRST_ORDER: SectionId[] = [
 const ALREADY_FIRE_ORDER: SectionId[] = [
   'section-personal',
   'section-net-worth',
+  'section-property',
   'section-expenses',
   'section-allocation',
   'section-fire-settings',
   'section-cpf',
-  'section-property',
   'section-income',
 ]
 
@@ -363,6 +363,8 @@ function CpfContent() {
   )
 }
 
+type PropertyStatus = 'none' | 'fully-paid' | 'with-mortgage'
+
 function PropertyContent() {
   const ownsProperty = usePropertyStore((s) => s.ownsProperty)
   const existingPropertyValue = usePropertyStore((s) => s.existingPropertyValue)
@@ -372,9 +374,33 @@ function PropertyContent() {
   const setField = usePropertyStore((s) => s.setField)
   const validationErrors = usePropertyStore((s) => s.validationErrors)
 
+  const propertyStatus: PropertyStatus = !ownsProperty
+    ? 'none'
+    : (existingMortgageBalance === 0 && existingMonthlyPayment === 0)
+      ? 'fully-paid'
+      : 'with-mortgage'
+
+  const handleStatusChange = (status: PropertyStatus) => {
+    if (status === 'none') {
+      setField('ownsProperty', false)
+    } else if (status === 'fully-paid') {
+      setField('ownsProperty', true)
+      setField('existingMortgageBalance', 0)
+      setField('existingMonthlyPayment', 0)
+    } else {
+      setField('ownsProperty', true)
+    }
+  }
+
   const propertyEquity = ownsProperty
     ? Math.max(0, existingPropertyValue - existingMortgageBalance)
     : 0
+
+  const STATUS_OPTIONS: { value: PropertyStatus; label: string }[] = [
+    { value: 'none', label: 'No property' },
+    { value: 'fully-paid', label: 'Own, fully paid' },
+    { value: 'with-mortgage', label: 'Own, with mortgage' },
+  ]
 
   return (
     <>
@@ -383,14 +409,21 @@ function PropertyContent() {
           <CardTitle className="text-lg">Existing Property</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={ownsProperty}
-              onChange={(e) => setField('ownsProperty', e.target.checked)}
-            />
-            I currently own property
-          </label>
+          <div className="flex items-center gap-1 p-1 bg-muted rounded-lg w-fit">
+            {STATUS_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleStatusChange(opt.value)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  propertyStatus === opt.value
+                    ? 'bg-background shadow-sm text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
 
           {ownsProperty && (
             <>
@@ -402,20 +435,24 @@ function PropertyContent() {
                   error={validationErrors.existingPropertyValue}
                   tooltip="Estimated current market value of your property"
                 />
-                <CurrencyInput
-                  label="Outstanding Mortgage"
-                  value={existingMortgageBalance}
-                  onChange={(v) => setField('existingMortgageBalance', v)}
-                  error={validationErrors.existingMortgageBalance}
-                  tooltip="Remaining mortgage principal balance"
-                />
-                <CurrencyInput
-                  label="Monthly Mortgage Payment"
-                  value={existingMonthlyPayment}
-                  onChange={(v) => setField('existingMonthlyPayment', v)}
-                  error={validationErrors.existingMonthlyPayment}
-                  tooltip="Monthly mortgage repayment amount (principal + interest)"
-                />
+                {propertyStatus === 'with-mortgage' && (
+                  <>
+                    <CurrencyInput
+                      label="Outstanding Mortgage"
+                      value={existingMortgageBalance}
+                      onChange={(v) => setField('existingMortgageBalance', v)}
+                      error={validationErrors.existingMortgageBalance}
+                      tooltip="Remaining mortgage principal balance"
+                    />
+                    <CurrencyInput
+                      label="Monthly Mortgage Payment"
+                      value={existingMonthlyPayment}
+                      onChange={(v) => setField('existingMonthlyPayment', v)}
+                      error={validationErrors.existingMonthlyPayment}
+                      tooltip="Monthly mortgage repayment amount (principal + interest)"
+                    />
+                  </>
+                )}
                 <CurrencyInput
                   label="Monthly Rental Income"
                   value={existingRentalIncome}
@@ -424,11 +461,13 @@ function PropertyContent() {
                   tooltip="Monthly rental income if this is an investment property (0 if owner-occupied)"
                 />
               </div>
-              <div className="p-2 bg-muted/50 rounded text-sm">
-                <span className="text-muted-foreground">Property Equity: </span>
-                <span className="font-semibold">{formatCurrency(propertyEquity)}</span>
-                <span className="text-muted-foreground"> (Value - Mortgage)</span>
-              </div>
+              {propertyStatus === 'with-mortgage' && (
+                <div className="p-2 bg-muted/50 rounded text-sm">
+                  <span className="text-muted-foreground">Property Equity: </span>
+                  <span className="font-semibold">{formatCurrency(propertyEquity)}</span>
+                  <span className="text-muted-foreground"> (Value - Mortgage)</span>
+                </div>
+              )}
             </>
           )}
         </CardContent>
