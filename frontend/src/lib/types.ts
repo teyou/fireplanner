@@ -46,6 +46,9 @@ export interface ProfileState {
   swr: number
   fireNumberBasis: FireNumberBasis
 
+  // Retirement spending
+  retirementSpendingAdjustment: number
+
   // Assumptions
   expectedReturn: number
   usePortfolioReturn: boolean

@@ -16,7 +16,8 @@ const PROFILE_DATA_KEYS = [
   'currentAge', 'retirementAge', 'lifeExpectancy', 'lifeStage', 'maritalStatus',
   'residencyStatus', 'annualIncome', 'annualExpenses', 'liquidNetWorth',
   'cpfOA', 'cpfSA', 'cpfMA', 'srsBalance', 'srsAnnualContribution',
-  'fireType', 'swr', 'fireNumberBasis', 'expectedReturn', 'usePortfolioReturn', 'inflation', 'expenseRatio', 'rebalanceFrequency',
+  'fireType', 'swr', 'fireNumberBasis', 'retirementSpendingAdjustment',
+  'expectedReturn', 'usePortfolioReturn', 'inflation', 'expenseRatio', 'rebalanceFrequency',
   'cpfLifeStartAge', 'cpfLifePlan', 'cpfRetirementSum', 'cpfHousingMode', 'cpfHousingMonthly', 'cpfMortgageYearsLeft',
 ] as const
 
@@ -38,6 +39,7 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   fireType: 'regular',
   swr: 0.04,
   fireNumberBasis: 'today',
+  retirementSpendingAdjustment: 1.0,
   expectedReturn: 0.07,
   usePortfolioReturn: true,
   inflation: 0.025,
@@ -99,7 +101,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -116,6 +118,9 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
           } else {
             state.cpfMortgageYearsLeft = state.cpfMortgageYearsLeft ?? 25
           }
+        }
+        if (version < 3) {
+          state.retirementSpendingAdjustment = state.retirementSpendingAdjustment ?? 1.0
         }
         return state
       },

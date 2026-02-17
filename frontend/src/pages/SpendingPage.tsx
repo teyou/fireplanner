@@ -7,6 +7,9 @@ import { WithdrawalChart } from '@/components/withdrawal/WithdrawalChart'
 import { PortfolioComparisonChart } from '@/components/withdrawal/PortfolioComparisonChart'
 import { AnalysisModeToggle } from '@/components/shared/AnalysisModeToggle'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
+import { PercentInput } from '@/components/shared/PercentInput'
+import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { formatCurrency } from '@/lib/utils'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useProfileStore } from '@/stores/useProfileStore'
@@ -29,8 +32,12 @@ export function SpendingPage() {
   const { portfolioLabel } = useAnalysisPortfolio()
 
   const annualExpenses = useProfileStore((s) => s.annualExpenses)
+  const retirementSpendingAdjustment = useProfileStore((s) => s.retirementSpendingAdjustment)
   const setProfileField = useProfileStore((s) => s.setField)
   const expensesError = useProfileStore((s) => s.validationErrors.annualExpenses)
+  const adjustmentError = useProfileStore((s) => s.validationErrors.retirementSpendingAdjustment)
+
+  const retirementExpenses = annualExpenses * retirementSpendingAdjustment
 
   const activeStrategy = useSimulationStore((s) => s.selectedStrategy)
   const setSimField = useSimulationStore((s) => s.setField)
@@ -67,6 +74,34 @@ export function SpendingPage() {
               error={expensesError}
               tooltip="Total annual spending. This determines your FIRE number."
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Retirement Spending */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            Retirement Spending
+            <InfoTooltip text="Adjust how much of your current spending you expect in retirement. Many retirees spend less (no commute, paid-off mortgage) — a common estimate is 70-80% of working expenses." />
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="max-w-sm">
+            <PercentInput
+              label="Retirement Spending Adjustment"
+              value={retirementSpendingAdjustment}
+              onChange={(v) => setProfileField('retirementSpendingAdjustment', v)}
+              error={adjustmentError}
+              tooltip="Percentage of current expenses expected in retirement (e.g. 80% = lower spending)"
+            />
+          </div>
+          <div className="p-2 bg-muted/50 rounded text-sm">
+            <span className="text-muted-foreground">Retirement expenses: </span>
+            <span className="font-semibold">{formatCurrency(retirementExpenses)}/yr</span>
+            <span className="text-muted-foreground">
+              {' '}({(retirementSpendingAdjustment * 100).toFixed(0)}% of {formatCurrency(annualExpenses)})
+            </span>
           </div>
         </CardContent>
       </Card>

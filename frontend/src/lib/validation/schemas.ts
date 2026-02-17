@@ -38,6 +38,7 @@ export const profileSchema = z.object({
 
   fireType: z.enum(['regular', 'lean', 'fat', 'coast', 'barista']),
   swr: swrSchema,
+  retirementSpendingAdjustment: z.number().min(0.1).max(2.0),
 
   expectedReturn: returnSchema,
   inflation: inflationSchema,
@@ -175,6 +176,7 @@ export function validateProfileField(
     srsBalance: nonNegativeSchema,
     srsAnnualContribution: nonNegativeSchema,
     swr: swrSchema,
+    retirementSpendingAdjustment: z.number().min(0.1).max(2.0),
     expectedReturn: returnSchema,
     inflation: inflationSchema,
     expenseRatio: expenseRatioSchema,
