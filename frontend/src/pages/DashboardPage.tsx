@@ -1,10 +1,12 @@
 import { StatusPanel } from '@/components/dashboard/StatusPanel'
 import { AccumulationChart } from '@/components/dashboard/AccumulationChart'
 import { RiskDashboard } from '@/components/dashboard/RiskDashboard'
+import { EmptyDashboardState } from '@/components/dashboard/EmptyDashboardState'
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics'
 
 export function DashboardPage() {
   const metrics = useDashboardMetrics()
+  const isEmpty = metrics.fireNumber === null
 
   return (
     <div className="space-y-6">
@@ -15,9 +17,15 @@ export function DashboardPage() {
         </p>
       </div>
 
-      <StatusPanel {...metrics} />
-      <AccumulationChart />
-      <RiskDashboard />
+      {isEmpty ? (
+        <EmptyDashboardState />
+      ) : (
+        <>
+          <StatusPanel {...metrics} />
+          <AccumulationChart />
+          <RiskDashboard />
+        </>
+      )}
     </div>
   )
 }
