@@ -21,14 +21,6 @@ export function FinancialSection() {
           />
 
           <CurrencyInput
-            label="Annual Expenses"
-            value={store.annualExpenses}
-            onChange={(v) => store.setField('annualExpenses', v)}
-            error={store.validationErrors.annualExpenses}
-            tooltip="Total annual spending. This determines your FIRE number."
-          />
-
-          <CurrencyInput
             label="Liquid Net Worth"
             value={store.liquidNetWorth}
             onChange={(v) => store.setField('liquidNetWorth', v)}

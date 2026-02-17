@@ -38,13 +38,13 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
       { label: 'CPF', path: '/cpf', icon: <Landmark className="h-4 w-4" /> },
       { label: 'Property', path: '/property', icon: <Building className="h-4 w-4" /> },
       { label: 'Asset Allocation', path: '/allocation', icon: <PieChart className="h-4 w-4" /> },
+      { label: 'Spending', path: '/spending', icon: <TrendingDown className="h-4 w-4" /> },
     ],
   },
   {
     title: 'PLAN',
     items: [
       { label: 'Projection', path: '/projection', icon: <TableProperties className="h-4 w-4" /> },
-      { label: 'Withdrawal', path: '/withdrawal', icon: <TrendingDown className="h-4 w-4" /> },
     ],
   },
   {

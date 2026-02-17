@@ -1,13 +1,15 @@
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StrategyParamsSection } from '@/components/withdrawal/StrategyParamsSection'
 import { ComparisonTable } from '@/components/withdrawal/ComparisonTable'
 import { WithdrawalChart } from '@/components/withdrawal/WithdrawalChart'
 import { PortfolioComparisonChart } from '@/components/withdrawal/PortfolioComparisonChart'
 import { AnalysisModeToggle } from '@/components/shared/AnalysisModeToggle'
+import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import { useSimulationStore } from '@/stores/useSimulationStore'
+import { useProfileStore } from '@/stores/useProfileStore'
 import { useWithdrawalComparison } from '@/hooks/useWithdrawalComparison'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 import type { WithdrawalStrategyType } from '@/lib/types'
@@ -21,10 +23,14 @@ const STRATEGY_LABELS: Record<WithdrawalStrategyType, string> = {
   floor_ceiling: 'Floor & Ceiling',
 }
 
-export function WithdrawalPage() {
+export function SpendingPage() {
   const reset = useWithdrawalStore((s) => s.reset)
   const { results, hasErrors, errors } = useWithdrawalComparison()
   const { portfolioLabel } = useAnalysisPortfolio()
+
+  const annualExpenses = useProfileStore((s) => s.annualExpenses)
+  const setProfileField = useProfileStore((s) => s.setField)
+  const expensesError = useProfileStore((s) => s.validationErrors.annualExpenses)
 
   const activeStrategy = useSimulationStore((s) => s.selectedStrategy)
   const setSimField = useSimulationStore((s) => s.setField)
@@ -37,15 +43,36 @@ export function WithdrawalPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Withdrawal Strategies</h1>
+          <h1 className="text-2xl font-bold">Spending</h1>
           <p className="text-muted-foreground text-sm">
-            Compare 6 withdrawal strategies on a deterministic median-return path. Toggle strategies and tune parameters to see how they affect retirement income and portfolio longevity.
+            Set your current spending level and compare 6 withdrawal strategies for retirement income planning.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={reset}>
           Reset to Defaults
         </Button>
       </div>
+
+      {/* Current Spending */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Current Spending</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="max-w-sm">
+            <CurrencyInput
+              label="Annual Expenses"
+              value={annualExpenses}
+              onChange={(v) => setProfileField('annualExpenses', v)}
+              error={expensesError}
+              tooltip="Total annual spending. This determines your FIRE number."
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Withdrawal Strategy */}
+      <h2 className="text-xl font-semibold">Withdrawal Strategy</h2>
 
       {/* Active strategy selector — flows into Projection & Stress Test */}
       <Card>
@@ -100,3 +127,6 @@ export function WithdrawalPage() {
     </div>
   )
 }
+
+/** @deprecated Use SpendingPage instead */
+export const WithdrawalPage = SpendingPage
