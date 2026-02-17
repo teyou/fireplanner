@@ -541,6 +541,25 @@ export function InputsPage() {
   const resetWithdrawal = useWithdrawalStore((s) => s.reset)
   const resetProperty = usePropertyStore((s) => s.reset)
 
+  const [collapsedSections, setCollapsedSections] = useState<Set<SectionId>>(() => {
+    if (sectionOrder === 'already-fire') {
+      return new Set(['section-fire-settings'])
+    }
+    return new Set()
+  })
+
+  const toggleSection = (id: SectionId) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
   const sections: Record<SectionId, SectionDef> = {
     'section-personal': {
       id: 'section-personal',
@@ -661,6 +680,7 @@ export function InputsPage() {
       {/* Render sections in chosen order */}
       {order.map((sectionId, index) => {
         const section = sections[sectionId]
+        const isCollapsed = collapsedSections.has(sectionId)
         return (
           <section
             key={sectionId}
@@ -669,17 +689,31 @@ export function InputsPage() {
           >
             {index > 0 && <div className="border-t-2 border-border mb-6" />}
             <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-2xl font-bold">{section.title}</h2>
-                <p className="text-muted-foreground text-sm">{section.description}</p>
+              <button
+                onClick={() => toggleSection(sectionId)}
+                className="flex items-center gap-2 text-left"
+              >
+                {isCollapsed ? (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground shrink-0" />
+                ) : (
+                  <ChevronUp className="h-5 w-5 text-muted-foreground shrink-0" />
+                )}
+                <div>
+                  <h2 className="text-2xl font-bold">{section.title}</h2>
+                  <p className="text-muted-foreground text-sm">{section.description}</p>
+                </div>
+              </button>
+              {!isCollapsed && (
+                <Button variant="outline" size="sm" onClick={section.onReset}>
+                  {section.resetLabel}
+                </Button>
+              )}
+            </div>
+            {!isCollapsed && (
+              <div className="space-y-6">
+                {section.content}
               </div>
-              <Button variant="outline" size="sm" onClick={section.onReset}>
-                {section.resetLabel}
-              </Button>
-            </div>
-            <div className="space-y-6">
-              {section.content}
-            </div>
+            )}
           </section>
         )
       })}
