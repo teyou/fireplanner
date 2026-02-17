@@ -174,6 +174,8 @@ export interface FireMetrics {
   savingsRate: number
   annualSavings: number
   totalNetWorth: number
+  propertyEquity: number
+  totalNWIncProperty: number
   cpfDependency: boolean
   liquidBridgeGapYears: number | null
   liquidDepletionAge: number | null
@@ -593,6 +595,9 @@ export interface ProjectionRow {
   withdrawalAmount: number
   maxPermittedWithdrawal: number
   withdrawalExcess: number
+  // Property
+  propertyEquity: number
+  totalNWIncProperty: number
   // Expanded: other
   cumulativeSavings: number
   activeLifeEvents: string[]

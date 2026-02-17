@@ -6,6 +6,7 @@ import { generateIncomeProjection } from '@/lib/calculations/income'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
+import { usePropertyStore } from '@/stores/usePropertyStore'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
 
 interface FireCalculationsResult {
@@ -24,6 +25,7 @@ export function useFireCalculations(): FireCalculationsResult {
   const profile = useProfileStore()
   const income = useIncomeStore()
   const allocation = useAllocationStore()
+  const property = usePropertyStore()
 
   return useMemo(() => {
     const profileErrors = profile.validationErrors
@@ -88,6 +90,11 @@ export function useFireCalculations(): FireCalculationsResult {
       expectedReturn = calculatePortfolioReturn(allocation.currentWeights, effectiveReturns)
     }
 
+    // Compute property equity from existing property
+    const propertyEquity = property.ownsProperty
+      ? Math.max(0, property.existingPropertyValue - property.existingMortgageBalance)
+      : 0
+
     const metrics = calculateAllFireMetrics({
       currentAge: profile.currentAge,
       retirementAge: profile.retirementAge,
@@ -104,6 +111,7 @@ export function useFireCalculations(): FireCalculationsResult {
       cpfLifeStartAge: profile.cpfLifeStartAge,
       lifeExpectancy: profile.lifeExpectancy,
       retirementSpendingAdjustment: profile.retirementSpendingAdjustment,
+      propertyEquity,
     })
 
     return { metrics, hasErrors: false, errors: {} }
@@ -149,5 +157,8 @@ export function useFireCalculations(): FireCalculationsResult {
     allocation.currentWeights,
     allocation.returnOverrides,
     allocation.validationErrors,
+    property.ownsProperty,
+    property.existingPropertyValue,
+    property.existingMortgageBalance,
   ])
 }

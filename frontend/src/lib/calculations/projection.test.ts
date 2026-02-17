@@ -128,6 +128,9 @@ function makeParams(overrides: Partial<ProjectionParams> = {}): ProjectionParams
     glidePathConfig: GLIDE_PATH_DISABLED,
     withdrawalStrategy: 'constant_dollar',
     strategyParams: DEFAULT_STRATEGY_PARAMS,
+    propertyEquity: 0,
+    annualMortgagePayment: 0,
+    annualRentalIncome: 0,
     ...overrides,
   }
 }

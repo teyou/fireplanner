@@ -183,6 +183,7 @@ export function calculateAllFireMetrics(params: {
   cpfLifeStartAge?: number
   lifeExpectancy?: number
   retirementSpendingAdjustment?: number
+  propertyEquity?: number
 }): FireMetrics {
   const {
     currentAge,
@@ -200,9 +201,11 @@ export function calculateAllFireMetrics(params: {
     cpfLifeStartAge = 65,
     lifeExpectancy = 90,
     retirementSpendingAdjustment = 1.0,
+    propertyEquity = 0,
   } = params
 
   const totalNetWorth = liquidNetWorth + cpfTotal
+  const totalNWIncProperty = totalNetWorth + propertyEquity
   const annualSavings = annualIncome - annualExpenses
   const savingsRate = annualIncome > 0 ? annualSavings / annualIncome : 0
 
@@ -301,6 +304,8 @@ export function calculateAllFireMetrics(params: {
     savingsRate,
     annualSavings,
     totalNetWorth,
+    propertyEquity,
+    totalNWIncProperty,
     cpfDependency,
     liquidBridgeGapYears,
     liquidDepletionAge,

@@ -5,6 +5,7 @@ import { calculatePortfolioReturn } from '@/lib/calculations/portfolio'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useSimulationStore } from '@/stores/useSimulationStore'
+import { usePropertyStore } from '@/stores/usePropertyStore'
 import { useIncomeProjection } from '@/hooks/useIncomeProjection'
 import { useFireCalculations } from '@/hooks/useFireCalculations'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
@@ -27,6 +28,7 @@ export function useProjection(): ProjectionResult {
   const profile = useProfileStore()
   const allocation = useAllocationStore()
   const simulation = useSimulationStore()
+  const property = usePropertyStore()
   const { projection: incomeProjection, hasErrors: incomeHasErrors, errors: incomeErrors } = useIncomeProjection()
   const { metrics: fireMetrics, hasErrors: fireHasErrors, errors: fireErrors } = useFireCalculations()
 
@@ -71,6 +73,11 @@ export function useProjection(): ProjectionResult {
       glidePathConfig: allocation.glidePathConfig,
       withdrawalStrategy: simulation.selectedStrategy,
       strategyParams: simulation.strategyParams,
+      propertyEquity: property.ownsProperty
+        ? Math.max(0, property.existingPropertyValue - property.existingMortgageBalance)
+        : 0,
+      annualMortgagePayment: property.ownsProperty ? property.existingMonthlyPayment * 12 : 0,
+      annualRentalIncome: property.ownsProperty ? property.existingRentalIncome * 12 : 0,
     })
 
     return { rows, summary, hasErrors: false, errors: {} }
@@ -99,5 +106,10 @@ export function useProjection(): ProjectionResult {
     allocation.validationErrors,
     simulation.selectedStrategy,
     simulation.strategyParams,
+    property.ownsProperty,
+    property.existingPropertyValue,
+    property.existingMortgageBalance,
+    property.existingMonthlyPayment,
+    property.existingRentalIncome,
   ])
 }

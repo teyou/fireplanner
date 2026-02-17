@@ -44,6 +44,10 @@ export interface ProjectionParams {
   glidePathConfig: GlidePathConfig
   withdrawalStrategy: WithdrawalStrategyType
   strategyParams: StrategyParamsMap
+  // Property
+  propertyEquity: number
+  annualMortgagePayment: number
+  annualRentalIncome: number
 }
 
 export interface ProjectionResult {
@@ -177,6 +181,9 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     glidePathConfig,
     withdrawalStrategy,
     strategyParams,
+    propertyEquity,
+    annualMortgagePayment,
+    annualRentalIncome,
   } = params
 
   const rows: ProjectionRow[] = []
@@ -226,10 +233,13 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
 
     if (!isRetired) {
       // Pre-retirement: accumulation
+      // Deduct annual mortgage payment from savings, add rental income
+      const netPropertyCashflow = annualRentalIncome - annualMortgagePayment
+      const adjustedSavings = incomeRow.annualSavings + netPropertyCashflow
       portfolioReturnDollar = startLiquidNW * returnRate
-      liquidNW = startLiquidNW * (1 + returnRate) + incomeRow.annualSavings
-      savingsOrWithdrawal = incomeRow.annualSavings
-      totalIncome = incomeRow.totalNet
+      liquidNW = startLiquidNW * (1 + returnRate) + adjustedSavings
+      savingsOrWithdrawal = adjustedSavings
+      totalIncome = incomeRow.totalNet + annualRentalIncome
     } else {
       // Post-retirement: decumulation
 
@@ -240,9 +250,9 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
         )
       }
 
-      // Post-retirement income from active streams
+      // Post-retirement income from active streams + existing property rental
       const postRetirementIncome = incomeRow.rentalIncome + incomeRow.investmentIncome +
-        incomeRow.businessIncome + incomeRow.governmentIncome
+        incomeRow.businessIncome + incomeRow.governmentIncome + annualRentalIncome
 
       // Compute max permitted withdrawal from strategy
       let strategyWithdrawal = 0
@@ -325,6 +335,8 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       cpfOA: incomeRow.cpfOA,
       cpfSA: incomeRow.cpfSA,
       cpfMA: incomeRow.cpfMA,
+      propertyEquity,
+      totalNWIncProperty: totalNW + propertyEquity,
       withdrawalAmount,
       maxPermittedWithdrawal,
       withdrawalExcess,
