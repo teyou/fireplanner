@@ -40,7 +40,7 @@ function StatRow({ label, tooltip, formula, current, target, format, higherIsBet
   )
 }
 
-export function PortfolioStatsPanel() {
+export function PortfolioStatsPanel({ compact = false }: { compact?: boolean } = {}) {
   const { currentStats, targetStats, hasErrors } = usePortfolioStats()
   const [expanded, setExpanded] = useState(false)
 
@@ -94,7 +94,7 @@ export function PortfolioStatsPanel() {
                 target={targetStats.realReturn}
                 format={(v) => formatPercent(v, 2)}
               />
-              {expanded && (
+              {!compact && expanded && (
                 <>
                   <StatRow
                     label="Net Return"
@@ -143,16 +143,18 @@ export function PortfolioStatsPanel() {
             </tbody>
           </table>
         </div>
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mt-2"
-        >
-          {expanded ? (
-            <>Hide details <ChevronUp className="h-4 w-4" /></>
-          ) : (
-            <>Show all stats <ChevronDown className="h-4 w-4" /></>
-          )}
-        </button>
+        {!compact && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mt-2"
+          >
+            {expanded ? (
+              <>Hide details <ChevronUp className="h-4 w-4" /></>
+            ) : (
+              <>Show all stats <ChevronDown className="h-4 w-4" /></>
+            )}
+          </button>
+        )}
       </CardContent>
     </Card>
   )

@@ -371,11 +371,17 @@ function NetWorthContent() {
 }
 
 function CpfContent() {
+  const healthcareEnabled = useUIStore((s) => s.healthcareEnabled)
+
   return (
     <>
       <CpfSection />
-      <HealthcareSection />
-      <HealthcareCostChart />
+      {healthcareEnabled && (
+        <>
+          <HealthcareSection />
+          <HealthcareCostChart />
+        </>
+      )}
     </>
   )
 }
@@ -533,9 +539,36 @@ function PropertyContent() {
 function AllocationContent() {
   const validationErrors = useAllocationStore((s) => s.validationErrors)
   const hasErrors = Object.keys(validationErrors).length > 0
+  const allocationAdvanced = useUIStore((s) => s.allocationAdvanced)
+  const setUIField = useUIStore((s) => s.setField)
 
   return (
     <>
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+          <button
+            onClick={() => setUIField('allocationAdvanced', false)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              !allocationAdvanced
+                ? 'bg-background shadow-sm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Simple
+          </button>
+          <button
+            onClick={() => setUIField('allocationAdvanced', true)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              allocationAdvanced
+                ? 'bg-background shadow-sm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Advanced
+          </button>
+        </div>
+      </div>
+
       {hasErrors && (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
           <p className="text-sm text-destructive font-medium">
@@ -545,10 +578,14 @@ function AllocationContent() {
       )}
 
       <AllocationBuilder />
-      <PortfolioStatsPanel />
-      <AdvancedOverrides />
-      <GlidePathSection />
-      <CorrelationHeatmap />
+      <PortfolioStatsPanel compact={!allocationAdvanced} />
+      {allocationAdvanced && (
+        <>
+          <AdvancedOverrides />
+          <GlidePathSection />
+          <CorrelationHeatmap />
+        </>
+      )}
     </>
   )
 }
@@ -557,8 +594,10 @@ function AllocationContent() {
 
 export function InputsPage() {
   const sectionOrder = useUIStore((s) => s.sectionOrder)
+  const cpfEnabled = useUIStore((s) => s.cpfEnabled)
+  const propertyEnabled = useUIStore((s) => s.propertyEnabled)
   const setSectionOrder = useUIStore((s) => s.setField)
-  const { sections: sectionCompletion, completedCount, totalSections } = useSectionCompletion()
+  const { sections: sectionCompletion } = useSectionCompletion()
 
   const resetProfileRaw = useProfileStore((s) => s.reset)
   const resetIncomeRaw = useIncomeStore((s) => s.reset)
@@ -669,11 +708,22 @@ export function InputsPage() {
     },
   }
 
-  const order = sectionOrder === 'goal-first'
+  const hiddenSections = new Set<SectionId>()
+  if (!cpfEnabled) hiddenSections.add('section-cpf')
+  if (!propertyEnabled) hiddenSections.add('section-property')
+
+  const baseOrder = sectionOrder === 'goal-first'
     ? GOAL_FIRST_ORDER
     : sectionOrder === 'already-fire'
       ? ALREADY_FIRE_ORDER
       : STORY_FIRST_ORDER
+
+  const order = baseOrder.filter((id) => !hiddenSections.has(id))
+
+  const visibleSections = Object.entries(sectionCompletion)
+    .filter(([id]) => !hiddenSections.has(id as SectionId))
+  const completedCount = visibleSections.filter(([, s]) => s.isComplete).length
+  const totalSections = visibleSections.length
 
   return (
     <div className="space-y-10">

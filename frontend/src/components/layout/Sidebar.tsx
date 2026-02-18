@@ -115,6 +115,8 @@ function useActiveSection() {
   const location = useLocation()
   const [activeSection, setActiveSection] = useState<string | null>(null)
   const isInputsPage = location.pathname === '/inputs'
+  const cpfEnabled = useUIStore((s) => s.cpfEnabled)
+  const propertyEnabled = useUIStore((s) => s.propertyEnabled)
 
   useEffect(() => {
     if (!isInputsPage) {
@@ -127,8 +129,8 @@ function useActiveSection() {
       'section-income',
       'section-expenses',
       'section-net-worth',
-      'section-cpf',
-      'section-property',
+      ...(cpfEnabled ? ['section-cpf'] : []),
+      ...(propertyEnabled ? ['section-property'] : []),
       'section-allocation',
     ]
 
@@ -154,7 +156,7 @@ function useActiveSection() {
     elements.forEach((el) => observer.observe(el))
 
     return () => observer.disconnect()
-  }, [isInputsPage])
+  }, [isInputsPage, cpfEnabled, propertyEnabled])
 
   // When not on inputs page, don't report any active section
   return { activeSection: isInputsPage ? activeSection : null, isInputsPage }
@@ -180,11 +182,20 @@ function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
   const { activeSection, isInputsPage } = useActiveSection()
   const { sections } = useSectionCompletion()
 
-  const inputSections = sectionOrder === 'goal-first'
+  const cpfEnabled = useUIStore((s) => s.cpfEnabled)
+  const propertyEnabled = useUIStore((s) => s.propertyEnabled)
+
+  const hiddenSectionIds = new Set<string>()
+  if (!cpfEnabled) hiddenSectionIds.add('section-cpf')
+  if (!propertyEnabled) hiddenSectionIds.add('section-property')
+
+  const allInputSections = sectionOrder === 'goal-first'
     ? GOAL_FIRST_SECTIONS
     : sectionOrder === 'already-fire'
       ? ALREADY_FIRE_SECTIONS
       : STORY_FIRST_SECTIONS
+
+  const inputSections = allInputSections.filter((s) => !hiddenSectionIds.has(s.sectionId))
 
   const handleSectionClick = useCallback(
     (sectionId: string) => {

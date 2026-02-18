@@ -8,7 +8,8 @@ import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useUIStore } from '@/stores/useUIStore'
 import { formatCurrency } from '@/lib/utils'
-import { Target, TrendingUp, CheckCircle, Clock, CalendarClock, Landmark, ArrowRight, Info } from 'lucide-react'
+import { Target, TrendingUp, CheckCircle, Clock, CalendarClock, Landmark, ArrowRight, Info, Building, Heart } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { MetricCard } from '@/components/shared/MetricCard'
@@ -47,6 +48,9 @@ export function StartPage() {
   const profileStore = useProfileStore()
   const incomeStore = useIncomeStore()
   const setUIField = useUIStore((s) => s.setField)
+  const cpfEnabled = useUIStore((s) => s.cpfEnabled)
+  const propertyEnabled = useUIStore((s) => s.propertyEnabled)
+  const healthcareEnabled = useUIStore((s) => s.healthcareEnabled)
   const navigate = useNavigate()
   const [activePathway, setActivePathway] = useState<ActivePathway>(null)
 
@@ -393,6 +397,58 @@ export function StartPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Section toggles — visible after picking a pathway */}
+      {activePathway !== null && (
+        <Card className="bg-muted/30">
+          <CardHeader>
+            <CardTitle className="text-lg">Customise your plan</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Landmark className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <div className="text-sm font-medium">CPF Integration</div>
+                  <p className="text-xs text-muted-foreground">CPF balances, contributions, and LIFE payouts</p>
+                </div>
+              </div>
+              <Switch
+                checked={cpfEnabled}
+                onCheckedChange={(v) => setUIField('cpfEnabled', v)}
+              />
+            </div>
+            {cpfEnabled && (
+              <div className="flex items-center justify-between ml-4 pl-4 border-l-2 border-muted-foreground/20">
+                <div className="flex items-center gap-3">
+                  <Heart className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <div className="text-sm font-medium">Healthcare Planning</div>
+                    <p className="text-xs text-muted-foreground">MediShield, CareShield, and out-of-pocket estimates</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={healthcareEnabled}
+                  onCheckedChange={(v) => setUIField('healthcareEnabled', v)}
+                />
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Building className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <div className="text-sm font-medium">Property Analysis</div>
+                  <p className="text-xs text-muted-foreground">Existing property, mortgage tracking, and purchase analysis</p>
+                </div>
+              </div>
+              <Switch
+                checked={propertyEnabled}
+                onCheckedChange={(v) => setUIField('propertyEnabled', v)}
+              />
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Continue link for returning users */}
