@@ -1,8 +1,108 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import Markdown from 'react-markdown'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import Markdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+
+// ── ELI5 glossary ──────────────────────────────────────────────────────
+const GLOSSARY: Record<string, string> = {
+  // Monte Carlo
+  'Monte Carlo simulation': 'Like rolling dice thousands of times to see how often your retirement plan works out.',
+  'Monte Carlo simulations': 'Like rolling dice thousands of times to see how often your retirement plan works out.',
+  'Parametric': 'Generates fake market returns using a mathematical bell curve.',
+  'multivariate normal distribution': 'A bell curve, but for multiple things at once (e.g. stocks and bonds moving together).',
+  'Cholesky decomposition': 'A math trick that keeps fake random returns realistically correlated with each other.',
+  'Historical Bootstrap': 'Picks random real years from history and replays them in shuffled order.',
+  'Bootstrap': 'Picks random real years from history and replays them in shuffled order.',
+  'Student-t distribution': 'A bell curve with fatter edges — makes extreme crashes and booms more likely.',
+  'Fat-Tail': 'A model where extreme events (crashes, booms) happen more often than a normal bell curve predicts.',
+  'fan chart': 'A chart shaped like a fan showing the range of possible outcomes from best to worst.',
+  'percentile bands': 'Dividing outcomes into slices — p5 means only 5% of scenarios did worse.',
+  // SWR
+  'CAPE ratio': 'A stock market "is it expensive?" gauge — compares prices to 10 years of earnings.',
+  'CAPE earnings yield': 'The inverse of the CAPE ratio — tells you what return the market is "priced to deliver".',
+  'CAPE': 'Cyclically Adjusted Price-to-Earnings — a stock market "is it expensive?" gauge using 10 years of earnings.',
+  'volatility': 'How wildly your investments swing up and down.',
+  'equities': 'Stocks — ownership shares in companies.',
+  'longevity insurance': 'Protection against the risk of living longer than your money lasts.',
+  // Asset Allocation
+  'REITs': 'Companies that own buildings and pay you rent as dividends.',
+  'Markowitz efficient frontier': 'The "best possible" combinations of risk and return — you can\'t do better without taking more risk.',
+  'Sharpe ratio': 'How much extra return you earn for each unit of risk — higher is better.',
+  'Sharpe Ratio': 'How much extra return you earn for each unit of risk — higher is better.',
+  'Diversification ratio': 'A score showing how much spreading across assets reduces your overall risk.',
+  'Glide path': 'Automatically shifting from aggressive to safer investments as you age.',
+  'Glide Path': 'Automatically shifting from aggressive to safer investments as you age.',
+  // Sequence Risk
+  'Bond tent': 'Temporarily holding more bonds around retirement to cushion early crashes.',
+  'Bucket strategy': 'Splitting money into "spend soon", "spend later", and "long-term growth" buckets.',
+  // Withdrawal
+  'VPW': 'Recalculates your withdrawal each year based on how much is left and how long you need it.',
+  'Guyton-Klinger': 'Rules that automatically cut or boost spending when your portfolio crosses preset thresholds.',
+  // Singapore
+  'annuity': 'A product that pays you a fixed amount every month for life.',
+  'SRS': 'A voluntary savings account that reduces your income tax now, taxed lightly when you withdraw later.',
+  'LTV': 'The maximum percentage of a property\'s value the bank will lend you.',
+  'leasehold': 'You own the property for a set number of years (usually 99), then it reverts to the state.',
+  "Bala's Table": 'An official lookup table that says how much value a leasehold property loses as the lease gets shorter.',
+  // Legacy & Estate
+  'testator': 'The person making the will.',
+  'Intestate Succession Act': 'Singapore\'s rulebook for dividing assets when someone dies without a will.',
+  'Faraid': 'Islamic inheritance rules that assign fixed shares to specific family members.',
+  'intestacy laws': 'The default rules for who gets what when there\'s no will.',
+  'intestacy rules': 'The default rules for who gets what when there\'s no will.',
+  'Section 73 trust': 'A legal shield that protects your life insurance payout from creditors — goes straight to spouse/kids.',
+  // Glossary
+  'VaR': '"In a bad month, the most I\'d expect to lose is $X" — a worst-case estimate at a given confidence level.',
+  'Value at Risk': '"In a bad month, the most I\'d expect to lose is $X" — a worst-case estimate at a given confidence level.',
+  'Standard Deviation': 'How spread out returns are from the average — bigger number means wilder swings.',
+}
+
+// Sort terms longest-first so "Historical Bootstrap" matches before "Bootstrap"
+const SORTED_TERMS = Object.keys(GLOSSARY).sort((a, b) => b.length - a.length)
+const GLOSSARY_RE = new RegExp(`(${SORTED_TERMS.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g')
+
+function injectTooltips(text: string): ReactNode[] {
+  const parts = text.split(GLOSSARY_RE)
+  return parts.map((part, i) => {
+    const eli5 = GLOSSARY[part]
+    if (eli5) {
+      return (
+        <Tooltip key={i}>
+          <TooltipTrigger asChild>
+            <span className="underline decoration-dotted decoration-muted-foreground/50 underline-offset-2 cursor-help">{part}</span>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs text-sm">{eli5}</TooltipContent>
+        </Tooltip>
+      )
+    }
+    return part
+  })
+}
+
+function buildMarkdownComponents(tooltipsEnabled: boolean): Components {
+  if (!tooltipsEnabled) return {}
+  return {
+    p: ({ children }) => <p>{processChildren(children)}</p>,
+    li: ({ children }) => <li>{processChildren(children)}</li>,
+    td: ({ children }) => <td>{processChildren(children)}</td>,
+    th: ({ children }) => <th>{processChildren(children)}</th>,
+    strong: ({ children }) => <strong>{processChildren(children)}</strong>,
+    em: ({ children }) => <em>{processChildren(children)}</em>,
+  }
+}
+
+function processChildren(children: ReactNode): ReactNode {
+  if (typeof children === 'string') return injectTooltips(children)
+  if (Array.isArray(children)) return children.map((child, i) => {
+    if (typeof child === 'string') return <span key={i}>{injectTooltips(child)}</span>
+    return child
+  })
+  return children
+}
 
 const SECTIONS = [
   {
@@ -344,6 +444,9 @@ export function ReferencePage() {
   const location = useLocation()
   const hashId = location.hash.slice(1)
   const validHash = SECTIONS.some((s) => s.id === hashId) ? hashId : null
+  const [tooltipsEnabled, setTooltipsEnabled] = useState(true)
+
+  const mdComponents = useMemo(() => buildMarkdownComponents(tooltipsEnabled), [tooltipsEnabled])
 
   // Include hash target in initial open set; also open on hash changes via key reset
   const openDefault = validHash ? ['fire', validHash] : ['fire']
@@ -357,28 +460,38 @@ export function ReferencePage() {
   }, [validHash])
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Reference Guide</h1>
-        <p className="text-muted-foreground text-sm">
-          Learn about FIRE planning concepts, Singapore-specific considerations, and how to use this tool effectively.
-        </p>
-      </div>
+    <TooltipProvider delayDuration={200}>
+      <div className="space-y-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Reference Guide</h1>
+            <p className="text-muted-foreground text-sm">
+              Learn about FIRE planning concepts, Singapore-specific considerations, and how to use this tool effectively.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 pt-1">
+            <Switch id="eli5" checked={tooltipsEnabled} onCheckedChange={setTooltipsEnabled} />
+            <Label htmlFor="eli5" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">
+              ELI5 tooltips
+            </Label>
+          </div>
+        </div>
 
-      <Accordion type="multiple" key={validHash ?? 'default'} defaultValue={openDefault}>
-        {SECTIONS.map((section) => (
-          <AccordionItem key={section.id} value={section.id} id={`ref-${section.id}`}>
-            <AccordionTrigger className="text-left font-medium">
-              {section.title}
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="prose prose-sm max-w-none prose-neutral prose-headings:text-foreground prose-headings:text-base prose-headings:mt-6 prose-headings:mb-2 prose-strong:text-foreground prose-p:text-muted-foreground prose-li:text-muted-foreground prose-td:text-muted-foreground prose-th:text-foreground prose-th:text-xs">
-                <Markdown remarkPlugins={[remarkGfm]}>{section.content}</Markdown>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
-    </div>
+        <Accordion type="multiple" key={validHash ?? 'default'} defaultValue={openDefault}>
+          {SECTIONS.map((section) => (
+            <AccordionItem key={section.id} value={section.id} id={`ref-${section.id}`}>
+              <AccordionTrigger className="text-left font-medium">
+                {section.title}
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="prose prose-sm max-w-none prose-neutral prose-headings:text-foreground prose-headings:text-base prose-headings:mt-6 prose-headings:mb-2 prose-strong:text-foreground prose-p:text-muted-foreground prose-li:text-muted-foreground prose-td:text-muted-foreground prose-th:text-foreground prose-th:text-xs">
+                  <Markdown remarkPlugins={[remarkGfm]} components={mdComponents}>{section.content}</Markdown>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </div>
+    </TooltipProvider>
   )
 }
