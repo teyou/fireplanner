@@ -34,7 +34,7 @@ export function flattenStrategyParams(
     const fc = sp as FloorCeilingParams
     return { floorAmount: fc.floor, ceilingAmount: fc.ceiling, targetRate: fc.targetRate }
   }
-  return sp as Record<string, number>
+  return sp as unknown as Record<string, number>
 }
 
 // ============================================================
@@ -67,6 +67,7 @@ function callWorker<T>(message: Record<string, unknown>): Promise<T> {
     const handler = (e: MessageEvent) => {
       if (e.data.id !== id) return
       w.removeEventListener('message', handler)
+      w.removeEventListener('error', errorHandler)
       if (e.data.type === 'error') {
         reject(new Error(e.data.error))
       } else {
@@ -74,7 +75,14 @@ function callWorker<T>(message: Record<string, unknown>): Promise<T> {
       }
     }
 
+    const errorHandler = (err: ErrorEvent) => {
+      w.removeEventListener('message', handler)
+      w.removeEventListener('error', errorHandler)
+      reject(new Error(err.message || 'Worker error'))
+    }
+
     w.addEventListener('message', handler)
+    w.addEventListener('error', errorHandler)
     w.postMessage({ ...message, id })
   })
 }

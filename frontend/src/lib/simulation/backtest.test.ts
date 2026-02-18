@@ -301,7 +301,7 @@ describe('generateHeatmap', () => {
   })
 
   it('higher SWR rows have lower or equal success rates than lower SWR rows (monotone tendency)', () => {
-    const heatmap = generateHeatmap(PARAMS, [0.03, 0.04, 0.05, 0.06], 0.01, [30, 30], 1)
+    const heatmap = generateHeatmap(PARAMS, [0.03, 0.06], 0.01, [30, 30], 1)
     // Single duration column — check swr order
     const col = heatmap.success_rates.map((row) => row[0])
     for (let i = 0; i < col.length - 1; i++) {

@@ -144,6 +144,7 @@ function computeWithdrawal(
   initialWithdrawal: number,
   prevWithdrawal: number,
   inflation: number,
+  prevYearReturn?: number,
 ): number {
   switch (strategy) {
     case 'constant_dollar':
@@ -168,6 +169,7 @@ function computeWithdrawal(
         strategyParams.ceilingTrigger ?? 1.20,
         strategyParams.floorTrigger ?? 0.80,
         strategyParams.adjustmentSize ?? 0.10,
+        prevYearReturn,
       )
 
     case 'vanguard_dynamic':
@@ -239,6 +241,7 @@ function runSingleWindow(
   let bestYearOffset = 0
   let bestBalance = initialPortfolio
   let survived = true
+  let prevYearReturn: number | undefined = undefined
 
   for (let y = 0; y < duration; y++) {
     const idx = startIdx + y
@@ -263,12 +266,14 @@ function runSingleWindow(
       initialWithdrawal,
       prevWithdrawal,
       inf,
+      prevYearReturn,
     )
 
     // Cap withdrawal at current portfolio value
     withdrawal = Math.min(withdrawal, portfolio)
     totalWithdrawn += withdrawal
     prevWithdrawal = withdrawal
+    prevYearReturn = ret
 
     portfolio = (portfolio - withdrawal) * (1 + ret - expenseRatio)
 
