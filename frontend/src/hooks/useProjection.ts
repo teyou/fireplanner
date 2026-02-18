@@ -78,6 +78,14 @@ export function useProjection(): ProjectionResult {
         : 0,
       annualMortgagePayment: property.ownsProperty ? property.existingMonthlyPayment * 12 : 0,
       annualRentalIncome: property.ownsProperty ? property.existingRentalIncome * 12 : 0,
+      downsizing: property.ownsProperty && property.downsizing.scenario !== 'none'
+        ? property.downsizing
+        : null,
+      existingMortgageBalance: property.existingMortgageBalance,
+      existingMortgageRate: property.existingMortgageRate,
+      existingMonthlyPayment: property.existingMonthlyPayment,
+      existingMortgageRemainingYears: property.existingMortgageRemainingYears,
+      residencyForAbsd: property.residencyForAbsd,
       parentSupport: profile.parentSupport,
       parentSupportEnabled: profile.parentSupportEnabled,
     })
@@ -113,6 +121,10 @@ export function useProjection(): ProjectionResult {
     property.existingMortgageBalance,
     property.existingMonthlyPayment,
     property.existingRentalIncome,
+    property.existingMortgageRate,
+    property.existingMortgageRemainingYears,
+    property.downsizing,
+    property.residencyForAbsd,
     profile.parentSupportEnabled,
     profile.parentSupport,
   ])

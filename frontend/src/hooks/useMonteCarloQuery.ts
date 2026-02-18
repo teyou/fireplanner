@@ -6,6 +6,7 @@ import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useSimulationStore } from '@/stores/useSimulationStore'
+import { usePropertyStore } from '@/stores/usePropertyStore'
 import { ASSET_CLASSES, CORRELATION_MATRIX } from '@/lib/data/historicalReturns'
 import { buildProjectionParams } from '@/hooks/useIncomeProjection'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
@@ -26,6 +27,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
   const income = useIncomeStore()
   const allocation = useAllocationStore()
   const simulation = useSimulationStore()
+  const propertyStore = usePropertyStore()
   const analysisPortfolio = useAnalysisPortfolio()
 
   // Gate on upstream validation
@@ -58,6 +60,8 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     incomeStreams: income.incomeStreams,
     parentSupportEnabled: profile.parentSupportEnabled,
     parentSupport: profile.parentSupport,
+    downsizing: propertyStore.downsizing,
+    ownsProperty: propertyStore.ownsProperty,
   }), [
     analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights, analysisPortfolio.skipAccumulation,
     profile.currentAge, profile.retirementAge, profile.lifeExpectancy, profile.expenseRatio, profile.inflation,
@@ -65,6 +69,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     allocation.returnOverrides, allocation.stdDevOverrides,
     income.annualSalary, income.salaryModel, income.incomeStreams,
     profile.parentSupportEnabled, profile.parentSupport,
+    propertyStore.downsizing, propertyStore.ownsProperty,
   ])
 
   const mutation = useMutation({

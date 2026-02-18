@@ -14,8 +14,14 @@ import type {
   StrategyParamsMap,
   GlidePathConfig,
   ParentSupport,
+  DownsizingConfig,
 } from '@/lib/types'
 import { calculateParentSupportAtAge } from './fire'
+import {
+  outstandingMortgageAtAge,
+  calculateSellAndDownsize,
+  calculateSellAndRent,
+} from './property'
 import { calculatePortfolioReturn, interpolateGlidePath } from './portfolio'
 import {
   constantDollar,
@@ -50,6 +56,13 @@ export interface ProjectionParams {
   propertyEquity: number
   annualMortgagePayment: number
   annualRentalIncome: number
+  // Downsizing
+  downsizing: DownsizingConfig | null
+  existingMortgageBalance: number
+  existingMortgageRate: number
+  existingMonthlyPayment: number
+  existingMortgageRemainingYears: number
+  residencyForAbsd: 'citizen' | 'pr' | 'foreigner'
   // Parent support
   parentSupport: ParentSupport[]
   parentSupportEnabled: boolean
@@ -189,6 +202,11 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     propertyEquity,
     annualMortgagePayment,
     annualRentalIncome,
+    downsizing,
+    existingMortgageBalance,
+    existingMortgageRate,
+    existingMonthlyPayment,
+    residencyForAbsd,
     parentSupport,
     parentSupportEnabled,
   } = params
@@ -202,6 +220,46 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
   let peakTotalNW = 0
   let peakTotalNWAge = currentAge
   let portfolioDepletedAge: number | null = null
+
+  // Pre-compute downsizing results
+  const dsActive = downsizing && downsizing.scenario !== 'none'
+  let dsSellAge = dsActive ? downsizing.sellAge : Infinity
+  let dsNetEquity = 0
+  let dsNewMonthlyPayment = 0
+  let dsAnnualRent = 0
+
+  if (dsActive && downsizing) {
+    const yearsToSell = dsSellAge - currentAge
+    const outstandingAtSell = outstandingMortgageAtAge(
+      existingMortgageBalance,
+      existingMonthlyPayment,
+      existingMortgageRate,
+      Math.max(0, yearsToSell),
+    )
+
+    if (downsizing.scenario === 'sell-and-downsize') {
+      const result = calculateSellAndDownsize({
+        salePrice: downsizing.expectedSalePrice,
+        outstandingMortgage: outstandingAtSell,
+        newPropertyCost: downsizing.newPropertyCost,
+        newLtv: downsizing.newLtv,
+        newMortgageRate: downsizing.newMortgageRate,
+        newMortgageTerm: downsizing.newMortgageTerm,
+        residency: residencyForAbsd,
+        propertyCount: 0, // selling existing, buying replacement = still 1st property
+      })
+      dsNetEquity = result.netEquityToPortfolio
+      dsNewMonthlyPayment = result.newMonthlyPayment
+    } else if (downsizing.scenario === 'sell-and-rent') {
+      const result = calculateSellAndRent({
+        salePrice: downsizing.expectedSalePrice,
+        outstandingMortgage: outstandingAtSell,
+        monthlyRent: downsizing.monthlyRent,
+      })
+      dsNetEquity = result.netProceedsToPortfolio
+      dsAnnualRent = result.annualRent
+    }
+  }
 
   const totalYears = lifeExpectancy - currentAge
 
@@ -227,6 +285,12 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       returnRate = expectedReturn - expenseRatio
     }
 
+    // Downsizing: inject lump sum at sell age (before capturing startLiquidNW)
+    const soldProperty = dsActive && age >= dsSellAge
+    if (dsActive && age === dsSellAge) {
+      liquidNW += dsNetEquity
+    }
+
     const startLiquidNW = liquidNW
     let withdrawalAmount = 0
     let maxPermittedWithdrawal = 0
@@ -240,18 +304,48 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       ? calculateParentSupportAtAge(parentSupport, age)
       : 0
 
+    // Property cashflows depend on whether property has been sold
+    let effectiveMortgagePayment = annualMortgagePayment
+    let effectiveRentalIncome = annualRentalIncome
+    let effectivePropertyEquity = propertyEquity
+    let downsizingRentExpense = 0
+
+    if (soldProperty && downsizing) {
+      // After selling, no existing mortgage or rental income
+      effectiveRentalIncome = 0
+      if (downsizing.scenario === 'sell-and-downsize') {
+        effectiveMortgagePayment = dsNewMonthlyPayment * 12
+        // New property equity grows from down payment
+        const yearsSinceSell = age - dsSellAge
+        const newDownPayment = downsizing.newPropertyCost * (1 - downsizing.newLtv)
+        const newMortgageBalance = outstandingMortgageAtAge(
+          downsizing.newPropertyCost * downsizing.newLtv,
+          dsNewMonthlyPayment,
+          downsizing.newMortgageRate,
+          yearsSinceSell,
+        )
+        effectivePropertyEquity = newDownPayment + (downsizing.newPropertyCost * downsizing.newLtv - newMortgageBalance)
+      } else if (downsizing.scenario === 'sell-and-rent') {
+        effectiveMortgagePayment = 0
+        effectivePropertyEquity = 0
+        // Rent grows over time from sell age
+        const yearsSinceSell = age - dsSellAge
+        downsizingRentExpense = dsAnnualRent * Math.pow(1 + (downsizing.rentGrowthRate ?? 0.03), yearsSinceSell)
+      }
+    }
+
     const baseExpenses = isRetired ? annualExpenses * retirementSpendingAdjustment : annualExpenses
-    const inflationAdjustedExpenses = baseExpenses * Math.pow(1 + inflation, year) + parentSupportExpense
+    const inflationAdjustedExpenses = baseExpenses * Math.pow(1 + inflation, year) + parentSupportExpense + downsizingRentExpense
 
     if (!isRetired) {
       // Pre-retirement: accumulation
       // Deduct annual mortgage payment from savings, add rental income
-      const netPropertyCashflow = annualRentalIncome - annualMortgagePayment
+      const netPropertyCashflow = effectiveRentalIncome - effectiveMortgagePayment
       const adjustedSavings = incomeRow.annualSavings + netPropertyCashflow
       portfolioReturnDollar = startLiquidNW * returnRate
       liquidNW = startLiquidNW * (1 + returnRate) + adjustedSavings
       savingsOrWithdrawal = adjustedSavings
-      totalIncome = incomeRow.totalNet + annualRentalIncome
+      totalIncome = incomeRow.totalNet + effectiveRentalIncome
     } else {
       // Post-retirement: decumulation
 
@@ -264,7 +358,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
 
       // Post-retirement income from active streams + existing property rental
       const postRetirementIncome = incomeRow.rentalIncome + incomeRow.investmentIncome +
-        incomeRow.businessIncome + incomeRow.governmentIncome + annualRentalIncome
+        incomeRow.businessIncome + incomeRow.governmentIncome + effectiveRentalIncome
 
       // Compute max permitted withdrawal from strategy
       let strategyWithdrawal = 0
@@ -347,8 +441,8 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       cpfOA: incomeRow.cpfOA,
       cpfSA: incomeRow.cpfSA,
       cpfMA: incomeRow.cpfMA,
-      propertyEquity,
-      totalNWIncProperty: totalNW + propertyEquity,
+      propertyEquity: effectivePropertyEquity,
+      totalNWIncProperty: totalNW + effectivePropertyEquity,
       withdrawalAmount,
       maxPermittedWithdrawal,
       withdrawalExcess,

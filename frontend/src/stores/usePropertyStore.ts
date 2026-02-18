@@ -1,13 +1,29 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { PropertyState, ValidationErrors } from '@/lib/types'
+import type { PropertyState, DownsizingConfig, ValidationErrors } from '@/lib/types'
 
 interface PropertyActions {
   setField: <K extends keyof Omit<PropertyState, 'validationErrors'>>(
     field: K,
     value: PropertyState[K]
   ) => void
+  setDownsizingField: <K extends keyof DownsizingConfig>(
+    field: K,
+    value: DownsizingConfig[K]
+  ) => void
   reset: () => void
+}
+
+const DEFAULT_DOWNSIZING: DownsizingConfig = {
+  scenario: 'none',
+  sellAge: 65,
+  expectedSalePrice: 1500000,
+  newPropertyCost: 800000,
+  newMortgageRate: 0.035,
+  newMortgageTerm: 20,
+  newLtv: 0.75,
+  monthlyRent: 2500,
+  rentGrowthRate: 0.03,
 }
 
 const PROPERTY_DATA_KEYS = [
@@ -16,6 +32,8 @@ const PROPERTY_DATA_KEYS = [
   'residencyForAbsd', 'propertyCount',
   'ownsProperty', 'existingPropertyValue', 'existingMortgageBalance',
   'existingMonthlyPayment', 'existingRentalIncome',
+  'existingMortgageRate', 'existingMortgageRemainingYears',
+  'downsizing',
 ] as const
 
 const DEFAULT_PROPERTY: Omit<PropertyState, 'validationErrors'> = {
@@ -34,6 +52,9 @@ const DEFAULT_PROPERTY: Omit<PropertyState, 'validationErrors'> = {
   existingMortgageBalance: 0,
   existingMonthlyPayment: 0,
   existingRentalIncome: 0,
+  existingMortgageRate: 0.035,
+  existingMortgageRemainingYears: 25,
+  downsizing: DEFAULT_DOWNSIZING,
 }
 
 function extractPropertyData(
@@ -80,6 +101,44 @@ function computeValidationErrors(
     if (state.existingRentalIncome < 0) {
       errors.existingRentalIncome = 'Rental income cannot be negative'
     }
+    if (state.existingMortgageRate < 0 || state.existingMortgageRate > 0.15) {
+      errors.existingMortgageRate = 'Mortgage rate must be between 0% and 15%'
+    }
+    if (state.existingMortgageRemainingYears < 0 || state.existingMortgageRemainingYears > 35) {
+      errors.existingMortgageRemainingYears = 'Remaining years must be between 0 and 35'
+    }
+
+    const ds = state.downsizing
+    if (ds.scenario !== 'none') {
+      if (ds.sellAge < 18 || ds.sellAge > 120) {
+        errors['downsizing_sellAge'] = 'Sell age must be between 18 and 120'
+      }
+      if (ds.expectedSalePrice <= 0) {
+        errors['downsizing_expectedSalePrice'] = 'Expected sale price must be positive'
+      }
+      if (ds.scenario === 'sell-and-downsize') {
+        if (ds.newPropertyCost <= 0) {
+          errors['downsizing_newPropertyCost'] = 'New property cost must be positive'
+        }
+        if (ds.newMortgageRate < 0 || ds.newMortgageRate > 0.15) {
+          errors['downsizing_newMortgageRate'] = 'Mortgage rate must be between 0% and 15%'
+        }
+        if (ds.newMortgageTerm < 1 || ds.newMortgageTerm > 35) {
+          errors['downsizing_newMortgageTerm'] = 'Term must be between 1 and 35 years'
+        }
+        if (ds.newLtv < 0 || ds.newLtv > 1) {
+          errors['downsizing_newLtv'] = 'LTV must be between 0% and 100%'
+        }
+      }
+      if (ds.scenario === 'sell-and-rent') {
+        if (ds.monthlyRent < 0) {
+          errors['downsizing_monthlyRent'] = 'Monthly rent cannot be negative'
+        }
+        if (ds.rentGrowthRate < 0 || ds.rentGrowthRate > 0.15) {
+          errors['downsizing_rentGrowthRate'] = 'Rent growth rate must be between 0% and 15%'
+        }
+      }
+    }
   }
 
   return errors
@@ -101,6 +160,17 @@ export const usePropertyStore = create<PropertyState & PropertyActions>()(
           }
         }),
 
+      setDownsizingField: (field, value) =>
+        set((state) => {
+          const stateData = extractPropertyData(state)
+          const updatedDownsizing = { ...stateData.downsizing, [field]: value }
+          const updated = { ...stateData, downsizing: updatedDownsizing }
+          return {
+            downsizing: updatedDownsizing,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
       reset: () =>
         set({
           ...DEFAULT_PROPERTY,
@@ -109,7 +179,7 @@ export const usePropertyStore = create<PropertyState & PropertyActions>()(
     }),
     {
       name: 'fireplanner-property',
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -118,6 +188,11 @@ export const usePropertyStore = create<PropertyState & PropertyActions>()(
           state.existingMortgageBalance = state.existingMortgageBalance ?? 0
           state.existingMonthlyPayment = state.existingMonthlyPayment ?? 0
           state.existingRentalIncome = state.existingRentalIncome ?? 0
+        }
+        if (version < 3) {
+          state.existingMortgageRate = state.existingMortgageRate ?? 0.035
+          state.existingMortgageRemainingYears = state.existingMortgageRemainingYears ?? 25
+          state.downsizing = state.downsizing ?? DEFAULT_DOWNSIZING
         }
         return state
       },

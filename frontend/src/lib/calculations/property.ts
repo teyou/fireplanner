@@ -137,6 +137,115 @@ export function mortgageAmortization(
 }
 
 // ============================================================
+// Outstanding Mortgage at Future Age
+// ============================================================
+
+/**
+ * Calculate outstanding mortgage balance after a number of years have elapsed.
+ * Uses month-by-month amortization from the current balance.
+ */
+export function outstandingMortgageAtAge(
+  currentBalance: number,
+  monthlyPayment: number,
+  annualRate: number,
+  yearsElapsed: number,
+): number {
+  if (currentBalance <= 0 || yearsElapsed <= 0) return Math.max(0, currentBalance)
+  const monthlyRate = annualRate / 12
+  let balance = currentBalance
+  const totalMonths = Math.round(yearsElapsed * 12)
+
+  for (let m = 0; m < totalMonths; m++) {
+    if (balance <= 0) return 0
+    const interest = balance * monthlyRate
+    const principal = Math.min(monthlyPayment - interest, balance)
+    if (principal <= 0) return balance // payment doesn't cover interest
+    balance -= principal
+  }
+
+  return Math.max(0, balance)
+}
+
+// ============================================================
+// Sell-and-Downsize Calculation
+// ============================================================
+
+export interface SellAndDownsizeResult {
+  grossProceeds: number
+  outstandingMortgage: number
+  bsdOnNewProperty: number
+  absdOnNewProperty: number
+  downPayment: number
+  newLoanAmount: number
+  newMonthlyPayment: number
+  netEquityToPortfolio: number
+}
+
+export function calculateSellAndDownsize(params: {
+  salePrice: number
+  outstandingMortgage: number
+  newPropertyCost: number
+  newLtv: number
+  newMortgageRate: number
+  newMortgageTerm: number
+  residency: 'citizen' | 'pr' | 'foreigner'
+  propertyCount: number // property count AFTER selling (typically 0 if selling only home)
+}): SellAndDownsizeResult {
+  const grossProceeds = params.salePrice
+  const bsd = calculateBSD(params.newPropertyCost)
+  const absd = calculateABSD(params.newPropertyCost, params.residency, params.propertyCount)
+  const newLoanAmount = params.newPropertyCost * params.newLtv
+  const downPayment = params.newPropertyCost - newLoanAmount
+
+  const monthlyRate = params.newMortgageRate / 12
+  const nPayments = params.newMortgageTerm * 12
+  let newMonthlyPayment: number
+  if (monthlyRate === 0) {
+    newMonthlyPayment = newLoanAmount / nPayments
+  } else {
+    newMonthlyPayment = newLoanAmount * (monthlyRate * (1 + monthlyRate) ** nPayments) / ((1 + monthlyRate) ** nPayments - 1)
+  }
+
+  const netEquity = grossProceeds - params.outstandingMortgage - bsd - absd - downPayment
+
+  return {
+    grossProceeds,
+    outstandingMortgage: params.outstandingMortgage,
+    bsdOnNewProperty: bsd,
+    absdOnNewProperty: absd,
+    downPayment,
+    newLoanAmount,
+    newMonthlyPayment,
+    netEquityToPortfolio: Math.max(0, netEquity),
+  }
+}
+
+// ============================================================
+// Sell-and-Rent Calculation
+// ============================================================
+
+export interface SellAndRentResult {
+  grossProceeds: number
+  outstandingMortgage: number
+  netProceedsToPortfolio: number
+  annualRent: number
+}
+
+export function calculateSellAndRent(params: {
+  salePrice: number
+  outstandingMortgage: number
+  monthlyRent: number
+}): SellAndRentResult {
+  const netProceeds = Math.max(0, params.salePrice - params.outstandingMortgage)
+  return {
+    grossProceeds: params.salePrice,
+    outstandingMortgage: params.outstandingMortgage,
+    netProceedsToPortfolio: netProceeds,
+    annualRent: params.monthlyRent * 12,
+  }
+}
+
+// ============================================================
 // Rental Yield
 // ============================================================
 

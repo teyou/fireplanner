@@ -558,6 +558,22 @@ export interface BacktestResult {
 
 export type PropertyType = 'hdb' | 'condo' | 'landed'
 
+export type DownsizingScenario = 'none' | 'sell-and-downsize' | 'sell-and-rent'
+
+export interface DownsizingConfig {
+  scenario: DownsizingScenario
+  sellAge: number
+  expectedSalePrice: number
+  // Sell-and-Downsize
+  newPropertyCost: number
+  newMortgageRate: number
+  newMortgageTerm: number
+  newLtv: number
+  // Sell-and-Rent
+  monthlyRent: number
+  rentGrowthRate: number
+}
+
 export interface PropertyState {
   // New purchase analysis
   propertyType: PropertyType
@@ -576,6 +592,10 @@ export interface PropertyState {
   existingMortgageBalance: number
   existingMonthlyPayment: number
   existingRentalIncome: number
+  existingMortgageRate: number
+  existingMortgageRemainingYears: number
+  // Downsizing
+  downsizing: DownsizingConfig
   validationErrors: ValidationErrors
 }
 

@@ -38,6 +38,8 @@ import { PortfolioComparisonChart } from '@/components/withdrawal/PortfolioCompa
 // Property sections
 import { PropertyInputForm } from '@/components/property/PropertyInputForm'
 import { PropertyAnalysisPanel } from '@/components/property/PropertyAnalysisPanel'
+import { DownsizingScenarioForm } from '@/components/property/DownsizingScenarioForm'
+import { DownsizingResultsPanel } from '@/components/property/DownsizingResultsPanel'
 
 // Shared
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
@@ -490,6 +492,13 @@ function PropertyContent() {
           )}
         </CardContent>
       </Card>
+
+      {ownsProperty && propertyStatus === 'with-mortgage' && (
+        <>
+          <DownsizingScenarioForm />
+          <DownsizingResultsPanel />
+        </>
+      )}
 
       <Card>
         <CardContent className="pt-4 pb-4">
