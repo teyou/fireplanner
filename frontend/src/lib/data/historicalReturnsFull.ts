@@ -151,6 +151,19 @@ export const ASSET_CLASS_COLUMNS = [
 
 export type AssetClassColumn = (typeof ASSET_CLASS_COLUMNS)[number]
 
+/** Maps ASSET_CLASSES key to HistoricalReturnRow column name.
+ *  Used by bootstrap MC to index into historical data by allocation weight order. */
+export const ASSET_KEY_TO_COLUMN: Record<string, keyof HistoricalReturnRow> = {
+  usEquities: 'usEquities',
+  sgEquities: 'sgEquities',
+  intlEquities: 'intlEquities',
+  bonds: 'usBonds',
+  reits: 'reits',
+  gold: 'gold',
+  cash: 'cash',
+  cpf: 'cpfBlended',
+}
+
 /** Year range of the full dataset. */
 export const DATA_YEAR_RANGE = { start: 1928, end: 2024 } as const
 
