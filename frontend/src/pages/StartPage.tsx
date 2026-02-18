@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { useFireCalculations } from '@/hooks/useFireCalculations'
 import { useProjection } from '@/hooks/useProjection'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useUIStore } from '@/stores/useUIStore'
 import { formatCurrency } from '@/lib/utils'
 import { Target, TrendingUp, CheckCircle, Clock, CalendarClock, Landmark, ArrowRight, Info } from 'lucide-react'
@@ -44,6 +45,7 @@ export function StartPage() {
   const { summary: projSummary } = useProjection()
   const { sections } = useSectionCompletion()
   const profileStore = useProfileStore()
+  const incomeStore = useIncomeStore()
   const setUIField = useUIStore((s) => s.setField)
   const navigate = useNavigate()
   const [activePathway, setActivePathway] = useState<ActivePathway>(null)
@@ -91,14 +93,17 @@ export function StartPage() {
   const handleStoryFirstContinue = () => {
     profileStore.setField('currentAge', draftAge)
     profileStore.setField('annualIncome', draftIncome)
+    profileStore.setField('annualExpenses', Math.round(draftIncome * 0.667 / 1000) * 1000)
     profileStore.setField('liquidNetWorth', draftNetWorth)
     profileStore.setField('lifeStage', 'pre-fire')
+    incomeStore.setField('annualSalary', draftIncome)
     setUIField('sectionOrder', 'story-first')
     navigate('/inputs')
   }
 
   const handleAlreadyFirePhase = (phase: RetirementPhase) => {
     profileStore.setField('currentAge', draftAge)
+    profileStore.setField('retirementAge', draftAge)
     profileStore.setField('liquidNetWorth', draftNetWorth)
     profileStore.setField('lifeStage', 'post-fire')
     profileStore.setField('retirementPhase', phase)

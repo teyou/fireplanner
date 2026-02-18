@@ -5,11 +5,11 @@ import type { ValidationErrors, ProfileState, IncomeState, AllocationState, With
  * Returns a map of field names to error messages.
  */
 export function validateProfileConsistency(
-  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'cpfLifeStartAge' | 'parentSupportEnabled' | 'parentSupport' | 'healthcareConfig'>
+  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'lifeStage' | 'cpfLifeStartAge' | 'parentSupportEnabled' | 'parentSupport' | 'healthcareConfig'>
 ): ValidationErrors {
   const errors: ValidationErrors = {}
 
-  if (profile.retirementAge <= profile.currentAge) {
+  if (profile.lifeStage !== 'post-fire' && profile.retirementAge <= profile.currentAge) {
     errors.retirementAge = 'Retirement age must be greater than current age'
   }
 

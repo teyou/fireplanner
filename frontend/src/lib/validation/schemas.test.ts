@@ -287,6 +287,7 @@ describe('validateProfileConsistency', () => {
       currentAge: 30,
       retirementAge: 65,
       lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
       cpfLifeStartAge: 65,
       parentSupportEnabled: false,
       parentSupport: [],
@@ -300,6 +301,7 @@ describe('validateProfileConsistency', () => {
       currentAge: 30,
       retirementAge: 30,
       lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
       cpfLifeStartAge: 65,
       parentSupportEnabled: false,
       parentSupport: [],
@@ -313,6 +315,7 @@ describe('validateProfileConsistency', () => {
       currentAge: 30,
       retirementAge: 65,
       lifeExpectancy: 65,
+      lifeStage: 'pre-fire',
       cpfLifeStartAge: 65,
       parentSupportEnabled: false,
       parentSupport: [],
@@ -326,12 +329,27 @@ describe('validateProfileConsistency', () => {
       currentAge: 65,
       retirementAge: 30,
       lifeExpectancy: 30,
+      lifeStage: 'pre-fire',
       cpfLifeStartAge: 65,
       parentSupportEnabled: false,
       parentSupport: [],
       healthcareConfig: defaultHealthcareConfig,
     })
     expect(Object.keys(errors).length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('allows retirement age == current age for post-fire', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 58,
+      retirementAge: 58,
+      lifeExpectancy: 90,
+      lifeStage: 'post-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+    })
+    expect(errors.retirementAge).toBeUndefined()
   })
 })
 

@@ -58,7 +58,7 @@ export const profileSchema = z.object({
   cpfHousingMonthly: nonNegativeSchema,
   cpfMortgageYearsLeft: z.number().int().min(0).max(40),
 }).refine(
-  (data) => data.retirementAge > data.currentAge,
+  (data) => data.lifeStage === 'post-fire' || data.retirementAge > data.currentAge,
   { message: 'Retirement age must be greater than current age', path: ['retirementAge'] }
 ).refine(
   (data) => data.lifeExpectancy > data.retirementAge,
