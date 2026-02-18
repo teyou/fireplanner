@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 const SECTIONS = [
   {
@@ -372,7 +373,7 @@ export function ReferencePage() {
             </AccordionTrigger>
             <AccordionContent>
               <div className="prose prose-sm max-w-none prose-neutral prose-headings:text-foreground prose-headings:text-base prose-headings:mt-6 prose-headings:mb-2 prose-strong:text-foreground prose-p:text-muted-foreground prose-li:text-muted-foreground prose-td:text-muted-foreground prose-th:text-foreground prose-th:text-xs">
-                <Markdown>{section.content}</Markdown>
+                <Markdown remarkPlugins={[remarkGfm]}>{section.content}</Markdown>
               </div>
             </AccordionContent>
           </AccordionItem>
