@@ -46,8 +46,8 @@ export function MetricCard({
         className,
       )}
     >
-      <CardContent className="pt-4 pb-3">
-        <p className="text-xs text-muted-foreground mb-1">{label}</p>
+      <CardContent className="pt-5 pb-4">
+        <p className="text-xs text-muted-foreground mb-1.5">{label}</p>
         <div className="text-2xl font-bold tabular-nums">{value}</div>
         {subtitle && (
           <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>

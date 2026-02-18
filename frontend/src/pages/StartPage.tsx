@@ -211,7 +211,7 @@ export function StartPage() {
                 ? 'border-2 border-primary shadow-md'
                 : 'hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5'
             }`}>
-              <CardContent className="pt-6">
+              <CardContent className="py-6">
                 <div className="flex items-start gap-4">
                   <div className="rounded-lg bg-primary/10 p-3">
                     <Icon className="h-6 w-6 text-primary" />
@@ -374,7 +374,7 @@ export function StartPage() {
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <Card className="h-full hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
-                    <CardContent className="pt-6">
+                    <CardContent className="py-6">
                       <div className="flex items-start gap-4">
                         <div className="rounded-lg bg-primary/10 p-3">
                           <Icon className="h-6 w-6 text-primary" />
