@@ -97,7 +97,7 @@ function getPortfolioReturns(
     })
 
     // Apply dataset-mode adjustments (matching Python _get_portfolio_returns)
-    let returns = [...raw]
+    const returns = [...raw]
 
     if (dataset === 'sg_only') {
       // Replace US Eq (idx 0) and Intl Eq (idx 2) with SG Eq (idx 1)
