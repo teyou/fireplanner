@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Singapore FIRE (Financial Independence, Retire Early) + Property + Investment Retirement Planner. A full-stack web application for comprehensive retirement planning tailored to Singapore residents.
+Singapore FIRE (Financial Independence, Retire Early) + Property + Investment Retirement Planner. A fully client-side web application for comprehensive retirement planning tailored to Singapore residents.
 
-**Status:** W7 complete. Full-stack app with Monte Carlo simulation, 6 withdrawal strategies, historical backtesting, sequence risk stress testing, dashboard, property analysis, scenario comparison, and reference guide.
+**Status:** W7 complete. Fully client-side app with Monte Carlo simulation (Web Worker), 6 withdrawal strategies, historical backtesting, sequence risk stress testing, dashboard, property analysis, scenario comparison, and reference guide.
 
 **Current Phase: W8 — Deploy**
 Update this marker as phases complete.
@@ -36,18 +36,23 @@ Update this marker as phases complete.
 
 **State:** 6 Zustand stores (profile, income, allocation, simulation, withdrawal, property). Dashboard metrics are **derived hooks**, not a 7th store — the dashboard owns no state, it computes views from other stores.
 
-### Backend
-| Dependency | Version |
-|-----------|---------|
-| Python | 3.12.x |
-| FastAPI | 0.115.x |
-| NumPy | 2.1.x |
-| SciPy | 1.14.x |
-| Pandas | 2.2.x |
-| openpyxl | 3.1.x (Excel export only) |
-| Redis (Upstash) | serverless |
+### Simulation Engine (Web Worker)
 
-**The backend is stateless.** It receives computation parameters via POST, returns results. No database. No user data storage. No authentication.
+All heavy computation (Monte Carlo, backtest, sequence risk, SWR optimization) runs in a Web Worker (`lib/simulation/simulation.worker.ts`) to avoid blocking the UI. No backend server required.
+
+| Module | Purpose |
+|--------|---------|
+| `lib/math/linalg.ts` | Cholesky decomposition, covariance matrix, matrix ops |
+| `lib/math/random.ts` | SeededRNG (xoshiro128**), Box-Muller gaussians |
+| `lib/math/stats.ts` | Percentile, Student-t quantile |
+| `lib/simulation/monteCarlo.ts` | 10K MC simulations (parametric/bootstrap/fat-tail) |
+| `lib/simulation/backtest.ts` | Bengen-style rolling window historical backtest |
+| `lib/simulation/sequenceRisk.ts` | Crisis scenario stress testing |
+| `lib/simulation/swrOptimizer.ts` | Binary search for safe withdrawal rate |
+| `lib/simulation/simulation.worker.ts` | Web Worker message handler |
+| `lib/simulation/workerClient.ts` | Worker client + strategy params flattening |
+| `lib/exportExcel.ts` | Client-side Excel export via exceljs |
+| `lib/data/historicalReturnsFull.ts` | 97 rows historical returns (1928-2024) |
 
 ### Data Persistence (Browser-Only)
 
@@ -56,7 +61,7 @@ All user financial data stays in the browser. No server-side storage of user dat
 - **localStorage:** All Zustand store state auto-saved on change via `zustand/middleware` persist. Restored on page load.
 - **JSON export/import:** Users can download their full state as a JSON file and restore it on any device/browser. This is the cross-device portability mechanism.
 - **URL params:** Life stage, FIRE type, and view state encoded in URL for bookmarking and sharing specific views.
-- **No authentication.** No accounts. No server-side user profiles.
+- **No authentication.** No accounts. No server-side anything.
 
 ### Directory Structure
 ```
@@ -104,8 +109,9 @@ fireplanner/
 │   │   │   ├── useDashboardMetrics.ts    # Dashboard headline numbers (derived)
 │   │   │   ├── useDashboardCharts.ts     # Dashboard chart data (derived)
 │   │   │   ├── useRiskAssessment.ts      # 6 risk dimensions (derived)
-│   │   │   ├── useMonteCarloQuery.ts     # API call + caching
-│   │   │   └── useBacktestQuery.ts       # API call + caching
+│   │   │   ├── useMonteCarloQuery.ts     # Web Worker call via workerClient
+│   │   │   ├── useBacktestQuery.ts       # Web Worker call via workerClient
+│   │   │   └── useSequenceRiskQuery.ts   # Web Worker call via workerClient
 │   │   │
 │   │   ├── lib/
 │   │   │   ├── calculations/
@@ -122,83 +128,52 @@ fireplanner/
 │   │   │   │   └── rules.ts           # Cross-store validation rules
 │   │   │   │
 │   │   │   ├── data/
-│   │   │   │   ├── historicalReturns.ts  # Embedded annual return data
-│   │   │   │   ├── momSalary.ts         # MOM salary benchmarks
-│   │   │   │   ├── cpfRates.ts          # CPF contribution rate tables
-│   │   │   │   ├── taxBrackets.ts       # SG tax brackets + reliefs
-│   │   │   │   ├── balaTable.ts         # Bala's Table data
-│   │   │   │   └── crisisScenarios.ts   # 8 historical crisis definitions
+│   │   │   │   ├── historicalReturns.ts      # Summary stats per asset class
+│   │   │   │   ├── historicalReturnsFull.ts   # Full 97-row time series (1928-2024)
+│   │   │   │   ├── momSalary.ts              # MOM salary benchmarks
+│   │   │   │   ├── cpfRates.ts               # CPF contribution rate tables
+│   │   │   │   ├── taxBrackets.ts            # SG tax brackets + reliefs
+│   │   │   │   ├── balaTable.ts              # Bala's Table data
+│   │   │   │   └── crisisScenarios.ts        # 8 historical crisis definitions
 │   │   │   │
-│   │   │   ├── api.ts                   # API client (to FastAPI backend)
-│   │   │   ├── types.ts                 # TypeScript interfaces
-│   │   │   └── utils.ts                 # Formatters, helpers
+│   │   │   ├── math/
+│   │   │   │   ├── linalg.ts                 # Cholesky, covariance, matrix ops
+│   │   │   │   ├── random.ts                 # SeededRNG (xoshiro128**)
+│   │   │   │   └── stats.ts                  # Percentile, Student-t quantile
+│   │   │   │
+│   │   │   ├── simulation/
+│   │   │   │   ├── monteCarlo.ts             # 10K MC engine (3 methods)
+│   │   │   │   ├── backtest.ts               # Bengen rolling window backtest
+│   │   │   │   ├── sequenceRisk.ts           # Crisis scenario stress testing
+│   │   │   │   ├── swrOptimizer.ts           # Binary search for safe SWR
+│   │   │   │   ├── simulation.worker.ts      # Web Worker message handler
+│   │   │   │   └── workerClient.ts           # Worker client + params flattening
+│   │   │   │
+│   │   │   ├── exportExcel.ts                # Client-side Excel via exceljs
+│   │   │   ├── types.ts                      # TypeScript interfaces
+│   │   │   └── utils.ts                      # Formatters, helpers
 │   │   │
 │   │   └── router.tsx                   # React Router configuration
 │   │
 │   ├── package.json
 │   └── vite.config.ts
 │
-├── backend/
-│   ├── app/
-│   │   ├── main.py                     # FastAPI app entry
-│   │   ├── config.py                   # Settings, env vars
-│   │   │
-│   │   ├── api/routes/
-│   │   │   ├── simulation.py           # POST /api/monte-carlo
-│   │   │   ├── backtest.py             # POST /api/backtest
-│   │   │   ├── optimization.py         # POST /api/optimize-swr
-│   │   │   ├── sequence_risk.py        # POST /api/sequence-risk
-│   │   │   └── export.py              # POST /api/export-excel
-│   │   │
-│   │   ├── core/
-│   │   │   ├── monte_carlo.py          # 10K simulation engine
-│   │   │   ├── backtest.py             # Historical backtesting
-│   │   │   ├── withdrawal_strategies.py # 6 strategy implementations
-│   │   │   ├── portfolio.py            # Markowitz, optimization
-│   │   │   ├── sequence_risk.py        # Stress test engine
-│   │   │   └── swr_optimizer.py        # Binary search for safe SWR
-│   │   │
-│   │   ├── data/
-│   │   │   ├── historical_returns.csv  # Full 1926-2024 data
-│   │   │   ├── correlation_matrix.csv  # Pre-computed correlations
-│   │   │   └── crisis_scenarios.json   # 8 crisis definitions
-│   │   │
-│   │   └── models/
-│   │       └── schemas.py              # Pydantic request/response models
-│   │
-│   ├── tests/
-│   │   ├── test_monte_carlo.py
-│   │   ├── test_backtest.py
-│   │   ├── test_withdrawal_strategies.py
-│   │   └── test_swr_optimizer.py
-│   │
-│   ├── requirements.txt
-│   └── Dockerfile
-│
-├── docker-compose.yml                  # Local dev: frontend + backend + redis
 ├── FIRE_PLANNER_MASTER_PLAN_v2.md     # Domain reference (formulas, rules, data)
 ├── FIRE_WEBAPP_ARCHITECTURE.md        # Architecture reference
 └── CLAUDE.md                          # This file
 ```
 
-## Computation Split (Critical Design Decision)
+## Computation Architecture
 
-**Client-side (instant feedback):** FIRE number, Coast/Barista FIRE, SG progressive tax, CPF contributions, income projections, portfolio stats (Markowitz on 8x8), deterministic withdrawal strategies (single-path), glide path interpolation, property analysis formulas.
+All computation is client-side. Heavy computations (Monte Carlo, backtest, sequence risk, SWR optimization) run in a **Web Worker** (`lib/simulation/simulation.worker.ts`) to avoid blocking the UI. Lightweight computations (FIRE number, tax, CPF, income projections, portfolio stats, deterministic withdrawal strategies, property analysis) run on the main thread for instant feedback.
 
-**Server-side (heavy computation):** Monte Carlo (10K simulations via NumPy vectorization, 2-5 sec), historical backtesting (rolling windows), SWR optimization (binary search over MC), sequence risk stress testing (multiple MC runs), portfolio optimization (scipy.optimize), Excel export (openpyxl).
+### Web Worker Communication
 
-### Withdrawal Strategy Dual Implementation
+The 3 simulation hooks (`useMonteCarloQuery`, `useBacktestQuery`, `useSequenceRiskQuery`) call worker functions from `workerClient.ts` instead of API endpoints. `workerClient.ts` manages a lazy singleton Worker instance with message ID multiplexing for concurrent calls. `useMutation` from TanStack React Query is retained for `isPending`/`error`/`data` state management.
 
-The 6 withdrawal strategies are implemented **twice**: in TypeScript (`lib/calculations/withdrawal.ts`) for instant deterministic comparison, and in Python (`core/withdrawal_strategies.py`) for use inside the MC simulation loop. Both implementations must produce identical outputs for identical inputs. Enforce parity via shared test vectors — the same hardcoded input/output pairs used in `withdrawal.test.ts` must match `test_withdrawal_strategies.py`. Any formula change requires updating both implementations and both test files.
+### Withdrawal Strategies
 
-### Redis Caching Strategy
-
-MC simulation results are cached in Upstash Redis to avoid re-running identical simulations.
-
-- **Cache key:** SHA-256 hash of the full POST request body (all params sorted deterministically). This means any input change automatically invalidates.
-- **TTL:** 1 hour. MC results are computation-heavy but not permanent — users iterate on inputs.
-- **Cache hit flow:** Backend checks Redis before running MC. On hit, returns cached response with `cached: true` flag. Frontend shows "Cached result" indicator.
-- **No cache for:** SWR optimization (too many internal iterations), export-excel (unique per call).
+The 6 withdrawal strategies are implemented in TypeScript (`lib/calculations/withdrawal.ts`) and used by both the deterministic comparison view and the simulation engines (MC, backtest, sequence risk). There is one implementation — no cross-language parity concern.
 
 ### Rebalancing
 
@@ -230,7 +205,7 @@ Rules that span stores:
 - Each store exposes a `validationErrors` field (map of field name to error message)
 - Calculation hooks check upstream store validity before computing: if profile store has errors, income projections return `null` with an error flag
 - Components display inline validation errors on inputs and show a warning banner when downstream calculations are blocked by upstream errors
-- API calls are gated: Monte Carlo button is disabled with tooltip explaining which inputs need fixing
+- Simulation runs are gated: Monte Carlo button is disabled with tooltip explaining which inputs need fixing
 
 ## Key Domain Concepts
 
@@ -273,11 +248,14 @@ Validation tests:
 - Each Zod schema rejects out-of-range values
 - Cross-store rules catch invalid combinations
 
-### Backend: pytest
-- `test_monte_carlo.py` — Seeded random state (`np.random.seed(42)`) for reproducible results. Verify success rate, percentile bands, terminal stats against known outputs.
-- `test_backtest.py` — Known historical period with expected survival outcome
-- `test_withdrawal_strategies.py` — Each strategy with fixed inputs and expected year-by-year withdrawals
-- `test_swr_optimizer.py` — Binary search converges to expected SWR within tolerance
+Simulation engine tests (`lib/simulation/` and `lib/math/`):
+- `linalg.test.ts` — Cholesky decomposition, covariance matrix construction, matrix multiplication
+- `random.test.ts` — SeededRNG determinism, Box-Muller gaussian distribution, seed reproducibility
+- `stats.test.ts` — Percentile matching NumPy, Student-t quantile accuracy
+- `monteCarlo.test.ts` — Seeded RNG for reproducible results. Success rate, percentile bands, terminal stats, all 3 methods (parametric/bootstrap/fat-tail), all 6 withdrawal strategies
+- `backtest.test.ts` — Known historical periods with expected survival, rolling windows, 3 dataset modes, heatmap generation
+- `sequenceRisk.test.ts` — Crisis return injection, 3 mitigations (bond tent, cash buffer, flexible spending), deterministic with seed
+- `swrOptimizer.test.ts` — Binary search converges to expected SWR within tolerance, per-strategy rate key mapping
 
 ### Integration Tests
 3 user journey scenarios with concrete expected values (derived from master plan formulas + smart defaults of 2.5% inflation, 0.3% expense ratio, Balanced 60/40 template at 7.2% nominal return):
@@ -309,18 +287,20 @@ Validation tests:
 
 ### Coverage Requirements
 - `lib/calculations/`: 95% line coverage minimum
+- `lib/simulation/`: 90% line coverage minimum
+- `lib/math/`: 90% line coverage minimum
 - `lib/validation/`: 90% line coverage minimum
-- Backend `core/`: 90% line coverage minimum
 - All tests must pass before committing
 
 ## Do Not
 
 - **Do not use `any` type** in TypeScript calculation functions. All inputs and outputs must be typed.
 - **Do not hardcode Singapore-specific values** in calculation functions. CPF rates, tax brackets, ABSD rates, Bala's Table data — all go in `lib/data/` files.
-- **Do not use `Math.random()`** for Monte Carlo. Monte Carlo runs server-side only with NumPy seeded generators.
+- **Do not use `Math.random()`** for Monte Carlo. Use `SeededRNG` from `lib/math/random.ts` for deterministic, reproducible simulations.
+- **Do not call simulation functions on the main thread.** Always use the Web Worker via `workerClient.ts`.
 - **Do not use Next.js conventions.** No `page.tsx` / `layout.tsx` nested folder routing. This is React Router v6 with Vite.
 - **Do not create a dashboard Zustand store.** Dashboard metrics are derived hooks that read from other stores.
-- **Do not store user data server-side.** No database for user profiles. No authentication. Browser-only persistence.
+- **Do not add a backend server.** All computation runs client-side. No database. No authentication. Browser-only persistence.
 - **Do not skip validation.** Every calculation hook must check input validity before computing.
 - **Do not import from one store inside another store's definition.** Cross-store reads happen in hooks and components, not in store definitions.
 
@@ -331,30 +311,15 @@ Validation tests:
 | W1 | Foundation: Vite/React/TS scaffold, React Router routing, FIRE Profile page, client-side calcs (`fire.ts`, `cpf.ts`, `tax.ts`), Zustand stores (profile, income), localStorage persistence, validation schemas, unit tests for calc functions |
 | W2 | Income Engine: 3 salary models, 5 income streams, life events, SG tax integration, CPF integration, year-by-year projection table, income store |
 | W3 | Asset Allocation: 8-class builder with sliders/inputs, 6 pre-built templates, Markowitz portfolio stats, D3 correlation matrix heatmap, glide path config, allocation store |
-| W4 | Backend + Monte Carlo: FastAPI setup, Monte Carlo engine (parametric/bootstrap/fat-tail), `/api/monte-carlo` endpoint, fan chart (Recharts), success gauge, Redis caching, simulation store |
-| W5 | Withdrawal Strategies + Sequence Risk: 6 strategy implementations (client-side deterministic), comparison table, `/api/sequence-risk` endpoint, crisis scenario stress tests, withdrawal store |
-| W6 | Historical Backtest: `/api/backtest` endpoint, rolling window results, SWR x Duration D3 heatmap, SG vs US comparison |
-| W7 | Dashboard + Property + Scenarios + Polish: Dashboard page with derived hooks, property analysis port, property hybrid MC overlay, scenario comparison mode (save/name/compare up to 5), Excel export (`/api/export-excel`), JSON export/import, reference guide, responsive polish, error/empty states |
-| W8 | Deploy: Vercel (frontend), Railway or Fly.io (backend), Upstash Redis, Sentry error monitoring, PostHog analytics, performance optimization (code splitting, lazy loading) |
-
-## API Endpoints
-
-All endpoints are stateless computation. No user data stored server-side.
-
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/monte-carlo` | POST | Run 10K simulations, returns percentile bands + success rate + safe SWR |
-| `/api/backtest` | POST | Historical rolling window analysis, optional heatmap generation |
-| `/api/optimize-swr` | POST | Binary search for max SWR at target confidence |
-| `/api/sequence-risk` | POST | Crisis scenario stress testing across withdrawal strategies |
-| `/api/export-excel` | POST | Generate .xlsx from full app state (receives all store data in request body) |
-
-See `FIRE_WEBAPP_ARCHITECTURE.md` Section 4 for full request/response JSON schemas.
+| W4 | Monte Carlo: Client-side MC engine in Web Worker (parametric/bootstrap/fat-tail), fan chart (Recharts), success gauge, simulation store |
+| W5 | Withdrawal Strategies + Sequence Risk: 6 strategy implementations (client-side deterministic), comparison table, sequence risk stress testing via Web Worker, withdrawal store |
+| W6 | Historical Backtest: Rolling window backtest via Web Worker, SWR x Duration D3 heatmap, SG vs US comparison |
+| W7 | Dashboard + Property + Scenarios + Polish: Dashboard page with derived hooks, property analysis port, property hybrid MC overlay, scenario comparison mode (save/name/compare up to 5), Excel export (client-side via exceljs), JSON export/import, reference guide, responsive polish, error/empty states |
+| W8 | Deploy: Static site to Vercel/Netlify/GitHub Pages. No server required. Sentry error monitoring, PostHog analytics, performance optimization (code splitting, lazy loading) |
 
 ## Development Commands
 
 ```bash
-# Frontend
 cd frontend && npm install
 npm run dev          # Vite dev server (http://localhost:5173)
 npm run build        # Production build
@@ -363,26 +328,15 @@ npm run type-check   # tsc --noEmit
 npm run test         # Vitest (run all tests)
 npm run test:watch   # Vitest in watch mode
 npm run test:coverage # Vitest with coverage report
-
-# Backend
-cd backend && pip install -r requirements.txt
-uvicorn app.main:app --reload    # FastAPI dev server (http://localhost:8000)
-pytest                            # Run all tests
-pytest --cov=app/core            # Run with coverage
-pytest tests/test_monte_carlo.py  # Single test file
-
-# Full stack (Docker)
-docker-compose up    # frontend + backend + redis
 ```
 
 ### Before Committing
 1. `npm run type-check` passes with zero errors
 2. `npm run lint` passes
 3. `npm run test` passes (all tests green)
-4. `pytest` passes (if backend code changed)
-5. `lib/calculations/` coverage >= 95%
-6. No `any` types in calculation files
-7. No hardcoded Singapore-specific values outside `lib/data/`
+4. `lib/calculations/` coverage >= 95%
+5. No `any` types in calculation or simulation files
+6. No hardcoded Singapore-specific values outside `lib/data/`
 
 ## UI Patterns
 
@@ -420,26 +374,18 @@ docker-compose up    # frontend + backend + redis
 - **Correlation matrix:** Compute from overlapping years only; document year range used
 
 ### Data Format
-- Frontend: JSON/TypeScript in `frontend/src/lib/data/` (client-side reference)
-- Backend: CSV in `backend/app/data/` (server-side computation)
+- All historical data lives in `frontend/src/lib/data/` as TypeScript modules
+- `historicalReturnsFull.ts` contains the full 97-row time series (1928-2024) used by MC bootstrap and backtest
+- `historicalReturns.ts` contains summary stats (mean, stddev) per asset class
+- `ASSET_KEY_TO_COLUMN` mapping bridges `ASSET_CLASSES` keys (`bonds`, `cpf`) to data column names (`usBonds`, `cpfBlended`)
 - Each file includes a header comment with source URL, download date, and license
 - Returns are annual, nominal, in local currency with a separate FX series for SGD conversion
+- CPI values are decimal fractions (0.025 = 2.5%), NOT percentages
 
 ### Update Cadence
 - Annual refresh in January with previous year's full-year data
-- Document the update process in `backend/app/data/README.md`
-- Frontend embedded data updated simultaneously with backend CSV data
-
-### Data Acquisition (Pre-W1 Task)
-Before W1 coding begins, historical return data must be collected and formatted:
-1. **Manual download** from each source (URLs documented in master plan Section 4D)
-2. **Python script** (`scripts/build_data.py`) to clean, merge, and output:
-   - `backend/app/data/historical_returns.csv` — full dataset, one row per year, columns per asset class
-   - `backend/app/data/correlation_matrix.csv` — computed from overlapping years
-   - `frontend/src/lib/data/historicalReturns.ts` — TypeScript export of summary stats + default return/stddev per asset class (not full time series — that stays backend-only)
-3. Each output file includes a header comment with source URL, download date, license
-4. The build script is idempotent — re-run annually with updated source CSVs
-5. During W1, frontend data files can use hardcoded defaults from the master plan (Section 5: Asset Allocation expected returns). Full historical data is a W4 prerequisite when the backend needs it for MC/backtest.
+- Update `historicalReturnsFull.ts` with new year's data row
+- Recompute summary stats in `historicalReturns.ts` if needed
 
 ### Property Hybrid Monte Carlo (W7)
 Property analysis is deterministic (formulas from the existing Excel model), but in W7, property scenarios are overlaid on MC results:
@@ -448,7 +394,7 @@ Property analysis is deterministic (formulas from the existing Excel model), but
 - Property equity is added to the portfolio balance at each year
 - Mortgage payments are deducted from annual savings (accumulation) or increase required withdrawals (decumulation)
 - Rental income is added to post-retirement income streams
-- This is a frontend post-processing overlay on existing MC results, not a new API endpoint
+- This is a post-processing overlay on existing MC results
 
 
 <claude-mem-context>
