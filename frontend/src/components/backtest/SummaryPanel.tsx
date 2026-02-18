@@ -17,7 +17,7 @@ export function SummaryPanel({ summary, computationTimeMs }: SummaryPanelProps) 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       <Card>
-        <CardContent className="pt-6 text-center">
+        <CardContent className="pt-6 md:pt-6 text-center">
           <p className="text-sm text-muted-foreground">Success Rate</p>
           <p className={`text-3xl font-bold ${rateColor}`}>
             {formatPercent(summary.success_rate, 1)}
@@ -28,19 +28,19 @@ export function SummaryPanel({ summary, computationTimeMs }: SummaryPanelProps) 
         </CardContent>
       </Card>
       <Card>
-        <CardContent className="pt-6 text-center">
+        <CardContent className="pt-6 md:pt-6 text-center">
           <p className="text-sm text-muted-foreground">Median Ending Balance</p>
           <p className="text-2xl font-bold">{formatCurrency(summary.median_ending_balance)}</p>
         </CardContent>
       </Card>
       <Card>
-        <CardContent className="pt-6 text-center">
+        <CardContent className="pt-6 md:pt-6 text-center">
           <p className="text-sm text-muted-foreground">Worst Start Year</p>
           <p className="text-2xl font-bold text-destructive">{summary.worst_start_year}</p>
         </CardContent>
       </Card>
       <Card>
-        <CardContent className="pt-6 text-center">
+        <CardContent className="pt-6 md:pt-6 text-center">
           <p className="text-sm text-muted-foreground">Avg Total Withdrawn</p>
           <p className="text-2xl font-bold">{formatCurrency(summary.average_total_withdrawn)}</p>
           <p className="text-xs text-muted-foreground mt-1">

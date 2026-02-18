@@ -252,13 +252,13 @@ function SequenceRiskTab() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
-              <CardContent className="pt-6 text-center">
+              <CardContent className="pt-6 md:pt-6 text-center">
                 <p className="text-sm text-muted-foreground">Normal Success Rate</p>
                 <p className="text-3xl font-bold text-green-600">{formatPercent(data.normal_success_rate, 1)}</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-6 text-center">
+              <CardContent className="pt-6 md:pt-6 text-center">
                 <p className="text-sm text-muted-foreground">Crisis Success Rate</p>
                 <p className={`text-3xl font-bold ${data.crisis_success_rate >= 0.8 ? 'text-green-600' : data.crisis_success_rate >= 0.6 ? 'text-yellow-600' : 'text-destructive'}`}>
                   {formatPercent(data.crisis_success_rate, 1)}
@@ -266,7 +266,7 @@ function SequenceRiskTab() {
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-6 text-center">
+              <CardContent className="pt-6 md:pt-6 text-center">
                 <p className="text-sm text-muted-foreground">Success Degradation</p>
                 <p className="text-3xl font-bold text-destructive">
                   -{formatPercent(data.success_degradation, 1)}

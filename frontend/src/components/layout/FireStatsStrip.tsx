@@ -102,7 +102,7 @@ function PositionPicker() {
       {open && (
         <div className={cn(
           "absolute right-0 bg-background border rounded-md shadow-lg py-1 z-50 min-w-[130px]",
-          statsPosition === 'top' ? 'top-full mt-1' : 'bottom-full mb-1'
+          statsPosition === 'bottom' ? 'bottom-full mb-1' : 'top-full mt-1'
         )}>
           {options.map((opt) => (
             <button

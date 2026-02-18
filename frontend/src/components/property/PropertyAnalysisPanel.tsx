@@ -54,7 +54,7 @@ export function PropertyAnalysisPanel() {
   if (!analysis) {
     return (
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 md:pt-6">
           <p className="text-sm text-muted-foreground">Fix validation errors to see analysis.</p>
         </CardContent>
       </Card>

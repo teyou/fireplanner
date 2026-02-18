@@ -305,7 +305,7 @@ function ExpensesContent() {
       </div>
 
       <Card>
-        <CardContent className="pt-4 pb-4">
+        <CardContent className="pt-4 pb-4 md:pt-4 md:pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-sm font-medium whitespace-nowrap">Active Strategy:</span>
@@ -507,7 +507,7 @@ function PropertyContent() {
       )}
 
       <Card>
-        <CardContent className="pt-4 pb-4">
+        <CardContent className="pt-4 pb-4 md:pt-4 md:pb-4">
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
@@ -776,7 +776,7 @@ export function InputsPage() {
 
       {/* What's Next CTA */}
       <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="pt-6 pb-6">
+        <CardContent className="py-6 md:py-6">
           <h3 className="text-lg font-semibold mb-1">
             {completedCount >= 5 ? 'Looking good! Ready to test your plan?' : 'Explore your projections'}
           </h3>
