@@ -25,7 +25,7 @@ import {
   type HistoricalReturnRow,
 } from '@/lib/data/historicalReturnsFull.ts'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns.ts'
-import type { PercentileBands, TerminalStats, FailureDistribution } from '@/lib/types.ts'
+import type { MonteCarloResult, PercentileBands, TerminalStats, FailureDistribution } from '@/lib/types.ts'
 
 // ============================================================
 // Types
@@ -51,12 +51,10 @@ export interface MonteCarloEngineParams {
   inflation: number
 }
 
-export interface MonteCarloEngineResult {
-  success_rate: number
-  percentile_bands: PercentileBands
-  terminal_stats: TerminalStats
-  failure_distribution: FailureDistribution
-}
+export type MonteCarloEngineResult = Omit<
+  MonteCarloResult,
+  'safe_swr' | 'n_simulations' | 'computation_time_ms' | 'cached'
+>
 
 // ============================================================
 // Helpers
@@ -72,11 +70,11 @@ export function resolveInitialRate(
 ): number {
   return (
     strategyParams.swr
-    || strategyParams.initialRate
-    || strategyParams.initial_rate
-    || strategyParams.targetRate
-    || strategyParams.target_rate
-    || defaultRate
+    ?? strategyParams.initialRate
+    ?? strategyParams.initial_rate
+    ?? strategyParams.targetRate
+    ?? strategyParams.target_rate
+    ?? defaultRate
   )
 }
 
@@ -98,10 +96,10 @@ export function generateReturnsParametric(
   expectedReturns: number[],
   stdDevs: number[],
   correlationMatrix: number[][],
+  precomputedL?: number[][],
 ): number[][] {
   const nAssets = weights.length
-  const covMatrix = buildCovarianceMatrix(stdDevs, correlationMatrix)
-  const L = choleskyDecomposition(covMatrix)
+  const L = precomputedL ?? choleskyDecomposition(buildCovarianceMatrix(stdDevs, correlationMatrix))
 
   // Transpose L to get L^T
   const LT: number[][] = Array.from({ length: nAssets }, (_, i) =>
