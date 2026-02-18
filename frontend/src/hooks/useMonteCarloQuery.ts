@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { runMonteCarlo } from '@/lib/api'
-import type { MonteCarloParams, MonteCarloResult } from '@/lib/types'
+import { runMonteCarloWorker, flattenStrategyParams } from '@/lib/simulation/workerClient'
+import type { MonteCarloResult } from '@/lib/types'
+import type { MonteCarloEngineParams } from '@/lib/simulation/monteCarlo'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
@@ -107,7 +108,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
         allocation.stdDevOverrides[i] ?? ac.stdDev
       )
 
-      const params: MonteCarloParams = {
+      const params: MonteCarloEngineParams = {
         initialPortfolio: analysisPortfolio.initialPortfolio,
         allocationWeights: analysisPortfolio.allocationWeights,
         expectedReturns,
@@ -123,12 +124,12 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
         method: simulation.mcMethod,
         nSimulations: simulation.nSimulations,
         withdrawalStrategy: simulation.selectedStrategy,
-        strategyParams: simulation.strategyParams,
+        strategyParams: flattenStrategyParams(simulation.selectedStrategy, simulation.strategyParams),
         expenseRatio: profile.expenseRatio,
         inflation: profile.inflation,
       }
 
-      return runMonteCarlo(params)
+      return runMonteCarloWorker(params)
     },
   })
 

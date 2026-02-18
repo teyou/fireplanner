@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { runBacktest } from '@/lib/api'
+import { runBacktestWorker, flattenStrategyParams } from '@/lib/simulation/workerClient'
 import type { BacktestResult, BacktestDataset, WithdrawalStrategyType } from '@/lib/types'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
@@ -74,7 +74,7 @@ export function useBacktestQuery(): UseBacktestQueryResult {
     mutationFn: async () => {
       setLastRunParams(currentParamsSig)
 
-      return runBacktest({
+      const params = {
         initialPortfolio: analysisPortfolio.initialPortfolio,
         allocationWeights: analysisPortfolio.allocationWeights,
         swr: config.swr,
@@ -82,11 +82,12 @@ export function useBacktestQuery(): UseBacktestQueryResult {
         dataset: config.dataset,
         blendRatio: config.blendRatio,
         expenseRatio: profile.expenseRatio,
-        includeHeatmap: config.includeHeatmap,
         withdrawalStrategy: strategy,
-        strategyParams: withdrawal.strategyParams,
+        strategyParams: flattenStrategyParams(strategy, withdrawal.strategyParams),
         inflation: profile.inflation,
-      })
+      }
+
+      return runBacktestWorker(params, config.includeHeatmap)
     },
   })
 

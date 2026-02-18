@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { runSequenceRisk } from '@/lib/api'
+import { runSequenceRiskWorker, flattenStrategyParams } from '@/lib/simulation/workerClient'
 import type { CrisisScenario, SequenceRiskResult } from '@/lib/types'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
@@ -87,7 +87,7 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
         allocation.stdDevOverrides[i] ?? ac.stdDev
       )
 
-      return runSequenceRisk({
+      const params = {
         initialPortfolio: analysisPortfolio.initialPortfolio,
         allocationWeights: analysisPortfolio.allocationWeights,
         expectedReturns,
@@ -96,13 +96,15 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
         retirementAge: profile.retirementAge,
         lifeExpectancy: profile.lifeExpectancy,
         withdrawalStrategy: strategy,
-        strategyParams: withdrawal.strategyParams,
+        strategyParams: flattenStrategyParams(strategy, withdrawal.strategyParams),
         crisis,
         nSimulations: 2000,
         expenseRatio: profile.expenseRatio,
         inflation: profile.inflation,
         postRetirementIncome,
-      })
+      }
+
+      return runSequenceRiskWorker(params)
     },
   })
 
