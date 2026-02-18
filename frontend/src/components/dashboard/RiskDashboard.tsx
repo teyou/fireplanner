@@ -8,6 +8,12 @@ const LEVEL_COLORS = {
   high: 'bg-red-100 text-red-800',
 }
 
+const CARD_TINTS = {
+  low: 'bg-success/5 border-success/20',
+  medium: 'bg-warning/5 border-warning/20',
+  high: 'bg-destructive/5 border-destructive/20',
+}
+
 export function RiskDashboard() {
   const risks = useRiskAssessment()
 
@@ -19,7 +25,7 @@ export function RiskDashboard() {
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {risks.map((risk) => (
-            <div key={risk.id} className="rounded-lg border p-3 space-y-2">
+            <div key={risk.id} className={`rounded-lg border p-3 space-y-2 ${CARD_TINTS[risk.level]}`}>
               <div className="flex items-center justify-between">
                 <span className="font-medium text-sm">{risk.label}</span>
                 <Badge className={LEVEL_COLORS[risk.level]}>

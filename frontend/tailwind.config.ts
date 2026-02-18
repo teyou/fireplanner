@@ -34,6 +34,14 @@ export default {
   				DEFAULT: 'hsl(var(--destructive))',
   				foreground: 'hsl(var(--destructive-foreground))'
   			},
+  			success: {
+  				DEFAULT: 'hsl(var(--success))',
+  				foreground: 'hsl(var(--success-foreground))'
+  			},
+  			warning: {
+  				DEFAULT: 'hsl(var(--warning))',
+  				foreground: 'hsl(var(--warning-foreground))'
+  			},
   			muted: {
   				DEFAULT: 'hsl(var(--muted))',
   				foreground: 'hsl(var(--muted-foreground))'
@@ -49,12 +57,32 @@ export default {
   			card: {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
+  			},
+  			chart: {
+  				primary: 'hsl(var(--chart-primary))',
+  				success: 'hsl(var(--chart-success))',
+  				warning: 'hsl(var(--chart-warning))',
+  				danger: 'hsl(var(--chart-danger))',
+  				muted: 'hsl(var(--chart-muted))',
+  				'fan-1': 'hsl(var(--chart-fan-1))',
+  				'fan-2': 'hsl(var(--chart-fan-2))',
+  				'fan-3': 'hsl(var(--chart-fan-3))',
+  				'fan-4': 'hsl(var(--chart-fan-4))',
+  				'strategy-1': 'hsl(var(--chart-strategy-1))',
+  				'strategy-2': 'hsl(var(--chart-strategy-2))',
+  				'strategy-3': 'hsl(var(--chart-strategy-3))',
+  				'strategy-4': 'hsl(var(--chart-strategy-4))',
+  				'strategy-5': 'hsl(var(--chart-strategy-5))',
+  				'strategy-6': 'hsl(var(--chart-strategy-6))',
   			}
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
+  		},
+  		boxShadow: {
+  			elevated: 'var(--shadow-elevated)'
   		},
   		keyframes: {
   			'accordion-down': {
@@ -72,11 +100,22 @@ export default {
   				to: {
   					height: '0'
   				}
+  			},
+  			'fade-in-up': {
+  				from: {
+  					opacity: '0',
+  					transform: 'translateY(8px)'
+  				},
+  				to: {
+  					opacity: '1',
+  					transform: 'translateY(0)'
+  				}
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'fade-in-up': 'fade-in-up 0.4s ease-out forwards'
   		}
   	}
   },

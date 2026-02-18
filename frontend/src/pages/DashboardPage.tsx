@@ -24,7 +24,7 @@ export function DashboardPage() {
   const uncustomized = KEY_SECTIONS.filter((s) => !sections[s.id].isComplete)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">FIRE Dashboard</h1>
         <p className="text-muted-foreground text-sm">
@@ -56,11 +56,21 @@ export function DashboardPage() {
         <EmptyDashboardState />
       ) : (
         <>
-          <StatusPanel {...metrics} />
-          <StrategyCard />
-          <PassiveIncomePanel />
-          <AccumulationChart />
-          <RiskDashboard />
+          <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '0ms' }}>
+            <StatusPanel {...metrics} />
+          </div>
+          <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '80ms' }}>
+            <StrategyCard />
+          </div>
+          <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '160ms' }}>
+            <PassiveIncomePanel />
+          </div>
+          <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '240ms' }}>
+            <AccumulationChart />
+          </div>
+          <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '320ms' }}>
+            <RiskDashboard />
+          </div>
         </>
       )}
     </div>

@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 20% 99%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -20,10 +20,36 @@
     --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+    --shadow-elevated: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 4px 12px -2px rgb(0 0 0 / 0.08);
+
+    /* Chart colors */
+    --chart-primary: 221 83% 53%;
+    --chart-success: 142 71% 45%;
+    --chart-warning: 38 92% 50%;
+    --chart-danger: 0 84% 60%;
+    --chart-muted: 215 16% 47%;
+
+    /* Fan chart gradient (green shades) */
+    --chart-fan-1: 142 71% 45%;
+    --chart-fan-2: 142 60% 55%;
+    --chart-fan-3: 142 50% 65%;
+    --chart-fan-4: 142 40% 75%;
+
+    /* Withdrawal strategy colors */
+    --chart-strategy-1: 221 83% 53%;
+    --chart-strategy-2: 142 71% 45%;
+    --chart-strategy-3: 38 92% 50%;
+    --chart-strategy-4: 0 84% 60%;
+    --chart-strategy-5: 262 83% 58%;
+    --chart-strategy-6: 187 72% 43%;
   }
 
   .dark {
@@ -43,9 +69,35 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
+    --shadow-elevated: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 4px 12px -2px rgb(0 0 0 / 0.16);
+
+    /* Chart colors (adjusted for dark mode) */
+    --chart-primary: 217 91% 60%;
+    --chart-success: 142 71% 55%;
+    --chart-warning: 38 92% 60%;
+    --chart-danger: 0 84% 65%;
+    --chart-muted: 215 20% 65%;
+
+    /* Fan chart gradient (green shades, brighter for dark) */
+    --chart-fan-1: 142 71% 55%;
+    --chart-fan-2: 142 60% 50%;
+    --chart-fan-3: 142 50% 45%;
+    --chart-fan-4: 142 40% 40%;
+
+    /* Withdrawal strategy colors (brighter for dark) */
+    --chart-strategy-1: 217 91% 60%;
+    --chart-strategy-2: 142 71% 55%;
+    --chart-strategy-3: 38 92% 60%;
+    --chart-strategy-4: 0 84% 65%;
+    --chart-strategy-5: 262 83% 65%;
+    --chart-strategy-6: 187 72% 55%;
   }
 }
 

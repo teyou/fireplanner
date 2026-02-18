@@ -10,6 +10,8 @@ import { formatCurrency } from '@/lib/utils'
 import { Target, TrendingUp, CheckCircle, Clock, CalendarClock, Landmark, ArrowRight, Info } from 'lucide-react'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { NumberInput } from '@/components/shared/NumberInput'
+import { MetricCard } from '@/components/shared/MetricCard'
+import { AnimatedNumber } from '@/components/shared/AnimatedNumber'
 import { Label } from '@/components/ui/label'
 import type { RetirementPhase } from '@/lib/types'
 import { useSectionCompletion } from '@/hooks/useSectionCompletion'
@@ -135,9 +137,9 @@ export function StartPage() {
 
   return (
     <div className="space-y-8">
-      <div>
+      <div className="py-8">
         <h1 className="text-3xl font-bold">Singapore FIRE Planner</h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-muted-foreground mt-2 text-base">
           Plan your path to Financial Independence with Singapore-specific calculations.
         </p>
       </div>
@@ -156,23 +158,35 @@ export function StartPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-primary">
-                  {formatCurrency(metrics.fireNumber)}
-                </div>
-                <div className="text-sm text-muted-foreground">FIRE Number</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-primary">
-                  {yearsToFire !== null && yearsToFire === 0
-                    ? 'Achieved!'
+            <div className="grid grid-cols-2 gap-4">
+              <MetricCard
+                label="FIRE Number"
+                variant="elevated"
+                accent="primary"
+                value={
+                  <AnimatedNumber
+                    value={metrics.fireNumber}
+                    format={formatCurrency}
+                    className="text-primary"
+                  />
+                }
+              />
+              <MetricCard
+                label="Years to FIRE"
+                variant="elevated"
+                accent="primary"
+                value={
+                  yearsToFire !== null && yearsToFire === 0
+                    ? <span className="text-success">Achieved!</span>
                     : yearsToFire !== null && isFinite(yearsToFire)
-                      ? `${Math.ceil(yearsToFire)} years`
-                      : '—'}
-                </div>
-                <div className="text-sm text-muted-foreground">Years to FIRE</div>
-              </div>
+                      ? <AnimatedNumber
+                          value={Math.ceil(yearsToFire)}
+                          format={(n) => `${Math.round(n)} years`}
+                          className="text-primary"
+                        />
+                      : <span>—</span>
+                }
+              />
             </div>
           </CardContent>
         </Card>
@@ -180,16 +194,17 @@ export function StartPage() {
 
       {/* Pathway cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {pathwayCards.map(({ key, label, description, icon: Icon }) => (
+        {pathwayCards.map(({ key, label, description, icon: Icon }, index) => (
           <button
             key={key}
             onClick={() => handlePathwayClick(key as ActivePathway)}
-            className="text-left"
+            className="text-left opacity-0 animate-fade-in-up"
+            style={{ animationDelay: `${index * 100}ms` }}
           >
-            <Card className={`h-full transition-all cursor-pointer ${
+            <Card className={`h-full transition-all duration-200 cursor-pointer ${
               activePathway === key
-                ? 'border-primary shadow-md'
-                : 'hover:border-primary/50 hover:shadow-md'
+                ? 'border-2 border-primary shadow-md'
+                : 'hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5'
             }`}>
               <CardContent className="pt-6">
                 <div className="flex items-start gap-4">
@@ -211,7 +226,7 @@ export function StartPage() {
 
       {/* Goal-first inline form */}
       {activePathway === 'goal-first' && (
-        <Card>
+        <Card className="bg-muted/30">
           <CardHeader>
             <CardTitle className="text-lg">Quick Setup</CardTitle>
           </CardHeader>
@@ -264,7 +279,7 @@ export function StartPage() {
 
       {/* Story-first inline form */}
       {activePathway === 'story-first' && (
-        <Card>
+        <Card className="bg-muted/30">
           <CardHeader>
             <CardTitle className="text-lg">Quick Setup</CardTitle>
           </CardHeader>
@@ -310,7 +325,7 @@ export function StartPage() {
       {/* Already FIRE: age + net worth, then phase cards */}
       {activePathway === 'already-fire' && (
         <div className="space-y-4">
-          <Card>
+          <Card className="bg-muted/30">
             <CardHeader>
               <CardTitle className="text-lg">Quick Setup</CardTitle>
             </CardHeader>
@@ -345,14 +360,15 @@ export function StartPage() {
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {PHASE_CARDS.map(({ phase, label, description, icon: Icon }) => (
+              {PHASE_CARDS.map(({ phase, label, description, icon: Icon }, index) => (
                 <button
                   key={phase}
                   onClick={() => handleAlreadyFirePhase(phase)}
                   disabled={!alreadyFireValid}
-                  className="text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-left disabled:opacity-50 disabled:cursor-not-allowed opacity-0 animate-fade-in-up"
+                  style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <Card className="h-full hover:border-primary/50 hover:shadow-md transition-all cursor-pointer">
+                  <Card className="h-full hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
                     <CardContent className="pt-6">
                       <div className="flex items-start gap-4">
                         <div className="rounded-lg bg-primary/10 p-3">
@@ -376,12 +392,15 @@ export function StartPage() {
 
       {/* Continue link for returning users */}
       <div className="text-center">
-        <Link
-          to="/inputs"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Continue planning &rarr;
-        </Link>
+        <Button variant="ghost" size="sm" asChild>
+          <Link
+            to="/inputs"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Continue planning
+            <ArrowRight className="ml-1 h-3 w-3" />
+          </Link>
+        </Button>
       </div>
     </div>
   )
