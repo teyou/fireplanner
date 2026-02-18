@@ -278,6 +278,8 @@ describe('validateProfileConsistency', () => {
       retirementAge: 65,
       lifeExpectancy: 90,
       cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
     })
     expect(Object.keys(errors)).toHaveLength(0)
   })
@@ -288,6 +290,8 @@ describe('validateProfileConsistency', () => {
       retirementAge: 30,
       lifeExpectancy: 90,
       cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
     })
     expect(errors.retirementAge).toBeTruthy()
   })
@@ -298,6 +302,8 @@ describe('validateProfileConsistency', () => {
       retirementAge: 65,
       lifeExpectancy: 65,
       cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
     })
     expect(errors.lifeExpectancy).toBeTruthy()
   })
@@ -308,6 +314,8 @@ describe('validateProfileConsistency', () => {
       retirementAge: 30,
       lifeExpectancy: 30,
       cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
     })
     expect(Object.keys(errors).length).toBeGreaterThanOrEqual(2)
   })

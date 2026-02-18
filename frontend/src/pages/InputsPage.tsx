@@ -13,6 +13,7 @@ import { FinancialSection } from '@/components/profile/FinancialSection'
 import { FireTargetsSection } from '@/components/profile/FireTargetsSection'
 import { AssumptionsSection } from '@/components/profile/AssumptionsSection'
 import { CpfSection } from '@/components/profile/CpfSection'
+import { ParentSupportSection } from '@/components/profile/ParentSupportSection'
 
 // Income sections
 import { SalaryModelSection } from '@/components/income/SalaryModelSection'
@@ -278,6 +279,8 @@ function ExpensesContent() {
           </div>
         </CardContent>
       </Card>
+
+      <ParentSupportSection />
 
       <Separator className="my-2" />
 

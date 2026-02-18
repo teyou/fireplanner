@@ -20,6 +20,19 @@ export type CpfHousingMode = 'none' | 'simple' | 'property-linked'
 export type RetirementPhase = 'before-55' | '55-to-64' | '65-plus'
 
 // ============================================================
+// Parent Support
+// ============================================================
+
+export interface ParentSupport {
+  id: string
+  label: string
+  monthlyAmount: number
+  startAge: number
+  endAge: number
+  growthRate: number
+}
+
+// ============================================================
 // Profile Store
 // ============================================================
 
@@ -68,6 +81,10 @@ export interface ProfileState {
   cpfHousingMode: CpfHousingMode
   cpfHousingMonthly: number
   cpfMortgageYearsLeft: number
+
+  // Aging Parent Support
+  parentSupportEnabled: boolean
+  parentSupport: ParentSupport[]
 
   // Validation
   validationErrors: ValidationErrors
@@ -603,6 +620,8 @@ export interface ProjectionRow {
   // Property
   propertyEquity: number
   totalNWIncProperty: number
+  // Expanded: parent support
+  parentSupportExpense: number
   // Expanded: other
   cumulativeSavings: number
   activeLifeEvents: string[]

@@ -5,7 +5,7 @@ import type { ValidationErrors, ProfileState, IncomeState, AllocationState, With
  * Returns a map of field names to error messages.
  */
 export function validateProfileConsistency(
-  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'cpfLifeStartAge'>
+  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'cpfLifeStartAge' | 'parentSupportEnabled' | 'parentSupport'>
 ): ValidationErrors {
   const errors: ValidationErrors = {}
 
@@ -19,6 +19,21 @@ export function validateProfileConsistency(
 
   if (profile.cpfLifeStartAge >= profile.lifeExpectancy) {
     errors.cpfLifeStartAge = 'CPF LIFE start age must be less than life expectancy'
+  }
+
+  // Parent support validation
+  if (profile.parentSupportEnabled) {
+    for (const entry of profile.parentSupport) {
+      if (entry.startAge < 18) {
+        errors[`parentSupport_${entry.id}_startAge`] = 'Start age must be at least 18'
+      }
+      if (entry.startAge >= entry.endAge) {
+        errors[`parentSupport_${entry.id}_startAge`] = 'Start age must be less than end age'
+      }
+      if (entry.endAge > profile.lifeExpectancy) {
+        errors[`parentSupport_${entry.id}_endAge`] = `End age cannot exceed life expectancy (${profile.lifeExpectancy})`
+      }
+    }
   }
 
   return errors

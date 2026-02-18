@@ -131,6 +131,8 @@ function makeParams(overrides: Partial<ProjectionParams> = {}): ProjectionParams
     propertyEquity: 0,
     annualMortgagePayment: 0,
     annualRentalIncome: 0,
+    parentSupport: [],
+    parentSupportEnabled: false,
     ...overrides,
   }
 }

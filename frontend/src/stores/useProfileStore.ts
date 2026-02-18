@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ProfileState, ValidationErrors } from '@/lib/types'
+import type { ProfileState, ParentSupport, ValidationErrors } from '@/lib/types'
 import { validateProfileField } from '@/lib/validation/schemas'
 import { validateProfileConsistency } from '@/lib/validation/rules'
 
@@ -9,6 +9,9 @@ interface ProfileActions {
     field: K,
     value: ProfileState[K]
   ) => void
+  addParentSupport: (entry: ParentSupport) => void
+  removeParentSupport: (id: string) => void
+  updateParentSupport: (id: string, updates: Partial<Omit<ParentSupport, 'id'>>) => void
   reset: () => void
 }
 
@@ -20,6 +23,7 @@ const PROFILE_DATA_KEYS = [
   'expectedReturn', 'usePortfolioReturn', 'inflation', 'expenseRatio', 'rebalanceFrequency',
   'retirementPhase', 'cpfLifeActualMonthlyPayout',
   'cpfLifeStartAge', 'cpfLifePlan', 'cpfRetirementSum', 'cpfHousingMode', 'cpfHousingMonthly', 'cpfMortgageYearsLeft',
+  'parentSupportEnabled', 'parentSupport',
 ] as const
 
 const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
@@ -54,6 +58,8 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   cpfHousingMode: 'none',
   cpfHousingMonthly: 0,
   cpfMortgageYearsLeft: 25,
+  parentSupportEnabled: false,
+  parentSupport: [],
 }
 
 function extractProfileData(state: ProfileState & ProfileActions): Omit<ProfileState, 'validationErrors'> {
@@ -96,6 +102,41 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
           }
         }),
 
+      addParentSupport: (entry: ParentSupport) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = { ...stateData, parentSupport: [...stateData.parentSupport, entry] }
+          return {
+            parentSupport: updated.parentSupport,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
+      removeParentSupport: (id: string) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = { ...stateData, parentSupport: stateData.parentSupport.filter((e) => e.id !== id) }
+          return {
+            parentSupport: updated.parentSupport,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
+      updateParentSupport: (id: string, updates: Partial<Omit<ParentSupport, 'id'>>) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = {
+            ...stateData,
+            parentSupport: stateData.parentSupport.map((e) =>
+              e.id === id ? { ...e, ...updates } : e
+            ),
+          }
+          return {
+            parentSupport: updated.parentSupport,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
       reset: () =>
         set({
           ...DEFAULT_PROFILE,
@@ -104,7 +145,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 4,
+      version: 5,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -128,6 +169,10 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
         if (version < 4) {
           state.retirementPhase = state.retirementPhase ?? null
           state.cpfLifeActualMonthlyPayout = state.cpfLifeActualMonthlyPayout ?? 0
+        }
+        if (version < 5) {
+          state.parentSupportEnabled = state.parentSupportEnabled ?? false
+          state.parentSupport = state.parentSupport ?? []
         }
         return state
       },

@@ -1,4 +1,4 @@
-import type { FireMetrics, FireType, FireNumberBasis } from '@/lib/types'
+import type { FireMetrics, FireType, FireNumberBasis, ParentSupport } from '@/lib/types'
 
 /** Expense multiplier for each FIRE type */
 const FIRE_TYPE_MULTIPLIERS: Record<FireType, number> = {
@@ -97,6 +97,24 @@ export function calculateFatFire(annualExpenses: number, swr: number): number {
   return calculateFireNumber(annualExpenses * 1.5, swr)
 }
 
+/**
+ * Calculate total annual parent support at a given age.
+ * Each entry is active when startAge <= age < endAge.
+ * Growth is compounded from startAge: amount * (1 + growthRate)^(age - startAge).
+ * Parent support is additive to expenses and NOT subject to retirementSpendingAdjustment.
+ */
+export function calculateParentSupportAtAge(entries: ParentSupport[], age: number): number {
+  let total = 0
+  for (const entry of entries) {
+    if (age >= entry.startAge && age < entry.endAge) {
+      const yearsActive = age - entry.startAge
+      const annualAmount = entry.monthlyAmount * 12 * Math.pow(1 + entry.growthRate, yearsActive)
+      total += annualAmount
+    }
+  }
+  return total
+}
+
 /** Progress toward FIRE target: NW / fireNumber (0 to 1+) */
 export function calculateProgress(currentNW: number, fireNumber: number): number {
   if (fireNumber <= 0) return 0
@@ -184,6 +202,8 @@ export function calculateAllFireMetrics(params: {
   lifeExpectancy?: number
   retirementSpendingAdjustment?: number
   propertyEquity?: number
+  parentSupport?: ParentSupport[]
+  parentSupportEnabled?: boolean
 }): FireMetrics {
   const {
     currentAge,
@@ -202,6 +222,8 @@ export function calculateAllFireMetrics(params: {
     lifeExpectancy = 90,
     retirementSpendingAdjustment = 1.0,
     propertyEquity = 0,
+    parentSupport = [],
+    parentSupportEnabled = false,
   } = params
 
   const totalNetWorth = liquidNetWorth + cpfTotal
@@ -212,6 +234,12 @@ export function calculateAllFireMetrics(params: {
   // Apply retirement spending adjustment and FIRE type multiplier to expenses for the FIRE number
   const multiplier = FIRE_TYPE_MULTIPLIERS[fireType]
   let effectiveExpenses = annualExpenses * retirementSpendingAdjustment * multiplier
+
+  // Add parent support at retirement age (additive, NOT subject to adjustment/multiplier)
+  const parentSupportAnnual = parentSupportEnabled
+    ? calculateParentSupportAtAge(parentSupport, retirementAge)
+    : 0
+  effectiveExpenses += parentSupportAnnual
 
   // Net real return = nominal - inflation - expense ratio
   const netRealReturn = expectedReturn - inflation - expenseRatio

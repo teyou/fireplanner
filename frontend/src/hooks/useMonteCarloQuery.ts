@@ -56,12 +56,15 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     annualSalary: income.annualSalary,
     salaryModel: income.salaryModel,
     incomeStreams: income.incomeStreams,
+    parentSupportEnabled: profile.parentSupportEnabled,
+    parentSupport: profile.parentSupport,
   }), [
     analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights, analysisPortfolio.skipAccumulation,
     profile.currentAge, profile.retirementAge, profile.lifeExpectancy, profile.expenseRatio, profile.inflation,
     simulation.mcMethod, simulation.nSimulations, simulation.selectedStrategy, simulation.strategyParams,
     allocation.returnOverrides, allocation.stdDevOverrides,
     income.annualSalary, income.salaryModel, income.incomeStreams,
+    profile.parentSupportEnabled, profile.parentSupport,
   ])
 
   const mutation = useMutation({

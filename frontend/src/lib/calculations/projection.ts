@@ -13,7 +13,9 @@ import type {
   WithdrawalStrategyType,
   StrategyParamsMap,
   GlidePathConfig,
+  ParentSupport,
 } from '@/lib/types'
+import { calculateParentSupportAtAge } from './fire'
 import { calculatePortfolioReturn, interpolateGlidePath } from './portfolio'
 import {
   constantDollar,
@@ -48,6 +50,9 @@ export interface ProjectionParams {
   propertyEquity: number
   annualMortgagePayment: number
   annualRentalIncome: number
+  // Parent support
+  parentSupport: ParentSupport[]
+  parentSupportEnabled: boolean
 }
 
 export interface ProjectionResult {
@@ -184,6 +189,8 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     propertyEquity,
     annualMortgagePayment,
     annualRentalIncome,
+    parentSupport,
+    parentSupportEnabled,
   } = params
 
   const rows: ProjectionRow[] = []
@@ -228,8 +235,13 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     let savingsOrWithdrawal: number
     let totalIncome: number
 
+    // Parent support at this age (uses its own growth rate, not inflation)
+    const parentSupportExpense = parentSupportEnabled
+      ? calculateParentSupportAtAge(parentSupport, age)
+      : 0
+
     const baseExpenses = isRetired ? annualExpenses * retirementSpendingAdjustment : annualExpenses
-    const inflationAdjustedExpenses = baseExpenses * Math.pow(1 + inflation, year)
+    const inflationAdjustedExpenses = baseExpenses * Math.pow(1 + inflation, year) + parentSupportExpense
 
     if (!isRetired) {
       // Pre-retirement: accumulation
@@ -340,6 +352,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       withdrawalAmount,
       maxPermittedWithdrawal,
       withdrawalExcess,
+      parentSupportExpense,
       cumulativeSavings: incomeRow.cumulativeSavings,
       activeLifeEvents: incomeRow.activeLifeEvents,
     })

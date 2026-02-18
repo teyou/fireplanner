@@ -78,6 +78,8 @@ export function useProjection(): ProjectionResult {
         : 0,
       annualMortgagePayment: property.ownsProperty ? property.existingMonthlyPayment * 12 : 0,
       annualRentalIncome: property.ownsProperty ? property.existingRentalIncome * 12 : 0,
+      parentSupport: profile.parentSupport,
+      parentSupportEnabled: profile.parentSupportEnabled,
     })
 
     return { rows, summary, hasErrors: false, errors: {} }
@@ -111,5 +113,7 @@ export function useProjection(): ProjectionResult {
     property.existingMortgageBalance,
     property.existingMonthlyPayment,
     property.existingRentalIncome,
+    profile.parentSupportEnabled,
+    profile.parentSupport,
   ])
 }

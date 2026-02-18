@@ -11,7 +11,9 @@ import {
   calculateAllFireMetrics,
   projectPortfolioAtRetirement,
   calculateLiquidBridgeGap,
+  calculateParentSupportAtAge,
 } from './fire'
+import type { ParentSupport } from '@/lib/types'
 
 describe('calculateFireNumber', () => {
   it('computes basic FIRE number: expenses / SWR', () => {
@@ -501,6 +503,143 @@ describe('property-based tests', () => {
         }
       )
     )
+  })
+})
+
+describe('calculateParentSupportAtAge', () => {
+  const mother: ParentSupport = {
+    id: 'm1',
+    label: 'Mother',
+    monthlyAmount: 500,
+    startAge: 35,
+    endAge: 75,
+    growthRate: 0.03,
+  }
+
+  const father: ParentSupport = {
+    id: 'f1',
+    label: 'Father',
+    monthlyAmount: 800,
+    startAge: 40,
+    endAge: 70,
+    growthRate: 0.02,
+  }
+
+  it('returns 0 for empty entries', () => {
+    expect(calculateParentSupportAtAge([], 40)).toBe(0)
+  })
+
+  it('returns 0 when age is before start', () => {
+    expect(calculateParentSupportAtAge([mother], 30)).toBe(0)
+  })
+
+  it('returns 0 when age is at or after end', () => {
+    expect(calculateParentSupportAtAge([mother], 75)).toBe(0)
+    expect(calculateParentSupportAtAge([mother], 80)).toBe(0)
+  })
+
+  it('single entry at start age (no growth applied)', () => {
+    // At startAge (35), yearsActive = 0, so growth^0 = 1
+    // 500 * 12 * 1 = 6000
+    expect(calculateParentSupportAtAge([mother], 35)).toBe(6000)
+  })
+
+  it('single entry with growth over years', () => {
+    // At age 45, yearsActive = 10
+    // 500 * 12 * (1.03)^10 = 6000 * 1.34392 = 8063.53
+    expect(calculateParentSupportAtAge([mother], 45)).toBeCloseTo(6000 * Math.pow(1.03, 10), 2)
+  })
+
+  it('multiple entries with overlapping periods', () => {
+    // At age 45: mother (active, 10yrs) + father (active, 5yrs)
+    const motherAmount = 500 * 12 * Math.pow(1.03, 10) // ~8063.53
+    const fatherAmount = 800 * 12 * Math.pow(1.02, 5) // ~10599.27
+    expect(calculateParentSupportAtAge([mother, father], 45)).toBeCloseTo(motherAmount + fatherAmount, 2)
+  })
+
+  it('multiple entries where only one is active', () => {
+    // At age 38: mother active (3yrs), father not yet started
+    const motherAmount = 500 * 12 * Math.pow(1.03, 3)
+    expect(calculateParentSupportAtAge([mother, father], 38)).toBeCloseTo(motherAmount, 2)
+  })
+
+  it('no entries active at given age', () => {
+    // At age 80: both entries have ended
+    expect(calculateParentSupportAtAge([mother, father], 80)).toBe(0)
+  })
+})
+
+describe('calculateAllFireMetrics with parentSupport', () => {
+  const baseParams = {
+    currentAge: 30,
+    retirementAge: 60,
+    annualIncome: 100000,
+    annualExpenses: 48000,
+    liquidNetWorth: 200000,
+    cpfTotal: 0,
+    swr: 0.04,
+    expectedReturn: 0.07,
+    inflation: 0.025,
+    expenseRatio: 0.003,
+  }
+
+  const parentEntries: ParentSupport[] = [
+    {
+      id: 'm1',
+      label: 'Mother',
+      monthlyAmount: 500,
+      startAge: 35,
+      endAge: 75,
+      growthRate: 0.03,
+    },
+  ]
+
+  it('parent support increases FIRE number when enabled', () => {
+    const without = calculateAllFireMetrics(baseParams)
+    const withPS = calculateAllFireMetrics({
+      ...baseParams,
+      parentSupportEnabled: true,
+      parentSupport: parentEntries,
+    })
+    expect(withPS.fireNumber).toBeGreaterThan(without.fireNumber)
+  })
+
+  it('disabled parent support does not change FIRE number', () => {
+    const without = calculateAllFireMetrics(baseParams)
+    const disabled = calculateAllFireMetrics({
+      ...baseParams,
+      parentSupportEnabled: false,
+      parentSupport: parentEntries,
+    })
+    expect(disabled.fireNumber).toBe(without.fireNumber)
+  })
+
+  it('parent support is additive and NOT subject to FIRE type multiplier', () => {
+    // With lean FIRE type, expenses are multiplied by 0.6, but parent support should be added after
+    const leanWithPS = calculateAllFireMetrics({
+      ...baseParams,
+      fireType: 'lean',
+      parentSupportEnabled: true,
+      parentSupport: parentEntries,
+    })
+    const leanWithout = calculateAllFireMetrics({
+      ...baseParams,
+      fireType: 'lean',
+    })
+    // Parent support at retirement age 60: 500*12*(1.03)^25 = 6000 * 2.09378 = 12562.67
+    const psAtRetirement = calculateParentSupportAtAge(parentEntries, 60)
+    const expectedDiff = psAtRetirement / 0.04 // FIRE number difference = parentSupport / SWR
+    expect(leanWithPS.fireNumber - leanWithout.fireNumber).toBeCloseTo(expectedDiff, 0)
+  })
+
+  it('empty parent support array when enabled has no effect', () => {
+    const without = calculateAllFireMetrics(baseParams)
+    const withEmpty = calculateAllFireMetrics({
+      ...baseParams,
+      parentSupportEnabled: true,
+      parentSupport: [],
+    })
+    expect(withEmpty.fireNumber).toBe(without.fireNumber)
   })
 })
 

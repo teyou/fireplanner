@@ -112,6 +112,8 @@ export function useFireCalculations(): FireCalculationsResult {
       lifeExpectancy: profile.lifeExpectancy,
       retirementSpendingAdjustment: profile.retirementSpendingAdjustment,
       propertyEquity,
+      parentSupport: profile.parentSupport,
+      parentSupportEnabled: profile.parentSupportEnabled,
     })
 
     return { metrics, hasErrors: false, errors: {} }
@@ -160,5 +162,7 @@ export function useFireCalculations(): FireCalculationsResult {
     property.ownsProperty,
     property.existingPropertyValue,
     property.existingMortgageBalance,
+    profile.parentSupportEnabled,
+    profile.parentSupport,
   ])
 }
