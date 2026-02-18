@@ -271,6 +271,16 @@ describe('validateProfileField', () => {
   })
 })
 
+const defaultHealthcareConfig = {
+  enabled: false,
+  mediShieldLifeEnabled: true,
+  ispTier: 'none' as const,
+  careShieldLifeEnabled: true,
+  oopBaseAmount: 1200,
+  oopModel: 'age-curve' as const,
+  mediSaveTopUpAnnual: 0,
+}
+
 describe('validateProfileConsistency', () => {
   it('returns empty for valid profile', () => {
     const errors = validateProfileConsistency({
@@ -280,6 +290,7 @@ describe('validateProfileConsistency', () => {
       cpfLifeStartAge: 65,
       parentSupportEnabled: false,
       parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
     })
     expect(Object.keys(errors)).toHaveLength(0)
   })
@@ -292,6 +303,7 @@ describe('validateProfileConsistency', () => {
       cpfLifeStartAge: 65,
       parentSupportEnabled: false,
       parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
     })
     expect(errors.retirementAge).toBeTruthy()
   })
@@ -304,6 +316,7 @@ describe('validateProfileConsistency', () => {
       cpfLifeStartAge: 65,
       parentSupportEnabled: false,
       parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
     })
     expect(errors.lifeExpectancy).toBeTruthy()
   })
@@ -316,6 +329,7 @@ describe('validateProfileConsistency', () => {
       cpfLifeStartAge: 65,
       parentSupportEnabled: false,
       parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
     })
     expect(Object.keys(errors).length).toBeGreaterThanOrEqual(2)
   })

@@ -5,7 +5,7 @@ import type { ValidationErrors, ProfileState, IncomeState, AllocationState, With
  * Returns a map of field names to error messages.
  */
 export function validateProfileConsistency(
-  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'cpfLifeStartAge' | 'parentSupportEnabled' | 'parentSupport'>
+  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'cpfLifeStartAge' | 'parentSupportEnabled' | 'parentSupport' | 'healthcareConfig'>
 ): ValidationErrors {
   const errors: ValidationErrors = {}
 
@@ -33,6 +33,16 @@ export function validateProfileConsistency(
       if (entry.endAge > profile.lifeExpectancy) {
         errors[`parentSupport_${entry.id}_endAge`] = `End age cannot exceed life expectancy (${profile.lifeExpectancy})`
       }
+    }
+  }
+
+  // Healthcare config validation
+  if (profile.healthcareConfig?.enabled) {
+    if (profile.healthcareConfig.oopBaseAmount < 0 || profile.healthcareConfig.oopBaseAmount > 50000) {
+      errors['healthcareConfig.oopBaseAmount'] = 'OOP base amount must be between $0 and $50,000'
+    }
+    if (profile.healthcareConfig.mediSaveTopUpAnnual < 0 || profile.healthcareConfig.mediSaveTopUpAnnual > 37740) {
+      errors['healthcareConfig.mediSaveTopUpAnnual'] = 'MediSave top-up must be between $0 and $37,740'
     }
   }
 

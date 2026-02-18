@@ -139,6 +139,7 @@ function makeParams(overrides: Partial<ProjectionParams> = {}): ProjectionParams
     residencyForAbsd: 'citizen',
     parentSupport: [],
     parentSupportEnabled: false,
+    healthcareConfig: null,
     ...overrides,
   }
 }

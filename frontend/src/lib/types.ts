@@ -20,6 +20,23 @@ export type CpfHousingMode = 'none' | 'simple' | 'property-linked'
 export type RetirementPhase = 'before-55' | '55-to-64' | '65-plus'
 
 // ============================================================
+// Healthcare Configuration
+// ============================================================
+
+export type IspTierOption = 'none' | 'basic' | 'standard' | 'enhanced'
+export type OopModel = 'fixed' | 'age-curve'
+
+export interface HealthcareConfig {
+  enabled: boolean
+  mediShieldLifeEnabled: boolean
+  ispTier: IspTierOption
+  careShieldLifeEnabled: boolean
+  oopBaseAmount: number
+  oopModel: OopModel
+  mediSaveTopUpAnnual: number
+}
+
+// ============================================================
 // Parent Support
 // ============================================================
 
@@ -85,6 +102,9 @@ export interface ProfileState {
   // Aging Parent Support
   parentSupportEnabled: boolean
   parentSupport: ParentSupport[]
+
+  // Healthcare & Insurance
+  healthcareConfig: HealthcareConfig
 
   // Validation
   validationErrors: ValidationErrors
@@ -642,6 +662,8 @@ export interface ProjectionRow {
   totalNWIncProperty: number
   // Expanded: parent support
   parentSupportExpense: number
+  // Expanded: healthcare
+  healthcareCashOutlay: number
   // Expanded: other
   cumulativeSavings: number
   activeLifeEvents: string[]

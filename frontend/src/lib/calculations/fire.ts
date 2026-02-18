@@ -1,4 +1,5 @@
-import type { FireMetrics, FireType, FireNumberBasis, ParentSupport } from '@/lib/types'
+import type { FireMetrics, FireType, FireNumberBasis, ParentSupport, HealthcareConfig } from '@/lib/types'
+import { calculateHealthcareCostAtAge } from './healthcare'
 
 /** Expense multiplier for each FIRE type */
 const FIRE_TYPE_MULTIPLIERS: Record<FireType, number> = {
@@ -204,6 +205,7 @@ export function calculateAllFireMetrics(params: {
   propertyEquity?: number
   parentSupport?: ParentSupport[]
   parentSupportEnabled?: boolean
+  healthcareConfig?: HealthcareConfig | null
 }): FireMetrics {
   const {
     currentAge,
@@ -224,6 +226,7 @@ export function calculateAllFireMetrics(params: {
     propertyEquity = 0,
     parentSupport = [],
     parentSupportEnabled = false,
+    healthcareConfig = null,
   } = params
 
   const totalNetWorth = liquidNetWorth + cpfTotal
@@ -240,6 +243,12 @@ export function calculateAllFireMetrics(params: {
     ? calculateParentSupportAtAge(parentSupport, retirementAge)
     : 0
   effectiveExpenses += parentSupportAnnual
+
+  // Add healthcare cash outlay at retirement age (additive, NOT subject to adjustment/multiplier)
+  const healthcareCashOutlay = healthcareConfig?.enabled
+    ? calculateHealthcareCostAtAge(healthcareConfig, retirementAge).cashOutlay
+    : 0
+  effectiveExpenses += healthcareCashOutlay
 
   // Net real return = nominal - inflation - expense ratio
   const netRealReturn = expectedReturn - inflation - expenseRatio

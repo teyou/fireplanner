@@ -34,6 +34,7 @@ function makeRow(overrides: Partial<ProjectionRow> & { age: number; isRetired: b
     maxPermittedWithdrawal: 0,
     withdrawalExcess: 0,
     parentSupportExpense: 0,
+    healthcareCashOutlay: 0,
     propertyEquity: 0,
     totalNWIncProperty: 1200000,
     cumulativeSavings: 0,

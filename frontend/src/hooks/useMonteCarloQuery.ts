@@ -62,6 +62,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     parentSupport: profile.parentSupport,
     downsizing: propertyStore.downsizing,
     ownsProperty: propertyStore.ownsProperty,
+    healthcareConfig: profile.healthcareConfig,
   }), [
     analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights, analysisPortfolio.skipAccumulation,
     profile.currentAge, profile.retirementAge, profile.lifeExpectancy, profile.expenseRatio, profile.inflation,
@@ -70,6 +71,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     income.annualSalary, income.salaryModel, income.incomeStreams,
     profile.parentSupportEnabled, profile.parentSupport,
     propertyStore.downsizing, propertyStore.ownsProperty,
+    profile.healthcareConfig,
   ])
 
   const mutation = useMutation({

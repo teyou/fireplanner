@@ -35,6 +35,10 @@ import { ComparisonTable } from '@/components/withdrawal/ComparisonTable'
 import { WithdrawalChart } from '@/components/withdrawal/WithdrawalChart'
 import { PortfolioComparisonChart } from '@/components/withdrawal/PortfolioComparisonChart'
 
+// Healthcare sections
+import { HealthcareSection } from '@/components/healthcare/HealthcareSection'
+import { HealthcareCostChart } from '@/components/healthcare/HealthcareCostChart'
+
 // Property sections
 import { PropertyInputForm } from '@/components/property/PropertyInputForm'
 import { PropertyAnalysisPanel } from '@/components/property/PropertyAnalysisPanel'
@@ -370,6 +374,8 @@ function CpfContent() {
   return (
     <>
       <CpfSection />
+      <HealthcareSection />
+      <HealthcareCostChart />
     </>
   )
 }

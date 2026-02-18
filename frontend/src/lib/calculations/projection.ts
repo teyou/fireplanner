@@ -15,8 +15,10 @@ import type {
   GlidePathConfig,
   ParentSupport,
   DownsizingConfig,
+  HealthcareConfig,
 } from '@/lib/types'
 import { calculateParentSupportAtAge } from './fire'
+import { calculateHealthcareCostAtAge } from './healthcare'
 import {
   outstandingMortgageAtAge,
   calculateSellAndDownsize,
@@ -66,6 +68,8 @@ export interface ProjectionParams {
   // Parent support
   parentSupport: ParentSupport[]
   parentSupportEnabled: boolean
+  // Healthcare
+  healthcareConfig: HealthcareConfig | null
 }
 
 export interface ProjectionResult {
@@ -209,6 +213,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     residencyForAbsd,
     parentSupport,
     parentSupportEnabled,
+    healthcareConfig,
   } = params
 
   const rows: ProjectionRow[] = []
@@ -223,7 +228,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
 
   // Pre-compute downsizing results
   const dsActive = downsizing && downsizing.scenario !== 'none'
-  let dsSellAge = dsActive ? downsizing.sellAge : Infinity
+  const dsSellAge = dsActive ? downsizing.sellAge : Infinity
   let dsNetEquity = 0
   let dsNewMonthlyPayment = 0
   let dsAnnualRent = 0
@@ -304,6 +309,12 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       ? calculateParentSupportAtAge(parentSupport, age)
       : 0
 
+    // Healthcare cash outlay at this age (age-dependent, not inflation-adjusted — premiums are already age-based)
+    const healthcareCost = healthcareConfig?.enabled
+      ? calculateHealthcareCostAtAge(healthcareConfig, age)
+      : null
+    const healthcareCashOutlay = healthcareCost?.cashOutlay ?? 0
+
     // Property cashflows depend on whether property has been sold
     let effectiveMortgagePayment = annualMortgagePayment
     let effectiveRentalIncome = annualRentalIncome
@@ -335,7 +346,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     }
 
     const baseExpenses = isRetired ? annualExpenses * retirementSpendingAdjustment : annualExpenses
-    const inflationAdjustedExpenses = baseExpenses * Math.pow(1 + inflation, year) + parentSupportExpense + downsizingRentExpense
+    const inflationAdjustedExpenses = baseExpenses * Math.pow(1 + inflation, year) + parentSupportExpense + downsizingRentExpense + healthcareCashOutlay
 
     if (!isRetired) {
       // Pre-retirement: accumulation
@@ -447,6 +458,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       maxPermittedWithdrawal,
       withdrawalExcess,
       parentSupportExpense,
+      healthcareCashOutlay,
       cumulativeSavings: incomeRow.cumulativeSavings,
       activeLifeEvents: incomeRow.activeLifeEvents,
     })

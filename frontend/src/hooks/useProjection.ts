@@ -88,6 +88,7 @@ export function useProjection(): ProjectionResult {
       residencyForAbsd: property.residencyForAbsd,
       parentSupport: profile.parentSupport,
       parentSupportEnabled: profile.parentSupportEnabled,
+      healthcareConfig: profile.healthcareConfig?.enabled ? profile.healthcareConfig : null,
     })
 
     return { rows, summary, hasErrors: false, errors: {} }
@@ -127,5 +128,6 @@ export function useProjection(): ProjectionResult {
     property.residencyForAbsd,
     profile.parentSupportEnabled,
     profile.parentSupport,
+    profile.healthcareConfig,
   ])
 }

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ProfileState, ParentSupport, ValidationErrors } from '@/lib/types'
+import type { ProfileState, ParentSupport, HealthcareConfig, ValidationErrors } from '@/lib/types'
 import { validateProfileField } from '@/lib/validation/schemas'
 import { validateProfileConsistency } from '@/lib/validation/rules'
 
@@ -24,7 +24,18 @@ const PROFILE_DATA_KEYS = [
   'retirementPhase', 'cpfLifeActualMonthlyPayout',
   'cpfLifeStartAge', 'cpfLifePlan', 'cpfRetirementSum', 'cpfHousingMode', 'cpfHousingMonthly', 'cpfMortgageYearsLeft',
   'parentSupportEnabled', 'parentSupport',
+  'healthcareConfig',
 ] as const
+
+const DEFAULT_HEALTHCARE_CONFIG: HealthcareConfig = {
+  enabled: false,
+  mediShieldLifeEnabled: true,
+  ispTier: 'none',
+  careShieldLifeEnabled: true,
+  oopBaseAmount: 1200,
+  oopModel: 'age-curve',
+  mediSaveTopUpAnnual: 0,
+}
 
 const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   currentAge: 30,
@@ -60,6 +71,7 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   cpfMortgageYearsLeft: 25,
   parentSupportEnabled: false,
   parentSupport: [],
+  healthcareConfig: DEFAULT_HEALTHCARE_CONFIG,
 }
 
 function extractProfileData(state: ProfileState & ProfileActions): Omit<ProfileState, 'validationErrors'> {
@@ -145,7 +157,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 5,
+      version: 6,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -173,6 +185,9 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
         if (version < 5) {
           state.parentSupportEnabled = state.parentSupportEnabled ?? false
           state.parentSupport = state.parentSupport ?? []
+        }
+        if (version < 6) {
+          state.healthcareConfig = state.healthcareConfig ?? DEFAULT_HEALTHCARE_CONFIG
         }
         return state
       },

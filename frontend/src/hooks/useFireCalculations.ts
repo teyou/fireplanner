@@ -114,6 +114,7 @@ export function useFireCalculations(): FireCalculationsResult {
       propertyEquity,
       parentSupport: profile.parentSupport,
       parentSupportEnabled: profile.parentSupportEnabled,
+      healthcareConfig: profile.healthcareConfig?.enabled ? profile.healthcareConfig : null,
     })
 
     return { metrics, hasErrors: false, errors: {} }
@@ -164,5 +165,6 @@ export function useFireCalculations(): FireCalculationsResult {
     property.existingMortgageBalance,
     profile.parentSupportEnabled,
     profile.parentSupport,
+    profile.healthcareConfig,
   ])
 }

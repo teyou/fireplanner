@@ -190,6 +190,9 @@ export function validateProfileField(
     cpfLifeStartAge: z.number().int().min(65).max(75),
     cpfHousingMonthly: nonNegativeSchema,
     cpfMortgageYearsLeft: z.number().int().min(0).max(40),
+    // Healthcare config sub-fields validated here for field-level checks
+    'healthcareConfig.oopBaseAmount': z.number().min(0).max(50000),
+    'healthcareConfig.mediSaveTopUpAnnual': z.number().min(0).max(37740),
   }
 
   const schema = fieldSchemas[field]
