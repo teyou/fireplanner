@@ -43,7 +43,7 @@ Based on William Bengen's 1994 study of US stock/bond returns from 1926-1992. Th
 - Tax implications (Singapore has no capital gains tax — advantage)
 - Additional income (CPF LIFE, rental, part-time work)
 
-**Singapore-specific considerations:**
+### Singapore-Specific Considerations
 - No capital gains tax improves effective SWR
 - CPF LIFE provides longevity insurance from age 65
 - Lower inflation historically than US (2-3% vs 3-4%)
@@ -97,7 +97,7 @@ The fan chart shows percentile bands (p5 to p95) of portfolio paths over time.`,
 | Cash | 2% | Very Low |
 | CPF (OA+SA) | 3.5% | Very Low |
 
-**Key concepts:**
+### Key Concepts
 - **Markowitz efficient frontier**: Optimal risk-return tradeoff
 - **Sharpe ratio**: Return per unit of risk
 - **Diversification ratio**: How much diversification reduces portfolio risk
@@ -120,7 +120,7 @@ The fan chart shows percentile bands (p5 to p95) of portfolio paths over time.`,
   {
     id: 'singapore',
     title: 'Singapore Considerations',
-    content: `**CPF (Central Provident Fund):**
+    content: `### CPF (Central Provident Fund)
 - Mandatory savings: up to 37% of salary (employee + employer)
 - OA: 2.5% interest (housing, education, investment)
 - SA: 4% interest (retirement)
@@ -128,13 +128,13 @@ The fan chart shows percentile bands (p5 to p95) of portfolio paths over time.`,
 - Extra 1% on first $60K combined balances
 - CPF LIFE: Lifetime annuity from age 65
 
-**Taxes:**
+### Taxes
 - Progressive income tax: 0% to 24%
 - No capital gains tax
 - No inheritance tax
 - SRS tax deduction: up to $15,300/year
 
-**Property:**
+### Property
 - BSD: 1-6% progressive brackets
 - ABSD: 0-60% based on residency and property count
 - 99-year leasehold is standard (Bala's Table for depreciation)
@@ -145,32 +145,32 @@ The fan chart shows percentile bands (p5 to p95) of portfolio paths over time.`,
     title: 'Healthcare & Insurance Planning',
     content: `Planning for healthcare costs is critical for a sustainable retirement in Singapore. Key programmes and considerations:
 
-**MediShield Life (as of 1 Apr 2025)**
+### MediShield Life (as of 1 Apr 2025)
 - Universal basic health insurance administered by CPF Board
 - Covers large hospital bills and selected costly outpatient treatments
 - Premiums increase with age (e.g., ~$300/yr at age 40, ~$1,400/yr at age 70, ~$2,250/yr at age 90)
 - Premiums are fully payable from MediSave
 
-**Integrated Shield Plans (ISPs)**
+### Integrated Shield Plans (ISPs)
 - Private insurance top-ups on MediShield Life, offered by 7 insurers
 - Tiers: Basic, Standard, Enhanced (private hospital coverage)
 - Additional premiums range from ~$200-$2,000+/yr depending on tier and age
 - Payable partly from MediSave up to the Additional Withdrawal Limits (AWL)
 - Consider whether you need private hospital coverage vs restructured hospital (Class B1/A)
 
-**CareShield Life (as of Oct 2020)**
+### CareShield Life (as of Oct 2020)
 - Long-term care insurance for severe disability
 - Mandatory for citizens/PRs born 1980 or later
 - Premiums payable from MediSave until age 67
 - Pays $600/month (as of 2020, increases 2%/yr) if unable to perform 3+ Activities of Daily Living
 
-**MediSave**
+### MediSave
 - CPF MA earns 4% interest (floor rate)
 - Used for premiums (MediShield Life, ISP, CareShield) and approved outpatient/inpatient
 - MediSave has withdrawal limits for different treatments
 - Typical depletion risk: heavy claims or long hospitalisation can exhaust MA, especially post-75
 
-**Budgeting for Healthcare in Retirement**
+### Budgeting for Healthcare in Retirement
 - Out-of-pocket costs rise significantly with age (roughly doubling every 15 years after 50)
 - Consider: chronic condition management, dental, vision, specialist visits
 - Nursing home / home care costs: $2,000-$4,500/month (as of 2024)
@@ -183,13 +183,13 @@ The fan chart shows percentile bands (p5 to p95) of portfolio paths over time.`,
     title: 'Legacy & Estate Planning',
     content: `Estate planning ensures your assets are distributed according to your wishes and minimises complications for your family.
 
-**Making a Will in Singapore**
+### Making a Will in Singapore
 - A will is the primary instrument for directing asset distribution
 - Must be signed by the testator (age 21+) in the presence of 2 witnesses
 - Can be prepared by a lawyer (~$200-$500 for simple wills) or via online will-writing services
 - Without a valid will, assets are distributed under the Intestate Succession Act (for non-Muslims) or the Administration of Muslim Law Act
 
-**Intestate Succession Act (ISA)**
+### Intestate Succession Act (ISA)
 If you die without a will (non-Muslim):
 - Spouse only: spouse gets everything
 - Spouse + children: spouse gets 50%, children share 50%
@@ -197,22 +197,22 @@ If you die without a will (non-Muslim):
 - Children only: children share equally
 - Parents only: parents share equally
 
-**Muslim Inheritance (Faraid)**
+### Muslim Inheritance (Faraid)
 - Governed by Islamic law under the Administration of Muslim Law Act
 - Fixed shares for specified heirs (e.g., spouse, children, parents)
 - Cannot be overridden by a civil will for assets subject to Faraid
 
-**Lasting Power of Attorney (LPA)**
+### Lasting Power of Attorney (LPA)
 - Legal document allowing a trusted person to make decisions if you lose mental capacity
 - Covers personal welfare and/or property & affairs
 - Must be certified by an LPA certificate issuer and registered with the OPG (~$75 registration fee)
 - Without an LPA, your family must apply to court to manage your affairs — costly and slow
 
-**Advance Medical Directive (AMD)**
+### Advance Medical Directive (AMD)
 - Legal document instructing doctors not to use extraordinary life-sustaining treatment when you are terminally ill and unconscious
 - Optional and revocable; registered with the Registrar of AMDs (MOH)
 
-**Insurance Trusts**
+### Insurance Trusts
 - Insurance policies can be placed in trust to bypass the estate and provide for beneficiaries immediately
 - Useful for ensuring life insurance payouts go directly to intended recipients
 - Section 73 trust (Married Women's Property Act) protects policy proceeds for spouse/children from creditors
@@ -224,25 +224,25 @@ If you die without a will (non-Muslim):
     title: 'CPF Nominations & Beneficiaries',
     content: `CPF savings are **not** covered by a will. You must make a separate CPF nomination to direct how your CPF balances are distributed upon death.
 
-**How to Nominate**
+### How to Nominate
 - Log in to my cpf > My Requests > Make/Change My Nomination
 - Free for online nominations; $8 at CPF Service Centres
 - You can nominate anyone (not restricted to family)
 - Allocate percentages to multiple nominees (must total 100%)
 - Two witnesses required (must not be nominees; must be age 21+)
 
-**What Happens Without a Nomination**
+### What Happens Without a Nomination
 - CPF savings are distributed under the intestacy laws, administered by the Public Trustee's Office
 - Processing takes 4-6 months (vs immediate with nomination)
 - Administration fee: up to 6% of the estate or $15,000, whichever is lower
 - You lose control over who receives what
 
-**Marriage Revocation**
+### Marriage Revocation
 - **Important:** Marriage automatically revokes all prior CPF nominations
 - You must re-nominate after marriage, or your CPF savings will follow intestacy rules
 - Divorce does NOT automatically revoke nominations — you may want to update manually
 
-**CPF vs Will**
+### CPF vs Will
 | | CPF Nomination | Will |
 |---|---|---|
 | Covers | CPF OA, SA, MA, RA balances | All other assets |
@@ -250,11 +250,11 @@ If you die without a will (non-Muslim):
 | Speed | Weeks | Months to years |
 | Revoked by marriage? | Yes | Yes (for wills before 2024 reforms) |
 
-**SRS Nomination**
+### SRS Nomination
 - SRS accounts also require a separate nomination with the SRS operator (bank)
 - Without nomination, SRS funds follow estate distribution under the will or ISA
 
-**Actionable Steps:**
+### Actionable Steps
 1. Check your CPF nomination status at my cpf online
 2. Update nominations after marriage, divorce, or birth of children
 3. Ensure SRS nominations are also in place
@@ -267,12 +267,12 @@ If you die without a will (non-Muslim):
     title: 'Supporting Dependents in Retirement',
     content: `Many Singaporeans provide financial support to aging parents and other dependents in retirement. Planning for these costs is essential to avoid underestimating your FIRE number.
 
-**Aging Parent Support Costs**
+### Aging Parent Support Costs
 - Monthly allowances: median ~$500-$1,000/parent (varies widely by family)
 - Should be factored as a time-bounded expense (e.g., from age 35 to age 75)
 - Consider: who else in your family contributes, and what happens if siblings reduce support
 
-**Eldercare Costs in Singapore (as of 2024)**
+### Eldercare Costs in Singapore (as of 2024)
 | Care Type | Monthly Cost |
 |-----------|-------------|
 | Day care / activity centre | $500-$1,500 |
@@ -281,23 +281,23 @@ If you die without a will (non-Muslim):
 | Nursing home (private) | $3,000-$4,500 |
 | Live-in domestic helper | $800-$1,200 + levy |
 
-**MediSave Top-Ups for Parents**
+### MediSave Top-Ups for Parents
 - You can top up your parents' MediSave accounts voluntarily
 - Tax relief: up to $8,000/year for topping up parents'/grandparents' RA or SA
 - Useful for ensuring parents' MediShield Life / ISP premiums remain funded
 
-**Government Schemes for Seniors**
+### Government Schemes for Seniors
 - **Silver Support Scheme**: Cash supplement for lower-income seniors (65+), up to $900/quarter
 - **CHAS (Community Health Assist Scheme)**: Subsidised outpatient care at participating GPs
 - **Pioneer / Merdeka Generation packages**: Additional Medisave top-ups, outpatient subsidies, MediShield Life premium subsidies for eligible cohorts
 - **ElderFund**: Financial assistance for seniors unable to pay nursing home fees after subsidies
 
-**Caregiver Support**
+### Caregiver Support
 - **Foreign Domestic Worker Levy Concession**: Reduced levy ($60 vs $300/month) for households with elderly dependents
 - **Home Caregiving Grant**: $250/month for caregivers of care recipients who need permanent moderate to total assistance
 - **Parent Relief**: Tax relief of $9,000 (no handicap) / $14,000 (handicap) for supporting parents aged 55+ living in Singapore
 
-**Planning Tips:**
+### Planning Tips
 - Model parent support as a separate expense stream with its own start/end age and growth rate
 - Don't assume healthcare costs stay flat — they accelerate with age
 - Consider long-term care insurance (CareShield Life supplements) for yourself as you age
@@ -371,7 +371,7 @@ export function ReferencePage() {
               {section.title}
             </AccordionTrigger>
             <AccordionContent>
-              <div className="prose prose-sm max-w-none text-muted-foreground">
+              <div className="prose prose-sm max-w-none prose-neutral prose-headings:text-foreground prose-headings:text-base prose-headings:mt-6 prose-headings:mb-2 prose-strong:text-foreground prose-p:text-muted-foreground prose-li:text-muted-foreground prose-td:text-muted-foreground prose-th:text-foreground prose-th:text-xs">
                 <Markdown>{section.content}</Markdown>
               </div>
             </AccordionContent>
