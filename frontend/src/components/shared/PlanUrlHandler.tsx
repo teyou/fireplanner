@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -11,23 +11,20 @@ import {
 } from '@/components/ui/alert-dialog'
 import { getPlanFromUrl, decodeStoresFromUrl, applyStoreData, stripPlanFromUrl } from '@/lib/shareUrl'
 
+function getInitialPlanData(): Record<string, unknown> | null {
+  const compressed = getPlanFromUrl()
+  if (!compressed) return null
+  const data = decodeStoresFromUrl(compressed)
+  if (!data) {
+    stripPlanFromUrl()
+    return null
+  }
+  return data
+}
+
 export function PlanUrlHandler() {
-  const [showDialog, setShowDialog] = useState(false)
-  const [storeData, setStoreData] = useState<Record<string, unknown> | null>(null)
-
-  useEffect(() => {
-    const compressed = getPlanFromUrl()
-    if (!compressed) return
-
-    const data = decodeStoresFromUrl(compressed)
-    if (data) {
-      setStoreData(data)
-      setShowDialog(true)
-    } else {
-      // Invalid data — just strip the param
-      stripPlanFromUrl()
-    }
-  }, [])
+  const [storeData, setStoreData] = useState(getInitialPlanData)
+  const showDialog = storeData !== null
 
   const handleConfirm = () => {
     if (storeData) {
@@ -38,7 +35,6 @@ export function PlanUrlHandler() {
   }
 
   const handleCancel = () => {
-    setShowDialog(false)
     setStoreData(null)
     stripPlanFromUrl()
   }

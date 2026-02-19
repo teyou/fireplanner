@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Share2, Check, AlertTriangle } from 'lucide-react'
+import { Share2, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { generateShareUrl } from '@/lib/shareUrl'
 
