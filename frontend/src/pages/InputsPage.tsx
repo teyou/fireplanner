@@ -505,7 +505,7 @@ function PropertyContent() {
         </CardContent>
       </Card>
 
-      {ownsProperty && propertyStatus === 'with-mortgage' && (
+      {ownsProperty && (
         <>
           <DownsizingScenarioForm />
           <DownsizingResultsPanel />
