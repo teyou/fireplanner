@@ -458,8 +458,8 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
 
         prevWithdrawals[s] = withdrawal
 
-        // Track actual achievable withdrawal (capped to portfolio balance)
-        withdrawalCol[s] = Math.min(withdrawal, Math.max(currentBalance, 0))
+        // Track net withdrawal (what actually leaves the portfolio)
+        withdrawalCol[s] = netWithdrawal
 
         balances[s][t + 1] =
           (currentBalance - netWithdrawal) * (1 + portfolioReturns[s][t] - expenseRatio)

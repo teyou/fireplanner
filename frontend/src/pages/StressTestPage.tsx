@@ -17,6 +17,7 @@ import { FanChart } from '@/components/simulation/FanChart'
 import { FailureDistributionChart } from '@/components/simulation/FailureDistributionChart'
 import { useMonteCarloQuery } from '@/hooks/useMonteCarloQuery'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { useSimulationStore } from '@/stores/useSimulationStore'
 
 // Backtest imports
 import { BacktestControls } from '@/components/backtest/BacktestControls'
@@ -62,6 +63,7 @@ function TabIntro({ children }: { children: React.ReactNode }) {
 function MonteCarloTab() {
   const { mutate, data, isPending, error, canRun, validationErrors, isStale } = useMonteCarloQuery()
   const retirementAge = useProfileStore((s) => s.retirementAge)
+  const selectedStrategy = useSimulationStore((s) => s.selectedStrategy)
 
   const mcInterpretation = data ? (() => {
     const rate = data.success_rate
@@ -124,7 +126,7 @@ function MonteCarloTab() {
             nSimulations={data.n_simulations}
           />
           {data.withdrawal_bands && (
-            <WithdrawalSchedule bands={data.withdrawal_bands} />
+            <WithdrawalSchedule bands={data.withdrawal_bands} strategy={selectedStrategy} />
           )}
         </>
       )}
@@ -132,12 +134,13 @@ function MonteCarloTab() {
   )
 }
 
-function WithdrawalSchedule({ bands }: { bands: PercentileBands }) {
+function WithdrawalSchedule({ bands, strategy }: { bands: PercentileBands; strategy: string }) {
   const [expanded, setExpanded] = useState(false)
   const [showAll, setShowAll] = useState(false)
   const [realDollars, setRealDollars] = useState(false)
   const currentAge = useProfileStore((s) => s.currentAge)
   const inflation = useProfileStore((s) => s.inflation)
+  const isConstantDollar = strategy === 'constant_dollar'
 
   const rows = useMemo(() => {
     return bands.ages.map((age, i) => {
@@ -165,6 +168,14 @@ function WithdrawalSchedule({ bands }: { bands: PercentileBands }) {
       </CardHeader>
       {expanded && (
         <CardContent>
+          <p className="text-xs text-muted-foreground mb-2">
+            Net amount withdrawn from the portfolio each year (after post-retirement income offset), across {bands.ages.length > 0 ? '10,000' : ''} simulated market paths.
+          </p>
+          {isConstantDollar && (
+            <p className="text-xs text-yellow-700 dark:text-yellow-400 mb-2">
+              Constant Dollar withdraws the same inflation-adjusted amount each year regardless of portfolio performance, so percentiles are identical for surviving simulations. Try a variable strategy (VPW, Guardrails) to see how withdrawals adapt to market conditions.
+            </p>
+          )}
           <div className="flex items-center gap-2 mb-3">
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input
