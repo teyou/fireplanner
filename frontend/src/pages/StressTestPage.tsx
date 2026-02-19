@@ -135,17 +135,23 @@ function MonteCarloTab() {
 function WithdrawalSchedule({ bands }: { bands: PercentileBands }) {
   const [expanded, setExpanded] = useState(false)
   const [showAll, setShowAll] = useState(false)
+  const [realDollars, setRealDollars] = useState(false)
+  const currentAge = useProfileStore((s) => s.currentAge)
+  const inflation = useProfileStore((s) => s.inflation)
 
   const rows = useMemo(() => {
-    return bands.ages.map((age, i) => ({
-      age,
-      p10: bands.p10[i],
-      p25: bands.p25[i],
-      p50: bands.p50[i],
-      p75: bands.p75[i],
-      p90: bands.p90[i],
-    }))
-  }, [bands])
+    return bands.ages.map((age, i) => {
+      const deflator = realDollars ? Math.pow(1 + inflation, age - currentAge) : 1
+      return {
+        age,
+        p10: bands.p10[i] / deflator,
+        p25: bands.p25[i] / deflator,
+        p50: bands.p50[i] / deflator,
+        p75: bands.p75[i] / deflator,
+        p90: bands.p90[i] / deflator,
+      }
+    })
+  }, [bands, realDollars, inflation, currentAge])
 
   const displayRows = showAll ? rows : rows.filter((_, i) => i % 5 === 0 || i === rows.length - 1)
 
@@ -159,6 +165,16 @@ function WithdrawalSchedule({ bands }: { bands: PercentileBands }) {
       </CardHeader>
       {expanded && (
         <CardContent>
+          <div className="flex items-center gap-2 mb-3">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={realDollars}
+                onChange={(e) => setRealDollars(e.target.checked)}
+              />
+              Show in today's dollars (adjusted for {(inflation * 100).toFixed(1)}% inflation)
+            </label>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
