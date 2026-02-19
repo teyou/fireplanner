@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { useUIStore } from '@/stores/useUIStore'
 import { useSectionCompletion, type SectionId } from '@/hooks/useSectionCompletion'
 import { exportToJson, importFromJson } from '@/lib/exportImport'
+import { ShareButton } from '@/components/shared/ShareButton'
 import { ScenarioManager } from './ScenarioManager'
 import { ThemeToggle } from './ThemeToggle'
 import {
@@ -332,6 +333,7 @@ function DataActions() {
         <Upload className="h-3.5 w-3.5" />
         Import
       </button>
+      <ShareButton />
       <input
         ref={fileInputRef}
         type="file"
