@@ -325,16 +325,15 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       }
     }
 
-    // At age 55, determine retirement sum from SA balance vs projected FRS
-    // Use params.currentAge (not 55) so BRS/FRS/ERS are projected forward
-    // from today to when THIS person turns 55, not the 2024 base values
+    // At age 55, set retirement sum based on user's selected level.
+    // The BRS/FRS/ERS selection represents the user's intended retirement sum
+    // (they can top up via OA transfers, cash, or voluntary contributions).
+    // We use the level amount directly, not capped at projected SA.
     if (age === 55) {
       const projected = calculateBrsFrsErs(params.currentAge)
-      // Use the lesser of actual SA balance and the retirement sum level amount
-      const levelAmount = cpfRetirementSum === 'brs' ? projected.brs
+      retirementSumAt55 = cpfRetirementSum === 'brs' ? projected.brs
         : cpfRetirementSum === 'ers' ? projected.ers
         : projected.frs
-      retirementSumAt55 = Math.min(cpfSA, levelAmount)
     }
 
     // Automated CPF LIFE payout (skip if user has manual stream)

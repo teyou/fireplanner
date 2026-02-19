@@ -732,6 +732,53 @@ describe('integration tests', () => {
     expect(payoutBrs).toBeGreaterThan(10000) // Would fail with the 2024-base-value bug
   })
 
+  it('CPF LIFE payout differs by BRS/FRS/ERS with default SA (zero starting balance)', () => {
+    // Realistic scenario: user starts with cpfSA=0 at age 30
+    // Bug: Math.min(cpfSA, levelAmount) caps all levels to the same projected SA
+    const baseParams = {
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 70,
+      salaryModel: 'simple' as const,
+      annualSalary: 72000,
+      salaryGrowthRate: 0.03,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree' as const,
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 48000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 0,
+      initialCpfSA: 0,
+      initialCpfMA: 0,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard' as const,
+    }
+
+    const rowsBrs = generateIncomeProjection({ ...baseParams, cpfRetirementSum: 'brs' as const })
+    const rowsFrs = generateIncomeProjection({ ...baseParams, cpfRetirementSum: 'frs' as const })
+    const rowsErs = generateIncomeProjection({ ...baseParams, cpfRetirementSum: 'ers' as const })
+
+    const payoutBrs = rowsBrs.find((r) => r.age === 65)!.cpfLifePayout
+    const payoutFrs = rowsFrs.find((r) => r.age === 65)!.cpfLifePayout
+    const payoutErs = rowsErs.find((r) => r.age === 65)!.cpfLifePayout
+
+    // All three selections MUST produce different payouts
+    expect(payoutBrs).toBeGreaterThan(0)
+    expect(payoutFrs).toBeGreaterThan(payoutBrs)
+    expect(payoutErs).toBeGreaterThan(payoutFrs)
+
+    // FRS payout should be ~2x BRS, ERS should be ~2x FRS
+    expect(payoutFrs).toBeGreaterThan(payoutBrs * 1.8)
+    expect(payoutErs).toBeGreaterThan(payoutFrs * 1.8)
+  })
+
   it('CPF LIFE escalating plan grows 2%/yr in projection', () => {
     const rows = generateIncomeProjection({
       currentAge: 60,
