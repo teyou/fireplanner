@@ -31,7 +31,7 @@ const WITHDRAWAL_DATA_KEYS = [
 
 const DEFAULT_STRATEGY_PARAMS: StrategyParamsMap = {
   constant_dollar: { swr: 0.04 },
-  vpw: { expectedRealReturn: 0.03, targetEndValue: 0 },
+  vpw: { expectedRealReturn: 0.03, targetEndValue: 0.10 },
   guardrails: { initialRate: 0.05, ceilingTrigger: 1.20, floorTrigger: 0.80, adjustmentSize: 0.10 },
   vanguard_dynamic: { swr: 0.04, ceiling: 0.05, floor: 0.025 },
   cape_based: { baseRate: 0.04, capeWeight: 0.50, currentCape: 30 },

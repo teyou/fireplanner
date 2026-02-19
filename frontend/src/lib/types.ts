@@ -442,6 +442,7 @@ export interface MonteCarloResult {
   terminal_stats: TerminalStats
   safe_swr: SafeSwr | null
   failure_distribution: FailureDistribution
+  withdrawal_bands?: PercentileBands
   n_simulations: number
   computation_time_ms: number
   cached: boolean

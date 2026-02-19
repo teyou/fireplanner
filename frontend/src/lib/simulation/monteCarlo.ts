@@ -396,6 +396,18 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
   const swr = resolveInitialRate(strategyParams)
   let initialWithdrawalAmount = 0
 
+  // Withdrawal tracking for percentile bands (reuse buffer each year)
+  const withdrawalCol: number[] = new Array(nSims).fill(0)
+  const wb_years: number[] = []
+  const wb_ages: number[] = []
+  const wb_p5: number[] = []
+  const wb_p10: number[] = []
+  const wb_p25: number[] = []
+  const wb_p50: number[] = []
+  const wb_p75: number[] = []
+  const wb_p90: number[] = []
+  const wb_p95: number[] = []
+
   for (let t = 0; t < nYearsTotal; t++) {
     if (t < nYearsAccum) {
       // ACCUMULATION: add savings, grow portfolio
@@ -446,6 +458,9 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
 
         prevWithdrawals[s] = withdrawal
 
+        // Track actual achievable withdrawal (capped to portfolio balance)
+        withdrawalCol[s] = Math.min(withdrawal, Math.max(currentBalance, 0))
+
         balances[s][t + 1] =
           (currentBalance - netWithdrawal) * (1 + portfolioReturns[s][t] - expenseRatio)
 
@@ -459,6 +474,17 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
           balances[s][t + 1] = 0
         }
       }
+
+      // Record withdrawal percentiles for this decumulation year
+      wb_years.push(decumYear)
+      wb_ages.push(retirementAge + decumYear)
+      wb_p5.push(percentile(withdrawalCol, 5))
+      wb_p10.push(percentile(withdrawalCol, 10))
+      wb_p25.push(percentile(withdrawalCol, 25))
+      wb_p50.push(percentile(withdrawalCol, 50))
+      wb_p75.push(percentile(withdrawalCol, 75))
+      wb_p90.push(percentile(withdrawalCol, 90))
+      wb_p95.push(percentile(withdrawalCol, 95))
     }
   }
 
@@ -547,10 +573,17 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
     total_failures: failedYears.length,
   }
 
+  const withdrawalBands: PercentileBands = {
+    years: wb_years, ages: wb_ages,
+    p5: wb_p5, p10: wb_p10, p25: wb_p25, p50: wb_p50,
+    p75: wb_p75, p90: wb_p90, p95: wb_p95,
+  }
+
   return {
     success_rate: successRate,
     percentile_bands: percentileBands,
     terminal_stats: terminalStats,
     failure_distribution: failureDistribution,
+    withdrawal_bands: withdrawalBands,
   }
 }
