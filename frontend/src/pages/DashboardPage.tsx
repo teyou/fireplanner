@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Info } from 'lucide-react'
 import { StatusPanel } from '@/components/dashboard/StatusPanel'
+import { WhatIfPanel } from '@/components/dashboard/WhatIfPanel'
 import { AccumulationChart } from '@/components/dashboard/AccumulationChart'
 import { RiskDashboard } from '@/components/dashboard/RiskDashboard'
 import { EmptyDashboardState } from '@/components/dashboard/EmptyDashboardState'
@@ -60,15 +61,18 @@ export function DashboardPage() {
             <StatusPanel {...metrics} />
           </div>
           <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '80ms' }}>
-            <StrategyCard />
+            <WhatIfPanel />
           </div>
           <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '160ms' }}>
-            <PassiveIncomePanel />
+            <StrategyCard />
           </div>
           <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '240ms' }}>
-            <AccumulationChart />
+            <PassiveIncomePanel />
           </div>
           <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '320ms' }}>
+            <AccumulationChart />
+          </div>
+          <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
             <RiskDashboard />
           </div>
         </>
