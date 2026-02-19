@@ -11,19 +11,14 @@ import { cn } from '@/lib/utils'
 
 const MODES: { value: AnalysisMode; label: string; tooltip: string }[] = [
   {
-    value: 'currentNW',
-    label: 'Current NW',
-    tooltip: "Use today's net worth. Includes accumulation phase before retirement.",
+    value: 'myPlan',
+    label: 'My Plan',
+    tooltip: 'Tests your full plan: current savings projected to retirement, then stress-tested through retirement.',
   },
   {
-    value: 'fireNumber',
-    label: 'FIRE Number',
-    tooltip: 'Start analysis at your FIRE target (expenses / SWR). Tests "will my plan work once I reach FIRE?"',
-  },
-  {
-    value: 'projectedNW',
-    label: 'Projected NW',
-    tooltip: 'Deterministic projection of portfolio at retirement age using current savings rate and expected returns.',
+    value: 'fireTarget',
+    label: 'FIRE Target',
+    tooltip: 'Tests whether your FIRE target (expenses \u00f7 SWR) survives through retirement.',
   },
 ]
 

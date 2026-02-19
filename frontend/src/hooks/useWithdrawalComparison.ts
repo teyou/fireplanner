@@ -57,9 +57,9 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
       expectedReturn = calculatePortfolioReturn(allocation.currentWeights, effectiveReturns)
     }
 
-    // In currentNW mode, use liquidNetWorth only (CPF not freely withdrawable).
-    // In other modes, use the analysis hook's computed portfolio.
-    const initialPortfolio = analysisMode === 'currentNW'
+    // In myPlan mode, use liquidNetWorth only (CPF not freely withdrawable).
+    // In fireTarget mode, use the analysis hook's computed portfolio.
+    const initialPortfolio = analysisMode === 'myPlan'
       ? profile.liquidNetWorth
       : analysisPortfolio.initialPortfolio
 

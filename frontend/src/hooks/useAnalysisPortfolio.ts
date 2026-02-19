@@ -11,6 +11,7 @@ import { formatCurrency } from '@/lib/utils'
 
 interface AnalysisPortfolioResult {
   initialPortfolio: number
+  retirementPortfolio: number
   allocationWeights: number[]
   analysisMode: AnalysisMode
   portfolioLabel: string
@@ -21,9 +22,10 @@ interface AnalysisPortfolioResult {
  * Central hook for analysis pages. Returns the starting portfolio and allocation
  * weights based on the selected analysis mode.
  *
- * - currentNW: today's liquid NW + CPF, current allocation weights, includes accumulation phase
- * - fireNumber: FIRE target (from useFireCalculations), retirement-age weights, skips accumulation
- * - projectedNW: deterministic FV projection at retirement, retirement-age weights, skips accumulation
+ * - myPlan: today's total NW as initialPortfolio (MC uses accumulation phase),
+ *   deterministically projected NW as retirementPortfolio (for BT/SR)
+ * - fireTarget: FIRE number for both initialPortfolio and retirementPortfolio,
+ *   retirement-age weights, skips accumulation
  */
 export function useAnalysisPortfolio(): AnalysisPortfolioResult {
   const profile = useProfileStore()
@@ -37,7 +39,7 @@ export function useAnalysisPortfolio(): AnalysisPortfolioResult {
     const currentWeights = allocation.currentWeights
     const totalNW = profile.liquidNetWorth + profile.cpfOA + profile.cpfSA + profile.cpfMA
 
-    // Compute retirement-age weights (for fireNumber and projectedNW modes)
+    // Compute retirement-age weights (for fireTarget and myPlan's retirementPortfolio)
     const retirementWeights = getRetirementAgeWeights(
       allocation.glidePathConfig.enabled,
       allocation.glidePathConfig,
@@ -46,52 +48,43 @@ export function useAnalysisPortfolio(): AnalysisPortfolioResult {
       profile.retirementAge,
     )
 
-    if (analysisMode === 'fireNumber') {
+    if (analysisMode === 'fireTarget') {
       const fireNumber = metrics?.fireNumber ?? 0
       return {
         initialPortfolio: fireNumber,
+        retirementPortfolio: fireNumber,
         allocationWeights: retirementWeights,
         analysisMode,
-        portfolioLabel: `FIRE Number: ${formatCurrency(fireNumber)}`,
+        portfolioLabel: `FIRE Target: ${formatCurrency(fireNumber)}`,
         skipAccumulation: true,
       }
     }
 
-    if (analysisMode === 'projectedNW') {
-      // Respect the usePortfolioReturn toggle: derive from allocation or use manual value
-      let portfolioReturn = profile.expectedReturn
-      const allocationValid = Object.keys(allocation.validationErrors).length === 0
-      if (profile.usePortfolioReturn && allocationValid) {
-        const effectiveReturns = ASSET_CLASSES.map((ac, i) =>
-          allocation.returnOverrides[i] ?? ac.expectedReturn
-        )
-        portfolioReturn = calculatePortfolioReturn(retirementWeights, effectiveReturns)
-      }
-      const netRealReturn = portfolioReturn - profile.inflation - profile.expenseRatio
-      const annualSavings = profile.annualIncome - profile.annualExpenses
-
-      const projected = projectPortfolioAtRetirement({
-        currentNW: totalNW,
-        annualSavings,
-        netRealReturn,
-        yearsToRetirement: profile.retirementAge - profile.currentAge,
-      })
-
-      return {
-        initialPortfolio: projected,
-        allocationWeights: retirementWeights,
-        analysisMode,
-        portfolioLabel: `Projected NW at ${profile.retirementAge}: ${formatCurrency(projected)}`,
-        skipAccumulation: true,
-      }
+    // myPlan mode: compute deterministic projection for BT/SR
+    let portfolioReturn = profile.expectedReturn
+    const allocationValid = Object.keys(allocation.validationErrors).length === 0
+    if (profile.usePortfolioReturn && allocationValid) {
+      const effectiveReturns = ASSET_CLASSES.map((ac, i) =>
+        allocation.returnOverrides[i] ?? ac.expectedReturn
+      )
+      portfolioReturn = calculatePortfolioReturn(retirementWeights, effectiveReturns)
     }
+    const netRealReturn = portfolioReturn - profile.inflation - profile.expenseRatio
+    const annualSavings = profile.annualIncome - profile.annualExpenses
 
-    // Default: currentNW mode
+    const projected = projectPortfolioAtRetirement({
+      currentNW: totalNW,
+      annualSavings,
+      netRealReturn,
+      yearsToRetirement: profile.retirementAge - profile.currentAge,
+    })
+
     return {
       initialPortfolio: totalNW,
+      retirementPortfolio: projected,
       allocationWeights: currentWeights,
       analysisMode,
-      portfolioLabel: `Current NW: ${formatCurrency(totalNW)}`,
+      portfolioLabel: `${formatCurrency(totalNW)} today → ~${formatCurrency(projected)} at age ${profile.retirementAge}`,
       skipAccumulation: false,
     }
   }, [

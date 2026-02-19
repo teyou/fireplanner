@@ -40,7 +40,7 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
   const strategy = withdrawal.selectedStrategies[0] ?? 'constant_dollar'
 
   const currentParamsSig = useMemo(() => JSON.stringify({
-    initialPortfolio: analysisPortfolio.initialPortfolio,
+    initialPortfolio: analysisPortfolio.retirementPortfolio,
     allocationWeights: analysisPortfolio.allocationWeights,
     retirementAge: profile.retirementAge,
     lifeExpectancy: profile.lifeExpectancy,
@@ -88,7 +88,7 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
       )
 
       const params = {
-        initialPortfolio: analysisPortfolio.initialPortfolio,
+        initialPortfolio: analysisPortfolio.retirementPortfolio,
         allocationWeights: analysisPortfolio.allocationWeights,
         expectedReturns,
         stdDevs,

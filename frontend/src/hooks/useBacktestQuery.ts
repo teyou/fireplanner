@@ -58,7 +58,7 @@ export function useBacktestQuery(): UseBacktestQueryResult {
   const [lastRunParams, setLastRunParams] = useState<string | null>(null)
 
   const currentParamsSig = useMemo(() => JSON.stringify({
-    initialPortfolio: analysisPortfolio.initialPortfolio,
+    initialPortfolio: analysisPortfolio.retirementPortfolio,
     allocationWeights: analysisPortfolio.allocationWeights,
     config,
     expenseRatio: profile.expenseRatio,
@@ -75,7 +75,7 @@ export function useBacktestQuery(): UseBacktestQueryResult {
       setLastRunParams(currentParamsSig)
 
       const params = {
-        initialPortfolio: analysisPortfolio.initialPortfolio,
+        initialPortfolio: analysisPortfolio.retirementPortfolio,
         allocationWeights: analysisPortfolio.allocationWeights,
         swr: config.swr,
         retirementDuration: config.retirementDuration,

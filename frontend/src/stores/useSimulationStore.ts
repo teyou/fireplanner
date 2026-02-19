@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
+  AnalysisMode,
   WithdrawalStrategyType,
   StrategyParamsMap,
   SimulationState,
@@ -39,7 +40,7 @@ const DEFAULT_SIMULATION: Omit<SimulationState, 'validationErrors'> = {
   selectedStrategy: 'constant_dollar',
   strategyParams: DEFAULT_STRATEGY_PARAMS,
   nSimulations: 10000,
-  analysisMode: 'currentNW',
+  analysisMode: 'myPlan',
 }
 
 function extractSimulationData(
@@ -104,13 +105,24 @@ export const useSimulationStore = create<SimulationState & SimulationActions>()(
     }),
     {
       name: 'fireplanner-simulation',
-      version: 1,
+      version: 2,
+      migrate: (persisted: unknown, version: number) => {
+        const state = persisted as Record<string, unknown>
+        if (version < 2) {
+          // v1 → v2: 3 modes → 2 modes
+          const old = state.analysisMode as string
+          const migrated: AnalysisMode =
+            old === 'fireNumber' ? 'fireTarget' : 'myPlan'
+          state.analysisMode = migrated
+        }
+        return state as unknown as SimulationState
+      },
       partialize: (state) => {
         const data: Record<string, unknown> = {}
         for (const key of SIMULATION_DATA_KEYS) {
           data[key] = state[key]
         }
-        return data
+        return data as unknown as SimulationState
       },
       onRehydrateStorage: () => (state) => {
         if (state) {

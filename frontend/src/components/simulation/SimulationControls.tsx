@@ -7,8 +7,6 @@ import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import type { MonteCarloMethod, WithdrawalStrategyType } from '@/lib/types'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
-import { AnalysisModeToggle } from '@/components/shared/AnalysisModeToggle'
-import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 
 const MC_METHODS: { value: MonteCarloMethod; label: string }[] = [
   { value: 'parametric', label: 'Parametric (Cholesky)' },
@@ -34,7 +32,6 @@ interface SimulationControlsProps {
 
 export function SimulationControls({ onRun, isPending, canRun, validationErrors }: SimulationControlsProps) {
   const simulation = useSimulationStore()
-  const { portfolioLabel } = useAnalysisPortfolio()
 
   const errorMessages = Object.values(validationErrors)
   const disabledReason = !canRun
@@ -47,8 +44,6 @@ export function SimulationControls({ onRun, isPending, canRun, validationErrors 
         <CardTitle>Simulation Parameters</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <AnalysisModeToggle portfolioLabel={portfolioLabel} />
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label>
