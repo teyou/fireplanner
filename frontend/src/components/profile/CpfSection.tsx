@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Label } from '@/components/ui/label'
@@ -6,6 +7,7 @@ import { NumberInput } from '@/components/shared/NumberInput'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
+import { useIncomeProjection } from '@/hooks/useIncomeProjection'
 import { calculateCpfContribution, calculateBrsFrsErs, estimateCpfLifePayout, calculateCpfLifePayoutAtAge, getRetirementSumAmount } from '@/lib/calculations/cpf'
 import type { CpfLifePlan, CpfRetirementSum, CpfHousingMode } from '@/lib/types'
 import { getCpfRatesForAge, BRS_2024, FRS_2024, ERS_2024 } from '@/lib/data/cpfRates'
@@ -53,6 +55,28 @@ export function CpfSection() {
   ]
 
   const totalCpf = cpfOA + cpfSA + cpfMA
+
+  // Project SA at 55 to check if user can reach selected retirement sum
+  const { projection } = useIncomeProjection()
+  const retirementSumShortfall = useMemo(() => {
+    // Only relevant for pre-55 users
+    if (currentAge >= 55) return null
+    if (!projection) return null
+
+    // Find projected CPF balances at age 54 (last year before 55 transfer)
+    const rowAt54 = projection.find((r) => r.age === 54)
+    if (!rowAt54) return null
+
+    // At 55, OA + SA can be consolidated into RA
+    const availableForRA = rowAt54.cpfOA + rowAt54.cpfSA
+    if (availableForRA >= retirementSumAmount) return null
+
+    return {
+      shortfall: retirementSumAmount - availableForRA,
+      projectedOaSa: availableForRA,
+      requiredAmount: retirementSumAmount,
+    }
+  }, [projection, currentAge, retirementSumAmount])
 
   // 65+ phase: single card with monthly payout input
   if (effectivePhase === '65-plus') {
@@ -370,15 +394,23 @@ export function CpfSection() {
             <span className="text-muted-foreground"> ({formatCurrency(projectedPayout / 12)}/mo)</span>
           </div>
 
+          {retirementSumShortfall && (
+            <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded text-sm text-amber-800 dark:text-amber-200 space-y-1">
+              <p className="font-medium">
+                Projected CPF shortfall of {formatCurrency(retirementSumShortfall.shortfall)}
+              </p>
+              <p>
+                Based on your income, your projected OA + SA at age 54 is {formatCurrency(retirementSumShortfall.projectedOaSa)}, which is below the {cpfRetirementSum.toUpperCase()} target of {formatCurrency(retirementSumShortfall.requiredAmount)}.
+                You would need voluntary contributions or cash top-ups to reach this level.
+              </p>
+            </div>
+          )}
+
           {hasManualCpfLife && (
             <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded text-sm text-amber-800 dark:text-amber-200">
               Manual CPF LIFE income stream detected — automated CPF LIFE calculation is skipped to avoid double-counting.
             </div>
           )}
-
-          <p className="mt-2 text-xs text-muted-foreground">
-            Note: SA to RA transfer at 55 and MA to SA overflow at 55 are not modeled. Projected SA at 55 is used as the CPF LIFE basis.
-          </p>
         </div>
 
         <Separator />
