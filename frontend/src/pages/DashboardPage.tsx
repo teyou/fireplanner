@@ -3,6 +3,7 @@ import { Info } from 'lucide-react'
 import { StatusPanel } from '@/components/dashboard/StatusPanel'
 import { WhatIfPanel } from '@/components/dashboard/WhatIfPanel'
 import { TimeCostPanel } from '@/components/dashboard/TimeCostPanel'
+import { OneMoreYearPanel } from '@/components/dashboard/OneMoreYearPanel'
 import { AccumulationChart } from '@/components/dashboard/AccumulationChart'
 import { RiskDashboard } from '@/components/dashboard/RiskDashboard'
 import { EmptyDashboardState } from '@/components/dashboard/EmptyDashboardState'
@@ -68,6 +69,9 @@ export function DashboardPage() {
             <TimeCostPanel />
           </div>
           <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '160ms' }}>
+            <OneMoreYearPanel />
+          </div>
+          <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
             <StrategyCard />
           </div>
           <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '240ms' }}>
