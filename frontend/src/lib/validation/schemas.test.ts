@@ -278,6 +278,8 @@ const defaultHealthcareConfig = {
   careShieldLifeEnabled: true,
   oopBaseAmount: 1200,
   oopModel: 'age-curve' as const,
+  oopInflationRate: 0.03,
+  oopReferenceAge: 30,
   mediSaveTopUpAnnual: 0,
 }
 

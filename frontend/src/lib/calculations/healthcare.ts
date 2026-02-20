@@ -31,6 +31,8 @@ export interface HealthcareConfig {
   careShieldLifeEnabled: boolean
   oopBaseAmount: number
   oopModel: 'fixed' | 'age-curve'
+  oopInflationRate?: number      // annual medical inflation rate (default 0)
+  oopReferenceAge?: number       // age at which oopBaseAmount is in today's dollars
   mediSaveTopUpAnnual: number
 }
 
@@ -108,12 +110,16 @@ export function calculateHealthcareCostAtAge(
     ? lookupByAge(CARESHIELD_LIFE_PREMIUMS, age)
     : 0
 
-  // 4. Out-of-pocket
+  // 4. Out-of-pocket (with medical inflation compounding from reference age)
+  const refAge = config.oopReferenceAge ?? age   // backward compat: no inflation if not set
+  const inflationRate = config.oopInflationRate ?? 0
+  const inflationFactor = Math.pow(1 + inflationRate, Math.max(0, age - refAge))
+
   let oopExpense: number
   if (config.oopModel === 'age-curve') {
-    oopExpense = config.oopBaseAmount * interpolateOopMultiplier(age)
+    oopExpense = config.oopBaseAmount * interpolateOopMultiplier(age) * inflationFactor
   } else {
-    oopExpense = config.oopBaseAmount
+    oopExpense = config.oopBaseAmount * inflationFactor
   }
 
   const totalCost = mediShieldLifePremium + ispAdditionalPremium + careShieldLifePremium + oopExpense

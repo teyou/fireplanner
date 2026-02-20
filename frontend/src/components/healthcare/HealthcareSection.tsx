@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
+import { PercentInput } from '@/components/shared/PercentInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { formatCurrency } from '@/lib/utils'
@@ -134,6 +135,32 @@ export function HealthcareSection() {
               ))}
             </div>
 
+            <div className="space-y-2">
+              <Label className="text-sm flex items-center gap-1">
+                OOP Presets
+                <InfoTooltip text="Estimated annual out-of-pocket medical costs at age 30 (GP visits, dental, medication). The age multiplier and medical inflation scale this up over time." />
+              </Label>
+              <div className="flex gap-2">
+                {([
+                  { label: 'Minimal', amount: 600 },
+                  { label: 'Moderate', amount: 1200 },
+                  { label: 'Conservative', amount: 2400 },
+                ] as const).map((preset) => (
+                  <button
+                    key={preset.label}
+                    onClick={() => updateConfig('oopBaseAmount', preset.amount)}
+                    className={`px-3 py-1.5 rounded-md border text-sm transition-colors ${
+                      config.oopBaseAmount === preset.amount
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-muted hover:border-muted-foreground/30'
+                    }`}
+                  >
+                    {preset.label} (${preset.amount.toLocaleString()})
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <CurrencyInput
               label={config.oopModel === 'age-curve' ? 'OOP Base Amount (at age 30)' : 'Annual OOP Amount'}
               value={config.oopBaseAmount}
@@ -144,6 +171,13 @@ export function HealthcareSection() {
                   ? 'Base annual out-of-pocket healthcare spending at age 30. This scales up with age using a research-based multiplier curve.'
                   : 'Fixed annual out-of-pocket healthcare spending, applied at every age.'
               }
+            />
+
+            <PercentInput
+              label="Medical Inflation Rate"
+              value={config.oopInflationRate}
+              onChange={(v) => updateConfig('oopInflationRate', v)}
+              tooltip="Annual increase in out-of-pocket costs above general inflation. Singapore CPI Healthcare averaged 2.24% over 20 years; 3% is moderately conservative. Set to 0% for no medical inflation."
             />
           </div>
 

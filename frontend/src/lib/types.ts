@@ -33,6 +33,8 @@ export interface HealthcareConfig {
   careShieldLifeEnabled: boolean
   oopBaseAmount: number
   oopModel: OopModel
+  oopInflationRate: number      // annual medical inflation rate (default 0.03)
+  oopReferenceAge: number       // age at which oopBaseAmount is in today's dollars (default = currentAge)
   mediSaveTopUpAnnual: number
 }
 

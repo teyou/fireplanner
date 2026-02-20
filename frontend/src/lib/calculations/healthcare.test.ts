@@ -86,6 +86,73 @@ describe('calculateHealthcareCostAtAge', () => {
     expect(result80.oopExpense).toBe(2000)
   })
 
+  it('applies medical inflation with age-curve model', () => {
+    // User age 30 (reference), OOP at age 50, 3% inflation
+    // multiplier at 50 = 1.6, inflation = 1.03^20
+    const config: HealthcareConfig = {
+      ...DEFAULT_CONFIG,
+      oopBaseAmount: 1200,
+      oopInflationRate: 0.03,
+      oopReferenceAge: 30,
+    }
+    const result = calculateHealthcareCostAtAge(config, 50)
+    const expected = 1200 * 1.6 * Math.pow(1.03, 20) // ≈ 3,467
+    expect(result.oopExpense).toBeCloseTo(expected, 0)
+  })
+
+  it('no inflation when oopInflationRate is undefined (backward compat)', () => {
+    // Config without inflation fields = same as before
+    const result = calculateHealthcareCostAtAge(DEFAULT_CONFIG, 50)
+    // multiplier at 50 = 1.6
+    expect(result.oopExpense).toBeCloseTo(1200 * 1.6, 0)
+  })
+
+  it('no inflation when oopInflationRate is 0', () => {
+    const config: HealthcareConfig = {
+      ...DEFAULT_CONFIG,
+      oopInflationRate: 0,
+      oopReferenceAge: 30,
+    }
+    const result = calculateHealthcareCostAtAge(config, 50)
+    expect(result.oopExpense).toBeCloseTo(1200 * 1.6, 0)
+  })
+
+  it('no inflation at reference age (age - refAge = 0)', () => {
+    const config: HealthcareConfig = {
+      ...DEFAULT_CONFIG,
+      oopInflationRate: 0.03,
+      oopReferenceAge: 45,
+    }
+    const result = calculateHealthcareCostAtAge(config, 45)
+    // multiplier at 45 = 1.4, inflation factor = 1.03^0 = 1
+    expect(result.oopExpense).toBeCloseTo(1200 * 1.4, 0)
+  })
+
+  it('applies inflation from reference age 45 to age 65', () => {
+    const config: HealthcareConfig = {
+      ...DEFAULT_CONFIG,
+      oopInflationRate: 0.03,
+      oopReferenceAge: 45,
+    }
+    const result = calculateHealthcareCostAtAge(config, 65)
+    // multiplier at 65 = 3.2, inflation = 1.03^20
+    const expected = 1200 * 3.2 * Math.pow(1.03, 20) // ≈ 6,934
+    expect(result.oopExpense).toBeCloseTo(expected, 0)
+  })
+
+  it('applies inflation to fixed OOP model', () => {
+    const config: HealthcareConfig = {
+      ...DEFAULT_CONFIG,
+      oopModel: 'fixed',
+      oopBaseAmount: 2000,
+      oopInflationRate: 0.03,
+      oopReferenceAge: 30,
+    }
+    const result = calculateHealthcareCostAtAge(config, 50)
+    const expected = 2000 * Math.pow(1.03, 20)
+    expect(result.oopExpense).toBeCloseTo(expected, 0)
+  })
+
   it('computes totalCost as sum of all components', () => {
     const config: HealthcareConfig = { ...DEFAULT_CONFIG, ispTier: 'basic' }
     const result = calculateHealthcareCostAtAge(config, 50)

@@ -34,6 +34,8 @@ const DEFAULT_HEALTHCARE_CONFIG: HealthcareConfig = {
   careShieldLifeEnabled: true,
   oopBaseAmount: 1200,
   oopModel: 'age-curve',
+  oopInflationRate: 0.03,
+  oopReferenceAge: 30,
   mediSaveTopUpAnnual: 0,
 }
 
@@ -108,8 +110,17 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
         set((state) => {
           const stateData = extractProfileData(state)
           const updated = { ...stateData, [field]: value }
+
+          // Sync oopReferenceAge when currentAge changes (if user hasn't customized it away from old currentAge)
+          if (field === 'currentAge' && typeof value === 'number') {
+            const hc = updated.healthcareConfig
+            if (hc.oopReferenceAge === stateData.currentAge) {
+              updated.healthcareConfig = { ...hc, oopReferenceAge: value }
+            }
+          }
+
           return {
-            [field]: value,
+            ...updated,
             validationErrors: computeValidationErrors(updated),
           }
         }),
@@ -157,7 +168,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 6,
+      version: 7,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -188,6 +199,13 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
         }
         if (version < 6) {
           state.healthcareConfig = state.healthcareConfig ?? DEFAULT_HEALTHCARE_CONFIG
+        }
+        if (version < 7) {
+          const hc = state.healthcareConfig as Record<string, unknown> | undefined
+          if (hc) {
+            hc.oopInflationRate = hc.oopInflationRate ?? 0.03
+            hc.oopReferenceAge = hc.oopReferenceAge ?? (state.currentAge as number ?? 30)
+          }
         }
         return state
       },
