@@ -49,6 +49,7 @@ export interface MonteCarloEngineParams {
   strategyParams: Record<string, number>
   expenseRatio: number
   inflation: number
+  portfolioAdjustments?: { year: number; amount: number }[]  // sparse one-time equity injections
 }
 
 export type MonteCarloEngineResult = Omit<
@@ -360,6 +361,14 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
   const nYearsDecum = Math.max(1, lifeExpectancy - retirementAge)
   const nYearsTotal = nYearsAccum + nYearsDecum
 
+  // Build dense adjustments array from sparse portfolio adjustments
+  const adjustments = new Array(nYearsTotal).fill(0)
+  for (const adj of params.portfolioAdjustments ?? []) {
+    if (adj.year >= 0 && adj.year < nYearsTotal) {
+      adjustments[adj.year] += adj.amount
+    }
+  }
+
   // Generate portfolio returns: [nSims][nYearsTotal]
   let portfolioReturns: number[][]
   switch (method) {
@@ -413,8 +422,9 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
       // ACCUMULATION: add savings, grow portfolio
       const savings = t < annualSavings.length ? annualSavings[t] : 0
       for (let s = 0; s < nSims; s++) {
+        const adjustedBalance = balances[s][t] + adjustments[t]
         balances[s][t + 1] =
-          balances[s][t] * (1 + portfolioReturns[s][t] - expenseRatio) + savings
+          adjustedBalance * (1 + portfolioReturns[s][t] - expenseRatio) + savings
       }
     } else {
       // DECUMULATION: subtract withdrawals
@@ -428,7 +438,7 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
       }
 
       for (let s = 0; s < nSims; s++) {
-        const currentBalance = balances[s][t]
+        const currentBalance = balances[s][t] + adjustments[t]
 
         // Previous year return for Guyton-Klinger PMR
         const prevYearReturn = decumYear > 0

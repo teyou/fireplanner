@@ -382,3 +382,73 @@ describe('computeWithdrawalsForYear', () => {
     ).toThrow('Unknown strategy')
   })
 })
+
+describe('portfolioAdjustments', () => {
+  it('omitted portfolioAdjustments gives identical results to empty', () => {
+    const paramsWithout = makeDefaultParams()
+    const paramsWith = makeDefaultParams({ portfolioAdjustments: [] })
+
+    const resultWithout = runMonteCarlo(paramsWithout)
+    const resultWith = runMonteCarlo(paramsWith)
+
+    expect(resultWith.success_rate).toBe(resultWithout.success_rate)
+    expect(resultWith.terminal_stats.median).toBe(resultWithout.terminal_stats.median)
+  })
+
+  it('$500K injection during accumulation increases terminal balance', () => {
+    const baseline = runMonteCarlo(makeDefaultParams())
+    const withInjection = runMonteCarlo(makeDefaultParams({
+      portfolioAdjustments: [{ year: 5, amount: 500_000 }],
+    }))
+
+    expect(withInjection.terminal_stats.median).toBeGreaterThan(baseline.terminal_stats.median)
+  })
+
+  it('$500K injection during decumulation improves success rate', () => {
+    // Use params that produce some failures (high SWR, low portfolio)
+    const stressParams = {
+      initialPortfolio: 500_000,
+      annualSavings: [],
+      currentAge: 60,
+      retirementAge: 60,
+      lifeExpectancy: 95,
+      postRetirementIncome: Array(35).fill(0),
+      strategyParams: { swr: 0.06 },
+      nSimulations: 1000,
+    }
+
+    const baseline = runMonteCarlo(makeDefaultParams(stressParams))
+    const withInjection = runMonteCarlo(makeDefaultParams({
+      ...stressParams,
+      portfolioAdjustments: [{ year: 5, amount: 500_000 }],
+    }))
+
+    expect(withInjection.success_rate).toBeGreaterThanOrEqual(baseline.success_rate)
+  })
+
+  it('multiple adjustments at different years all apply', () => {
+    const baseline = runMonteCarlo(makeDefaultParams())
+    const withMultiple = runMonteCarlo(makeDefaultParams({
+      portfolioAdjustments: [
+        { year: 2, amount: 100_000 },
+        { year: 10, amount: 200_000 },
+        { year: 25, amount: 300_000 },
+      ],
+    }))
+
+    expect(withMultiple.terminal_stats.median).toBeGreaterThan(baseline.terminal_stats.median)
+  })
+
+  it('out-of-range year indices are ignored', () => {
+    const baseline = runMonteCarlo(makeDefaultParams())
+    const withOutOfRange = runMonteCarlo(makeDefaultParams({
+      portfolioAdjustments: [
+        { year: -1, amount: 1_000_000 },
+        { year: 999, amount: 1_000_000 },
+      ],
+    }))
+
+    expect(withOutOfRange.success_rate).toBe(baseline.success_rate)
+    expect(withOutOfRange.terminal_stats.median).toBe(baseline.terminal_stats.median)
+  })
+})

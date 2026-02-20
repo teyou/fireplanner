@@ -11,6 +11,11 @@ import { usePropertyStore } from '@/stores/usePropertyStore'
 import { ASSET_CLASSES, CORRELATION_MATRIX } from '@/lib/data/historicalReturns'
 import { buildProjectionParams } from '@/hooks/useIncomeProjection'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
+import {
+  outstandingMortgageAtAge,
+  calculateSellAndDownsize,
+  calculateSellAndRent,
+} from '@/lib/calculations/property'
 
 interface UseMonteCarloQueryResult {
   mutate: () => void
@@ -108,6 +113,51 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
         allocation.stdDevOverrides[i] ?? ac.stdDev
       )
 
+      // Compute downsizing equity injection for MC
+      const portfolioAdjustments: { year: number; amount: number }[] = []
+      const ds = propertyStore.downsizing
+      if (ds && ds.scenario !== 'none' && propertyStore.ownsProperty) {
+        const effectiveStartAge = analysisPortfolio.skipAccumulation
+          ? profile.retirementAge : profile.currentAge
+        const mcYear = ds.sellAge - effectiveStartAge
+        const nYearsTotal = profile.lifeExpectancy - effectiveStartAge
+        if (mcYear >= 0 && mcYear < nYearsTotal) {
+          const yearsToSell = ds.sellAge - profile.currentAge
+          const outstandingAtSell = outstandingMortgageAtAge(
+            propertyStore.existingMortgageBalance,
+            propertyStore.existingMonthlyPayment,
+            propertyStore.existingMortgageRate,
+            Math.max(0, yearsToSell),
+          )
+
+          let netEquity = 0
+          if (ds.scenario === 'sell-and-downsize') {
+            const result = calculateSellAndDownsize({
+              salePrice: ds.expectedSalePrice,
+              outstandingMortgage: outstandingAtSell,
+              newPropertyCost: ds.newPropertyCost,
+              newLtv: ds.newLtv,
+              newMortgageRate: ds.newMortgageRate,
+              newMortgageTerm: ds.newMortgageTerm,
+              residency: propertyStore.residencyForAbsd,
+              propertyCount: 0,
+            })
+            netEquity = result.netEquityToPortfolio
+          } else if (ds.scenario === 'sell-and-rent') {
+            const result = calculateSellAndRent({
+              salePrice: ds.expectedSalePrice,
+              outstandingMortgage: outstandingAtSell,
+              monthlyRent: ds.monthlyRent,
+            })
+            netEquity = result.netProceedsToPortfolio
+          }
+
+          if (netEquity > 0) {
+            portfolioAdjustments.push({ year: mcYear, amount: netEquity })
+          }
+        }
+      }
+
       const params: MonteCarloEngineParams = {
         initialPortfolio: analysisPortfolio.initialPortfolio,
         allocationWeights: analysisPortfolio.allocationWeights,
@@ -127,6 +177,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
         strategyParams: flattenStrategyParams(simulation.selectedStrategy, simulation.strategyParams),
         expenseRatio: profile.expenseRatio,
         inflation: profile.inflation,
+        portfolioAdjustments,
       }
 
       return runMonteCarloWorker(params)
