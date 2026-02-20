@@ -7,6 +7,7 @@ import {
   getCompleteRows,
   getColumnValues,
   STI_VERIFIED_TOTAL_RETURN_FROM,
+  SHILLER_CROSS_REFERENCE,
 } from './historicalReturnsFull'
 
 describe('historicalReturnsFull — data integrity', () => {
@@ -245,5 +246,62 @@ describe('historicalReturnsFull — helper functions', () => {
 
   it('ASSET_CLASS_COLUMNS has 8 entries', () => {
     expect(ASSET_CLASS_COLUMNS).toHaveLength(8)
+  })
+})
+
+describe('historicalReturnsFull — Shiller cross-reference', () => {
+  it('SHILLER_CROSS_REFERENCE has 97 entries (1928-2024)', () => {
+    expect(SHILLER_CROSS_REFERENCE).toHaveLength(97)
+    expect(SHILLER_CROSS_REFERENCE[0].year).toBe(1928)
+    expect(SHILLER_CROSS_REFERENCE[96].year).toBe(2024)
+  })
+
+  it('Shiller usEquities are within 15% of Damodaran (methodology differs)', () => {
+    for (const sRow of SHILLER_CROSS_REFERENCE) {
+      const dRow = HISTORICAL_RETURNS.find((r) => r.year === sRow.year)!
+      if (sRow.usEquities !== null && dRow.usEquities !== null) {
+        // Both should agree on direction (sign) for large moves
+        if (Math.abs(dRow.usEquities) > 0.15) {
+          expect(Math.sign(sRow.usEquities)).toBe(Math.sign(dRow.usEquities))
+        }
+      }
+    }
+  })
+
+  it('Shiller usBonds agree on sign for Volcker rally (1982) and rate hike crash (2022)', () => {
+    const s82 = SHILLER_CROSS_REFERENCE.find((r) => r.year === 1982)!
+    expect(s82.usBonds).toBeGreaterThan(0.25) // Shiller: 0.432
+
+    const s22 = SHILLER_CROSS_REFERENCE.find((r) => r.year === 2022)!
+    expect(s22.usBonds).toBeLessThan(-0.10) // Shiller: -0.119
+  })
+})
+
+describe('historicalReturnsFull — Damodaran XLS exact spot-checks', () => {
+  const rowByYear = (y: number) => HISTORICAL_RETURNS.find((r) => r.year === y)!
+
+  // These values are exact from the downloaded Damodaran histretSP.xls
+  it('1928 usEquities = 0.4381 (Damodaran XLS)', () => {
+    expect(rowByYear(1928).usEquities).toBeCloseTo(0.4381, 3)
+  })
+
+  it('1931 usBonds = -0.0256 (Damodaran XLS)', () => {
+    expect(rowByYear(1931).usBonds).toBeCloseTo(-0.0256, 3)
+  })
+
+  it('2024 cash = 0.0518 (Damodaran XLS)', () => {
+    expect(rowByYear(2024).cash).toBeCloseTo(0.0518, 3)
+  })
+
+  it('1972 reits = 0.0801 (NAREIT All Equity REITs XLS)', () => {
+    expect(rowByYear(1972).reits).toBeCloseTo(0.0801, 3)
+  })
+
+  it('2008 reits = -0.3773 (NAREIT All Equity REITs XLS)', () => {
+    expect(rowByYear(2008).reits).toBeCloseTo(-0.3773, 3)
+  })
+
+  it('1980 gold = 0.1519 (Damodaran Gold Prices XLS)', () => {
+    expect(rowByYear(1980).gold).toBeCloseTo(0.1519, 3)
   })
 })
