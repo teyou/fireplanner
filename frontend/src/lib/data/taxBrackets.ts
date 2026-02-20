@@ -30,6 +30,90 @@ export const SRS_ANNUAL_CAP = 15300
 // SRS deduction cap (Foreigners)
 export const SRS_ANNUAL_CAP_FOREIGNER = 35700
 
-// Common personal reliefs (used as defaults)
-export const EARNED_INCOME_RELIEF = 1000
-export const NSWAN_RELIEF = 4500
+// ============================================================
+// Tax Relief Breakdown — YA 2025 (IRAS / PWC)
+// ============================================================
+
+export type NsmanStatus = 'none' | 'noDuty' | 'performedDuty'
+export type ParentReliefType = 'none' | 'liveWith' | 'notLiveWith'
+
+export interface ReliefBreakdown {
+  earnedIncomeRelief: number         // auto-computed from age
+  nsmanStatus: NsmanStatus
+  nsmanKAH: boolean                  // +$2,000 if Key Appointment Holder
+  spouseRelief: boolean              // $2,000 (spouse income <$4K)
+  nChildren: number                  // $4,000 per child (QCR)
+  parentReliefType: ParentReliefType
+  nParents: number                   // × parent amount
+  otherReliefs: number               // catch-all for WMCR, course fees, etc.
+}
+
+export const RELIEF_AMOUNTS = {
+  earnedIncome: { under55: 1000, age55to59: 6000, age60plus: 8000 },
+  nsman: { none: 0, noDuty: 1500, performedDuty: 3000, kahBonus: 2000 },
+  nsmanWife: 750,
+  spouse: 2000,
+  childPerChild: 4000,
+  parent: { liveWith: 9000, notLiveWith: 5500 },
+  reliefCap: 80000,
+} as const
+
+/**
+ * Compute the earned income relief based on age.
+ */
+export function earnedIncomeReliefForAge(age: number): number {
+  if (age >= 60) return RELIEF_AMOUNTS.earnedIncome.age60plus
+  if (age >= 55) return RELIEF_AMOUNTS.earnedIncome.age55to59
+  return RELIEF_AMOUNTS.earnedIncome.under55
+}
+
+/**
+ * Compute total personal reliefs from a detailed breakdown, capped at $80,000.
+ */
+export function computeTotalReliefs(breakdown: ReliefBreakdown, age: number): number {
+  let total = 0
+
+  // Earned income relief (auto from age)
+  total += earnedIncomeReliefForAge(age)
+
+  // NSman
+  total += RELIEF_AMOUNTS.nsman[breakdown.nsmanStatus]
+  if (breakdown.nsmanKAH && breakdown.nsmanStatus !== 'none') {
+    total += RELIEF_AMOUNTS.nsman.kahBonus
+  }
+
+  // Spouse
+  if (breakdown.spouseRelief) {
+    total += RELIEF_AMOUNTS.spouse
+  }
+
+  // Children (QCR)
+  total += breakdown.nChildren * RELIEF_AMOUNTS.childPerChild
+
+  // Parent
+  if (breakdown.parentReliefType !== 'none') {
+    total += breakdown.nParents * RELIEF_AMOUNTS.parent[breakdown.parentReliefType]
+  }
+
+  // Other (WMCR, course fees, etc.)
+  total += breakdown.otherReliefs
+
+  // Cap at $80,000
+  return Math.min(total, RELIEF_AMOUNTS.reliefCap)
+}
+
+/**
+ * Returns a sensible default breakdown based on age.
+ */
+export function getDefaultBreakdown(age: number): ReliefBreakdown {
+  return {
+    earnedIncomeRelief: earnedIncomeReliefForAge(age),
+    nsmanStatus: 'none',
+    nsmanKAH: false,
+    spouseRelief: false,
+    nChildren: 0,
+    parentReliefType: 'none',
+    nParents: 0,
+    otherReliefs: 0,
+  }
+}

@@ -21,6 +21,7 @@ import { IncomeStreamsSection } from '@/components/income/IncomeStreamsSection'
 import { LifeEventsSection } from '@/components/income/LifeEventsSection'
 import { ProjectionTable } from '@/components/income/ProjectionTable'
 import { SummaryPanel } from '@/components/income/SummaryPanel'
+import { TaxReliefSection } from '@/components/income/TaxReliefSection'
 
 // Allocation sections
 import { AllocationBuilder } from '@/components/allocation/AllocationBuilder'
@@ -183,25 +184,18 @@ function IncomeContent() {
 
       <SalaryModelSection />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <CurrencyInput
-          label="Personal Reliefs"
-          value={income.personalReliefs}
-          onChange={(v) => income.setField('personalReliefs', v)}
-          error={income.validationErrors.personalReliefs}
-          tooltip="Annual personal tax reliefs (earned income, NSman, etc.)"
-        />
-        <div className="flex items-end pb-1">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={income.employerCpfEnabled}
-              onChange={(e) => income.setField('employerCpfEnabled', e.target.checked)}
-            />
-            Employer CPF Contributions
-          </label>
-        </div>
+      <div className="flex items-center pb-1">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={income.employerCpfEnabled}
+            onChange={(e) => income.setField('employerCpfEnabled', e.target.checked)}
+          />
+          Employer CPF Contributions
+        </label>
       </div>
+
+      <TaxReliefSection />
 
       <IncomeStreamsSection />
       <LifeEventsSection />

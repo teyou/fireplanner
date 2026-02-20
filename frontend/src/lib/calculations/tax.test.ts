@@ -6,6 +6,11 @@ import {
   calculateEffectiveTaxRate,
   calculateSrsDeduction,
 } from './tax'
+import {
+  computeTotalReliefs,
+  getDefaultBreakdown,
+  earnedIncomeReliefForAge,
+} from '@/lib/data/taxBrackets'
 
 describe('calculateProgressiveTax', () => {
   // Bracket boundary tests
@@ -179,5 +184,99 @@ describe('calculateSrsDeduction', () => {
 
   it('returns 0 for negative', () => {
     expect(calculateSrsDeduction(-5000)).toBe(0)
+  })
+})
+
+describe('computeTotalReliefs', () => {
+  it('default breakdown for age 30 = just earned income $1,000', () => {
+    const bd = getDefaultBreakdown(30)
+    const total = computeTotalReliefs(bd, 30)
+    expect(total).toBe(1000)
+  })
+
+  it('earned income at age 55 = $6,000', () => {
+    expect(earnedIncomeReliefForAge(55)).toBe(6000)
+    expect(earnedIncomeReliefForAge(59)).toBe(6000)
+  })
+
+  it('earned income at age 60+ = $8,000', () => {
+    expect(earnedIncomeReliefForAge(60)).toBe(8000)
+    expect(earnedIncomeReliefForAge(75)).toBe(8000)
+  })
+
+  it('age 30, NSman performed duty, spouse, 2 children, 1 parent live-with = $23K', () => {
+    const total = computeTotalReliefs({
+      earnedIncomeRelief: 1000,
+      nsmanStatus: 'performedDuty',
+      nsmanKAH: false,
+      spouseRelief: true,
+      nChildren: 2,
+      parentReliefType: 'liveWith',
+      nParents: 1,
+      otherReliefs: 0,
+    }, 30)
+    // $1K + $3K + $2K + $8K + $9K = $23K
+    expect(total).toBe(23000)
+  })
+
+  it('age 60 same breakdown = $30K (earned income increases)', () => {
+    const total = computeTotalReliefs({
+      earnedIncomeRelief: 8000,
+      nsmanStatus: 'performedDuty',
+      nsmanKAH: false,
+      spouseRelief: true,
+      nChildren: 2,
+      parentReliefType: 'liveWith',
+      nParents: 1,
+      otherReliefs: 0,
+    }, 60)
+    // $8K + $3K + $2K + $8K + $9K = $30K
+    expect(total).toBe(30000)
+  })
+
+  it('NSman KAH adds $2,000', () => {
+    const without = computeTotalReliefs({
+      ...getDefaultBreakdown(30),
+      nsmanStatus: 'performedDuty',
+    }, 30)
+    const withKAH = computeTotalReliefs({
+      ...getDefaultBreakdown(30),
+      nsmanStatus: 'performedDuty',
+      nsmanKAH: true,
+    }, 30)
+    expect(withKAH - without).toBe(2000)
+  })
+
+  it('KAH with nsmanStatus=none does not add bonus', () => {
+    const total = computeTotalReliefs({
+      ...getDefaultBreakdown(30),
+      nsmanStatus: 'none',
+      nsmanKAH: true,
+    }, 30)
+    expect(total).toBe(1000) // just earned income
+  })
+
+  it('caps total at $80,000', () => {
+    const total = computeTotalReliefs({
+      earnedIncomeRelief: 8000,
+      nsmanStatus: 'performedDuty',
+      nsmanKAH: true,
+      spouseRelief: true,
+      nChildren: 10,
+      parentReliefType: 'liveWith',
+      nParents: 4,
+      otherReliefs: 50000,
+    }, 60)
+    expect(total).toBe(80000)
+  })
+
+  it('parent notLiveWith = $5,500 per parent', () => {
+    const total = computeTotalReliefs({
+      ...getDefaultBreakdown(30),
+      parentReliefType: 'notLiveWith',
+      nParents: 2,
+    }, 30)
+    // $1K + $5.5K × 2 = $12K
+    expect(total).toBe(12000)
   })
 })

@@ -9,6 +9,8 @@ import type {
   ValidationErrors,
 } from '@/lib/types'
 import { validateIncomeField } from '@/lib/validation/schemas'
+import { computeTotalReliefs, type ReliefBreakdown } from '@/lib/data/taxBrackets'
+import { useProfileStore } from '@/stores/useProfileStore'
 
 interface IncomeActions {
   setField: <K extends keyof Omit<IncomeState, 'validationErrors' | 'incomeStreams' | 'lifeEvents' | 'realisticPhases' | 'promotionJumps'>>(
@@ -23,6 +25,7 @@ interface IncomeActions {
   updateLifeEvent: (id: string, updates: Partial<LifeEvent>) => void
   setRealisticPhases: (phases: CareerPhase[]) => void
   setPromotionJumps: (jumps: PromotionJump[]) => void
+  setReliefBreakdown: (breakdown: ReliefBreakdown | null) => void
   reset: () => void
 }
 
@@ -38,6 +41,7 @@ const INCOME_DATA_KEYS = [
   'salaryModel', 'annualSalary', 'salaryGrowthRate', 'employerCpfEnabled',
   'incomeStreams', 'lifeEvents', 'realisticPhases', 'promotionJumps',
   'momEducation', 'momAdjustment', 'lifeEventsEnabled', 'personalReliefs',
+  'reliefBreakdown',
 ] as const
 
 const DEFAULT_INCOME: Omit<IncomeState, 'validationErrors'> = {
@@ -53,6 +57,7 @@ const DEFAULT_INCOME: Omit<IncomeState, 'validationErrors'> = {
   momAdjustment: 1.0,
   lifeEventsEnabled: false,
   personalReliefs: 20000,
+  reliefBreakdown: null,
 }
 
 function extractIncomeData(state: IncomeState & IncomeActions): Omit<IncomeState, 'validationErrors'> {
@@ -184,6 +189,7 @@ function migrateV1ToV2(persisted: V1State): Omit<IncomeState, 'validationErrors'
     momAdjustment: DEFAULT_INCOME.momAdjustment,
     lifeEventsEnabled: DEFAULT_INCOME.lifeEventsEnabled,
     personalReliefs: DEFAULT_INCOME.personalReliefs,
+    reliefBreakdown: null,
   }
 }
 
@@ -281,6 +287,27 @@ export const useIncomeStore = create<IncomeState & IncomeActions>()(
           }
         }),
 
+      setReliefBreakdown: (breakdown) =>
+        set((state) => {
+          const stateData = extractIncomeData(state)
+          if (breakdown === null) {
+            // Switch to Simple mode: keep current personalReliefs, clear breakdown
+            return {
+              reliefBreakdown: null,
+              validationErrors: computeValidationErrors({ ...stateData, reliefBreakdown: null }),
+            }
+          }
+          // Detailed mode: auto-compute personalReliefs from breakdown
+          const currentAge = useProfileStore.getState().currentAge ?? 30
+          const total = computeTotalReliefs(breakdown, currentAge)
+          const updated = { ...stateData, reliefBreakdown: breakdown, personalReliefs: total }
+          return {
+            reliefBreakdown: breakdown,
+            personalReliefs: total,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
       reset: () =>
         set({
           ...DEFAULT_INCOME,
@@ -289,7 +316,7 @@ export const useIncomeStore = create<IncomeState & IncomeActions>()(
     }),
     {
       name: 'fireplanner-income',
-      version: 2,
+      version: 3,
       partialize: (state) => {
         const data: Record<string, unknown> = {}
         for (const key of INCOME_DATA_KEYS) {
@@ -301,7 +328,11 @@ export const useIncomeStore = create<IncomeState & IncomeActions>()(
         if (version === 1) {
           return migrateV1ToV2(persisted as V1State)
         }
-        return persisted as Omit<IncomeState, 'validationErrors'>
+        const state = persisted as Record<string, unknown>
+        if (version < 3) {
+          state.reliefBreakdown = state.reliefBreakdown ?? null
+        }
+        return state as Omit<IncomeState, 'validationErrors'>
       },
       onRehydrateStorage: () => (state) => {
         if (state) {
