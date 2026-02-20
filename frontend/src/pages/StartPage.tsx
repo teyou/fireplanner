@@ -77,7 +77,7 @@ export function StartPage() {
   const handleStoryFirstContinue = () => {
     profileStore.setField('currentAge', draftAge)
     profileStore.setField('annualIncome', draftIncome)
-    profileStore.setField('annualExpenses', Math.round(draftIncome * 0.667 / 1000) * 1000)
+    profileStore.setField('annualExpenses', Math.max(12000, Math.round(draftIncome * 0.667 / 1000) * 1000))
     profileStore.setField('liquidNetWorth', draftNetWorth)
     profileStore.setField('lifeStage', 'pre-fire')
     incomeStore.setField('annualSalary', draftIncome)
