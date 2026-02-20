@@ -30,8 +30,8 @@ describe('exportToJson', () => {
       click: mockClick,
       set setAttribute(_args: unknown[]) { /* noop */ },
     } as unknown as HTMLAnchorElement)
-    vi.spyOn(URL, 'createObjectURL').mockImplementation((blob: Blob) => {
-      downloadedBlob = blob
+    vi.spyOn(URL, 'createObjectURL').mockImplementation((blob: Blob | MediaSource) => {
+      downloadedBlob = blob as Blob
       return 'blob:test'
     })
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
@@ -51,8 +51,8 @@ describe('exportToJson', () => {
     vi.spyOn(document, 'createElement').mockReturnValue({
       href: '', download: '', click: vi.fn(),
     } as unknown as HTMLAnchorElement)
-    vi.spyOn(URL, 'createObjectURL').mockImplementation((blob: Blob) => {
-      downloadedBlob = blob
+    vi.spyOn(URL, 'createObjectURL').mockImplementation((blob: Blob | MediaSource) => {
+      downloadedBlob = blob as Blob
       return 'blob:test'
     })
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
@@ -144,8 +144,8 @@ describe('importFromJson', () => {
     vi.spyOn(document, 'createElement').mockReturnValue({
       href: '', download: '', click: vi.fn(),
     } as unknown as HTMLAnchorElement)
-    vi.spyOn(URL, 'createObjectURL').mockImplementation((blob: Blob) => {
-      capturedBlob = blob
+    vi.spyOn(URL, 'createObjectURL').mockImplementation((blob: Blob | MediaSource) => {
+      capturedBlob = blob as Blob
       return 'blob:test'
     })
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})

@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import {
   validateProfileConsistency,
   validateCrossStoreRules,
-  validateAllocationCrossStoreRules,
   validateWithdrawalCrossStoreRules,
 } from './rules'
 
@@ -42,7 +41,7 @@ describe('validateProfileConsistency edge cases', () => {
       cpfLifeStartAge: 65,
       parentSupportEnabled: true,
       parentSupport: [
-        { id: 'ps1', label: 'Mom', monthlyAmount: 500, startAge: 16, endAge: 65 },
+        { id: 'ps1', label: 'Mom', monthlyAmount: 500, startAge: 16, endAge: 65, growthRate: 0 },
       ],
       healthcareConfig: defaultHealthcareConfig,
     })
@@ -58,7 +57,7 @@ describe('validateProfileConsistency edge cases', () => {
       cpfLifeStartAge: 65,
       parentSupportEnabled: true,
       parentSupport: [
-        { id: 'ps1', label: 'Mom', monthlyAmount: 500, startAge: 30, endAge: 95 },
+        { id: 'ps1', label: 'Mom', monthlyAmount: 500, startAge: 30, endAge: 95, growthRate: 0 },
       ],
       healthcareConfig: defaultHealthcareConfig,
     })

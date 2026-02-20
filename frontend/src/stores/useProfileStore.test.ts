@@ -95,6 +95,7 @@ describe('useProfileStore', () => {
         monthlyAmount: 500,
         startAge: 30,
         endAge: 65,
+        growthRate: 0,
       })
       const state = useProfileStore.getState()
       expect(state.parentSupport).toHaveLength(1)
@@ -103,10 +104,10 @@ describe('useProfileStore', () => {
 
     it('removes parent support entry by ID', () => {
       useProfileStore.getState().addParentSupport({
-        id: 'ps1', label: 'Mom', monthlyAmount: 500, startAge: 30, endAge: 65,
+        id: 'ps1', label: 'Mom', monthlyAmount: 500, startAge: 30, endAge: 65, growthRate: 0,
       })
       useProfileStore.getState().addParentSupport({
-        id: 'ps2', label: 'Dad', monthlyAmount: 300, startAge: 30, endAge: 65,
+        id: 'ps2', label: 'Dad', monthlyAmount: 300, startAge: 30, endAge: 65, growthRate: 0,
       })
       useProfileStore.getState().removeParentSupport('ps1')
       const state = useProfileStore.getState()
@@ -116,7 +117,7 @@ describe('useProfileStore', () => {
 
     it('updates parent support entry fields', () => {
       useProfileStore.getState().addParentSupport({
-        id: 'ps1', label: 'Mom', monthlyAmount: 500, startAge: 30, endAge: 65,
+        id: 'ps1', label: 'Mom', monthlyAmount: 500, startAge: 30, endAge: 65, growthRate: 0,
       })
       useProfileStore.getState().updateParentSupport('ps1', { monthlyAmount: 800 })
       expect(useProfileStore.getState().parentSupport[0].monthlyAmount).toBe(800)
@@ -125,7 +126,7 @@ describe('useProfileStore', () => {
     it('validates parent support start < end age', () => {
       useProfileStore.getState().setField('parentSupportEnabled', true)
       useProfileStore.getState().addParentSupport({
-        id: 'ps1', label: 'Mom', monthlyAmount: 500, startAge: 65, endAge: 30,
+        id: 'ps1', label: 'Mom', monthlyAmount: 500, startAge: 65, endAge: 30, growthRate: 0,
       })
       const errors = useProfileStore.getState().validationErrors
       expect(errors['parentSupport_ps1_startAge']).toBeTruthy()
@@ -136,11 +137,11 @@ describe('useProfileStore', () => {
     it('updates nested healthcare fields', () => {
       useProfileStore.getState().setField('healthcareConfig', {
         ...useProfileStore.getState().healthcareConfig,
-        ispTier: 'a',
+        ispTier: 'enhanced',
         enabled: true,
       })
       const state = useProfileStore.getState()
-      expect(state.healthcareConfig.ispTier).toBe('a')
+      expect(state.healthcareConfig.ispTier).toBe('enhanced')
       expect(state.healthcareConfig.enabled).toBe(true)
     })
   })
@@ -156,6 +157,91 @@ describe('useProfileStore', () => {
       expect(state.annualIncome).toBe(72000)
       expect(state.swr).toBe(0.04)
       expect(Object.keys(state.validationErrors)).toHaveLength(0)
+    })
+  })
+
+  describe('persist migration', () => {
+    it('v1→v2: adds CPF fields with defaults', () => {
+      // Simulate what the persist middleware migrate function does
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = { currentAge: 35 }
+      const migrated = migrate!(oldState, 1) as Record<string, unknown>
+      expect(migrated.cpfLifeStartAge).toBe(65)
+      expect(migrated.cpfLifePlan).toBe('standard')
+      expect(migrated.cpfRetirementSum).toBe('frs')
+      expect(migrated.cpfHousingMode).toBe('none')
+      expect(migrated.cpfHousingMonthly).toBe(0)
+      expect(migrated.cpfMortgageYearsLeft).toBe(25)
+    })
+
+    it('v1→v2: migrates cpfHousingEndAge to cpfMortgageYearsLeft', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = { currentAge: 35, cpfHousingEndAge: 55 }
+      const migrated = migrate!(oldState, 1) as Record<string, unknown>
+      expect(migrated.cpfMortgageYearsLeft).toBe(20) // 55 - 35
+      expect(migrated.cpfHousingEndAge).toBeUndefined()
+    })
+
+    it('v2→v3: adds retirementSpendingAdjustment', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = { currentAge: 30 }
+      const migrated = migrate!(oldState, 2) as Record<string, unknown>
+      expect(migrated.retirementSpendingAdjustment).toBe(1.0)
+    })
+
+    it('v3→v4: adds retirementPhase and cpfLifeActualMonthlyPayout', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = {}
+      const migrated = migrate!(oldState, 3) as Record<string, unknown>
+      expect(migrated.retirementPhase).toBeNull()
+      expect(migrated.cpfLifeActualMonthlyPayout).toBe(0)
+    })
+
+    it('v4→v5: adds parentSupport fields', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = {}
+      const migrated = migrate!(oldState, 4) as Record<string, unknown>
+      expect(migrated.parentSupportEnabled).toBe(false)
+      expect(migrated.parentSupport).toEqual([])
+    })
+
+    it('v5→v6: adds healthcareConfig', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = {}
+      const migrated = migrate!(oldState, 5) as Record<string, unknown>
+      expect(migrated.healthcareConfig).toBeDefined()
+      expect((migrated.healthcareConfig as Record<string, unknown>).enabled).toBe(false)
+    })
+
+    it('v6→v7: adds oopInflationRate and oopReferenceAge to healthcareConfig', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = {
+        currentAge: 40,
+        healthcareConfig: { enabled: true, ispTier: 'b' },
+      }
+      const migrated = migrate!(oldState, 6) as Record<string, unknown>
+      const hc = migrated.healthcareConfig as Record<string, unknown>
+      expect(hc.oopInflationRate).toBe(0.03)
+      expect(hc.oopReferenceAge).toBe(40)
+    })
+
+    it('full migration v0→v7 applies all steps', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = { currentAge: 25 }
+      const migrated = migrate!(oldState, 0) as Record<string, unknown>
+      // v1→v2 fields
+      expect(migrated.cpfLifeStartAge).toBe(65)
+      // v2→v3 fields
+      expect(migrated.retirementSpendingAdjustment).toBe(1.0)
+      // v3→v4 fields
+      expect(migrated.retirementPhase).toBeNull()
+      // v4→v5 fields
+      expect(migrated.parentSupportEnabled).toBe(false)
+      // v5→v6 fields
+      expect(migrated.healthcareConfig).toBeDefined()
+      // v6→v7 fields
+      const hc = migrated.healthcareConfig as Record<string, unknown>
+      expect(hc.oopInflationRate).toBe(0.03)
     })
   })
 })

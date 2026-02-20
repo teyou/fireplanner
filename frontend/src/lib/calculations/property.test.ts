@@ -6,6 +6,10 @@ import {
   calculateBSD,
   calculateABSD,
   leaseDecayFactor,
+  calculateLTV,
+  mortgageAmortization,
+  calculateRentalYield,
+  calculatePropertyNPV,
 } from './property'
 
 describe('outstandingMortgageAtAge', () => {
@@ -209,5 +213,161 @@ describe('leaseDecayFactor', () => {
     const diff_early = leaseDecayFactor(99, 20) - leaseDecayFactor(99, 30)
     const diff_late = leaseDecayFactor(99, 60) - leaseDecayFactor(99, 70)
     expect(diff_late).toBeGreaterThan(diff_early)
+  })
+})
+
+describe('calculateLTV', () => {
+  it('returns ratio of loan to property value', () => {
+    expect(calculateLTV(600000, 800000)).toBeCloseTo(0.75, 4)
+  })
+
+  it('returns 0 when property value is 0', () => {
+    expect(calculateLTV(600000, 0)).toBe(0)
+  })
+
+  it('returns 0 when property value is negative', () => {
+    expect(calculateLTV(600000, -100000)).toBe(0)
+  })
+
+  it('handles 100% LTV', () => {
+    expect(calculateLTV(1000000, 1000000)).toBeCloseTo(1.0, 4)
+  })
+
+  it('handles 0 loan amount', () => {
+    expect(calculateLTV(0, 800000)).toBe(0)
+  })
+})
+
+describe('mortgageAmortization', () => {
+  it('returns correct monthly payment for standard loan', () => {
+    // $500K, 3.5%, 25 years
+    const result = mortgageAmortization(500000, 0.035, 25)
+    // Standard mortgage calc: ~$2,503.53/mo
+    expect(result.monthlyPayment).toBeCloseTo(2503.53, 0)
+  })
+
+  it('schedule has one entry per year', () => {
+    const result = mortgageAmortization(500000, 0.035, 25)
+    expect(result.schedule.length).toBe(25)
+    expect(result.schedule[0].year).toBe(1)
+    expect(result.schedule[24].year).toBe(25)
+  })
+
+  it('final balance is 0', () => {
+    const result = mortgageAmortization(500000, 0.035, 25)
+    expect(result.schedule[24].balance).toBeCloseTo(0, 0)
+  })
+
+  it('total payment = loan + total interest', () => {
+    const result = mortgageAmortization(500000, 0.035, 25)
+    expect(result.totalPayment).toBeCloseTo(result.totalInterest + 500000, 0)
+  })
+
+  it('total interest is positive', () => {
+    const result = mortgageAmortization(500000, 0.035, 25)
+    expect(result.totalInterest).toBeGreaterThan(0)
+    // Over 25 years at 3.5%, total interest ~$251K
+    expect(result.totalInterest).toBeCloseTo(251060, -3)
+  })
+
+  it('handles 0% interest rate', () => {
+    const result = mortgageAmortization(240000, 0, 20)
+    expect(result.monthlyPayment).toBe(1000) // 240K / 240 months
+    expect(result.totalInterest).toBe(0)
+    expect(result.totalPayment).toBe(240000)
+    expect(result.schedule[19].balance).toBeCloseTo(0, 0)
+  })
+
+  it('earlier years have more interest, later years have more principal', () => {
+    const result = mortgageAmortization(500000, 0.035, 25)
+    const firstYear = result.schedule[0]
+    const lastYear = result.schedule[24]
+    expect(firstYear.interestPaid).toBeGreaterThan(firstYear.principalPaid)
+    expect(lastYear.principalPaid).toBeGreaterThan(lastYear.interestPaid)
+  })
+})
+
+describe('calculateRentalYield', () => {
+  it('returns annual rental as fraction of property value', () => {
+    // $36K annual rental on $1.2M property = 3%
+    expect(calculateRentalYield(36000, 1200000)).toBeCloseTo(0.03, 4)
+  })
+
+  it('returns 0 when property value is 0', () => {
+    expect(calculateRentalYield(36000, 0)).toBe(0)
+  })
+
+  it('returns 0 when property value is negative', () => {
+    expect(calculateRentalYield(36000, -500000)).toBe(0)
+  })
+
+  it('handles 0 rental', () => {
+    expect(calculateRentalYield(0, 1000000)).toBe(0)
+  })
+})
+
+describe('calculatePropertyNPV', () => {
+  it('positive NPV for appreciating property with strong rental income', () => {
+    const npv = calculatePropertyNPV(
+      1000000,   // purchasePrice
+      0.03,      // annualAppreciation 3%
+      60000,     // annualRental $60K (5% yield)
+      36000,     // mortgageAnnualPayment $36K
+      6000,      // annualExpenses $6K
+      10,        // holdingYears
+      0.03,      // discountRate 3%
+      99,        // leaseYears
+    )
+    // Positive cash flow ($18K/yr) + 3% appreciation + low discount → positive NPV
+    expect(npv).toBeGreaterThan(0)
+  })
+
+  it('negative NPV for expensive property with no rental income', () => {
+    const npv = calculatePropertyNPV(
+      2000000,   // purchasePrice
+      0.01,      // annualAppreciation 1%
+      0,         // annualRental $0
+      96000,     // mortgageAnnualPayment $96K
+      12000,     // annualExpenses $12K
+      10,        // holdingYears
+      0.07,      // discountRate 7%
+      99,        // leaseYears
+    )
+    // High costs, no rental, low appreciation, high discount rate → negative NPV
+    expect(npv).toBeLessThan(0)
+  })
+
+  it('accounts for leasehold decay via Bala Table', () => {
+    // Short lease remaining = more decay = lower selling price
+    const npvLongLease = calculatePropertyNPV(
+      1000000, 0.03, 36000, 48000, 6000, 10, 0.05, 99,
+    )
+    const npvShortLease = calculatePropertyNPV(
+      1000000, 0.03, 36000, 48000, 6000, 10, 0.05, 40,
+    )
+    expect(npvLongLease).toBeGreaterThan(npvShortLease)
+  })
+
+  it('NPV decreases with higher discount rate', () => {
+    const npvLow = calculatePropertyNPV(
+      1000000, 0.03, 36000, 48000, 6000, 10, 0.03, 99,
+    )
+    const npvHigh = calculatePropertyNPV(
+      1000000, 0.03, 36000, 48000, 6000, 10, 0.10, 99,
+    )
+    expect(npvLow).toBeGreaterThan(npvHigh)
+  })
+
+  it('NPV starts at -purchasePrice and accumulates cash flows', () => {
+    // With 0 appreciation, 0 rental, 0 mortgage, 0 expenses, the NPV
+    // is just -purchase + discountedSellingPrice
+    const npv = calculatePropertyNPV(
+      1000000, 0, 0, 0, 0, 1, 0.05, 99,
+    )
+    // Selling price = 1M * (1+0)^1 * getBalaFactor(98)/getBalaFactor(99)
+    // For 99yr lease, decay in 1 year is minimal
+    // NPV ≈ -1M + ~1M/(1.05) ≈ -47K
+    expect(npv).toBeLessThan(0)
+    expect(npv).toBeGreaterThan(-100000)
   })
 })

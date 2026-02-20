@@ -711,4 +711,109 @@ describe('generateProjection', () => {
       expect(result.rows[0].portfolioReturnPct).toBeCloseTo(0.07, 4)
     })
   })
+
+  describe('downsizing sell-and-downsize', () => {
+    it('injects net equity at sell age', () => {
+      const params = makeParams({
+        currentAge: 50, retirementAge: 55, lifeExpectancy: 60,
+        initialLiquidNW: 500000,
+        propertyEquity: 700000,
+        annualMortgagePayment: 30000,
+        existingMortgageBalance: 300000,
+        existingMortgageRate: 0.035,
+        existingMonthlyPayment: 2500,
+        existingMortgageRemainingYears: 15,
+        downsizing: {
+          scenario: 'sell-and-downsize',
+          sellAge: 55,
+          expectedSalePrice: 1500000,
+          newPropertyCost: 800000,
+          newLtv: 0.75,
+          newMortgageRate: 0.035,
+          newMortgageTerm: 20,
+          monthlyRent: 0,
+          rentGrowthRate: 0.03,
+        },
+        residencyForAbsd: 'citizen',
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 50, retirementAge: 55, lifeExpectancy: 60,
+        annualSavings: 20000,
+      })
+
+      const result = generateProjection(params)
+
+      // At sell age 55 (index 5), equity should be injected into portfolio
+      const preSell = result.rows[4] // age 54
+      const atSell = result.rows[5] // age 55
+      // After selling, liquid NW should jump significantly
+      expect(atSell.liquidNW).toBeGreaterThan(preSell.liquidNW)
+    })
+  })
+
+  describe('downsizing sell-and-rent', () => {
+    it('injects sale proceeds and adds rent expense', () => {
+      const params = makeParams({
+        currentAge: 55, retirementAge: 58, lifeExpectancy: 62,
+        initialLiquidNW: 500000,
+        propertyEquity: 700000,
+        annualMortgagePayment: 30000,
+        existingMortgageBalance: 300000,
+        existingMortgageRate: 0.035,
+        existingMonthlyPayment: 2500,
+        existingMortgageRemainingYears: 15,
+        downsizing: {
+          scenario: 'sell-and-rent',
+          sellAge: 58,
+          expectedSalePrice: 1200000,
+          newPropertyCost: 0,
+          newLtv: 0,
+          newMortgageRate: 0,
+          newMortgageTerm: 0,
+          monthlyRent: 2500,
+          rentGrowthRate: 0.03,
+        },
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 55, retirementAge: 58, lifeExpectancy: 62,
+        annualSavings: 20000,
+      })
+
+      const result = generateProjection(params)
+
+      // After sell age 58, property equity should be 0
+      const atSell = result.rows.find((r) => r.age === 58)!
+      const afterSell = result.rows.find((r) => r.age === 59)!
+      expect(afterSell.propertyEquity).toBe(0)
+      // Expenses should include rent after selling
+      expect(afterSell.annualExpenses).toBeGreaterThan(atSell.annualExpenses)
+    })
+  })
+
+  describe('healthcare costs', () => {
+    it('adds healthcare cash outlay to expenses when enabled', () => {
+      const params = makeParams({
+        currentAge: 55, retirementAge: 58, lifeExpectancy: 62,
+        healthcareConfig: {
+          enabled: true,
+          mediShieldLifeEnabled: true,
+          ispTier: 'none',
+          careShieldLifeEnabled: true,
+          oopBaseAmount: 5000,
+          oopModel: 'fixed',
+          oopInflationRate: 0.03,
+          oopReferenceAge: 55,
+          mediSaveTopUpAnnual: 0,
+        },
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 55, retirementAge: 58, lifeExpectancy: 62,
+      })
+
+      const result = generateProjection(params)
+
+      // Healthcare cost should be > 0 for all ages
+      expect(result.rows[0].healthcareCashOutlay).toBeGreaterThan(0)
+    })
+  })
 })

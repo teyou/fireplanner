@@ -58,7 +58,7 @@ describe('usePortfolioStats', () => {
     // Override first asset (US equities) to have much higher return
     useAllocationStore.setState({
       ...useAllocationStore.getState(),
-      returnOverrides: [0.20, undefined, undefined, undefined, undefined, undefined, undefined, undefined] as any,
+      returnOverrides: [0.20, null, null, null, null, null, null, null],
     })
     const { result: overridden } = renderHook(() => usePortfolioStats())
     const overriddenReturn = overridden.current.currentStats!.expectedReturn
@@ -79,8 +79,8 @@ describe('usePortfolioStats', () => {
         ...store.glidePathConfig,
         enabled: true,
         method: 'linear',
-        transitionStart: 30,
-        transitionEnd: 55,
+        startAge: 30,
+        endAge: 55,
       },
       targetWeights: [0.2, 0, 0.1, 0.5, 0, 0.05, 0.15, 0],
     })

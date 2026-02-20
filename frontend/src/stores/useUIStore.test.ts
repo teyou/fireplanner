@@ -57,4 +57,32 @@ describe('useUIStore', () => {
       expect(useUIStore.getState().allocationAdvanced).toBe(true)
     })
   })
+
+  describe('persist migration', () => {
+    it('v1→v2: adds boolean toggle defaults', () => {
+      const { migrate } = useUIStore.persist.getOptions()
+      const oldState: Record<string, unknown> = { sectionOrder: 'story-first', statsPosition: 'top' }
+      const migrated = migrate!(oldState, 1) as Record<string, unknown>
+      expect(migrated.cpfEnabled).toBe(true)
+      expect(migrated.propertyEnabled).toBe(false)
+      expect(migrated.healthcareEnabled).toBe(false)
+      expect(migrated.allocationAdvanced).toBe(false)
+      // Preserves existing fields
+      expect(migrated.sectionOrder).toBe('story-first')
+      expect(migrated.statsPosition).toBe('top')
+    })
+
+    it('v2 state passes through unchanged', () => {
+      const { migrate } = useUIStore.persist.getOptions()
+      const state: Record<string, unknown> = {
+        sectionOrder: 'already-fire',
+        cpfEnabled: false,
+        propertyEnabled: true,
+      }
+      const migrated = migrate!(state, 2) as Record<string, unknown>
+      expect(migrated.sectionOrder).toBe('already-fire')
+      expect(migrated.cpfEnabled).toBe(false)
+      expect(migrated.propertyEnabled).toBe(true)
+    })
+  })
 })

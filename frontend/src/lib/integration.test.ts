@@ -269,7 +269,7 @@ describe('Journey: Scenario Comparison', () => {
     // Save 3 scenarios
     const id1 = saveScenario('Aggressive')
     const id2 = saveScenario('Balanced')
-    const id3 = saveScenario('Conservative')
+    saveScenario('Conservative')
 
     // List should show 3
     let list = listScenarios()

@@ -97,4 +97,57 @@ describe('useRiskAssessment', () => {
     const healthcare = result.current.find((d) => d.id === 'healthcare')
     expect(healthcare!.level).toBe('low')
   })
+
+  it('healthcare risk uses projection when healthcare config enabled', () => {
+    useProfileStore.setState({
+      ...useProfileStore.getState(),
+      currentAge: 55,
+      retirementAge: 58,
+      lifeExpectancy: 90,
+      healthcareConfig: {
+        enabled: true,
+        mediShieldLifeEnabled: true,
+        ispTier: 'none',
+        careShieldLifeEnabled: true,
+        oopBaseAmount: 5000,
+        oopModel: 'age-curve',
+        oopInflationRate: 0.05,
+        oopReferenceAge: 55,
+        mediSaveTopUpAnnual: 0,
+      },
+      validationErrors: {},
+    })
+    const { result } = renderHook(() => useRiskAssessment())
+    const healthcare = result.current.find((d) => d.id === 'healthcare')
+    // With healthcare config enabled, uses generateHealthcareProjection
+    expect(healthcare).toBeDefined()
+    expect(['low', 'medium', 'high']).toContain(healthcare!.level)
+    // Description should contain $ amount from projection
+    expect(healthcare!.description).toMatch(/\$/)
+  })
+
+  it('healthcare risk high with enabled config and high OOP base', () => {
+    useProfileStore.setState({
+      ...useProfileStore.getState(),
+      currentAge: 55,
+      retirementAge: 58,
+      lifeExpectancy: 90,
+      healthcareConfig: {
+        enabled: true,
+        mediShieldLifeEnabled: true,
+        ispTier: 'none',
+        careShieldLifeEnabled: false,
+        oopBaseAmount: 15000,
+        oopModel: 'age-curve',
+        oopInflationRate: 0.05,
+        oopReferenceAge: 55,
+        mediSaveTopUpAnnual: 0,
+      },
+      validationErrors: {},
+    })
+    const { result } = renderHook(() => useRiskAssessment())
+    const healthcare = result.current.find((d) => d.id === 'healthcare')
+    // High OOP base ($15K) + medical inflation → high risk
+    expect(healthcare!.level).toBe('high')
+  })
 })

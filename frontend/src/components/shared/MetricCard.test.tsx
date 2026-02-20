@@ -100,7 +100,6 @@ describe('MetricCard', () => {
     )
     // MetricCard passes Math.min(progress * 100, 100) to Progress
     // The Indicator gets translateX(-0%) when value=100 (fully filled)
-    const indicator = container.querySelector('[data-state]')?.querySelector('div')
     // Progress bar should render (clamped at 100, not 150)
     const progressBar = container.querySelector('[role="progressbar"]')
     expect(progressBar).toBeInTheDocument()

@@ -36,7 +36,6 @@ describe('calculateOneTimeCost', () => {
   })
 
   it('handles amount greater than net worth', () => {
-    const totalNW = baseInput.liquidNetWorth + baseInput.cpfTotal // 150000
     const result = calculateOneTimeCost(baseInput, 200000)
     // Should handle gracefully — NW goes negative
     expect(result.delayYears).toBeGreaterThan(0)

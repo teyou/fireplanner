@@ -57,10 +57,10 @@ describe('decodeStoresFromUrl', () => {
     expect(decodeStoresFromUrl('totally-invalid-data-xyz')).toBeNull()
   })
 
-  it('returns null for valid JSON without expected keys', () => {
+  it('returns null for valid JSON without expected keys', async () => {
     // Manually encode something without any store keys
-    const { compressToEncodedURIComponent } = require('lz-string')
-    const encoded = compressToEncodedURIComponent(JSON.stringify({ randomKey: true }))
+    const lzString = await import('lz-string')
+    const encoded = lzString.compressToEncodedURIComponent(JSON.stringify({ randomKey: true }))
     expect(decodeStoresFromUrl(encoded)).toBeNull()
   })
 

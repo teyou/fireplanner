@@ -108,4 +108,24 @@ describe('optimizeSwr', () => {
     expect(result).toBeGreaterThanOrEqual(0.03)
     expect(result).toBeLessThanOrEqual(0.05)
   })
+
+  it('works with vanguard_dynamic strategy', () => {
+    const result = optimizeSwr(0.90, {
+      ...BASE_PARAMS,
+      withdrawalStrategy: 'vanguard_dynamic',
+      strategyParams: { swr: 0.04, ceiling: 0.05, floor: 0.025 },
+    }, { nSims: 500 })
+    expect(typeof result).toBe('number')
+    expect(result).toBeGreaterThanOrEqual(0.02)
+  })
+
+  it('works with vpw strategy', () => {
+    const result = optimizeSwr(0.90, {
+      ...BASE_PARAMS,
+      withdrawalStrategy: 'vpw',
+      strategyParams: { expectedRealReturn: 0.03, targetEndValue: 0 },
+    }, { nSims: 500 })
+    expect(typeof result).toBe('number')
+    expect(result).toBeGreaterThanOrEqual(0.02)
+  })
 })
