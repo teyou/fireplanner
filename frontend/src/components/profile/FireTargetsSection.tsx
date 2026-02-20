@@ -53,6 +53,33 @@ export function FireTargetsSection() {
             </Select>
           </div>
 
+          {(fireType === 'coast' || fireType === 'barista') && (
+            <div className="col-span-1 md:col-span-2 p-3 rounded-md bg-primary/5 border border-primary/20 text-sm space-y-2">
+              {fireType === 'coast' ? (
+                <>
+                  <p className="font-medium text-primary">Coast FIRE</p>
+                  <p className="text-muted-foreground">
+                    Your portfolio is large enough that compound growth alone will reach your full FIRE number by retirement — even if you never invest another dollar.
+                    You still need to earn enough to cover current expenses, but you can stop saving. This frees you to take a lower-paying job, work fewer hours, or take career risks.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Formula: FIRE Number / (1 + real return)<sup>years to retirement</sup> &mdash; easier to reach because time does the heavy lifting.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-medium text-primary">Barista FIRE</p>
+                  <p className="text-muted-foreground">
+                    Your portfolio is large enough to partially fund retirement expenses right now. You only need a small part-time income to cover the gap between your investment withdrawals and your living expenses.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Formula: max(0, Expenses &minus; Portfolio &times; SWR) &mdash; harder to reach than Coast FIRE because you're already withdrawing, which exposes you to sequence-of-returns risk.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+
           <div>
             <PercentInput
               label="Safe Withdrawal Rate (SWR)"

@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { cn } from '@/lib/utils'
 
 type MetricCardVariant = 'default' | 'elevated' | 'flat'
@@ -9,6 +10,7 @@ interface MetricCardProps {
   label: string
   value: React.ReactNode
   subtitle?: string
+  tooltip?: string
   progress?: number | null
   variant?: MetricCardVariant
   accent?: MetricCardAccent
@@ -27,6 +29,7 @@ export function MetricCard({
   label,
   value,
   subtitle,
+  tooltip,
   progress,
   variant = 'default',
   accent,
@@ -47,7 +50,10 @@ export function MetricCard({
       )}
     >
       <CardContent className="pt-5 pb-4 md:pt-5 md:pb-4">
-        <p className="text-xs text-muted-foreground mb-1.5">{label}</p>
+        <p className="text-xs text-muted-foreground mb-1.5">
+          {label}
+          {tooltip && <InfoTooltip text={tooltip} />}
+        </p>
         <div className="text-2xl font-bold tabular-nums">{value}</div>
         {subtitle && (
           <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>

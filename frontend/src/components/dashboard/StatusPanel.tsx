@@ -28,6 +28,7 @@ export function StatusPanel(props: StatusPanelProps) {
     progress?: number | null
     href?: string
     accent: MetricAccent
+    tooltip?: string
   }[] = [
     {
       label: 'FIRE Number',
@@ -65,6 +66,7 @@ export function StatusPanel(props: StatusPanelProps) {
         ? <AnimatedNumber value={props.coastFireNumber} format={formatCurrency} />
         : '—',
       accent: 'primary',
+      tooltip: 'Amount needed today for compound growth alone to reach your FIRE number by retirement — no further saving required',
     },
     {
       label: 'Barista FIRE Income',
@@ -72,6 +74,7 @@ export function StatusPanel(props: StatusPanelProps) {
         ? <AnimatedNumber value={props.baristaFireIncome} format={(n) => `${formatCurrency(n)}/yr`} />
         : '—',
       accent: 'primary',
+      tooltip: 'Part-time income needed to cover the gap between your portfolio withdrawals and living expenses',
     },
     {
       label: 'Savings Rate',
@@ -109,6 +112,7 @@ export function StatusPanel(props: StatusPanelProps) {
             )
           }
           progress={card.progress}
+          tooltip={card.tooltip}
         />
       ))}
     </div>
