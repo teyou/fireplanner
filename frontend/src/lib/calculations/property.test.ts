@@ -4,6 +4,8 @@ import {
   calculateSellAndDownsize,
   calculateSellAndRent,
   calculateBSD,
+  calculateABSD,
+  leaseDecayFactor,
 } from './property'
 
 describe('outstandingMortgageAtAge', () => {
@@ -122,5 +124,90 @@ describe('calculateSellAndRent', () => {
       monthlyRent: 2000,
     })
     expect(result.netProceedsToPortfolio).toBe(0)
+  })
+})
+
+describe('calculateABSD', () => {
+  it('citizen 1st property: 0% ABSD', () => {
+    expect(calculateABSD(1000000, 'citizen', 0)).toBe(0)
+  })
+
+  it('citizen 2nd property: 20% ABSD', () => {
+    expect(calculateABSD(1000000, 'citizen', 1)).toBe(200000)
+  })
+
+  it('citizen 3rd+ property: 30% ABSD', () => {
+    expect(calculateABSD(1000000, 'citizen', 2)).toBe(300000)
+    expect(calculateABSD(1000000, 'citizen', 5)).toBe(300000) // capped at 3rd+ rate
+  })
+
+  it('PR 1st property: 5% ABSD', () => {
+    expect(calculateABSD(1000000, 'pr', 0)).toBe(50000)
+  })
+
+  it('PR 2nd property: 30% ABSD', () => {
+    expect(calculateABSD(1000000, 'pr', 1)).toBe(300000)
+  })
+
+  it('PR 3rd+ property: 35% ABSD', () => {
+    expect(calculateABSD(1000000, 'pr', 2)).toBe(350000)
+  })
+
+  it('foreigner: 60% ABSD on all properties', () => {
+    expect(calculateABSD(1000000, 'foreigner', 0)).toBe(600000)
+    expect(calculateABSD(1000000, 'foreigner', 1)).toBe(600000)
+    expect(calculateABSD(1000000, 'foreigner', 2)).toBe(600000)
+  })
+
+  it('scales linearly with purchase price', () => {
+    expect(calculateABSD(2000000, 'citizen', 1)).toBe(400000) // 20% of 2M
+    expect(calculateABSD(500000, 'foreigner', 0)).toBe(300000) // 60% of 500K
+  })
+})
+
+describe('calculateBSD edge cases', () => {
+  it('BSD on first $180K tier: 1%', () => {
+    expect(calculateBSD(180000)).toBeCloseTo(1800, 0)
+  })
+
+  it('BSD on $360K spans first two tiers', () => {
+    // 180K * 0.01 + 180K * 0.02 = 1800 + 3600 = 5400
+    expect(calculateBSD(360000)).toBeCloseTo(5400, 0)
+  })
+
+  it('BSD on $1M spans three tiers', () => {
+    // 180K * 0.01 + 180K * 0.02 + 640K * 0.03 = 1800 + 3600 + 19200 = 24600
+    expect(calculateBSD(1000000)).toBeCloseTo(24600, 0)
+  })
+
+  it('BSD is 0 for $0 purchase price', () => {
+    expect(calculateBSD(0)).toBe(0)
+  })
+})
+
+describe('leaseDecayFactor', () => {
+  it('returns 1.0 for brand new 99-year lease', () => {
+    // 99 years remaining = factor should be 1.0 or very close
+    expect(leaseDecayFactor(99, 0)).toBeCloseTo(1.0, 1)
+  })
+
+  it('returns lower factor as years pass', () => {
+    const factor0 = leaseDecayFactor(99, 0)
+    const factor30 = leaseDecayFactor(99, 30)
+    const factor60 = leaseDecayFactor(99, 60)
+    expect(factor30).toBeLessThan(factor0)
+    expect(factor60).toBeLessThan(factor30)
+  })
+
+  it('returns 0 when lease fully expired', () => {
+    expect(leaseDecayFactor(99, 99)).toBe(0)
+    expect(leaseDecayFactor(99, 120)).toBe(0) // beyond lease term
+  })
+
+  it('decay accelerates in last 30 years (Bala curve)', () => {
+    // The decay from year 60→70 should be larger than from year 20→30
+    const diff_early = leaseDecayFactor(99, 20) - leaseDecayFactor(99, 30)
+    const diff_late = leaseDecayFactor(99, 60) - leaseDecayFactor(99, 70)
+    expect(diff_late).toBeGreaterThan(diff_early)
   })
 })

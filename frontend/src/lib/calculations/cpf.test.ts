@@ -67,6 +67,54 @@ describe('calculateCpfContribution', () => {
     expect(result.total).toBeCloseTo(60000 * 0.125, 0)
   })
 
+  // Age boundary tests: exact cutoff ages
+  it('age 55 is still in "55 and below" bracket (37%)', () => {
+    const result = calculateCpfContribution(72000, 55)
+    expect(result.total).toBeCloseTo(72000 * 0.37, 0)
+  })
+
+  it('age 56 switches to "55-60" bracket (29.5%)', () => {
+    const result = calculateCpfContribution(72000, 56)
+    expect(result.total).toBeCloseTo(72000 * 0.295, 0)
+  })
+
+  it('age 60 is still in "55-60" bracket (29.5%)', () => {
+    const result = calculateCpfContribution(72000, 60)
+    expect(result.total).toBeCloseTo(72000 * 0.295, 0)
+  })
+
+  it('age 61 switches to "60-65" bracket (20.5%)', () => {
+    const result = calculateCpfContribution(72000, 61)
+    expect(result.total).toBeCloseTo(72000 * 0.205, 0)
+  })
+
+  it('age 65 is still in "60-65" bracket (20.5%)', () => {
+    const result = calculateCpfContribution(72000, 65)
+    expect(result.total).toBeCloseTo(72000 * 0.205, 0)
+  })
+
+  it('age 66 switches to "65-70" bracket (16%)', () => {
+    const result = calculateCpfContribution(72000, 66)
+    expect(result.total).toBeCloseTo(72000 * 0.16, 0)
+  })
+
+  it('age 70 is still in "65-70" bracket (16%)', () => {
+    const result = calculateCpfContribution(72000, 70)
+    expect(result.total).toBeCloseTo(72000 * 0.16, 0)
+  })
+
+  it('age 71 switches to "above 70" bracket (12.5%)', () => {
+    const result = calculateCpfContribution(72000, 71)
+    expect(result.total).toBeCloseTo(72000 * 0.125, 0)
+  })
+
+  it('rate drops from 37% to 29.5% at the 55/56 boundary', () => {
+    const at55 = calculateCpfContribution(72000, 55)
+    const at56 = calculateCpfContribution(72000, 56)
+    expect(at55.total).toBeGreaterThan(at56.total)
+    expect(at55.total - at56.total).toBeCloseTo(72000 * (0.37 - 0.295), 0)
+  })
+
   // Property-based: CPF <= salary * max_total_rate (37%)
   it('CPF contribution never exceeds salary × 37%', () => {
     fc.assert(

@@ -54,6 +54,15 @@ describe('calculateYearsToFire', () => {
     expect(calculateYearsToFire(-0.02, -5000, 100000, 1000000)).toBe(Infinity)
   })
 
+  it('handles negative net worth: takes longer to reach FIRE', () => {
+    // With negative NW, years to FIRE should be longer than starting from 0
+    const fromZero = calculateYearsToFire(0.04, 50000, 0, 1000000)
+    const fromNegative = calculateYearsToFire(0.04, 50000, -50000, 1000000)
+    expect(fromNegative).toBeGreaterThan(fromZero)
+    expect(fromNegative).toBeGreaterThan(0)
+    expect(isFinite(fromNegative)).toBe(true)
+  })
+
   it('handles r=0 with positive savings (linear)', () => {
     // (1M - 100K) / 50K = 18 years
     expect(calculateYearsToFire(0, 50000, 100000, 1000000)).toBe(18)
@@ -147,6 +156,11 @@ describe('calculateProgress', () => {
 
   it('can exceed 1.0 when past FIRE', () => {
     expect(calculateProgress(2500000, 2000000)).toBe(1.25)
+  })
+
+  it('negative net worth returns negative progress', () => {
+    const progress = calculateProgress(-50000, 1200000)
+    expect(progress).toBeLessThan(0)
   })
 })
 
