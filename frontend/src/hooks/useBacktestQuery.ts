@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { runBacktestWorker, flattenStrategyParams } from '@/lib/simulation/workerClient'
-import type { BacktestResult, BacktestDataset, WithdrawalStrategyType } from '@/lib/types'
+import type { BacktestResult, BacktestDataset, WithdrawalStrategyType, HeatmapConfig } from '@/lib/types'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
@@ -13,6 +13,7 @@ interface BacktestConfig {
   dataset: BacktestDataset
   blendRatio: number
   includeHeatmap: boolean
+  heatmapConfig: HeatmapConfig
 }
 
 interface UseBacktestQueryResult {
@@ -34,6 +35,14 @@ const DEFAULT_CONFIG: BacktestConfig = {
   dataset: 'us_only',
   blendRatio: 0.70,
   includeHeatmap: true,
+  heatmapConfig: {
+    swrMin: 0.01,
+    swrMax: 0.06,
+    swrStep: 0.005,
+    durationMin: 15,
+    durationMax: 45,
+    durationStep: 5,
+  },
 }
 
 export function useBacktestQuery(): UseBacktestQueryResult {
@@ -87,7 +96,7 @@ export function useBacktestQuery(): UseBacktestQueryResult {
         inflation: profile.inflation,
       }
 
-      return runBacktestWorker(params, config.includeHeatmap)
+      return runBacktestWorker(params, config.includeHeatmap, config.heatmapConfig)
     },
   })
 

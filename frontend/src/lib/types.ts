@@ -560,6 +560,15 @@ export interface BacktestSummary {
   average_total_withdrawn: number
 }
 
+export interface HeatmapConfig {
+  swrMin: number
+  swrMax: number
+  swrStep: number
+  durationMin: number
+  durationMax: number
+  durationStep: number
+}
+
 export interface HeatmapData {
   swr_values: number[]
   duration_values: number[]

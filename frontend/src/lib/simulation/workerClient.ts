@@ -4,7 +4,7 @@
  * Lazily creates a single Worker instance and multiplexes calls via message IDs.
  */
 
-import type { MonteCarloResult, BacktestResult, SequenceRiskResult } from '@/lib/types'
+import type { MonteCarloResult, BacktestResult, SequenceRiskResult, HeatmapConfig } from '@/lib/types'
 import type {
   WithdrawalStrategyType,
   StrategyParamsMap,
@@ -98,8 +98,9 @@ export function runMonteCarloWorker(params: MonteCarloEngineParams): Promise<Mon
 export function runBacktestWorker(
   params: BacktestEngineParams,
   includeHeatmap: boolean,
+  heatmapConfig?: HeatmapConfig,
 ): Promise<BacktestResult> {
-  return callWorker<BacktestResult>({ type: 'backtest', params, includeHeatmap })
+  return callWorker<BacktestResult>({ type: 'backtest', params, includeHeatmap, heatmapConfig })
 }
 
 export function runSequenceRiskWorker(

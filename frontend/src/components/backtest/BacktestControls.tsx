@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
-import type { BacktestDataset } from '@/lib/types'
+import type { BacktestDataset, HeatmapConfig } from '@/lib/types'
 
 interface BacktestConfig {
   swr: number
@@ -12,6 +12,7 @@ interface BacktestConfig {
   dataset: BacktestDataset
   blendRatio: number
   includeHeatmap: boolean
+  heatmapConfig: HeatmapConfig
 }
 
 interface BacktestControlsProps {
@@ -124,7 +125,81 @@ export function BacktestControls({ config, setConfig, onRun, isPending, canRun, 
             Include SWR heatmap (slower)
           </label>
         </div>
+
+        {config.includeHeatmap && (
+          <div className="border-t pt-3 space-y-2">
+            <Label className="text-xs text-muted-foreground">Heatmap Range & Granularity</Label>
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+              <HeatmapField
+                label="SWR Min"
+                value={config.heatmapConfig.swrMin * 100}
+                onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, swrMin: v / 100 } })}
+                suffix="%"
+                step={0.5}
+              />
+              <HeatmapField
+                label="SWR Max"
+                value={config.heatmapConfig.swrMax * 100}
+                onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, swrMax: v / 100 } })}
+                suffix="%"
+                step={0.5}
+              />
+              <HeatmapField
+                label="SWR Step"
+                value={config.heatmapConfig.swrStep * 100}
+                onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, swrStep: v / 100 } })}
+                suffix="%"
+                step={0.1}
+              />
+              <HeatmapField
+                label="Duration Min"
+                value={config.heatmapConfig.durationMin}
+                onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, durationMin: v } })}
+                suffix="yr"
+                step={5}
+              />
+              <HeatmapField
+                label="Duration Max"
+                value={config.heatmapConfig.durationMax}
+                onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, durationMax: v } })}
+                suffix="yr"
+                step={5}
+              />
+              <HeatmapField
+                label="Duration Step"
+                value={config.heatmapConfig.durationStep}
+                onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, durationStep: v } })}
+                suffix="yr"
+                step={1}
+              />
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
+  )
+}
+
+function HeatmapField({ label, value, onChange, suffix, step }: {
+  label: string
+  value: number
+  onChange: (v: number) => void
+  suffix: string
+  step: number
+}) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs">{label}</Label>
+      <div className="flex items-center gap-1">
+        <Input
+          type="number"
+          className="h-7 text-xs"
+          value={value}
+          step={step}
+          onChange={(e) => onChange(Number(e.target.value))}
+        />
+        <span className="text-xs text-muted-foreground">{suffix}</span>
+      </div>
+    </div>
   )
 }

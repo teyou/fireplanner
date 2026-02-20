@@ -16,10 +16,13 @@ export function SwrHeatmap({ data }: SwrHeatmapProps) {
     if (!svgRef.current || !containerRef.current) return
 
     const containerWidth = containerRef.current.clientWidth
-    const width = Math.min(containerWidth, 600)
+    const nCols = data.duration_values.length
+    const nRows = data.swr_values.length
+    const cellSize = Math.max(28, Math.min(60, Math.floor(500 / Math.max(nCols, nRows))))
     const margin = { top: 40, right: 20, bottom: 50, left: 70 }
-    const innerWidth = width - margin.left - margin.right
-    const innerHeight = 300
+    const innerWidth = nCols * cellSize
+    const innerHeight = nRows * cellSize
+    const width = Math.min(containerWidth, innerWidth + margin.left + margin.right)
 
     const svg = d3.select(svgRef.current)
     svg.selectAll('*').remove()
@@ -31,8 +34,9 @@ export function SwrHeatmap({ data }: SwrHeatmapProps) {
     const swrLabels = data.swr_values.map((v) => `${(v * 100).toFixed(1)}%`)
     const durLabels = data.duration_values.map((v) => `${v}yr`)
 
-    const cellWidth = innerWidth / data.duration_values.length
-    const cellHeight = innerHeight / data.swr_values.length
+    const cellWidth = innerWidth / nCols
+    const cellHeight = innerHeight / nRows
+    const fontSize = Math.max(8, Math.min(11, cellSize * 0.3))
 
     // Color scale: red → orange → yellow → green
     const colorScale = d3.scaleLinear<string>()
@@ -72,7 +76,7 @@ export function SwrHeatmap({ data }: SwrHeatmapProps) {
           .attr('y', row * cellHeight + cellHeight / 2)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'central')
-          .attr('font-size', '11px')
+          .attr('font-size', `${fontSize}px`)
           .attr('fill', rate >= 0.8 ? '#fff' : '#1f2937')
           .attr('pointer-events', 'none')
           .text(`${(rate * 100).toFixed(0)}%`)

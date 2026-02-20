@@ -44,7 +44,16 @@ self.onmessage = (e: MessageEvent) => {
       }
     } else if (type === 'backtest') {
       const btResult = runBacktest(e.data.params)
-      const heatmap = e.data.includeHeatmap ? generateHeatmap(e.data.params) : null
+      const hc = e.data.heatmapConfig
+      const heatmap = e.data.includeHeatmap
+        ? generateHeatmap(
+            e.data.params,
+            hc ? [hc.swrMin, hc.swrMax] : undefined,
+            hc?.swrStep,
+            hc ? [hc.durationMin, hc.durationMax] : undefined,
+            hc?.durationStep,
+          )
+        : null
 
       result = {
         ...btResult,
