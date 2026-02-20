@@ -595,6 +595,102 @@ describe('generateProjection', () => {
     })
   })
 
+  describe('parent support adds to expenses', () => {
+    it('parent support increases expenses during active period', () => {
+      const params = makeParams({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 32,
+        annualExpenses: 50000, inflation: 0,
+        parentSupportEnabled: true,
+        parentSupport: [
+          { id: 'p1', label: 'Mom', monthlyAmount: 500, startAge: 30, endAge: 70, growthRate: 0 },
+        ],
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 32,
+      })
+
+      const result = generateProjection(params)
+
+      // Expenses should be 50000 + 500*12 = 56000
+      expect(result.rows[0].annualExpenses).toBeCloseTo(56000, 0)
+      expect(result.rows[0].parentSupportExpense).toBeCloseTo(6000, 0)
+    })
+
+    it('disabled parent support does not add to expenses', () => {
+      const params = makeParams({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 30,
+        annualExpenses: 50000, inflation: 0,
+        parentSupportEnabled: false,
+        parentSupport: [
+          { id: 'p1', label: 'Mom', monthlyAmount: 500, startAge: 30, endAge: 70, growthRate: 0 },
+        ],
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 30,
+      })
+
+      const result = generateProjection(params)
+      expect(result.rows[0].annualExpenses).toBeCloseTo(50000, 0)
+      expect(result.rows[0].parentSupportExpense).toBe(0)
+    })
+  })
+
+  describe('downsizing injects equity at sell age', () => {
+    it('liquidNW jumps at sell age with sell-and-rent scenario', () => {
+      const params = makeParams({
+        currentAge: 55, retirementAge: 54, lifeExpectancy: 57,
+        expectedReturn: 0, initialLiquidNW: 500000,
+        annualExpenses: 50000, inflation: 0,
+        downsizing: {
+          scenario: 'sell-and-rent',
+          sellAge: 56,
+          expectedSalePrice: 1500000,
+          monthlyRent: 2000,
+          rentGrowthRate: 0,
+          newPropertyCost: 0,
+          newLtv: 0,
+          newMortgageRate: 0,
+          newMortgageTerm: 0,
+        },
+        existingMortgageBalance: 0,
+        existingMortgageRate: 0.035,
+        existingMonthlyPayment: 0,
+        existingMortgageRemainingYears: 0,
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 55, retirementAge: 54, lifeExpectancy: 57,
+        annualSavings: 0,
+      })
+
+      const result = generateProjection(params)
+
+      // At age 56 (index 1), downsizing injects $1.5M equity
+      // Before injection: liquidNW was ~450K (500K - 50K withdrawal)
+      // After injection: ~450K + 1.5M = ~1.95M
+      expect(result.rows[1].liquidNW).toBeGreaterThan(result.rows[0].liquidNW + 1000000)
+    })
+  })
+
+  describe('retirement spending adjustment', () => {
+    it('reduces expenses in retirement when adjustment < 1', () => {
+      const params = makeParams({
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 62,
+        annualExpenses: 50000, inflation: 0,
+        retirementSpendingAdjustment: 0.8,
+        initialLiquidNW: 500000,
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 62,
+        annualSavings: 0,
+      })
+
+      const result = generateProjection(params)
+
+      // Post-retirement expenses = 50000 * 0.8 = 40000
+      expect(result.rows[0].annualExpenses).toBeCloseTo(40000, 0)
+    })
+  })
+
   describe('fallback when usePortfolioReturn is false', () => {
     it('uses expectedReturn instead of portfolio return', () => {
       const params = makeParams({

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import * as fc from 'fast-check'
 import { percentile, studentTQuantile } from './stats'
 
 describe('percentile', () => {
@@ -79,6 +80,36 @@ describe('percentile', () => {
     // numpy.percentile([1,2,3,4,5,6,7,8,9,10], 33) = 3.97
     const data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     expect(percentile(data, 33)).toBeCloseTo(3.97, 10)
+  })
+
+  it('property: monotonically non-decreasing with p', () => {
+    fc.assert(
+      fc.property(
+        fc.array(fc.double({ min: -1000, max: 1000, noNaN: true }), { minLength: 2, maxLength: 50 }),
+        fc.double({ min: 0, max: 100, noNaN: true }),
+        fc.double({ min: 0, max: 100, noNaN: true }),
+        (data, p1, p2) => {
+          const lower = Math.min(p1, p2)
+          const higher = Math.max(p1, p2)
+          return percentile(data, higher) >= percentile(data, lower) - 1e-10
+        },
+      ),
+    )
+  })
+
+  it('property: result is bounded by min and max of data', () => {
+    fc.assert(
+      fc.property(
+        fc.array(fc.double({ min: -1000, max: 1000, noNaN: true }), { minLength: 1, maxLength: 50 }),
+        fc.double({ min: 0, max: 100, noNaN: true }),
+        (data, p) => {
+          const result = percentile(data, p)
+          const min = Math.min(...data)
+          const max = Math.max(...data)
+          return result >= min - 1e-10 && result <= max + 1e-10
+        },
+      ),
+    )
   })
 })
 

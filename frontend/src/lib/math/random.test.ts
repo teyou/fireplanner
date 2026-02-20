@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import * as fc from 'fast-check'
 import { SeededRNG } from './random'
 
 describe('SeededRNG', () => {
@@ -122,6 +123,47 @@ describe('SeededRNG', () => {
       for (let i = 0; i < 100; i++) {
         expect(rng.nextInt(1)).toBe(0)
       }
+    })
+  })
+
+  describe('property-based', () => {
+    it('any seed produces identical sequences from two RNGs', () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: -2147483648, max: 2147483647 }),
+          (seed) => {
+            const rng1 = new SeededRNG(seed)
+            const rng2 = new SeededRNG(seed)
+            for (let i = 0; i < 20; i++) {
+              if (rng1.next() !== rng2.next()) return false
+            }
+            return true
+          },
+        ),
+      )
+    })
+
+    it('all outputs are in [0, 1)', () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 0, max: 10000 }),
+          (seed) => {
+            const rng = new SeededRNG(seed)
+            for (let i = 0; i < 100; i++) {
+              const val = rng.next()
+              if (val < 0 || val >= 1) return false
+            }
+            return true
+          },
+        ),
+      )
+    })
+
+    it('seed 0 works (handles all-zero state guard)', () => {
+      const rng = new SeededRNG(0)
+      const val = rng.next()
+      expect(val).toBeGreaterThanOrEqual(0)
+      expect(val).toBeLessThan(1)
     })
   })
 })

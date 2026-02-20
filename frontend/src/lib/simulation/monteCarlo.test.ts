@@ -452,3 +452,51 @@ describe('portfolioAdjustments', () => {
     expect(withOutOfRange.terminal_stats.median).toBe(baseline.terminal_stats.median)
   })
 })
+
+describe('MC success rate invariants', () => {
+  it('success rate is exactly 0 or 1 for extreme cases', () => {
+    // Huge portfolio, low SWR → should be ~100% success
+    const safe = runMonteCarlo(makeDefaultParams({
+      initialPortfolio: 100_000_000,
+      annualSavings: Array(20).fill(0),
+      strategyParams: { swr: 0.001 },
+      nSimulations: 200,
+    }))
+    expect(safe.success_rate).toBe(1)
+
+    // Tiny portfolio, massive SWR → should be ~0% success
+    const risky = runMonteCarlo(makeDefaultParams({
+      initialPortfolio: 1000,
+      annualSavings: [],
+      currentAge: 60,
+      retirementAge: 60,
+      lifeExpectancy: 95,
+      postRetirementIncome: Array(35).fill(0),
+      strategyParams: { swr: 0.50 },
+      nSimulations: 200,
+    }))
+    expect(risky.success_rate).toBe(0)
+  })
+
+  it('higher SWR reduces success rate', () => {
+    const conservative = runMonteCarlo(makeDefaultParams({
+      strategyParams: { swr: 0.02 },
+      nSimulations: 500,
+    }))
+    const aggressive = runMonteCarlo(makeDefaultParams({
+      strategyParams: { swr: 0.08 },
+      nSimulations: 500,
+    }))
+    expect(conservative.success_rate).toBeGreaterThanOrEqual(aggressive.success_rate)
+  })
+
+  it('withdrawal_bands covers decumulation years', () => {
+    const params = makeDefaultParams()
+    const result = runMonteCarlo(params)
+    if (result.withdrawal_bands) {
+      // Withdrawal bands cover only decumulation years
+      const nYearsDecum = Math.max(1, params.lifeExpectancy - params.retirementAge)
+      expect(result.withdrawal_bands.years.length).toBe(nYearsDecum)
+    }
+  })
+})
