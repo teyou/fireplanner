@@ -2,21 +2,15 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { useFireCalculations } from '@/hooks/useFireCalculations'
-import { useProjection } from '@/hooks/useProjection'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useUIStore } from '@/stores/useUIStore'
-import { formatCurrency } from '@/lib/utils'
-import { Target, TrendingUp, CheckCircle, Clock, CalendarClock, Landmark, ArrowRight, Info, Building, Heart } from 'lucide-react'
+import { Target, TrendingUp, CheckCircle, Clock, CalendarClock, Landmark, ArrowRight, Building, Heart } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { NumberInput } from '@/components/shared/NumberInput'
-import { MetricCard } from '@/components/shared/MetricCard'
-import { AnimatedNumber } from '@/components/shared/AnimatedNumber'
 import { Label } from '@/components/ui/label'
 import type { RetirementPhase } from '@/lib/types'
-import { useSectionCompletion } from '@/hooks/useSectionCompletion'
 
 type ActivePathway = 'goal-first' | 'story-first' | 'already-fire' | null
 
@@ -42,9 +36,6 @@ const PHASE_CARDS: { phase: RetirementPhase; label: string; description: string;
 ]
 
 export function StartPage() {
-  const { metrics } = useFireCalculations()
-  const { summary: projSummary } = useProjection()
-  const { sections } = useSectionCompletion()
   const profileStore = useProfileStore()
   const incomeStore = useIncomeStore()
   const setUIField = useUIStore((s) => s.setField)
@@ -59,17 +50,6 @@ export function StartPage() {
   const [draftRetirementAge, setDraftRetirementAge] = useState(profileStore.retirementAge)
   const [draftIncome, setDraftIncome] = useState(profileStore.annualIncome)
   const [draftNetWorth, setDraftNetWorth] = useState(profileStore.liquidNetWorth)
-
-  const usingDefaults = !sections['section-personal'].isComplete
-    && !sections['section-income'].isComplete
-    && !sections['section-expenses'].isComplete
-    && !sections['section-net-worth'].isComplete
-
-  // Prefer projection's simulated FIRE age over NPER estimate
-  const projFireAge = projSummary?.fireAchievedAge ?? null
-  const yearsToFire = projFireAge !== null
-    ? Math.max(0, projFireAge - profileStore.currentAge)
-    : metrics?.yearsToFire ?? null
 
   const handlePathwayClick = (pathway: ActivePathway) => {
     if (activePathway === pathway) {
@@ -152,54 +132,6 @@ export function StartPage() {
           Plan your path to Financial Independence with Singapore-specific calculations.
         </p>
       </div>
-
-      {metrics && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              Quick Overview
-              {usingDefaults && (
-                <span className="inline-flex items-center gap-1 text-xs font-normal text-muted-foreground">
-                  <Info className="h-3 w-3" />
-                  based on defaults
-                </span>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <MetricCard
-                label="FIRE Number"
-                variant="elevated"
-                accent="primary"
-                value={
-                  <AnimatedNumber
-                    value={metrics.fireNumber}
-                    format={formatCurrency}
-                    className="text-primary"
-                  />
-                }
-              />
-              <MetricCard
-                label="Years to FIRE"
-                variant="elevated"
-                accent="primary"
-                value={
-                  yearsToFire !== null && yearsToFire === 0
-                    ? <span className="text-success">Achieved!</span>
-                    : yearsToFire !== null && isFinite(yearsToFire)
-                      ? <AnimatedNumber
-                          value={Math.ceil(yearsToFire)}
-                          format={(n) => `${Math.round(n)} years`}
-                          className="text-primary"
-                        />
-                      : <span>—</span>
-                }
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Pathway cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
