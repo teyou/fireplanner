@@ -60,7 +60,7 @@ export function ThemeToggle() {
   }, [])
 
   return (
-    <div className="flex items-center gap-0.5 px-2">
+    <div className="flex items-center gap-0.5">
       {THEMES.map(({ value, icon: Icon, label }) => (
         <button
           key={value}

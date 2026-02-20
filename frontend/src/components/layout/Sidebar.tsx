@@ -316,7 +316,7 @@ function DataActions() {
   }
 
   return (
-    <div className="flex items-center gap-1 px-2">
+    <div className="flex items-center gap-1">
       <button
         onClick={handleExport}
         className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
