@@ -18,11 +18,13 @@ import {
   validateProfileField,
   validateIncomeField,
   validateAllocationField,
+  validateSimulationField,
 } from './schemas'
 import {
   validateProfileConsistency,
   validateCrossStoreRules,
   validateAllocationCrossStoreRules,
+  validateWithdrawalCrossStoreRules,
 } from './rules'
 
 describe('field schemas', () => {
@@ -655,5 +657,71 @@ describe('validateAllocationCrossStoreRules', () => {
       targetWeights: validTargetWeights,
     })
     expect(Object.keys(errors)).toHaveLength(0)
+  })
+})
+
+describe('validateWithdrawalCrossStoreRules', () => {
+  const defaultProfile = { annualExpenses: 48000, retirementAge: 65, lifeExpectancy: 90 }
+  const defaultParams = {
+    strategyParams: {
+      floor_ceiling: { floor: 60000, ceiling: 150000, targetRate: 0.045 },
+    },
+  }
+
+  it('returns empty for valid inputs', () => {
+    const errors = validateWithdrawalCrossStoreRules(
+      defaultProfile,
+      defaultParams as ReturnType<typeof validateWithdrawalCrossStoreRules extends (a: unknown, b: infer B) => unknown ? () => B : never>,
+    )
+    expect(Object.keys(errors)).toHaveLength(0)
+  })
+
+  it('warns when floor is too high relative to expenses', () => {
+    const errors = validateWithdrawalCrossStoreRules(defaultProfile, {
+      strategyParams: {
+        floor_ceiling: { floor: 200000, ceiling: 300000, targetRate: 0.045 },
+      },
+    } as Parameters<typeof validateWithdrawalCrossStoreRules>[1])
+    expect(errors['floor_ceiling.floor']).toBeTruthy()
+  })
+
+  it('catches retirement duration <= 0', () => {
+    const errors = validateWithdrawalCrossStoreRules(
+      { annualExpenses: 48000, retirementAge: 90, lifeExpectancy: 90 },
+      defaultParams as Parameters<typeof validateWithdrawalCrossStoreRules>[1],
+    )
+    expect(errors.duration).toBeTruthy()
+  })
+
+  it('passes with positive retirement duration', () => {
+    const errors = validateWithdrawalCrossStoreRules(
+      { annualExpenses: 48000, retirementAge: 55, lifeExpectancy: 90 },
+      defaultParams as Parameters<typeof validateWithdrawalCrossStoreRules>[1],
+    )
+    expect(errors.duration).toBeUndefined()
+  })
+})
+
+describe('validateSimulationField', () => {
+  it('returns null for valid nSimulations', () => {
+    expect(validateSimulationField('nSimulations', 10000)).toBeNull()
+  })
+
+  it('returns error for nSimulations below 100', () => {
+    expect(validateSimulationField('nSimulations', 50)).toBeTruthy()
+  })
+
+  it('returns error for nSimulations above 100000', () => {
+    expect(validateSimulationField('nSimulations', 200000)).toBeTruthy()
+  })
+
+  it('returns null for valid mcMethod', () => {
+    expect(validateSimulationField('mcMethod', 'parametric')).toBeNull()
+    expect(validateSimulationField('mcMethod', 'bootstrap')).toBeNull()
+    expect(validateSimulationField('mcMethod', 'fat_tail')).toBeNull()
+  })
+
+  it('returns null for unknown fields', () => {
+    expect(validateSimulationField('unknownField', 'anything')).toBeNull()
   })
 })
