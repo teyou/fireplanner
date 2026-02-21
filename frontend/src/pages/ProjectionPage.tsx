@@ -28,6 +28,12 @@ const STRATEGY_SHORT_LABELS: Record<WithdrawalStrategyType, string> = {
   vanguard_dynamic: 'Vanguard Dynamic',
   cape_based: 'CAPE-Based',
   floor_ceiling: 'Floor & Ceiling',
+  percent_of_portfolio: '% of Portfolio',
+  one_over_n: '1/N',
+  sensible_withdrawals: 'Sensible',
+  ninety_five_percent: '95% Rule',
+  endowment: 'Endowment',
+  hebeler_autopilot: 'Hebeler',
 }
 
 const columnHelper = createColumnHelper<ProjectionRow>()

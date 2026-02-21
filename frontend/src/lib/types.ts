@@ -360,6 +360,12 @@ export type WithdrawalStrategyType =
   | 'vanguard_dynamic'
   | 'cape_based'
   | 'floor_ceiling'
+  | 'percent_of_portfolio'
+  | 'one_over_n'
+  | 'sensible_withdrawals'
+  | 'ninety_five_percent'
+  | 'endowment'
+  | 'hebeler_autopilot'
 
 export interface ConstantDollarParams {
   swr: number
@@ -395,6 +401,32 @@ export interface FloorCeilingParams {
   targetRate: number
 }
 
+export interface PercentOfPortfolioParams {
+  rate: number
+}
+
+export interface OneOverNParams {
+  // No configurable params — withdrawal = portfolio / remainingYears
+}
+
+export interface SensibleWithdrawalsParams {
+  baseRate: number
+  extrasRate: number
+}
+
+export interface NinetyFivePercentParams {
+  swr: number
+}
+
+export interface EndowmentParams {
+  swr: number
+  smoothingWeight: number
+}
+
+export interface HebelerAutopilotParams {
+  expectedRealReturn: number
+}
+
 export interface StrategyParamsMap {
   constant_dollar: ConstantDollarParams
   vpw: VpwParams
@@ -402,6 +434,12 @@ export interface StrategyParamsMap {
   vanguard_dynamic: VanguardDynamicParams
   cape_based: CapeBasedParams
   floor_ceiling: FloorCeilingParams
+  percent_of_portfolio: PercentOfPortfolioParams
+  one_over_n: OneOverNParams
+  sensible_withdrawals: SensibleWithdrawalsParams
+  ninety_five_percent: NinetyFivePercentParams
+  endowment: EndowmentParams
+  hebeler_autopilot: HebelerAutopilotParams
 }
 
 export interface MonteCarloParams {

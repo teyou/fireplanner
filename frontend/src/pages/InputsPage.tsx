@@ -81,6 +81,12 @@ const STRATEGY_LABELS: Record<WithdrawalStrategyType, string> = {
   vanguard_dynamic: 'Vanguard Dynamic',
   cape_based: 'CAPE-Based',
   floor_ceiling: 'Floor & Ceiling',
+  percent_of_portfolio: 'Percent of Portfolio',
+  one_over_n: '1/N (Remaining Years)',
+  sensible_withdrawals: 'Sensible Withdrawals',
+  ninety_five_percent: '95% Rule',
+  endowment: 'Endowment (Yale)',
+  hebeler_autopilot: 'Hebeler Autopilot II',
 }
 
 type SectionId =

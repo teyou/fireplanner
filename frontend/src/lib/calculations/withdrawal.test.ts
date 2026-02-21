@@ -12,6 +12,12 @@ import {
   vanguardDynamic,
   capeBased,
   floorCeiling,
+  percentOfPortfolio,
+  oneOverN,
+  sensibleWithdrawals,
+  ninetyFivePercent,
+  endowment,
+  hebelerAutopilot,
   computeWithdrawal,
   runDeterministicComparison,
 } from './withdrawal'
@@ -251,6 +257,195 @@ describe('runDeterministicComparison', () => {
 })
 
 // ============================================================
+// Strategy 7: Percent of Portfolio
+// ============================================================
+
+describe('percentOfPortfolio', () => {
+  it('returns portfolio * rate', () => {
+    expect(percentOfPortfolio(PORTFOLIO, 0.04)).toBeCloseTo(80_000, 0)
+  })
+
+  it('scales with portfolio', () => {
+    expect(percentOfPortfolio(500_000, 0.04)).toBeCloseTo(20_000, 0)
+  })
+
+  it('zero portfolio: returns 0', () => {
+    expect(percentOfPortfolio(0, 0.04)).toBeCloseTo(0, 0)
+  })
+
+  it('property: withdrawal >= 0', () => {
+    fc.assert(
+      fc.property(
+        fc.double({ min: 0, max: 10_000_000, noNaN: true }),
+        fc.double({ min: 0.01, max: 0.20, noNaN: true }),
+        (p, r) => percentOfPortfolio(p, r) >= 0,
+      ),
+    )
+  })
+})
+
+// ============================================================
+// Strategy 8: 1/N (Remaining Years)
+// ============================================================
+
+describe('oneOverN', () => {
+  it('30 years: withdraws 1/30th', () => {
+    expect(oneOverN(PORTFOLIO, 30)).toBeCloseTo(PORTFOLIO / 30, 0)
+  })
+
+  it('1 year: withdraws entire portfolio', () => {
+    expect(oneOverN(PORTFOLIO, 1)).toBeCloseTo(PORTFOLIO, 0)
+  })
+
+  it('0 remaining years: clamps to 1', () => {
+    expect(oneOverN(PORTFOLIO, 0)).toBeCloseTo(PORTFOLIO, 0)
+  })
+
+  it('negative remaining years: clamps to 1', () => {
+    expect(oneOverN(PORTFOLIO, -5)).toBeCloseTo(PORTFOLIO, 0)
+  })
+
+  it('property: withdrawal >= 0', () => {
+    fc.assert(
+      fc.property(
+        fc.double({ min: 0, max: 10_000_000, noNaN: true }),
+        fc.integer({ min: 1, max: 60 }),
+        (p, n) => oneOverN(p, n) >= 0,
+      ),
+    )
+  })
+})
+
+// ============================================================
+// Strategy 9: Sensible Withdrawals
+// ============================================================
+
+describe('sensibleWithdrawals', () => {
+  it('year 0 (no prior gains): base rate only', () => {
+    expect(sensibleWithdrawals(PORTFOLIO, 0.03, 0.10, 0)).toBeCloseTo(60_000, 0)
+  })
+
+  it('with positive gains: base + extras share', () => {
+    const gains = 200_000
+    const expected = PORTFOLIO * 0.03 + gains * 0.10
+    expect(sensibleWithdrawals(PORTFOLIO, 0.03, 0.10, gains)).toBeCloseTo(expected, 0)
+  })
+
+  it('negative gains: extras are 0', () => {
+    expect(sensibleWithdrawals(PORTFOLIO, 0.03, 0.10, -100_000)).toBeCloseTo(60_000, 0)
+  })
+
+  it('zero portfolio: returns 0', () => {
+    expect(sensibleWithdrawals(0, 0.03, 0.10, 0)).toBeCloseTo(0, 0)
+  })
+
+  it('property: withdrawal >= 0', () => {
+    fc.assert(
+      fc.property(
+        fc.double({ min: 0, max: 10_000_000, noNaN: true }),
+        fc.double({ min: -500_000, max: 500_000, noNaN: true }),
+        (p, gains) => sensibleWithdrawals(p, 0.03, 0.10, gains) >= 0,
+      ),
+    )
+  })
+})
+
+// ============================================================
+// Strategy 10: 95% Rule
+// ============================================================
+
+describe('ninetyFivePercent', () => {
+  it('year 0 (prevWithdrawal=0): portfolio * swr', () => {
+    expect(ninetyFivePercent(PORTFOLIO, 0, 0.04)).toBeCloseTo(80_000, 0)
+  })
+
+  it('good year: uses market-based amount', () => {
+    // 3M * 0.04 = 120K > 80K * 0.95 = 76K → uses 120K
+    expect(ninetyFivePercent(3_000_000, 80_000, 0.04)).toBeCloseTo(120_000, 0)
+  })
+
+  it('bad year: uses 95% floor', () => {
+    // 500K * 0.04 = 20K < 80K * 0.95 = 76K → uses 76K
+    expect(ninetyFivePercent(500_000, 80_000, 0.04)).toBeCloseTo(76_000, 0)
+  })
+
+  it('zero portfolio: uses 95% floor', () => {
+    expect(ninetyFivePercent(0, 80_000, 0.04)).toBeCloseTo(76_000, 0)
+  })
+})
+
+// ============================================================
+// Strategy 11: Endowment (Yale Model)
+// ============================================================
+
+describe('endowment', () => {
+  it('year 0 (prevWithdrawal=0): (1-w) * portfolio * swr', () => {
+    // w=0.70, (1-0.70) * 2M * 0.04 = 0.30 * 80K = 24K
+    expect(endowment(PORTFOLIO, 0, INFLATION, 0.04, 0.70)).toBeCloseTo(24_000, 0)
+  })
+
+  it('year 1: blends inflation-adjusted prior with market target', () => {
+    const prev = 80_000
+    const w = 0.70
+    const expected = w * prev * (1 + INFLATION) + (1 - w) * PORTFOLIO * 0.04
+    expect(endowment(PORTFOLIO, prev, INFLATION, 0.04, w)).toBeCloseTo(expected, 0)
+  })
+
+  it('high smoothing: heavily weighted to prior', () => {
+    const prev = 80_000
+    const result = endowment(PORTFOLIO, prev, INFLATION, 0.04, 0.90)
+    // 0.90 * 80K * 1.025 + 0.10 * 80K = 73800 + 8000 = 81800
+    expect(result).toBeCloseTo(0.90 * prev * 1.025 + 0.10 * PORTFOLIO * 0.04, 0)
+  })
+
+  it('property: withdrawal >= 0', () => {
+    fc.assert(
+      fc.property(
+        fc.double({ min: 0, max: 10_000_000, noNaN: true }),
+        fc.double({ min: 0, max: 200_000, noNaN: true }),
+        (p, prev) => endowment(p, prev, 0.025, 0.04, 0.70) >= 0,
+      ),
+    )
+  })
+})
+
+// ============================================================
+// Strategy 12: Hebeler Autopilot II
+// ============================================================
+
+describe('hebelerAutopilot', () => {
+  it('year 0 (prevWithdrawal=0): 0.25 * PMT component', () => {
+    const pmt = vpw(PORTFOLIO, 30, 0.03, 0)
+    expect(hebelerAutopilot(PORTFOLIO, 0, INFLATION, 30, 0.03)).toBeCloseTo(0.25 * pmt, 0)
+  })
+
+  it('year 1: blends prior inflation-adjusted with PMT', () => {
+    const prev = 80_000
+    const pmt = vpw(PORTFOLIO, 29, 0.03, 0)
+    const expected = 0.75 * prev * (1 + INFLATION) + 0.25 * pmt
+    expect(hebelerAutopilot(PORTFOLIO, prev, INFLATION, 29, 0.03)).toBeCloseTo(expected, 0)
+  })
+
+  it('0 remaining years: PMT returns full portfolio', () => {
+    const prev = 80_000
+    const pmt = vpw(PORTFOLIO, 0, 0.03, 0) // = portfolio
+    const expected = 0.75 * prev * (1 + INFLATION) + 0.25 * pmt
+    expect(hebelerAutopilot(PORTFOLIO, prev, INFLATION, 0, 0.03)).toBeCloseTo(expected, 0)
+  })
+
+  it('property: withdrawal >= 0', () => {
+    fc.assert(
+      fc.property(
+        fc.double({ min: 0, max: 10_000_000, noNaN: true }),
+        fc.double({ min: 0, max: 200_000, noNaN: true }),
+        fc.integer({ min: 1, max: 40 }),
+        (p, prev, n) => hebelerAutopilot(p, prev, 0.025, n, 0.03) >= 0,
+      ),
+    )
+  })
+})
+
+// ============================================================
 // computeWithdrawal dispatch
 // ============================================================
 
@@ -332,6 +527,70 @@ describe('computeWithdrawal dispatch', () => {
     const dispatched = computeWithdrawal('floor_ceiling', {
       ...baseCtx,
       strategyParams: { floor: 60_000, ceiling: 150_000, targetRate: 0.045 },
+    })
+    expect(dispatched).toBeCloseTo(direct, 6)
+  })
+
+  it('percent_of_portfolio: matches direct call', () => {
+    const direct = percentOfPortfolio(PORTFOLIO, 0.05)
+    const dispatched = computeWithdrawal('percent_of_portfolio', {
+      ...baseCtx,
+      strategyParams: { rate: 0.05 },
+    })
+    expect(dispatched).toBeCloseTo(direct, 6)
+  })
+
+  it('one_over_n: matches direct call', () => {
+    const direct = oneOverN(PORTFOLIO, 25)
+    const dispatched = computeWithdrawal('one_over_n', {
+      ...baseCtx,
+      remainingYears: 25,
+      strategyParams: {},
+    })
+    expect(dispatched).toBeCloseTo(direct, 6)
+  })
+
+  it('sensible_withdrawals: matches direct call', () => {
+    const gains = 150_000
+    const direct = sensibleWithdrawals(PORTFOLIO, 0.03, 0.10, gains)
+    const dispatched = computeWithdrawal('sensible_withdrawals', {
+      ...baseCtx,
+      strategyParams: { baseRate: 0.03, extrasRate: 0.10 },
+      prevYearGains: gains,
+    })
+    expect(dispatched).toBeCloseTo(direct, 6)
+  })
+
+  it('ninety_five_percent: matches direct call', () => {
+    const direct = ninetyFivePercent(PORTFOLIO, 80_000, 0.04)
+    const dispatched = computeWithdrawal('ninety_five_percent', {
+      ...baseCtx,
+      year: 1,
+      prevWithdrawal: 80_000,
+      strategyParams: { swr: 0.04 },
+    })
+    expect(dispatched).toBeCloseTo(direct, 6)
+  })
+
+  it('endowment: matches direct call', () => {
+    const direct = endowment(PORTFOLIO, 80_000, INFLATION, 0.04, 0.70)
+    const dispatched = computeWithdrawal('endowment', {
+      ...baseCtx,
+      year: 1,
+      prevWithdrawal: 80_000,
+      strategyParams: { swr: 0.04, smoothingWeight: 0.70 },
+    })
+    expect(dispatched).toBeCloseTo(direct, 6)
+  })
+
+  it('hebeler_autopilot: matches direct call', () => {
+    const direct = hebelerAutopilot(PORTFOLIO, 80_000, INFLATION, 29, 0.03)
+    const dispatched = computeWithdrawal('hebeler_autopilot', {
+      ...baseCtx,
+      year: 1,
+      remainingYears: 29,
+      prevWithdrawal: 80_000,
+      strategyParams: { expectedRealReturn: 0.03 },
     })
     expect(dispatched).toBeCloseTo(direct, 6)
   })

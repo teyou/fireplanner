@@ -143,6 +143,107 @@ export function floorCeiling(
 }
 
 // ============================================================
+// Strategy 7: Percent of Portfolio
+// ============================================================
+
+/**
+ * Withdraw a fixed percentage of the current portfolio each year.
+ * Simple, adapts to market — but volatile income.
+ */
+export function percentOfPortfolio(
+  portfolio: number,
+  rate: number = 0.04,
+): number {
+  return portfolio * rate
+}
+
+// ============================================================
+// Strategy 8: 1/N (Remaining Years)
+// ============================================================
+
+/**
+ * Withdraw portfolio / remainingYears. Spends everything by end,
+ * naturally increasing withdrawals as time shrinks.
+ */
+export function oneOverN(
+  portfolio: number,
+  remainingYears: number,
+): number {
+  return portfolio / Math.max(1, remainingYears)
+}
+
+// ============================================================
+// Strategy 9: Sensible Withdrawals
+// ============================================================
+
+/**
+ * Base withdrawal from portfolio + share of previous year's gains.
+ * Extras only apply to positive gains — no penalty in down years.
+ */
+export function sensibleWithdrawals(
+  portfolio: number,
+  baseRate: number = 0.03,
+  extrasRate: number = 0.10,
+  prevYearGains: number = 0,
+): number {
+  return portfolio * baseRate + Math.max(0, prevYearGains) * extrasRate
+}
+
+// ============================================================
+// Strategy 10: 95% Rule
+// ============================================================
+
+/**
+ * Never withdraw less than 95% of last year's withdrawal.
+ * Floor prevents dramatic income drops during crashes.
+ */
+export function ninetyFivePercent(
+  portfolio: number,
+  prevWithdrawal: number,
+  swr: number = 0.04,
+): number {
+  return Math.max(portfolio * swr, prevWithdrawal * 0.95)
+}
+
+// ============================================================
+// Strategy 11: Endowment (Yale Model)
+// ============================================================
+
+/**
+ * Smoothed blend of inflation-adjusted prior withdrawal and market-based target.
+ * smoothingWeight (w) controls inertia: w=0.70 → 70% from prior, 30% from market.
+ * Year 0: prevWithdrawal=0 → returns (1-w) * portfolio * swr.
+ */
+export function endowment(
+  portfolio: number,
+  prevWithdrawal: number,
+  inflation: number,
+  swr: number = 0.04,
+  smoothingWeight: number = 0.70,
+): number {
+  return smoothingWeight * prevWithdrawal * (1 + inflation) + (1 - smoothingWeight) * portfolio * swr
+}
+
+// ============================================================
+// Strategy 12: Hebeler Autopilot II
+// ============================================================
+
+/**
+ * 75% inflation-adjusted prior + 25% PMT-based (reuses VPW math).
+ * Year 0: prevWithdrawal=0 → returns 0.25 * PMT(rate, n, portfolio).
+ */
+export function hebelerAutopilot(
+  portfolio: number,
+  prevWithdrawal: number,
+  inflation: number,
+  remainingYears: number,
+  expectedRealReturn: number = 0.03,
+): number {
+  const pmtComponent = vpw(portfolio, remainingYears, expectedRealReturn, 0)
+  return 0.75 * prevWithdrawal * (1 + inflation) + 0.25 * pmtComponent
+}
+
+// ============================================================
 // Shared Withdrawal Dispatch
 // ============================================================
 
@@ -224,6 +325,29 @@ export function computeWithdrawal(strategy: string, ctx: WithdrawalContext): num
         sp.ceilingAmount ?? sp.ceiling ?? 150_000,
         sp.targetRate ?? 0.045,
       )
+    case 'percent_of_portfolio':
+      return percentOfPortfolio(portfolio, sp.rate ?? 0.04)
+    case 'one_over_n':
+      return oneOverN(portfolio, remainingYears)
+    case 'sensible_withdrawals':
+      return sensibleWithdrawals(
+        portfolio,
+        sp.baseRate ?? 0.03,
+        sp.extrasRate ?? 0.10,
+        ctx.prevYearGains ?? 0,
+      )
+    case 'ninety_five_percent': {
+      const pw = year > 0 ? prevWithdrawal : 0
+      return ninetyFivePercent(portfolio, pw, sp.swr ?? 0.04)
+    }
+    case 'endowment': {
+      const pw = year > 0 ? prevWithdrawal : 0
+      return endowment(portfolio, pw, inflation, sp.swr ?? 0.04, sp.smoothingWeight ?? 0.70)
+    }
+    case 'hebeler_autopilot': {
+      const pw = year > 0 ? prevWithdrawal : 0
+      return hebelerAutopilot(portfolio, pw, inflation, remainingYears, sp.expectedRealReturn ?? 0.03)
+    }
     default:
       throw new Error(`Unknown withdrawal strategy: ${strategy}`)
   }
@@ -281,6 +405,7 @@ export function runDeterministicComparison(params: {
     const years: WithdrawalYearResult[] = []
     let portfolio = initialPortfolio
     let prevWithdrawal = 0
+    let prevPortfolio = initialPortfolio
     const sp = strategyParams[strategy] ?? {}
     const initialW = initialPortfolio * (sp.swr ?? sp.initialRate ?? sp.targetRate ?? swr)
     let survived = true
@@ -294,6 +419,9 @@ export function runDeterministicComparison(params: {
 
       const remaining = duration - y
 
+      // prevYearGains: market growth component for sensible_withdrawals
+      const prevYearGains = y > 0 ? prevPortfolio * netReturn : 0
+
       let withdrawal = computeWithdrawal(strategy, {
         portfolio,
         year: y,
@@ -302,11 +430,13 @@ export function runDeterministicComparison(params: {
         prevWithdrawal,
         inflation,
         strategyParams: sp,
+        prevYearGains,
       })
 
       withdrawal = Math.min(withdrawal, portfolio)
       years.push({ year: y, age: retirementAge + y, portfolio, withdrawal })
       prevWithdrawal = withdrawal
+      prevPortfolio = portfolio
       portfolio = (portfolio - withdrawal) * (1 + netReturn)
     }
 

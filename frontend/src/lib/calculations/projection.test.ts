@@ -13,6 +13,12 @@ const DEFAULT_STRATEGY_PARAMS: StrategyParamsMap = {
   vanguard_dynamic: { swr: 0.04, ceiling: 0.05, floor: 0.025 },
   cape_based: { baseRate: 0.04, capeWeight: 0.50, currentCape: 30 },
   floor_ceiling: { floor: 60000, ceiling: 150000, targetRate: 0.045 },
+  percent_of_portfolio: { rate: 0.04 },
+  one_over_n: {},
+  sensible_withdrawals: { baseRate: 0.03, extrasRate: 0.10 },
+  ninety_five_percent: { swr: 0.04 },
+  endowment: { swr: 0.04, smoothingWeight: 0.70 },
+  hebeler_autopilot: { expectedRealReturn: 0.03 },
 }
 
 const GLIDE_PATH_DISABLED: GlidePathConfig = {

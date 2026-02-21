@@ -20,6 +20,12 @@ const STRATEGY_DESCRIPTIONS: Record<WithdrawalStrategyType, string> = {
   vanguard_dynamic: 'Target a percentage of portfolio with ceiling and floor limits on changes.',
   cape_based: 'Blend CAPE earnings yield with a base rate, adjusting for valuation.',
   floor_ceiling: 'Withdraw a percentage of portfolio, clamped between floor and ceiling amounts.',
+  percent_of_portfolio: 'Withdraw a fixed percentage of the current portfolio each year.',
+  one_over_n: 'Withdraw portfolio / remaining years. Spends everything by end.',
+  sensible_withdrawals: 'Base rate + share of prior year gains. Conservative base with upside.',
+  ninety_five_percent: 'Never less than 95% of last year. Protects income in downturns.',
+  endowment: 'Smoothed blend of inflation-adjusted prior and market-based target (Yale model).',
+  hebeler_autopilot: '75% inflation-adjusted prior + 25% PMT-based annuity factor.',
 }
 
 export function StrategyParamsSection() {
