@@ -14,6 +14,7 @@ import type {
   StrategyParamsMap,
   GlidePathConfig,
   ParentSupport,
+  RetirementWithdrawal,
   DownsizingConfig,
   HealthcareConfig,
 } from '@/lib/types'
@@ -70,6 +71,8 @@ export interface ProjectionParams {
   parentSupportEnabled: boolean
   // Healthcare
   healthcareConfig: HealthcareConfig | null
+  // One-time retirement withdrawals
+  retirementWithdrawals?: RetirementWithdrawal[]
 }
 
 export interface ProjectionResult {
@@ -383,13 +386,24 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
         strategyWithdrawal = Math.min(strategyWithdrawal, startLiquidNW)
       }
 
-      // Actual draw = min(expense gap after passive income, strategy max)
+      // One-time retirement withdrawals at this age
+      let oneTimeWithdrawalTotal = 0
+      for (const rw of params.retirementWithdrawals ?? []) {
+        if (rw.age === age) {
+          const amount = rw.inflationAdjusted
+            ? rw.amount * Math.pow(1 + inflation, year)
+            : rw.amount
+          oneTimeWithdrawalTotal += amount
+        }
+      }
+
+      // Actual draw = min(expense gap after passive income, strategy max) + one-time withdrawals
       const expenseGap = Math.max(0, inflationAdjustedExpenses - postRetirementIncome)
       const actualDraw = Math.min(expenseGap, strategyWithdrawal)
       const surplusIncome = Math.max(0, postRetirementIncome - inflationAdjustedExpenses)
 
-      // Portfolio: loses actual draw, gains surplus passive income
-      const netPortfolioDraw = actualDraw - surplusIncome
+      // Portfolio: loses actual draw + one-time withdrawals, gains surplus passive income
+      const netPortfolioDraw = actualDraw + oneTimeWithdrawalTotal - surplusIncome
       const afterDraw = startLiquidNW - netPortfolioDraw
       portfolioReturnDollar = afterDraw * returnRate
       liquidNW = Math.max(0, afterDraw * (1 + returnRate))

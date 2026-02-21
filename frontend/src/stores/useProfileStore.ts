@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ProfileState, ParentSupport, HealthcareConfig, ValidationErrors } from '@/lib/types'
+import type { ProfileState, ParentSupport, RetirementWithdrawal, HealthcareConfig, ValidationErrors } from '@/lib/types'
 import { validateProfileField } from '@/lib/validation/schemas'
 import { validateProfileConsistency } from '@/lib/validation/rules'
 
@@ -12,6 +12,9 @@ interface ProfileActions {
   addParentSupport: (entry: ParentSupport) => void
   removeParentSupport: (id: string) => void
   updateParentSupport: (id: string, updates: Partial<Omit<ParentSupport, 'id'>>) => void
+  addRetirementWithdrawal: (entry: RetirementWithdrawal) => void
+  removeRetirementWithdrawal: (id: string) => void
+  updateRetirementWithdrawal: (id: string, updates: Partial<Omit<RetirementWithdrawal, 'id'>>) => void
   reset: () => void
 }
 
@@ -25,6 +28,7 @@ const PROFILE_DATA_KEYS = [
   'cpfLifeStartAge', 'cpfLifePlan', 'cpfRetirementSum', 'cpfHousingMode', 'cpfHousingMonthly', 'cpfMortgageYearsLeft',
   'parentSupportEnabled', 'parentSupport',
   'healthcareConfig',
+  'retirementWithdrawals',
 ] as const
 
 const DEFAULT_HEALTHCARE_CONFIG: HealthcareConfig = {
@@ -74,6 +78,7 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   parentSupportEnabled: false,
   parentSupport: [],
   healthcareConfig: DEFAULT_HEALTHCARE_CONFIG,
+  retirementWithdrawals: [],
 }
 
 function extractProfileData(state: ProfileState & ProfileActions): Omit<ProfileState, 'validationErrors'> {
@@ -160,6 +165,41 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
           }
         }),
 
+      addRetirementWithdrawal: (entry: RetirementWithdrawal) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = { ...stateData, retirementWithdrawals: [...stateData.retirementWithdrawals, entry] }
+          return {
+            retirementWithdrawals: updated.retirementWithdrawals,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
+      removeRetirementWithdrawal: (id: string) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = { ...stateData, retirementWithdrawals: stateData.retirementWithdrawals.filter((e) => e.id !== id) }
+          return {
+            retirementWithdrawals: updated.retirementWithdrawals,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
+      updateRetirementWithdrawal: (id: string, updates: Partial<Omit<RetirementWithdrawal, 'id'>>) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = {
+            ...stateData,
+            retirementWithdrawals: stateData.retirementWithdrawals.map((e) =>
+              e.id === id ? { ...e, ...updates } : e
+            ),
+          }
+          return {
+            retirementWithdrawals: updated.retirementWithdrawals,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
       reset: () =>
         set({
           ...DEFAULT_PROFILE,
@@ -168,7 +208,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 7,
+      version: 8,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -206,6 +246,9 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
             hc.oopInflationRate = hc.oopInflationRate ?? 0.03
             hc.oopReferenceAge = hc.oopReferenceAge ?? (state.currentAge as number ?? 30)
           }
+        }
+        if (version < 8) {
+          state.retirementWithdrawals = state.retirementWithdrawals ?? []
         }
         return state
       },

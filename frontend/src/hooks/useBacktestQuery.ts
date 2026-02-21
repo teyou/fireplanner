@@ -90,26 +90,41 @@ export function useBacktestQuery(): UseBacktestQueryResult {
     strategy,
     strategyParams: withdrawal.strategyParams,
     inflation: profile.inflation,
+    retirementWithdrawals: profile.retirementWithdrawals,
   }), [
     analysisPortfolio.retirementPortfolio, analysisPortfolio.allocationWeights,
     config.swr, config.retirementDuration, config.dataset, config.blendRatio,
     profile.expenseRatio, strategy, withdrawal.strategyParams, profile.inflation,
+    profile.retirementWithdrawals,
   ])
 
-  const buildParams = useCallback(() => ({
-    initialPortfolio: analysisPortfolio.retirementPortfolio,
-    allocationWeights: analysisPortfolio.allocationWeights,
-    swr: config.swr,
-    retirementDuration: config.retirementDuration,
-    dataset: config.dataset,
-    blendRatio: config.blendRatio,
-    expenseRatio: profile.expenseRatio,
-    withdrawalStrategy: strategy,
-    strategyParams: flattenStrategyParams(strategy, withdrawal.strategyParams),
-    inflation: profile.inflation,
-  }), [
+  const buildParams = useCallback(() => {
+    // Convert retirement withdrawals to year-offset based one-time withdrawals
+    const oneTimeWithdrawals: { year: number; amount: number }[] = []
+    for (const rw of profile.retirementWithdrawals) {
+      const yearOffset = rw.age - profile.retirementAge
+      if (yearOffset >= 0 && yearOffset < config.retirementDuration) {
+        oneTimeWithdrawals.push({ year: yearOffset, amount: rw.amount })
+      }
+    }
+
+    return {
+      initialPortfolio: analysisPortfolio.retirementPortfolio,
+      allocationWeights: analysisPortfolio.allocationWeights,
+      swr: config.swr,
+      retirementDuration: config.retirementDuration,
+      dataset: config.dataset,
+      blendRatio: config.blendRatio,
+      expenseRatio: profile.expenseRatio,
+      withdrawalStrategy: strategy,
+      strategyParams: flattenStrategyParams(strategy, withdrawal.strategyParams),
+      inflation: profile.inflation,
+      oneTimeWithdrawals: oneTimeWithdrawals.length > 0 ? oneTimeWithdrawals : undefined,
+    }
+  }, [
     analysisPortfolio.retirementPortfolio, analysisPortfolio.allocationWeights,
     config, profile.expenseRatio, strategy, withdrawal.strategyParams, profile.inflation,
+    profile.retirementWithdrawals, profile.retirementAge,
   ])
 
   // Base mutation (no heatmap — fast)

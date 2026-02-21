@@ -52,6 +52,18 @@ export interface ParentSupport {
 }
 
 // ============================================================
+// Retirement One-Time Withdrawals
+// ============================================================
+
+export interface RetirementWithdrawal {
+  id: string
+  label: string
+  amount: number
+  age: number           // age at which the withdrawal occurs
+  inflationAdjusted: boolean  // if true, amount is in today's dollars
+}
+
+// ============================================================
 // Profile Store
 // ============================================================
 
@@ -107,6 +119,9 @@ export interface ProfileState {
 
   // Healthcare & Insurance
   healthcareConfig: HealthcareConfig
+
+  // Retirement One-Time Withdrawals
+  retirementWithdrawals: RetirementWithdrawal[]
 
   // Validation
   validationErrors: ValidationErrors

@@ -69,6 +69,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     downsizing: propertyStore.downsizing,
     ownsProperty: propertyStore.ownsProperty,
     healthcareConfig: profile.healthcareConfig,
+    retirementWithdrawals: profile.retirementWithdrawals,
   }), [
     analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights, analysisPortfolio.skipAccumulation,
     profile.currentAge, profile.retirementAge, profile.lifeExpectancy, profile.expenseRatio, profile.inflation,
@@ -78,6 +79,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     profile.parentSupportEnabled, profile.parentSupport,
     propertyStore.downsizing, propertyStore.ownsProperty,
     profile.healthcareConfig,
+    profile.retirementWithdrawals,
   ])
 
   const mutation = useMutation({
@@ -155,6 +157,19 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
           if (netEquity > 0) {
             portfolioAdjustments.push({ year: mcYear, amount: netEquity })
           }
+        }
+      }
+
+      // Convert retirement withdrawals to negative portfolio adjustments
+      const effectiveStartAge = analysisPortfolio.skipAccumulation
+        ? profile.retirementAge : profile.currentAge
+      for (const rw of profile.retirementWithdrawals) {
+        const mcYear = rw.age - effectiveStartAge
+        const nYearsTotal = profile.lifeExpectancy - effectiveStartAge
+        if (mcYear >= 0 && mcYear < nYearsTotal) {
+          // Negative amount = withdrawal from portfolio
+          // Inflation adjustment is handled per-sim in the engine via the adjustments array
+          portfolioAdjustments.push({ year: mcYear, amount: -rw.amount })
         }
       }
 
