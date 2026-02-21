@@ -35,6 +35,7 @@ import { StrategyParamsSection } from '@/components/withdrawal/StrategyParamsSec
 import { ComparisonTable } from '@/components/withdrawal/ComparisonTable'
 import { WithdrawalChart } from '@/components/withdrawal/WithdrawalChart'
 import { PortfolioComparisonChart } from '@/components/withdrawal/PortfolioComparisonChart'
+import { StrategyComparisonCard } from '@/components/withdrawal/StrategyComparisonCard'
 
 // Healthcare sections
 import { HealthcareSection } from '@/components/healthcare/HealthcareSection'
@@ -321,6 +322,11 @@ function ExpensesContent() {
           </div>
         </CardContent>
       </Card>
+
+      <StrategyComparisonCard
+        activeStrategy={activeStrategy}
+        onSelect={(s) => handleActiveStrategyChange(s)}
+      />
 
       <AnalysisModeToggle portfolioLabel={portfolioLabel} />
 

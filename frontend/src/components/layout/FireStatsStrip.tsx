@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useFireCalculations } from '@/hooks/useFireCalculations'
 import { useProjection } from '@/hooks/useProjection'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useUIStore } from '@/stores/useUIStore'
 import { formatCurrency } from '@/lib/utils'
 import { Settings2 } from 'lucide-react'
@@ -14,10 +15,17 @@ interface StatChip {
   value: string
 }
 
+function formatRate(rate: number | null): string {
+  if (rate === null) return '—'
+  return `${(rate * 100).toFixed(1)}%`
+}
+
 function useStatsData(): StatChip[] {
   const { metrics } = useFireCalculations()
   const { summary } = useProjection()
   const currentAge = useProfileStore((s) => s.currentAge)
+  const lastMCSuccessRate = useSimulationStore((s) => s.lastMCSuccessRate)
+  const lastBacktestSuccessRate = useSimulationStore((s) => s.lastBacktestSuccessRate)
 
   if (!metrics) {
     return [
@@ -25,8 +33,8 @@ function useStatsData(): StatChip[] {
       { label: 'Years to FIRE', value: '—' },
       { label: 'FIRE Number', value: '—' },
       { label: 'Progress', value: '—' },
-      { label: 'Peak NW', value: '—' },
-      { label: 'Terminal NW', value: '—' },
+      { label: 'MC Success', value: formatRate(lastMCSuccessRate) },
+      { label: 'Backtest', value: formatRate(lastBacktestSuccessRate) },
     ]
   }
 
@@ -58,12 +66,12 @@ function useStatsData(): StatChip[] {
       value: `${Math.min(100, Math.round(metrics.progress * 100))}%`,
     },
     {
-      label: 'Peak NW',
-      value: summary ? formatCurrency(summary.peakTotalNW) : '—',
+      label: 'MC Success',
+      value: formatRate(lastMCSuccessRate),
     },
     {
-      label: 'Terminal NW',
-      value: summary ? formatCurrency(summary.terminalTotalNW) : '—',
+      label: 'Backtest',
+      value: formatRate(lastBacktestSuccessRate),
     },
   ]
 }
