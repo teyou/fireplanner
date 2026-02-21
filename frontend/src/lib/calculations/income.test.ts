@@ -432,9 +432,9 @@ describe('calculateIncomeSummary', () => {
 
   it('computes correct peak earning for simple projection', () => {
     const rows: IncomeProjectionRow[] = [
-      { year: 0, age: 30, salary: 72000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 72000, sgTax: 2000, cpfEmployee: 14400, cpfEmployer: 12240, totalNet: 55600, annualSavings: 7600, cumulativeSavings: 7600, cpfOA: 16560, cpfSA: 4320, cpfMA: 5760, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0 },
-      { year: 1, age: 31, salary: 80000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 80000, sgTax: 3000, cpfEmployee: 16000, cpfEmployer: 13600, totalNet: 61000, annualSavings: 13000, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0 },
-      { year: 2, age: 32, salary: 0, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0, cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: true, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0 },
+      { year: 0, age: 30, salary: 72000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 72000, sgTax: 2000, cpfEmployee: 14400, cpfEmployer: 12240, totalNet: 55600, annualSavings: 7600, cumulativeSavings: 7600, cpfOA: 16560, cpfSA: 4320, cpfMA: 5760, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfLifeAnnuityPremium: 0 },
+      { year: 1, age: 31, salary: 80000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 80000, sgTax: 3000, cpfEmployee: 16000, cpfEmployer: 13600, totalNet: 61000, annualSavings: 13000, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfLifeAnnuityPremium: 0 },
+      { year: 2, age: 32, salary: 0, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0, cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: true, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfLifeAnnuityPremium: 0 },
     ]
 
     const summary = calculateIncomeSummary(rows, 48000)
@@ -1133,6 +1133,241 @@ describe('integration tests', () => {
 
     // Payout based on RA balance at LIFE start (higher than original FRS due to 10yr growth)
     expect(row65.cpfLifePayout).toBeGreaterThan(213000 * 0.063) // Higher than old fixed-FRS payout
+  })
+
+  it('Basic Plan: RA retains ~85% at LIFE start', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 55,
+      retirementAge: 58,
+      lifeExpectancy: 75,
+      salaryModel: 'simple',
+      annualSalary: 200000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 80000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 100000,
+      initialCpfSA: 200000,
+      initialCpfMA: 50000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'basic',
+      cpfRetirementSum: 'frs',
+    })
+
+    // RA should grow from 55 to 64
+    const row64 = rows.find((r) => r.age === 64)!
+    const preLifeRA = row64.cpfRA
+    expect(preLifeRA).toBeGreaterThan(0)
+
+    // At 65 (LIFE start): RA should retain ~85% (not go to 0)
+    const row65 = rows.find((r) => r.age === 65)!
+    // RA at 65 should be ~85% of what it was at 64, minus the payout deducted,
+    // plus interest earned during that year
+    expect(row65.cpfRA).toBeGreaterThan(0)
+    // Annuity premium should be ~15% of pre-LIFE RA
+    expect(row65.cpfLifeAnnuityPremium).toBeCloseTo(preLifeRA * 0.15, -2)
+  })
+
+  it('Basic Plan: RA draws down each year post-LIFE', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 60,
+      retirementAge: 60,
+      lifeExpectancy: 95,
+      salaryModel: 'simple',
+      annualSalary: 0,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: false,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0,
+      personalReliefs: 0,
+      srsAnnualContribution: 0,
+      initialCpfOA: 50000,
+      initialCpfSA: 200000,
+      initialCpfMA: 30000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'basic',
+      cpfRetirementSum: 'frs',
+    })
+
+    const row65 = rows.find((r) => r.age === 65)!
+    const row70 = rows.find((r) => r.age === 70)!
+    const row80 = rows.find((r) => r.age === 80)!
+
+    // RA should be non-zero at 65
+    expect(row65.cpfRA).toBeGreaterThan(0)
+    // RA decreasing over time (payout exceeds interest)
+    expect(row70.cpfRA).toBeLessThan(row65.cpfRA)
+    // RA eventually depletes (by ~85-95)
+    expect(row80.cpfRA).toBeLessThan(row70.cpfRA)
+
+    // Eventually reaches 0
+    const depleted = rows.find((r) => r.age > 65 && r.cpfRA === 0)
+    expect(depleted).toBeDefined()
+  })
+
+  it('Basic Plan: payout amount unchanged regardless of RA balance', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 60,
+      retirementAge: 60,
+      lifeExpectancy: 95,
+      salaryModel: 'simple',
+      annualSalary: 0,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: false,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0,
+      personalReliefs: 0,
+      srsAnnualContribution: 0,
+      initialCpfOA: 50000,
+      initialCpfSA: 200000,
+      initialCpfMA: 30000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'basic',
+      cpfRetirementSum: 'frs',
+    })
+
+    const row65 = rows.find((r) => r.age === 65)!
+    const row85 = rows.find((r) => r.age === 85)!
+    const row90 = rows.find((r) => r.age === 90)!
+
+    // Payout should be the same at all ages (Basic rate is flat)
+    expect(row65.cpfLifePayout).toBeGreaterThan(0)
+    expect(row85.cpfLifePayout).toBe(row65.cpfLifePayout)
+    expect(row90.cpfLifePayout).toBe(row65.cpfLifePayout)
+  })
+
+  it('Standard/Escalating: cpfLifeAnnuityPremium equals full RA', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 55,
+      retirementAge: 58,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 200000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 80000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 100000,
+      initialCpfSA: 200000,
+      initialCpfMA: 50000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+    })
+
+    const row64 = rows.find((r) => r.age === 64)!
+    const row65 = rows.find((r) => r.age === 65)!
+
+    // Standard: annuity premium = full RA at LIFE start
+    expect(row65.cpfLifeAnnuityPremium).toBeCloseTo(row64.cpfRA, -2)
+    // RA should be 0 after annuitization
+    expect(row65.cpfRA).toBe(0)
+  })
+
+  it('Post-LIFE contributions go to OA, not RA (all plans)', () => {
+    // Worker past LIFE start age, contributions should route SA → OA
+    const rowsStandard = generateIncomeProjection({
+      currentAge: 60,
+      retirementAge: 70,
+      lifeExpectancy: 75,
+      salaryModel: 'simple',
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 50000,
+      initialCpfSA: 200000,
+      initialCpfMA: 30000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+    })
+
+    // At 66: still working, contributions should go to OA (not RA which is annuitized)
+    const row65 = rowsStandard.find((r) => r.age === 65)!
+    const row66 = rowsStandard.find((r) => r.age === 66)!
+    // RA stays 0 for Standard
+    expect(row66.cpfRA).toBe(0)
+    // OA should grow (contributions + interest)
+    expect(row66.cpfOA).toBeGreaterThan(row65.cpfOA)
+  })
+
+  it('cpfLifeActualMonthlyPayout still sets correct annuity premium', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 65,
+      retirementAge: 65,
+      lifeExpectancy: 75,
+      salaryModel: 'simple',
+      annualSalary: 0,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: false,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0,
+      personalReliefs: 0,
+      srsAnnualContribution: 0,
+      initialCpfOA: 50000,
+      initialCpfSA: 200000,
+      initialCpfMA: 30000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+      cpfLifeActualMonthlyPayout: 1500,
+    })
+
+    const row65 = rows.find((r) => r.age === 65)!
+    // Annuity premium should still be set (based on RA, not payout)
+    expect(row65.cpfLifeAnnuityPremium).toBeGreaterThan(0)
+    // Payout uses actual monthly value
+    expect(row65.cpfLifePayout).toBe(18000)
   })
 
   it('post-55 SA contributions route to RA then overflow to OA', () => {

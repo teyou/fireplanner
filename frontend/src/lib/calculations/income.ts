@@ -19,6 +19,7 @@ import {
   SA_INTEREST_RATE,
   MA_INTEREST_RATE,
   RA_INTEREST_RATE,
+  CPF_LIFE_BASIC_PREMIUM_RATE,
 } from '@/lib/data/cpfRates'
 
 export const DEFAULT_CAREER_PHASES: CareerPhase[] = [
@@ -349,10 +350,16 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       saClosed = true
     }
 
-    // Zero out RA at CPF LIFE start age (money goes into annuity)
+    // CPF LIFE annuitization at start age
     if (age === cpfLifeStartAge) {
       raBalanceAtLifeStart = cpfRA
-      cpfRA = 0
+      if (cpfLifePlan === 'basic') {
+        // Basic: ~15% goes to annuity premium, rest stays in RA for direct drawdown
+        cpfRA = cpfRA * (1 - CPF_LIFE_BASIC_PREMIUM_RATE)
+      } else {
+        // Standard/Escalating: full RA goes to annuity
+        cpfRA = 0
+      }
     }
 
     // Automated CPF LIFE payout (skip if user has manual stream)
@@ -380,11 +387,17 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       cpfEmployer = cpf.employer
 
       if (saClosed) {
-        // Post-55: SA allocation goes to RA (if room) or overflows to OA
-        const alloc = allocatePostAge55Contribution(cpf, cpfRA, retirementSumTarget)
-        cpfOA += alloc.oaAllocation
-        cpfRA += alloc.raAllocation
-        cpfMA += alloc.maAllocation
+        if (age >= cpfLifeStartAge) {
+          // Post-LIFE: no more RA accumulation, SA portion → OA
+          cpfOA += cpf.oaAllocation + cpf.saAllocation
+          cpfMA += cpf.maAllocation
+        } else {
+          // Post-55, pre-LIFE: SA allocation goes to RA (if room) or overflows to OA
+          const alloc = allocatePostAge55Contribution(cpf, cpfRA, retirementSumTarget)
+          cpfOA += alloc.oaAllocation
+          cpfRA += alloc.raAllocation
+          cpfMA += alloc.maAllocation
+        }
       } else {
         cpfOA += cpf.oaAllocation
         cpfSA += cpf.saAllocation
@@ -402,8 +415,14 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     cpfOA += oaInterest
     if (saClosed) {
       if (age >= cpfLifeStartAge) {
-        // Post-LIFE: RA is annuitized, extra interest → OA
-        cpfOA += extraInterest
+        if (cpfLifePlan === 'basic' && cpfRA > 0) {
+          // Basic: RA earns 4% interest + extra interest, then payout is deducted
+          cpfRA += raInterest + extraInterest
+          cpfRA = Math.max(0, cpfRA - cpfLifePayout)
+        } else {
+          // Standard/Escalating, or Basic with depleted RA: extra interest → OA
+          cpfOA += extraInterest
+        }
       } else {
         cpfRA += raInterest + extraInterest
       }
@@ -435,6 +454,14 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
 
     const activeLifeEvents = getActiveLifeEventNames(age, params.lifeEvents, params.lifeEventsEnabled)
 
+    // Record annuity premium on the LIFE start row
+    let cpfLifeAnnuityPremium = 0
+    if (age === cpfLifeStartAge && raBalanceAtLifeStart > 0) {
+      cpfLifeAnnuityPremium = cpfLifePlan === 'basic'
+        ? raBalanceAtLifeStart * CPF_LIFE_BASIC_PREMIUM_RATE
+        : raBalanceAtLifeStart
+    }
+
     rows.push({
       year,
       age,
@@ -458,6 +485,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       activeLifeEvents,
       cpfLifePayout,
       cpfOaHousingDeduction,
+      cpfLifeAnnuityPremium,
     })
   }
 

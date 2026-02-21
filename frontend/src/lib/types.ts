@@ -209,6 +209,7 @@ export interface IncomeProjectionRow {
   activeLifeEvents: string[]
   cpfLifePayout: number
   cpfOaHousingDeduction: number
+  cpfLifeAnnuityPremium: number
 }
 
 export interface IncomeSummaryStats {
