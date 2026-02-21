@@ -13,6 +13,8 @@ import type { PercentileBands } from '@/lib/types'
 // Monte Carlo imports
 import { SimulationControls } from '@/components/simulation/SimulationControls'
 import { ResultsSummary } from '@/components/simulation/ResultsSummary'
+import { SpendingMetricsPanel } from '@/components/simulation/SpendingMetricsPanel'
+import { PortfolioHistogram } from '@/components/simulation/PortfolioHistogram'
 import { FanChart } from '@/components/simulation/FanChart'
 import { FailureDistributionChart } from '@/components/simulation/FailureDistributionChart'
 import { useMonteCarloQuery } from '@/hooks/useMonteCarloQuery'
@@ -121,7 +123,13 @@ function MonteCarloTab() {
             <InterpretationCallout level={mcInterpretation.level} message={mcInterpretation.message} />
           )}
           <ResultsSummary result={data} />
+          {data.spending_metrics && (
+            <SpendingMetricsPanel metrics={data.spending_metrics} nSimulations={data.n_simulations} />
+          )}
           <FanChart bands={data.percentile_bands} retirementAge={retirementAge} />
+          {data.histogram_snapshots && data.histogram_snapshots.length > 0 && (
+            <PortfolioHistogram snapshots={data.histogram_snapshots} />
+          )}
           <FailureDistributionChart
             distribution={data.failure_distribution}
             nSimulations={data.n_simulations}
