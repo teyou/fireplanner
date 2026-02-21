@@ -27,6 +27,7 @@ export function CpfProjectionTable() {
 
   const hasHousingDeduction = rows?.some((r) => r.oaHousingDeduction > 0) ?? false
   const hasRA = rows?.some((r) => r.raBalance > 0) ?? false
+  const hasBequest = rows?.some((r) => r.bequest > 0) ?? false
 
   const columns = useMemo((): ColumnDef<CpfProjectionRow, number>[] => {
     const cols: ColumnDef<CpfProjectionRow, number>[] = [
@@ -88,8 +89,17 @@ export function CpfProjectionTable() {
       }),
     )
 
+    if (hasBequest) {
+      cols.push(
+        columnHelper.accessor('bequest', {
+          header: 'Bequest',
+          cell: (info) => optionalCurrencyCell(info.getValue()),
+        }),
+      )
+    }
+
     return cols
-  }, [hasHousingDeduction, hasRA])
+  }, [hasHousingDeduction, hasRA, hasBequest])
 
   const table = useReactTable({
     data: rows ?? [],

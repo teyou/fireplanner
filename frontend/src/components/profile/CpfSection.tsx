@@ -188,6 +188,14 @@ export function CpfSection() {
             <span className="text-muted-foreground"> ({formatCurrency(projectedPayout / 12)}/mo)</span>
           </div>
 
+          {cpfLifePlan === 'basic' && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Basic Plan: ~15% of your RA is deducted as annuity premium at payout start.
+              The remaining ~85% provides direct payouts until ~age 90.
+              The actual premium rate (10-20%) is determined by CPF Board.
+            </p>
+          )}
+
           {hasManualCpfLife && (
             <div className="p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded text-sm text-amber-800 dark:text-amber-200">
               Manual CPF LIFE income stream detected — automated CPF LIFE calculation is skipped to avoid double-counting.
@@ -419,6 +427,14 @@ export function CpfSection() {
             <span className="font-semibold">{formatCurrency(projectedPayout)}/yr</span>
             <span className="text-muted-foreground"> ({formatCurrency(projectedPayout / 12)}/mo)</span>
           </div>
+
+          {cpfLifePlan === 'basic' && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Basic Plan: ~15% of your RA is deducted as annuity premium at payout start.
+              The remaining ~85% provides direct payouts until ~age 90.
+              The actual premium rate (10-20%) is determined by CPF Board.
+            </p>
+          )}
 
           {retirementSumShortfall && (
             <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded text-sm text-amber-800 dark:text-amber-200 space-y-1">
