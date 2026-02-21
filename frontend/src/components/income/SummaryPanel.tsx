@@ -31,9 +31,9 @@ export function SummaryPanel({ summary }: SummaryPanelProps) {
   ]
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+    <div className="flex flex-wrap justify-center gap-3">
       {metrics.map((m) => (
-        <Card key={m.label}>
+        <Card key={m.label} className="min-w-[160px] flex-1 max-w-[260px]">
           <CardContent className="p-3">
             <p className="text-xs text-muted-foreground">{m.label}</p>
             <p className="text-sm font-semibold mt-1">{m.value}</p>
