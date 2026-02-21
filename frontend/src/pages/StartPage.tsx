@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useUIStore } from '@/stores/useUIStore'
+import { calculateFireNumber, calculateYearsToFire } from '@/lib/calculations/fire'
 import { Target, TrendingUp, CheckCircle, Clock, CalendarClock, Landmark, ArrowRight, Building, Heart } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
@@ -51,6 +52,30 @@ export function StartPage() {
   const [draftIncome, setDraftIncome] = useState(profileStore.annualIncome)
   const [draftNetWorth, setDraftNetWorth] = useState(profileStore.liquidNetWorth)
   const [draftExpenses, setDraftExpenses] = useState(profileStore.annualExpenses)
+
+  // Compute preliminary FIRE metrics from draft values
+  const DEFAULT_SWR = 0.04
+  const DEFAULT_RETURN = 0.07
+  const DEFAULT_INFLATION = 0.025
+  const DEFAULT_EXPENSE_RATIO = 0.003
+
+  const draftFireNumber = calculateFireNumber(draftExpenses, DEFAULT_SWR)
+  const draftNetRealReturn = DEFAULT_RETURN - DEFAULT_INFLATION - DEFAULT_EXPENSE_RATIO
+  const draftAnnualSavings = draftIncome - draftExpenses
+  const draftYearsToFire = calculateYearsToFire(
+    draftNetRealReturn,
+    draftAnnualSavings,
+    draftNetWorth,
+    draftFireNumber
+  )
+  const draftFireAge = draftAge + Math.ceil(draftYearsToFire)
+  const draftSavingsRate = draftIncome > 0 ? draftAnnualSavings / draftIncome : 0
+  const draftProgress = draftFireNumber > 0 ? Math.min(1, draftNetWorth / draftFireNumber) : 0
+
+  // Show results when inputs are filled and valid
+  const showResults = draftAge >= 18 && draftIncome > 0 && draftExpenses > 0
+    && draftAnnualSavings > 0 && draftFireNumber > 0
+    && isFinite(draftYearsToFire) && draftYearsToFire > 0
 
   const handlePathwayClick = (pathway: ActivePathway) => {
     if (activePathway === pathway) {
@@ -224,6 +249,7 @@ export function StartPage() {
                 tooltip="Cash, stocks, bonds — excluding CPF and property"
               />
             </div>
+            {showResults && <QuickResults fireNumber={draftFireNumber} yearsToFire={draftYearsToFire} fireAge={draftFireAge} savingsRate={draftSavingsRate} progress={draftProgress} />}
             <div className="flex justify-end">
               <Button
                 onClick={handleGoalFirstContinue}
@@ -275,6 +301,7 @@ export function StartPage() {
                 tooltip="Cash, stocks, bonds — excluding CPF and property"
               />
             </div>
+            {showResults && <QuickResults fireNumber={draftFireNumber} yearsToFire={draftYearsToFire} fireAge={draftFireAge} savingsRate={draftSavingsRate} progress={draftProgress} />}
             <div className="flex justify-end">
               <Button
                 onClick={handleStoryFirstContinue}
@@ -432,6 +459,69 @@ export function StartPage() {
           </Link>
         </Button>
       </div>
+    </div>
+  )
+}
+
+function QuickResults({
+  fireNumber,
+  yearsToFire,
+  fireAge,
+  savingsRate,
+  progress,
+}: {
+  fireNumber: number
+  yearsToFire: number
+  fireAge: number
+  savingsRate: number
+  progress: number
+}) {
+  return (
+    <div className="col-span-full mt-4 p-4 rounded-lg border bg-muted/30 space-y-3">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span className="inline-block w-2 h-2 rounded-full bg-amber-500" />
+        Preliminary estimate
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+          <div className="text-xs text-muted-foreground">FIRE Number</div>
+          <div className="text-lg font-semibold">
+            ${fireNumber.toLocaleString('en-SG', { maximumFractionDigits: 0 })}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground">Years to FIRE</div>
+          <div className="text-lg font-semibold">
+            {Math.ceil(yearsToFire)} years
+          </div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground">FIRE Age</div>
+          <div className="text-lg font-semibold">Age {fireAge}</div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground">Savings Rate</div>
+          <div className="text-lg font-semibold">
+            {(savingsRate * 100).toFixed(1)}%
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="flex justify-between text-xs text-muted-foreground mb-1">
+          <span>Progress</span>
+          <span>{(progress * 100).toFixed(1)}%</span>
+        </div>
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
+          <div
+            className="h-full rounded-full bg-primary transition-all"
+            style={{ width: `${progress * 100}%` }}
+          />
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Based on default assumptions (4% SWR, ~7% return, 2.5% inflation).
+        Refine your plan for a more accurate projection.
+      </p>
     </div>
   )
 }

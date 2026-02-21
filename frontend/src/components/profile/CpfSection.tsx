@@ -8,6 +8,7 @@ import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useIncomeProjection } from '@/hooks/useIncomeProjection'
+import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { calculateCpfContribution, calculateBrsFrsErs, estimateCpfLifePayout, calculateCpfLifePayoutAtAge, getRetirementSumAmount } from '@/lib/calculations/cpf'
 import type { CpfLifePlan, CpfRetirementSum, CpfHousingMode } from '@/lib/types'
 import { getCpfRatesForAge, BRS_2024, FRS_2024, ERS_2024 } from '@/lib/data/cpfRates'
@@ -24,6 +25,7 @@ export function CpfSection() {
     validationErrors, setField,
   } = useProfileStore()
   const incomeStreams = useIncomeStore((s) => s.incomeStreams)
+  const mode = useEffectiveMode()
 
   // Phase-aware rendering only applies to post-fire users
   const isPostFire = lifeStage === 'post-fire'
@@ -214,52 +216,56 @@ export function CpfSection() {
         <CardTitle className="text-lg">Current CPF Status</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Current rates */}
-        <div>
-          <h4 className="text-sm font-medium flex items-center mb-2">
-            CPF Rates (Age {currentAge}, {rates.ageGroup})
-            <InfoTooltip text="CPF contribution rates vary by age bracket. Rates shown are for your current age." />
-          </h4>
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            <div className="p-2 bg-muted/50 rounded">
-              <div className="text-xs text-muted-foreground">Employee</div>
-              <div className="font-semibold">{formatPercent(rates.employeeRate)}</div>
-            </div>
-            <div className="p-2 bg-muted/50 rounded">
-              <div className="text-xs text-muted-foreground">Employer</div>
-              <div className="font-semibold">{formatPercent(rates.employerRate)}</div>
-            </div>
-            <div className="p-2 bg-muted/50 rounded">
-              <div className="text-xs text-muted-foreground">Total</div>
-              <div className="font-semibold">{formatPercent(rates.totalRate)}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Annual contribution estimate */}
-        <div>
-          <h4 className="text-sm font-medium mb-2">Annual CPF Contribution (estimated)</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-            <div className="p-2 bg-muted/50 rounded">
-              <div className="text-xs text-muted-foreground">Employee</div>
-              <div className="font-semibold">{formatCurrency(contribution.employee)}</div>
-            </div>
-            <div className="p-2 bg-muted/50 rounded">
-              <div className="text-xs text-muted-foreground">Employer</div>
-              <div className="font-semibold">{formatCurrency(contribution.employer)}</div>
-            </div>
-            <div className="p-2 bg-muted/50 rounded">
-              <div className="text-xs text-muted-foreground">OA</div>
-              <div className="font-semibold">{formatCurrency(contribution.oaAllocation)}</div>
-            </div>
-            <div className="p-2 bg-muted/50 rounded">
-              <div className="text-xs text-muted-foreground">SA</div>
-              <div className="font-semibold">{formatCurrency(contribution.saAllocation)}</div>
+        {/* Current rates — Advanced only */}
+        {mode === 'advanced' && (
+          <div>
+            <h4 className="text-sm font-medium flex items-center mb-2">
+              CPF Rates (Age {currentAge}, {rates.ageGroup})
+              <InfoTooltip text="CPF contribution rates vary by age bracket. Rates shown are for your current age." />
+            </h4>
+            <div className="grid grid-cols-3 gap-2 text-sm">
+              <div className="p-2 bg-muted/50 rounded">
+                <div className="text-xs text-muted-foreground">Employee</div>
+                <div className="font-semibold">{formatPercent(rates.employeeRate)}</div>
+              </div>
+              <div className="p-2 bg-muted/50 rounded">
+                <div className="text-xs text-muted-foreground">Employer</div>
+                <div className="font-semibold">{formatPercent(rates.employerRate)}</div>
+              </div>
+              <div className="p-2 bg-muted/50 rounded">
+                <div className="text-xs text-muted-foreground">Total</div>
+                <div className="font-semibold">{formatPercent(rates.totalRate)}</div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        <Separator />
+        {/* Annual contribution estimate — Advanced only */}
+        {mode === 'advanced' && (
+          <div>
+            <h4 className="text-sm font-medium mb-2">Annual CPF Contribution (estimated)</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+              <div className="p-2 bg-muted/50 rounded">
+                <div className="text-xs text-muted-foreground">Employee</div>
+                <div className="font-semibold">{formatCurrency(contribution.employee)}</div>
+              </div>
+              <div className="p-2 bg-muted/50 rounded">
+                <div className="text-xs text-muted-foreground">Employer</div>
+                <div className="font-semibold">{formatCurrency(contribution.employer)}</div>
+              </div>
+              <div className="p-2 bg-muted/50 rounded">
+                <div className="text-xs text-muted-foreground">OA</div>
+                <div className="font-semibold">{formatCurrency(contribution.oaAllocation)}</div>
+              </div>
+              <div className="p-2 bg-muted/50 rounded">
+                <div className="text-xs text-muted-foreground">SA</div>
+                <div className="font-semibold">{formatCurrency(contribution.saAllocation)}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {mode === 'advanced' && <Separator />}
 
         {/* CPF balance summary */}
         <div>
@@ -455,86 +461,90 @@ export function CpfSection() {
           )}
         </div>
 
-        <Separator />
+        {mode === 'advanced' && (
+          <>
+            <Separator />
 
-        {/* CPF OA Housing */}
-        <div>
-          <h4 className="text-sm font-medium flex items-center mb-2">
-            CPF OA Housing Deduction
-            <InfoTooltip text="Monthly CPF OA deduction for housing loan repayment. Reduces OA balance growth in projections." />
-          </h4>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <Label className="text-xs">Mode</Label>
-              <Select
-                value={cpfHousingMode}
-                onValueChange={(v) => setField('cpfHousingMode', v as CpfHousingMode)}
-              >
-                <SelectTrigger className="h-8 border-blue-300">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="simple">Simple (fixed monthly amount)</SelectItem>
-                  <SelectItem value="property-linked">Property-linked (from property analysis)</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* CPF OA Housing — Advanced only */}
+            <div>
+              <h4 className="text-sm font-medium flex items-center mb-2">
+                CPF OA Housing Deduction
+                <InfoTooltip text="Monthly CPF OA deduction for housing loan repayment. Reduces OA balance growth in projections." />
+              </h4>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Mode</Label>
+                  <Select
+                    value={cpfHousingMode}
+                    onValueChange={(v) => setField('cpfHousingMode', v as CpfHousingMode)}
+                  >
+                    <SelectTrigger className="h-8 border-blue-300">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="simple">Simple (fixed monthly amount)</SelectItem>
+                      <SelectItem value="property-linked">Property-linked (from property analysis)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {cpfHousingMode === 'simple' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Monthly OA Deduction ($)</Label>
+                      <NumberInput
+                        min={0}
+                        value={cpfHousingMonthly}
+                        onChange={(v) => setField('cpfHousingMonthly', v)}
+                        className="h-8 border-blue-300"
+                      />
+                      {validationErrors.cpfHousingMonthly && (
+                        <p className="text-xs text-destructive">{validationErrors.cpfHousingMonthly}</p>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Mortgage Years Remaining</Label>
+                      <NumberInput
+                        integer
+                        min={0}
+                        max={40}
+                        value={cpfMortgageYearsLeft}
+                        onChange={(v) => setField('cpfMortgageYearsLeft', v)}
+                        className="h-8 border-blue-300"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Deductions end at age {currentAge + cpfMortgageYearsLeft}
+                      </p>
+                      {currentAge + cpfMortgageYearsLeft > retirementAge && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          Mortgage extends {currentAge + cpfMortgageYearsLeft - retirementAge} years past retirement (age {retirementAge}). Post-retirement payments will draw from CPF OA or liquid portfolio.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {cpfHousingMode === 'property-linked' && (
+                  <p className="text-xs text-muted-foreground">
+                    Housing deduction will be computed from your property analysis mortgage details.
+                  </p>
+                )}
+              </div>
             </div>
 
-            {cpfHousingMode === 'simple' && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs">Monthly OA Deduction ($)</Label>
-                  <NumberInput
-                    min={0}
-                    value={cpfHousingMonthly}
-                    onChange={(v) => setField('cpfHousingMonthly', v)}
-                    className="h-8 border-blue-300"
-                  />
-                  {validationErrors.cpfHousingMonthly && (
-                    <p className="text-xs text-destructive">{validationErrors.cpfHousingMonthly}</p>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Mortgage Years Remaining</Label>
-                  <NumberInput
-                    integer
-                    min={0}
-                    max={40}
-                    value={cpfMortgageYearsLeft}
-                    onChange={(v) => setField('cpfMortgageYearsLeft', v)}
-                    className="h-8 border-blue-300"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Deductions end at age {currentAge + cpfMortgageYearsLeft}
-                  </p>
-                  {currentAge + cpfMortgageYearsLeft > retirementAge && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400">
-                      Mortgage extends {currentAge + cpfMortgageYearsLeft - retirementAge} years past retirement (age {retirementAge}). Post-retirement payments will draw from CPF OA or liquid portfolio.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
+            <Separator />
 
-            {cpfHousingMode === 'property-linked' && (
-              <p className="text-xs text-muted-foreground">
-                Housing deduction will be computed from your property analysis mortgage details.
-              </p>
-            )}
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* CPF Projection Table */}
-        <div>
-          <h4 className="text-sm font-medium flex items-center mb-2">
-            Year-by-Year CPF Projection
-            <InfoTooltip text="Projected CPF balances based on your income model, contribution rates, and CPF LIFE configuration. Milestone rows are highlighted when balances cross BRS/FRS/ERS thresholds." />
-          </h4>
-          <CpfProjectionTable />
-        </div>
+            {/* CPF Projection Table — Advanced only */}
+            <div>
+              <h4 className="text-sm font-medium flex items-center mb-2">
+                Year-by-Year CPF Projection
+                <InfoTooltip text="Projected CPF balances based on your income model, contribution rates, and CPF LIFE configuration. Milestone rows are highlighted when balances cross BRS/FRS/ERS thresholds." />
+              </h4>
+              <CpfProjectionTable />
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
     </>

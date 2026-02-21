@@ -10,10 +10,12 @@ import { useProjection } from '@/hooks/useProjection'
 import { PercentInput } from '@/components/shared/PercentInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { formatCurrency, formatPercent } from '@/lib/utils'
+import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import type { FireType, FireNumberBasis } from '@/lib/types'
 
 export function FireTargetsSection() {
   const { fireType, swr, fireNumberBasis, inflation, retirementAge, currentAge, liquidNetWorth, setField, validationErrors } = useProfileStore()
+  const mode = useEffectiveMode()
   const { metrics, hasErrors } = useFireCalculations()
   const { summary: projSummary } = useProjection()
 
@@ -31,29 +33,31 @@ export function FireTargetsSection() {
       <CardContent className="space-y-6">
         {/* Inputs */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label className="text-sm flex items-center">
-              FIRE Type
-              <InfoTooltip text="Regular: full expenses. Lean: 60%. Fat: 150%. Coast: let portfolio grow. Barista: part-time income." />
-            </Label>
-            <Select
-              value={fireType}
-              onValueChange={(v) => setField('fireType', v as FireType)}
-            >
-              <SelectTrigger className="border-blue-300">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="regular">Regular FIRE</SelectItem>
-                <SelectItem value="lean">Lean FIRE (60%)</SelectItem>
-                <SelectItem value="fat">Fat FIRE (150%)</SelectItem>
-                <SelectItem value="coast">Coast FIRE</SelectItem>
-                <SelectItem value="barista">Barista FIRE</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {mode === 'advanced' && (
+            <div className="space-y-1">
+              <Label className="text-sm flex items-center">
+                FIRE Type
+                <InfoTooltip text="Regular: full expenses. Lean: 60%. Fat: 150%. Coast: let portfolio grow. Barista: part-time income." />
+              </Label>
+              <Select
+                value={fireType}
+                onValueChange={(v) => setField('fireType', v as FireType)}
+              >
+                <SelectTrigger className="border-blue-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="regular">Regular FIRE</SelectItem>
+                  <SelectItem value="lean">Lean FIRE (60%)</SelectItem>
+                  <SelectItem value="fat">Fat FIRE (150%)</SelectItem>
+                  <SelectItem value="coast">Coast FIRE</SelectItem>
+                  <SelectItem value="barista">Barista FIRE</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
-          {(fireType === 'coast' || fireType === 'barista') && (
+          {mode === 'advanced' && (fireType === 'coast' || fireType === 'barista') && (
             <div className="col-span-1 md:col-span-2 p-3 rounded-md bg-primary/5 border border-primary/20 text-sm space-y-2">
               {fireType === 'coast' ? (
                 <>
@@ -95,35 +99,37 @@ export function FireTargetsSection() {
             </p>
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-sm flex items-center">
-              FIRE Number Basis
-              <InfoTooltip text="Today's $: current expenses. At Retirement: inflation-adjusted to retirement age. At FIRE Age: inflation-adjusted to when you actually reach FIRE." />
-            </Label>
-            <Select
-              value={fireNumberBasis}
-              onValueChange={(v) => setField('fireNumberBasis', v as FireNumberBasis)}
-            >
-              <SelectTrigger className="border-blue-300">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="today">Today's $</SelectItem>
-                <SelectItem value="retirement">At Retirement</SelectItem>
-                <SelectItem value="fireAge">At FIRE Age</SelectItem>
-              </SelectContent>
-            </Select>
-            {fireNumberBasis === 'retirement' && (
-              <p className="text-xs text-muted-foreground">
-                Inflation-adjusted to age {retirementAge} at {(inflation * 100).toFixed(1)}%
-              </p>
-            )}
-            {fireNumberBasis === 'fireAge' && effectiveFireAge !== null && isFinite(effectiveFireAge) && (
-              <p className="text-xs text-muted-foreground">
-                Inflation-adjusted to FIRE age {Math.ceil(effectiveFireAge)} at {(inflation * 100).toFixed(1)}%
-              </p>
-            )}
-          </div>
+          {mode === 'advanced' && (
+            <div className="space-y-1">
+              <Label className="text-sm flex items-center">
+                FIRE Number Basis
+                <InfoTooltip text="Today's $: current expenses. At Retirement: inflation-adjusted to retirement age. At FIRE Age: inflation-adjusted to when you actually reach FIRE." />
+              </Label>
+              <Select
+                value={fireNumberBasis}
+                onValueChange={(v) => setField('fireNumberBasis', v as FireNumberBasis)}
+              >
+                <SelectTrigger className="border-blue-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Today's $</SelectItem>
+                  <SelectItem value="retirement">At Retirement</SelectItem>
+                  <SelectItem value="fireAge">At FIRE Age</SelectItem>
+                </SelectContent>
+              </Select>
+              {fireNumberBasis === 'retirement' && (
+                <p className="text-xs text-muted-foreground">
+                  Inflation-adjusted to age {retirementAge} at {(inflation * 100).toFixed(1)}%
+                </p>
+              )}
+              {fireNumberBasis === 'fireAge' && effectiveFireAge !== null && isFinite(effectiveFireAge) && (
+                <p className="text-xs text-muted-foreground">
+                  Inflation-adjusted to FIRE age {Math.ceil(effectiveFireAge)} at {(inflation * 100).toFixed(1)}%
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Computed Metrics */}
