@@ -19,7 +19,7 @@ beforeEach(() => {
     cpfEnabled: true,
     propertyEnabled: false,
     healthcareEnabled: false,
-    allocationAdvanced: false,
+    mode: 'simple',
     statsPosition: 'bottom',
   })
 })

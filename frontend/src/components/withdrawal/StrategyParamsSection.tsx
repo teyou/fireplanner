@@ -7,6 +7,7 @@ import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import { useSimulationStore } from '@/stores/useSimulationStore'
 import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { useEffectiveMode, SIMPLE_STRATEGIES } from '@/hooks/useEffectiveMode'
 import type { WithdrawalStrategyType } from '@/lib/types'
 
 const STRATEGY_GROUPS: { label: string; strategies: WithdrawalStrategyType[] }[] = [
@@ -41,6 +42,20 @@ const STRATEGY_DESCRIPTIONS: Record<WithdrawalStrategyType, string> = {
 
 export function StrategyParamsSection() {
   const withdrawal = useWithdrawalStore()
+  const mode = useEffectiveMode()
+
+  const simpleStrategySet = new Set<string>(SIMPLE_STRATEGIES)
+
+  // In Simple mode: flat list of simple strategies + any active-but-hidden advanced ones
+  // In Advanced mode: grouped list with all strategies
+  const visibleGroups = mode === 'simple'
+    ? [{ label: '', strategies: [...SIMPLE_STRATEGIES] as WithdrawalStrategyType[] }]
+    : STRATEGY_GROUPS
+
+  // Active strategies that are hidden in simple mode (selected but not in SIMPLE_STRATEGIES)
+  const hiddenActiveStrategies = mode === 'simple'
+    ? withdrawal.selectedStrategies.filter((s) => !simpleStrategySet.has(s))
+    : []
 
   return (
     <Card>
@@ -54,9 +69,11 @@ export function StrategyParamsSection() {
             <InfoTooltip text="Toggle strategies on/off to include in the comparison. Each selected strategy runs on a deterministic median-return path." />
           </Label>
           <div className="space-y-3">
-            {STRATEGY_GROUPS.map((group) => (
-              <div key={group.label}>
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{group.label}</span>
+            {visibleGroups.map((group) => (
+              <div key={group.label || 'simple'}>
+                {group.label && (
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{group.label}</span>
+                )}
                 <div className="flex flex-wrap gap-2 mt-1">
                   {group.strategies.map((s) => {
                     const active = withdrawal.selectedStrategies.includes(s)
@@ -74,6 +91,25 @@ export function StrategyParamsSection() {
                 </div>
               </div>
             ))}
+            {/* Show active-but-hidden advanced strategies with muted styling */}
+            {hiddenActiveStrategies.length > 0 && (
+              <div>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {hiddenActiveStrategies.map((s) => (
+                    <Button
+                      key={s}
+                      variant="default"
+                      size="sm"
+                      className="opacity-70"
+                      onClick={() => withdrawal.toggleStrategy(s)}
+                    >
+                      {getStrategyLabel(s)}
+                      <Badge variant="secondary" className="ml-1 text-[10px] px-1 py-0">Advanced</Badge>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           {withdrawal.validationErrors.selectedStrategies && (
             <p className="text-sm text-destructive mt-1">{withdrawal.validationErrors.selectedStrategies}</p>

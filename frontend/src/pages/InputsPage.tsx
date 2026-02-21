@@ -68,6 +68,7 @@ import { useSectionCompletion } from '@/hooks/useSectionCompletion'
 import { useIncomeProjection } from '@/hooks/useIncomeProjection'
 import { useWithdrawalComparison } from '@/hooks/useWithdrawalComparison'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
+import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { pushUndo } from '@/lib/undo'
@@ -548,36 +549,11 @@ function PropertyContent() {
 function AllocationContent() {
   const validationErrors = useAllocationStore((s) => s.validationErrors)
   const hasErrors = Object.keys(validationErrors).length > 0
-  const allocationAdvanced = useUIStore((s) => s.allocationAdvanced)
-  const setUIField = useUIStore((s) => s.setField)
+  const mode = useEffectiveMode()
+  const isAdvanced = mode === 'advanced'
 
   return (
     <>
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
-          <button
-            onClick={() => setUIField('allocationAdvanced', false)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              !allocationAdvanced
-                ? 'bg-background shadow-sm text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Simple
-          </button>
-          <button
-            onClick={() => setUIField('allocationAdvanced', true)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              allocationAdvanced
-                ? 'bg-background shadow-sm text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Advanced
-          </button>
-        </div>
-      </div>
-
       {hasErrors && (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
           <p className="text-sm text-destructive font-medium">
@@ -587,8 +563,8 @@ function AllocationContent() {
       )}
 
       <AllocationBuilder />
-      <PortfolioStatsPanel compact={!allocationAdvanced} />
-      {allocationAdvanced && (
+      <PortfolioStatsPanel compact={!isAdvanced} />
+      {isAdvanced && (
         <>
           <AdvancedOverrides />
           <GlidePathSection />
