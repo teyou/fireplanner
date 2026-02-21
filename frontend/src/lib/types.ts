@@ -479,6 +479,8 @@ export interface SimulationState {
   strategyParams: StrategyParamsMap
   nSimulations: number
   analysisMode: AnalysisMode
+  lastMCSuccessRate: number | null
+  lastBacktestSuccessRate: number | null
   validationErrors: ValidationErrors
 }
 

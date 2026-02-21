@@ -24,6 +24,7 @@ interface SimulationActions {
 
 const SIMULATION_DATA_KEYS = [
   'mcMethod', 'selectedStrategy', 'strategyParams', 'nSimulations', 'analysisMode',
+  'lastMCSuccessRate', 'lastBacktestSuccessRate',
 ] as const
 
 const DEFAULT_STRATEGY_PARAMS: StrategyParamsMap = {
@@ -41,6 +42,8 @@ const DEFAULT_SIMULATION: Omit<SimulationState, 'validationErrors'> = {
   strategyParams: DEFAULT_STRATEGY_PARAMS,
   nSimulations: 10000,
   analysisMode: 'myPlan',
+  lastMCSuccessRate: null,
+  lastBacktestSuccessRate: null,
 }
 
 function extractSimulationData(
@@ -105,7 +108,7 @@ export const useSimulationStore = create<SimulationState & SimulationActions>()(
     }),
     {
       name: 'fireplanner-simulation',
-      version: 2,
+      version: 3,
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -114,6 +117,11 @@ export const useSimulationStore = create<SimulationState & SimulationActions>()(
           const migrated: AnalysisMode =
             old === 'fireNumber' ? 'fireTarget' : 'myPlan'
           state.analysisMode = migrated
+        }
+        if (version < 3) {
+          // v2 → v3: add last success rates
+          state.lastMCSuccessRate = null
+          state.lastBacktestSuccessRate = null
         }
         return state as unknown as SimulationState
       },

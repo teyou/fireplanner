@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -67,6 +67,12 @@ function MonteCarloTab() {
   const { mutate, data, isPending, error, canRun, validationErrors, isStale } = useMonteCarloQuery()
   const retirementAge = useProfileStore((s) => s.retirementAge)
   const selectedStrategy = useSimulationStore((s) => s.selectedStrategy)
+  const setSimField = useSimulationStore((s) => s.setField)
+
+  // Persist last MC success rate
+  useEffect(() => {
+    if (data) setSimField('lastMCSuccessRate', data.success_rate)
+  }, [data, setSimField])
 
   const mcInterpretation = data ? (() => {
     const rate = data.success_rate
@@ -243,6 +249,12 @@ function BacktestTab() {
     isPending, isHeatmapPending, error, canRun, validationErrors, config, setConfig,
   } = useBacktestQuery()
   const [drillDownCell, setDrillDownCell] = useState<{ swr: number; duration: number; successRate: number } | null>(null)
+  const setSimField = useSimulationStore((s) => s.setField)
+
+  // Persist last backtest success rate
+  useEffect(() => {
+    if (baseData) setSimField('lastBacktestSuccessRate', baseData.summary.success_rate)
+  }, [baseData, setSimField])
 
   const btInterpretation = baseData ? (() => {
     const rate = baseData.summary.success_rate
