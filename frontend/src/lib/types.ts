@@ -213,6 +213,11 @@ export interface IncomeProjectionRow {
   cpfLifePayout: number
   cpfOaHousingDeduction: number
   cpfLifeAnnuityPremium: number
+  // SRS lifecycle
+  srsBalance: number
+  srsContribution: number
+  srsWithdrawal: number
+  srsTaxableWithdrawal: number
 }
 
 export interface IncomeSummaryStats {

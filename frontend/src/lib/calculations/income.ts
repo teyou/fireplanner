@@ -241,6 +241,10 @@ export interface IncomeProjectionParams {
   cpfLifeActualMonthlyPayout?: number
   // Residency status for correct SRS cap
   residencyStatus?: 'citizen' | 'pr' | 'foreigner'
+  // SRS lifecycle
+  srsBalance?: number
+  srsInvestmentReturn?: number
+  srsDrawdownStartAge?: number
 }
 
 /**
@@ -255,6 +259,13 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
   let cumulativeSavings = 0
   let saClosed = false
   let raBalanceAtLifeStart = 0
+
+  // SRS lifecycle tracking
+  let srsBalance = params.srsBalance ?? 0
+  const srsReturn = params.srsInvestmentReturn ?? 0.04
+  const srsDrawdownStart = params.srsDrawdownStartAge ?? 63
+  const srsDrawdownEnd = srsDrawdownStart + 10
+  const srsCap = params.residencyStatus === 'foreigner' ? 35700 : 15300
 
   // CPF LIFE configuration (defaults for backward compat)
   const cpfLifeStartAge = params.cpfLifeStartAge ?? 65
@@ -376,6 +387,24 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       governmentIncome += cpfLifePayout
     }
 
+    // SRS lifecycle: accumulation before drawdown start, drawdown from startAge to +10 years
+    let srsContribution = 0
+    let srsWithdrawal = 0
+    let srsTaxableWithdrawal = 0
+    if (age < srsDrawdownStart) {
+      // Accumulation: contribute + earn returns
+      srsContribution = !isRetired ? Math.min(params.srsAnnualContribution, srsCap) : 0
+      srsBalance = (srsBalance + srsContribution) * (1 + srsReturn)
+    } else if (age >= srsDrawdownStart && age < srsDrawdownEnd && srsBalance > 0) {
+      // Drawdown: spread evenly over remaining drawdown years
+      const remainingDrawdownYears = srsDrawdownEnd - age
+      srsWithdrawal = srsBalance / remainingDrawdownYears
+      srsBalance -= srsWithdrawal
+      srsBalance = Math.max(0, srsBalance)
+      srsTaxableWithdrawal = srsWithdrawal * 0.5 // 50% tax concession
+      governmentIncome += srsWithdrawal
+    }
+
     const totalGross = salary + rentalIncome + investmentIncome + businessIncome + governmentIncome
 
     // CPF contributions (only if employed and not paused)
@@ -434,12 +463,14 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     cpfMA += maInterest
 
     // Tax: only on taxable income
-    const taxableIncome = salary + rentalIncome + businessIncome
-    // Investment income and government income may be tax-exempt
+    // SRS drawdown: only 50% is taxable (srsTaxableWithdrawal = withdrawal * 0.5)
+    const taxableIncome = salary + rentalIncome + businessIncome + srsTaxableWithdrawal
+    // Investment income and CPF LIFE are tax-exempt
+    // Use actual SRS contribution this year (0 during drawdown/post-retirement)
     const chargeableIncome = calculateChargeableIncome(
       taxableIncome,
       cpfEmployee,
-      params.srsAnnualContribution,
+      srsContribution,
       params.personalReliefs,
       params.residencyStatus
     )
@@ -489,6 +520,10 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       cpfLifePayout,
       cpfOaHousingDeduction,
       cpfLifeAnnuityPremium,
+      srsBalance,
+      srsContribution,
+      srsWithdrawal,
+      srsTaxableWithdrawal,
     })
   }
 

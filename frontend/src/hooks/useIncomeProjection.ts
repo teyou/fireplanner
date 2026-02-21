@@ -50,6 +50,9 @@ export function buildProjectionParams(
     cpfMortgageYearsLeft: profile.cpfMortgageYearsLeft,
     cpfLifeActualMonthlyPayout: profile.cpfLifeActualMonthlyPayout,
     residencyStatus: profile.residencyStatus,
+    srsBalance: profile.srsBalance,
+    srsInvestmentReturn: profile.srsInvestmentReturn,
+    srsDrawdownStartAge: profile.srsDrawdownStartAge,
   }
 }
 
@@ -122,6 +125,9 @@ export function useIncomeProjection(): IncomeProjectionResult {
       cpfMortgageYearsLeft: profile.cpfMortgageYearsLeft,
       cpfLifeActualMonthlyPayout: profile.cpfLifeActualMonthlyPayout,
       residencyStatus: profile.residencyStatus,
+      srsBalance: profile.srsBalance,
+      srsInvestmentReturn: profile.srsInvestmentReturn,
+      srsDrawdownStartAge: profile.srsDrawdownStartAge,
     })
 
     const summary = calculateIncomeSummary(projection, profile.annualExpenses)
@@ -146,6 +152,9 @@ export function useIncomeProjection(): IncomeProjectionResult {
     profile.cpfMortgageYearsLeft,
     profile.cpfLifeActualMonthlyPayout,
     profile.residencyStatus,
+    profile.srsBalance,
+    profile.srsInvestmentReturn,
+    profile.srsDrawdownStartAge,
     profile.validationErrors,
     income.salaryModel,
     income.annualSalary,
