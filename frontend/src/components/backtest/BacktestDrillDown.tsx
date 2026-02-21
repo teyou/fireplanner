@@ -13,7 +13,6 @@ import { formatCurrency, formatPercent } from '@/lib/utils'
 import { runBacktestWorker, runDetailedWindowWorker, flattenStrategyParams } from '@/lib/simulation/workerClient'
 import type { BacktestResult, PerYearResult } from '@/lib/types'
 import type { DetailedWindowResult, BacktestEngineParams } from '@/lib/simulation/backtest'
-import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
@@ -55,7 +54,6 @@ export function BacktestDrillDown({
   blendRatio,
 }: BacktestDrillDownProps) {
   const profile = useProfileStore()
-  const allocation = useAllocationStore()
   const withdrawal = useWithdrawalStore()
   const analysisPortfolio = useAnalysisPortfolio()
 

@@ -11,20 +11,21 @@ interface BacktestConfig {
   retirementDuration: number
   dataset: BacktestDataset
   blendRatio: number
-  includeHeatmap: boolean
   heatmapConfig: HeatmapConfig
 }
 
 interface BacktestControlsProps {
   config: BacktestConfig
   setConfig: (update: Partial<BacktestConfig>) => void
-  onRun: () => void
   isPending: boolean
   canRun: boolean
   validationErrors: Record<string, string>
+  onRunHeatmap: () => void
+  isHeatmapPending: boolean
+  heatmapStale: boolean
 }
 
-export function BacktestControls({ config, setConfig, onRun, isPending, canRun, validationErrors }: BacktestControlsProps) {
+export function BacktestControls({ config, setConfig, isPending, canRun, validationErrors, onRunHeatmap, isHeatmapPending, heatmapStale }: BacktestControlsProps) {
   const errorMessages = Object.values(validationErrors)
   const disabledReason = !canRun
     ? errorMessages[0] ?? 'Fix validation errors to run backtest'
@@ -33,7 +34,12 @@ export function BacktestControls({ config, setConfig, onRun, isPending, canRun, 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Backtest Parameters</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          Backtest Parameters
+          {isPending && (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -105,76 +111,66 @@ export function BacktestControls({ config, setConfig, onRun, isPending, canRun, 
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={onRun}
-            disabled={!canRun || isPending}
-            className="min-w-[160px]"
-          >
-            {isPending ? 'Running Backtest...' : 'Run Backtest'}
-          </Button>
-          {disabledReason && (
-            <span className="text-sm text-muted-foreground">{disabledReason}</span>
-          )}
-          <label className="flex items-center gap-2 text-sm ml-auto">
-            <input
-              type="checkbox"
-              checked={config.includeHeatmap}
-              onChange={(e) => setConfig({ includeHeatmap: e.target.checked })}
-            />
-            Include SWR heatmap (slower)
-          </label>
-        </div>
-
-        {config.includeHeatmap && (
-          <div className="border-t pt-3 space-y-2">
-            <Label className="text-xs text-muted-foreground">Heatmap Range & Granularity</Label>
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-              <HeatmapField
-                label="SWR Min"
-                value={config.heatmapConfig.swrMin * 100}
-                onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, swrMin: v / 100 } })}
-                suffix="%"
-                step={0.5}
-              />
-              <HeatmapField
-                label="SWR Max"
-                value={config.heatmapConfig.swrMax * 100}
-                onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, swrMax: v / 100 } })}
-                suffix="%"
-                step={0.5}
-              />
-              <HeatmapField
-                label="SWR Step"
-                value={config.heatmapConfig.swrStep * 100}
-                onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, swrStep: v / 100 } })}
-                suffix="%"
-                step={0.1}
-              />
-              <HeatmapField
-                label="Duration Min"
-                value={config.heatmapConfig.durationMin}
-                onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, durationMin: v } })}
-                suffix="yr"
-                step={5}
-              />
-              <HeatmapField
-                label="Duration Max"
-                value={config.heatmapConfig.durationMax}
-                onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, durationMax: v } })}
-                suffix="yr"
-                step={5}
-              />
-              <HeatmapField
-                label="Duration Step"
-                value={config.heatmapConfig.durationStep}
-                onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, durationStep: v } })}
-                suffix="yr"
-                step={1}
-              />
-            </div>
-          </div>
+        {disabledReason && (
+          <p className="text-sm text-muted-foreground">{disabledReason}</p>
         )}
+
+        <div className="border-t pt-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium">SWR x Duration Heatmap</Label>
+            <Button
+              size="sm"
+              onClick={onRunHeatmap}
+              disabled={!canRun || isHeatmapPending}
+            >
+              {isHeatmapPending ? 'Generating...' : heatmapStale ? 'Regenerate Heatmap' : 'Generate Heatmap'}
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+            <HeatmapField
+              label="SWR Min"
+              value={config.heatmapConfig.swrMin * 100}
+              onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, swrMin: v / 100 } })}
+              suffix="%"
+              step={0.5}
+            />
+            <HeatmapField
+              label="SWR Max"
+              value={config.heatmapConfig.swrMax * 100}
+              onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, swrMax: v / 100 } })}
+              suffix="%"
+              step={0.5}
+            />
+            <HeatmapField
+              label="SWR Step"
+              value={config.heatmapConfig.swrStep * 100}
+              onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, swrStep: v / 100 } })}
+              suffix="%"
+              step={0.1}
+            />
+            <HeatmapField
+              label="Duration Min"
+              value={config.heatmapConfig.durationMin}
+              onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, durationMin: v } })}
+              suffix="yr"
+              step={5}
+            />
+            <HeatmapField
+              label="Duration Max"
+              value={config.heatmapConfig.durationMax}
+              onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, durationMax: v } })}
+              suffix="yr"
+              step={5}
+            />
+            <HeatmapField
+              label="Duration Step"
+              value={config.heatmapConfig.durationStep}
+              onChange={(v) => setConfig({ heatmapConfig: { ...config.heatmapConfig, durationStep: v } })}
+              suffix="yr"
+              step={1}
+            />
+          </div>
+        </div>
       </CardContent>
     </Card>
   )

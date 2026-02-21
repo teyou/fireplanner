@@ -230,14 +230,17 @@ function WithdrawalSchedule({ bands, strategy }: { bands: PercentileBands; strat
 }
 
 function BacktestTab() {
-  const { mutate, data, isPending, error, canRun, validationErrors, config, setConfig, isStale } = useBacktestQuery()
+  const {
+    baseData, heatmapData, heatmapStale, runHeatmap,
+    isPending, isHeatmapPending, error, canRun, validationErrors, config, setConfig,
+  } = useBacktestQuery()
   const [drillDownCell, setDrillDownCell] = useState<{ swr: number; duration: number; successRate: number } | null>(null)
 
-  const btInterpretation = data ? (() => {
-    const rate = data.summary.success_rate
-    const failed = data.summary.failed_periods
-    const total = data.summary.total_periods
-    const worst = data.summary.worst_start_year
+  const btInterpretation = baseData ? (() => {
+    const rate = baseData.summary.success_rate
+    const failed = baseData.summary.failed_periods
+    const total = baseData.summary.total_periods
+    const worst = baseData.summary.worst_start_year
     if (rate >= 1.0) return { level: 'success' as const, message: 'Your plan would have survived every historical period since 1928.' }
     if (rate >= 0.90) return { level: 'warning' as const, message: `Your plan failed in ${failed} out of ${total} historical periods. The worst starting year was ${worst}.` }
     return { level: 'danger' as const, message: `Your plan shows significant historical vulnerability (${failed} failures out of ${total} periods). Consider reducing your withdrawal rate.` }
@@ -246,7 +249,7 @@ function BacktestTab() {
   return (
     <div className="space-y-6">
       <TabIntro>
-        Tests your plan against every historical period since 1928. Unlike Monte Carlo (which generates random scenarios), this uses actual market history.
+        Tests your plan against every historical period since 1928. Unlike Monte Carlo (which generates random scenarios), this uses actual market history. Results update automatically as you change parameters.
       </TabIntro>
 
       {Object.keys(validationErrors).length > 0 && (
@@ -271,10 +274,12 @@ function BacktestTab() {
       <BacktestControls
         config={config}
         setConfig={setConfig}
-        onRun={mutate}
         isPending={isPending}
         canRun={canRun}
         validationErrors={validationErrors}
+        onRunHeatmap={runHeatmap}
+        isHeatmapPending={isHeatmapPending}
+        heatmapStale={heatmapStale}
       />
 
       {error && (
@@ -283,35 +288,35 @@ function BacktestTab() {
         </div>
       )}
 
-      {data && isStale && (
+      {heatmapStale && heatmapData && (
         <div className="flex items-center justify-between rounded-md border border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-700 p-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0" />
             <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              Results may be outdated — your inputs have changed since the last run.
+              Heatmap may be outdated — parameters have changed since it was generated.
             </p>
           </div>
-          <Button size="sm" variant="outline" onClick={() => mutate()} disabled={isPending}>
-            Re-run
+          <Button size="sm" variant="outline" onClick={runHeatmap} disabled={isHeatmapPending}>
+            Regenerate
           </Button>
         </div>
       )}
 
-      {data && (
+      {baseData && (
         <>
           {btInterpretation && (
             <InterpretationCallout level={btInterpretation.level} message={btInterpretation.message} />
           )}
-          <SummaryPanel summary={data.summary} computationTimeMs={data.computation_time_ms} />
-          {data.heatmap && (
+          <SummaryPanel summary={baseData.summary} computationTimeMs={baseData.computation_time_ms} />
+          {heatmapData && (
             <SwrHeatmap
-              data={data.heatmap}
+              data={heatmapData}
               onCellClick={(swr, duration, successRate) =>
                 setDrillDownCell({ swr, duration, successRate })
               }
             />
           )}
-          <ResultsTable results={data.results} />
+          <ResultsTable results={baseData.results} />
         </>
       )}
 

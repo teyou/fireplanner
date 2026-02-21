@@ -1,32 +1,38 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { runBacktestWorker, flattenStrategyParams } from '@/lib/simulation/workerClient'
-import type { BacktestResult, BacktestDataset, WithdrawalStrategyType, HeatmapConfig } from '@/lib/types'
+import type { BacktestSummary, PerYearResult, BacktestDataset, WithdrawalStrategyType, HeatmapConfig, HeatmapData } from '@/lib/types'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 
-interface BacktestConfig {
+export interface BacktestConfig {
   swr: number
   retirementDuration: number
   dataset: BacktestDataset
   blendRatio: number
-  includeHeatmap: boolean
   heatmapConfig: HeatmapConfig
 }
 
 interface UseBacktestQueryResult {
-  mutate: () => void
-  data: BacktestResult | undefined
+  /** Base backtest data (auto-run) — results + summary without heatmap */
+  baseData: { results: PerYearResult[]; summary: BacktestSummary; computation_time_ms: number } | null
+  /** Heatmap data (manual run) */
+  heatmapData: HeatmapData | null
+  /** Whether heatmap may be outdated (base was re-run since last heatmap) */
+  heatmapStale: boolean
+  /** Generate/regenerate heatmap */
+  runHeatmap: () => void
   isPending: boolean
+  isHeatmapPending: boolean
   error: Error | null
-  reset: () => void
   canRun: boolean
   validationErrors: Record<string, string>
   config: BacktestConfig
   setConfig: (update: Partial<BacktestConfig>) => void
-  isStale: boolean
+  /** Current params signature for staleness detection */
+  currentParamsSig: string
 }
 
 const DEFAULT_CONFIG: BacktestConfig = {
@@ -34,7 +40,6 @@ const DEFAULT_CONFIG: BacktestConfig = {
   retirementDuration: 30,
   dataset: 'us_only',
   blendRatio: 0.70,
-  includeHeatmap: true,
   heatmapConfig: {
     swrMin: 0.01,
     swrMax: 0.06,
@@ -44,6 +49,8 @@ const DEFAULT_CONFIG: BacktestConfig = {
     durationStep: 5,
   },
 }
+
+const DEBOUNCE_MS = 800
 
 export function useBacktestQuery(): UseBacktestQueryResult {
   const profile = useProfileStore()
@@ -63,55 +70,116 @@ export function useBacktestQuery(): UseBacktestQueryResult {
 
   const strategy: WithdrawalStrategyType = withdrawal.selectedStrategies[0] ?? 'constant_dollar'
 
-  // Stale detection
-  const [lastRunParams, setLastRunParams] = useState<string | null>(null)
+  // Split state: base results + heatmap results
+  const [baseData, setBaseData] = useState<{
+    results: PerYearResult[]
+    summary: BacktestSummary
+    computation_time_ms: number
+  } | null>(null)
+  const [heatmapData, setHeatmapData] = useState<HeatmapData | null>(null)
+  const [heatmapStale, setHeatmapStale] = useState(false)
 
   const currentParamsSig = useMemo(() => JSON.stringify({
     initialPortfolio: analysisPortfolio.retirementPortfolio,
     allocationWeights: analysisPortfolio.allocationWeights,
-    config,
+    swr: config.swr,
+    retirementDuration: config.retirementDuration,
+    dataset: config.dataset,
+    blendRatio: config.blendRatio,
     expenseRatio: profile.expenseRatio,
     strategy,
     strategyParams: withdrawal.strategyParams,
     inflation: profile.inflation,
   }), [
-    analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights,
+    analysisPortfolio.retirementPortfolio, analysisPortfolio.allocationWeights,
+    config.swr, config.retirementDuration, config.dataset, config.blendRatio,
+    profile.expenseRatio, strategy, withdrawal.strategyParams, profile.inflation,
+  ])
+
+  const buildParams = useCallback(() => ({
+    initialPortfolio: analysisPortfolio.retirementPortfolio,
+    allocationWeights: analysisPortfolio.allocationWeights,
+    swr: config.swr,
+    retirementDuration: config.retirementDuration,
+    dataset: config.dataset,
+    blendRatio: config.blendRatio,
+    expenseRatio: profile.expenseRatio,
+    withdrawalStrategy: strategy,
+    strategyParams: flattenStrategyParams(strategy, withdrawal.strategyParams),
+    inflation: profile.inflation,
+  }), [
+    analysisPortfolio.retirementPortfolio, analysisPortfolio.allocationWeights,
     config, profile.expenseRatio, strategy, withdrawal.strategyParams, profile.inflation,
   ])
 
-  const mutation = useMutation({
+  // Base mutation (no heatmap — fast)
+  const baseMutation = useMutation({
     mutationFn: async () => {
-      setLastRunParams(currentParamsSig)
-
-      const params = {
-        initialPortfolio: analysisPortfolio.retirementPortfolio,
-        allocationWeights: analysisPortfolio.allocationWeights,
-        swr: config.swr,
-        retirementDuration: config.retirementDuration,
-        dataset: config.dataset,
-        blendRatio: config.blendRatio,
-        expenseRatio: profile.expenseRatio,
-        withdrawalStrategy: strategy,
-        strategyParams: flattenStrategyParams(strategy, withdrawal.strategyParams),
-        inflation: profile.inflation,
-      }
-
-      return runBacktestWorker(params, config.includeHeatmap, config.heatmapConfig)
+      const params = buildParams()
+      return runBacktestWorker(params, false)
+    },
+    onSuccess: (result) => {
+      setBaseData({
+        results: result.results,
+        summary: result.summary,
+        computation_time_ms: result.computation_time_ms,
+      })
+      setHeatmapStale(true)
     },
   })
 
-  const isStale = mutation.data !== undefined && lastRunParams !== currentParamsSig
+  // Heatmap mutation (slower, manual trigger)
+  const heatmapMutation = useMutation({
+    mutationFn: async () => {
+      const params = buildParams()
+      return runBacktestWorker(params, true, config.heatmapConfig)
+    },
+    onSuccess: (result) => {
+      setBaseData({
+        results: result.results,
+        summary: result.summary,
+        computation_time_ms: result.computation_time_ms,
+      })
+      if (result.heatmap) {
+        setHeatmapData(result.heatmap)
+        setHeatmapStale(false)
+      }
+    },
+  })
+
+  // Auto-run base backtest on param changes (debounced)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const prevSigRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!canRun) return
+    if (prevSigRef.current === currentParamsSig) return
+
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    debounceRef.current = setTimeout(() => {
+      prevSigRef.current = currentParamsSig
+      baseMutation.mutate()
+    }, prevSigRef.current === null ? 0 : DEBOUNCE_MS) // No debounce on first run
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentParamsSig, canRun])
 
   return {
-    mutate: () => mutation.mutate(),
-    data: mutation.data,
-    isPending: mutation.isPending,
-    error: mutation.error,
-    reset: mutation.reset,
+    baseData,
+    heatmapData,
+    heatmapStale: heatmapStale && heatmapData !== null,
+    runHeatmap: () => heatmapMutation.mutate(),
+    isPending: baseMutation.isPending,
+    isHeatmapPending: heatmapMutation.isPending,
+    error: baseMutation.error ?? heatmapMutation.error ?? null,
     canRun,
     validationErrors: allErrors,
     config,
     setConfig,
-    isStale,
+    currentParamsSig,
   }
 }
