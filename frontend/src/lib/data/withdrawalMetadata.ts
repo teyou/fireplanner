@@ -13,6 +13,7 @@ export interface StrategyMetadata {
   cons: string[]
   bestFor: string
   complexity: 'Low' | 'Medium' | 'High'
+  remark?: string
 }
 
 export const WITHDRAWAL_STRATEGY_METADATA: StrategyMetadata[] = [
@@ -33,6 +34,7 @@ export const WITHDRAWAL_STRATEGY_METADATA: StrategyMetadata[] = [
     ],
     bestFor: 'Retirees who want simplicity and predictable spending.',
     complexity: 'Low',
+    remark: 'One of the simplest methods that avoids overcomplicating retirement. Rather than switching to a complex strategy, consider simply using a lower withdrawal rate (e.g. 3%) for a larger safety margin.',
   },
   {
     key: 'vpw',

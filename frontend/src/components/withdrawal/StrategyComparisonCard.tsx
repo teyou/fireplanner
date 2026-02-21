@@ -104,6 +104,11 @@ export function StrategyComparisonCard({ activeStrategy, onSelect }: Props) {
                     <span className="font-medium text-foreground">Best for: </span>
                     {meta.bestFor}
                   </p>
+                  {meta.remark && (
+                    <p className="text-muted-foreground italic border-l-2 border-primary/30 pl-2">
+                      {meta.remark}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
