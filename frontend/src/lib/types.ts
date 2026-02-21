@@ -83,6 +83,7 @@ export interface ProfileState {
   cpfOA: number
   cpfSA: number
   cpfMA: number
+  cpfRA: number
   srsBalance: number
   srsAnnualContribution: number
 

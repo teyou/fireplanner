@@ -36,6 +36,7 @@ export const profileSchema = z.object({
   cpfOA: nonNegativeSchema,
   cpfSA: nonNegativeSchema,
   cpfMA: nonNegativeSchema,
+  cpfRA: nonNegativeSchema,
   srsBalance: nonNegativeSchema,
   srsAnnualContribution: nonNegativeSchema,
 

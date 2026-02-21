@@ -21,7 +21,7 @@ interface ProfileActions {
 const PROFILE_DATA_KEYS = [
   'currentAge', 'retirementAge', 'lifeExpectancy', 'lifeStage', 'maritalStatus',
   'residencyStatus', 'annualIncome', 'annualExpenses', 'liquidNetWorth',
-  'cpfOA', 'cpfSA', 'cpfMA', 'srsBalance', 'srsAnnualContribution',
+  'cpfOA', 'cpfSA', 'cpfMA', 'cpfRA', 'srsBalance', 'srsAnnualContribution',
   'fireType', 'swr', 'fireNumberBasis', 'retirementSpendingAdjustment',
   'expectedReturn', 'usePortfolioReturn', 'inflation', 'expenseRatio', 'rebalanceFrequency',
   'retirementPhase', 'cpfLifeActualMonthlyPayout',
@@ -56,6 +56,7 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   cpfOA: 0,
   cpfSA: 0,
   cpfMA: 0,
+  cpfRA: 0,
   srsBalance: 0,
   srsAnnualContribution: 0,
   fireType: 'regular',
@@ -208,7 +209,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 8,
+      version: 9,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -249,6 +250,9 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
         }
         if (version < 8) {
           state.retirementWithdrawals = state.retirementWithdrawals ?? []
+        }
+        if (version < 9) {
+          state.cpfRA = state.cpfRA ?? 0
         }
         return state
       },

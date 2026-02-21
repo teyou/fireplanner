@@ -179,6 +179,7 @@ describe('profileSchema', () => {
     cpfOA: 50000,
     cpfSA: 20000,
     cpfMA: 10000,
+    cpfRA: 0,
     srsBalance: 0,
     srsAnnualContribution: 0,
     fireType: 'regular' as const,
