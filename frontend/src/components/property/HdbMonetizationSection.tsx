@@ -5,10 +5,11 @@ import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { usePropertyStore } from '@/stores/usePropertyStore'
-import { computeHdbCpfRefund, computeHdbSublettingIncome } from '@/lib/calculations/hdb'
+import { computeHdbCpfRefund, computeHdbSublettingIncome, computeLbsProceeds } from '@/lib/calculations/hdb'
 import { calculateSellAndRent } from '@/lib/calculations/property'
-import { SUBLETTING_RATE_SUGGESTIONS } from '@/lib/data/hdbRates'
+import { SUBLETTING_RATE_SUGGESTIONS, LBS_RETAINED_LEASE_OPTIONS } from '@/lib/data/hdbRates'
 import { formatCurrency } from '@/lib/utils'
+import { useProfileStore } from '@/stores/useProfileStore'
 import type { HdbFlatType, HdbMonetizationStrategy } from '@/lib/types'
 
 export function HdbMonetizationSection() {
@@ -84,9 +85,7 @@ export function HdbMonetizationSection() {
         )}
 
         {strategy === 'lbs' && (
-          <div className="p-3 rounded-lg bg-muted/30 text-sm text-muted-foreground">
-            LBS parameters are configured below in the Lease Buyback section.
-          </div>
+          <LbsInputs />
         )}
       </CardContent>
     </Card>
@@ -178,6 +177,73 @@ function SellAndRentInputs() {
       <p className="text-xs text-muted-foreground">
         Sale price and monthly rent are configured in the Downsizing section above.
       </p>
+    </div>
+  )
+}
+
+function LbsInputs() {
+  const property = usePropertyStore()
+  const profile = useProfileStore()
+
+  const lbsResult = computeLbsProceeds({
+    flatValue: property.existingPropertyValue,
+    remainingLease: property.leaseYears,
+    retainedLease: property.hdbLbsRetainedLease,
+    cpfRaBalance: profile.cpfRA,
+    retirementSum: 213000, // Current FRS approximation
+  })
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <Label className="text-sm flex items-center gap-1">
+            Retained Lease
+            <InfoTooltip text="Years of lease to keep. HDB allows 20, 25, 30, or 35 years. Must cover you to at least age 95." />
+          </Label>
+          <Select
+            value={String(property.hdbLbsRetainedLease)}
+            onValueChange={(v) => property.setField('hdbLbsRetainedLease', Number(v))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LBS_RETAINED_LEASE_OPTIONS.map((y) => (
+                <SelectItem key={y} value={String(y)}>
+                  {y} years
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <CurrencyInput
+          label="Estimated Flat Value"
+          value={property.existingPropertyValue}
+          onChange={(v) => property.setField('existingPropertyValue', v)}
+          tooltip="Market value of your HDB flat. Used to estimate LBS proceeds."
+        />
+      </div>
+
+      <div className="p-3 rounded-lg bg-muted/30 space-y-1 text-sm">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Total LBS Proceeds</span>
+          <span className="font-semibold">{formatCurrency(lbsResult.totalProceeds)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">CPF RA Top-up</span>
+          <span className="font-medium">{formatCurrency(lbsResult.cpfRaTopUp)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Cash Proceeds</span>
+          <span className="font-medium">{formatCurrency(lbsResult.cashProceeds)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Est. Monthly LIFE Boost</span>
+          <span className="font-medium">{formatCurrency(lbsResult.estimatedMonthlyLifeBoost)}/mo</span>
+        </div>
+      </div>
     </div>
   )
 }

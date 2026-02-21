@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { ProjectionRow, ProjectionSummary } from '@/lib/types'
 import { generateProjection } from '@/lib/calculations/projection'
 import { calculatePortfolioReturn } from '@/lib/calculations/portfolio'
-import { computeHdbSublettingIncome } from '@/lib/calculations/hdb'
+import { computeHdbSublettingIncome, computeLbsProceeds } from '@/lib/calculations/hdb'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useSimulationStore } from '@/stores/useSimulationStore'
@@ -54,12 +54,26 @@ export function useProjection(): ProjectionResult {
       effectiveReturn = calculatePortfolioReturn(allocation.currentWeights, assetReturns)
     }
 
+    // LBS: add cash proceeds to portfolio, RA top-up enhances CPF LIFE
+    const isLbs = property.ownsProperty
+      && property.propertyType === 'hdb'
+      && property.hdbMonetizationStrategy === 'lbs'
+    const lbsResult = isLbs
+      ? computeLbsProceeds({
+          flatValue: property.existingPropertyValue,
+          remainingLease: property.leaseYears,
+          retainedLease: property.hdbLbsRetainedLease,
+          cpfRaBalance: profile.cpfRA,
+          retirementSum: 213000,
+        })
+      : null
+
     const { rows, summary } = generateProjection({
       incomeProjection,
       currentAge: profile.currentAge,
       retirementAge: profile.retirementAge,
       lifeExpectancy: profile.lifeExpectancy,
-      initialLiquidNW: profile.liquidNetWorth,
+      initialLiquidNW: profile.liquidNetWorth + (lbsResult?.cashProceeds ?? 0),
       swr: profile.swr,
       expectedReturn: effectiveReturn,
       usePortfolioReturn: profile.usePortfolioReturn && !allocationHasErrors,
@@ -141,6 +155,8 @@ export function useProjection(): ProjectionResult {
     property.hdbMonetizationStrategy,
     property.hdbSublettingRooms,
     property.hdbSublettingRate,
+    property.hdbLbsRetainedLease,
+    property.leaseYears,
     profile.parentSupportEnabled,
     profile.parentSupport,
     profile.healthcareConfig,
