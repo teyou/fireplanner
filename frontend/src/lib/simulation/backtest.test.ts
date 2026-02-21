@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { runBacktest, generateHeatmap } from './backtest'
+import { runBacktest, generateHeatmap, runDetailedWindow } from './backtest'
 
 // ---------------------------------------------------------------------------
 // Shared test params (60/40 US equities/bonds)
@@ -308,5 +308,120 @@ describe('generateHeatmap', () => {
       // Soft check: average direction should be downward
       expect(col[i]).toBeGreaterThanOrEqual(col[col.length - 1] - 0.15)
     }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// runDetailedWindow
+// ---------------------------------------------------------------------------
+
+describe('runDetailedWindow', () => {
+  it('returns arrays with correct length for surviving window', () => {
+    // Find a start year that survives with these params
+    const btResult = runBacktest(PARAMS)
+    const survivingWindow = btResult.results.find(r => r.survived)!
+    const result = runDetailedWindow(PARAMS, survivingWindow.start_year)
+
+    expect(result.survived).toBe(true)
+    expect(result.years.length).toBe(PARAMS.retirementDuration)
+    expect(result.yearlyBalances.length).toBe(PARAMS.retirementDuration)
+    expect(result.yearlyWithdrawals.length).toBe(PARAMS.retirementDuration)
+    expect(result.yearlyReturns.length).toBe(PARAMS.retirementDuration)
+    expect(result.yearlyInflation.length).toBe(PARAMS.retirementDuration)
+  })
+
+  it('returns shorter arrays when portfolio depletes early', () => {
+    // Use aggressive SWR to force depletion
+    const aggressiveParams = { ...PARAMS, swr: 0.12, retirementDuration: 40 }
+    const btResult = runBacktest(aggressiveParams)
+    const failedWindow = btResult.results.find(r => !r.survived)
+    if (failedWindow) {
+      const result = runDetailedWindow(aggressiveParams, failedWindow.start_year)
+      expect(result.survived).toBe(false)
+      expect(result.years.length).toBeLessThan(aggressiveParams.retirementDuration)
+    }
+  })
+
+  it('first year starts at startYear', () => {
+    const result = runDetailedWindow(PARAMS, 1950)
+    expect(result.years[0]).toBe(1950)
+  })
+
+  it('years are sequential', () => {
+    const result = runDetailedWindow(PARAMS, 1950)
+    for (let i = 1; i < result.years.length; i++) {
+      expect(result.years[i]).toBe(result.years[i - 1] + 1)
+    }
+  })
+
+  it('endingBalance matches last yearlyBalance', () => {
+    const result = runDetailedWindow(PARAMS, 1950)
+    if (result.yearlyBalances.length > 0) {
+      expect(result.endingBalance).toBeCloseTo(
+        result.yearlyBalances[result.yearlyBalances.length - 1],
+        2,
+      )
+    }
+  })
+
+  it('results match runBacktest summary for same window', () => {
+    // Find a start year from runBacktest results
+    const btResult = runBacktest(PARAMS)
+    const window = btResult.results[0]
+    const detail = runDetailedWindow(PARAMS, window.start_year)
+
+    expect(detail.survived).toBe(window.survived)
+    expect(detail.endingBalance).toBeCloseTo(window.ending_balance, 2)
+  })
+
+  it('returns empty arrays for invalid start year', () => {
+    const result = runDetailedWindow(PARAMS, 9999)
+    expect(result.survived).toBe(false)
+    expect(result.years.length).toBe(0)
+  })
+
+  it('all yearlyWithdrawals are non-negative', () => {
+    const result = runDetailedWindow(PARAMS, 1950)
+    for (const w of result.yearlyWithdrawals) {
+      expect(w).toBeGreaterThanOrEqual(0)
+    }
+  })
+
+  it('all yearlyBalances are non-negative', () => {
+    const result = runDetailedWindow(PARAMS, 1950)
+    for (const b of result.yearlyBalances) {
+      expect(b).toBeGreaterThanOrEqual(0)
+    }
+  })
+
+  // ---------------------------------------------------------------------------
+  // oneTimeWithdrawals
+  // ---------------------------------------------------------------------------
+
+  it('oneTimeWithdrawals reduces portfolio at specified year', () => {
+    const baseline = runDetailedWindow(PARAMS, 1950)
+    const withOneTime = runDetailedWindow(
+      { ...PARAMS, oneTimeWithdrawals: [{ year: 5, amount: 100_000 }] },
+      1950,
+    )
+
+    // Before year 5, balances should be the same
+    for (let i = 0; i < 5; i++) {
+      expect(withOneTime.yearlyBalances[i]).toBeCloseTo(baseline.yearlyBalances[i], 2)
+    }
+
+    // At year 5 and beyond, the one-time withdrawal version should have lower balances
+    expect(withOneTime.yearlyBalances[5]).toBeLessThan(baseline.yearlyBalances[5])
+  })
+
+  it('oneTimeWithdrawals also affect runBacktest via runSingleWindow', () => {
+    const baseline = runBacktest(PARAMS)
+    const withOneTime = runBacktest({
+      ...PARAMS,
+      oneTimeWithdrawals: [{ year: 0, amount: 500_000 }],
+    })
+
+    // Large year-0 withdrawal should lower success rate
+    expect(withOneTime.summary.success_rate).toBeLessThanOrEqual(baseline.summary.success_rate)
   })
 })

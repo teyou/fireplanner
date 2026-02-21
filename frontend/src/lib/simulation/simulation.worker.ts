@@ -10,7 +10,7 @@
 
 import { runMonteCarlo } from './monteCarlo'
 import { optimizeSwr } from './swrOptimizer'
-import { runBacktest, generateHeatmap } from './backtest'
+import { runBacktest, generateHeatmap, runDetailedWindow } from './backtest'
 import { runSequenceRisk } from './sequenceRisk'
 
 self.onmessage = (e: MessageEvent) => {
@@ -60,6 +60,8 @@ self.onmessage = (e: MessageEvent) => {
         heatmap,
         computation_time_ms: Math.round(performance.now() - start),
       }
+    } else if (type === 'backtest-window-detail') {
+      result = runDetailedWindow(e.data.params, e.data.startYear)
     } else if (type === 'sequenceRisk') {
       result = {
         ...runSequenceRisk(e.data.params),

@@ -38,6 +38,7 @@ export interface BacktestEngineParams {
   withdrawalStrategy: string
   strategyParams: Record<string, number>
   inflation: number
+  oneTimeWithdrawals?: { year: number; amount: number }[]  // year-offset → amount
 }
 
 export interface BacktestEngineResult {
@@ -231,6 +232,7 @@ function runSingleWindow(
   inflationFixed: number,
   strategy: string,
   strategyParams: Record<string, number>,
+  oneTimeWithdrawals?: { year: number; amount: number }[],
 ): WindowResult {
   let portfolio = initialPortfolio
   const initialWithdrawal = initialPortfolio * swr
@@ -269,6 +271,12 @@ function runSingleWindow(
       prevYearReturn,
     )
 
+    // Add one-time withdrawals for this year offset
+    const oneTime = (oneTimeWithdrawals ?? [])
+      .filter(w => w.year === y)
+      .reduce((sum, w) => sum + w.amount, 0)
+    withdrawal += oneTime
+
     // Cap withdrawal at current portfolio value
     withdrawal = Math.min(withdrawal, portfolio)
     totalWithdrawn += withdrawal
@@ -300,6 +308,136 @@ function runSingleWindow(
     worstYearOffset,
     bestYearOffset,
     totalWithdrawn,
+  }
+}
+
+// ============================================================
+// Detailed single window (year-by-year data for drill-down)
+// ============================================================
+
+export interface DetailedWindowResult {
+  survived: boolean
+  endingBalance: number
+  years: number[]            // [startYear, startYear+1, ...]
+  yearlyBalances: number[]   // portfolio value at end of each year
+  yearlyWithdrawals: number[] // withdrawal amount each year
+  yearlyReturns: number[]    // historical portfolio return each year
+  yearlyInflation: number[]  // CPI rate each year
+}
+
+/**
+ * Run a single backtest window and return year-by-year detail.
+ * Same logic as runSingleWindow but collects per-year arrays.
+ */
+export function runDetailedWindow(
+  params: BacktestEngineParams,
+  startYear: number,
+): DetailedWindowResult {
+  const {
+    initialPortfolio,
+    allocationWeights,
+    swr,
+    retirementDuration,
+    dataset,
+    blendRatio,
+    expenseRatio,
+    inflation: inflationFixed,
+    withdrawalStrategy,
+    strategyParams,
+    oneTimeWithdrawals,
+  } = params
+
+  const { portfolioReturns, inflationRates, years } = getPortfolioReturns(
+    allocationWeights,
+    dataset,
+    blendRatio,
+  )
+
+  // Find start index
+  const startIdx = years.indexOf(startYear)
+  if (startIdx === -1) {
+    return {
+      survived: false,
+      endingBalance: 0,
+      years: [],
+      yearlyBalances: [],
+      yearlyWithdrawals: [],
+      yearlyReturns: [],
+      yearlyInflation: [],
+    }
+  }
+
+  let portfolio = initialPortfolio
+  const initialWithdrawal = initialPortfolio * swr
+  let prevWithdrawal = 0
+  let survived = true
+  let prevYearReturn: number | undefined = undefined
+
+  const outYears: number[] = []
+  const outBalances: number[] = []
+  const outWithdrawals: number[] = []
+  const outReturns: number[] = []
+  const outInflation: number[] = []
+
+  for (let y = 0; y < retirementDuration; y++) {
+    const idx = startIdx + y
+    if (idx >= portfolioReturns.length) break
+
+    if (portfolio <= 0) {
+      survived = false
+      break
+    }
+
+    const ret = portfolioReturns[idx]
+    const rawCpi = inflationRates[idx]
+    const inf = rawCpi !== null ? rawCpi : inflationFixed
+    const remaining = retirementDuration - y
+
+    let withdrawal = computeWithdrawal(
+      withdrawalStrategy,
+      strategyParams,
+      portfolio,
+      y,
+      remaining,
+      initialWithdrawal,
+      prevWithdrawal,
+      inf,
+      prevYearReturn,
+    )
+
+    // Add one-time withdrawals for this year offset
+    const oneTime = (oneTimeWithdrawals ?? [])
+      .filter(w => w.year === y)
+      .reduce((sum, w) => sum + w.amount, 0)
+    withdrawal += oneTime
+
+    // Cap withdrawal at current portfolio value
+    withdrawal = Math.min(withdrawal, portfolio)
+    prevWithdrawal = withdrawal
+    prevYearReturn = ret
+
+    portfolio = (portfolio - withdrawal) * (1 + ret - expenseRatio)
+
+    if (portfolio <= 0) {
+      survived = false
+      portfolio = 0
+    }
+
+    outYears.push(years[idx])
+    outBalances.push(Math.max(0, portfolio))
+    outWithdrawals.push(withdrawal)
+    outReturns.push(ret)
+    outInflation.push(inf)
+  }
+
+  return {
+    survived,
+    endingBalance: Math.max(0, portfolio),
+    years: outYears,
+    yearlyBalances: outBalances,
+    yearlyWithdrawals: outWithdrawals,
+    yearlyReturns: outReturns,
+    yearlyInflation: outInflation,
   }
 }
 
@@ -339,6 +477,7 @@ export function runBacktest(params: BacktestEngineParams): BacktestEngineResult 
     inflation: inflationFixed,
     withdrawalStrategy,
     strategyParams,
+    oneTimeWithdrawals,
   } = params
 
   const { portfolioReturns, inflationRates, years } = getPortfolioReturns(
@@ -367,6 +506,7 @@ export function runBacktest(params: BacktestEngineParams): BacktestEngineResult 
       inflationFixed,
       withdrawalStrategy,
       strategyParams,
+      oneTimeWithdrawals,
     )
 
     results.push({

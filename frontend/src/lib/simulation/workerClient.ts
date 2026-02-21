@@ -11,7 +11,7 @@ import type {
   FloorCeilingParams,
 } from '@/lib/types'
 import type { MonteCarloEngineParams } from './monteCarlo'
-import type { BacktestEngineParams } from './backtest'
+import type { BacktestEngineParams, DetailedWindowResult } from './backtest'
 import type { SequenceRiskEngineParams } from './sequenceRisk'
 
 // ============================================================
@@ -101,6 +101,13 @@ export function runBacktestWorker(
   heatmapConfig?: HeatmapConfig,
 ): Promise<BacktestResult> {
   return callWorker<BacktestResult>({ type: 'backtest', params, includeHeatmap, heatmapConfig })
+}
+
+export function runDetailedWindowWorker(
+  params: BacktestEngineParams,
+  startYear: number,
+): Promise<DetailedWindowResult> {
+  return callWorker<DetailedWindowResult>({ type: 'backtest-window-detail', params, startYear })
 }
 
 export function runSequenceRiskWorker(
