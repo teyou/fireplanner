@@ -87,6 +87,8 @@ export interface ProfileState {
   cpfRA: number
   srsBalance: number
   srsAnnualContribution: number
+  srsInvestmentReturn: number
+  srsDrawdownStartAge: number
 
   // FIRE Targets
   fireType: FireType
