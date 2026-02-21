@@ -13,7 +13,7 @@ import type { CpfLifePlan, CpfRetirementSum, CpfHousingMode } from '@/lib/types'
 import { getCpfRatesForAge, BRS_2024, FRS_2024, ERS_2024 } from '@/lib/data/cpfRates'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { CpfProjectionTable } from '@/components/cpf/CpfProjectionTable'
-import { formatCurrency, formatPercent } from '@/lib/utils'
+import { cn, formatCurrency, formatPercent } from '@/lib/utils'
 
 export function CpfSection() {
   const {
@@ -110,7 +110,7 @@ export function CpfSection() {
     )
   }
 
-  // 55-64 phase: simplified — retirement sum + CPF LIFE config + projected payout
+  // 55-64 phase: simplified — RA balance + CPF LIFE config + projected payout
   if (effectivePhase === '55-to-64') {
     return (
       <Card>
@@ -118,6 +118,21 @@ export function CpfSection() {
           <CardTitle className="text-lg">CPF LIFE Configuration</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="max-w-sm">
+            <CurrencyInput
+              label="Retirement Account (RA) Balance"
+              value={cpfRA}
+              onChange={(v) => setField('cpfRA', v)}
+              error={validationErrors.cpfRA}
+              tooltip="Your CPF Retirement Account balance. At 55, your SA was transferred to the RA per CPF rules. The RA funds your CPF LIFE payouts."
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            At 55, your SA was transferred to a Retirement Account (RA) per CPF rules. The RA earns 4% interest and funds your CPF LIFE payouts.
+          </p>
+
+          <Separator />
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="space-y-1">
               <Label className="text-xs">Start Age (65-75)</Label>
@@ -241,7 +256,7 @@ export function CpfSection() {
         {/* CPF balance summary */}
         <div>
           <h4 className="text-sm font-medium mb-2">Current CPF Balances</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+          <div className={cn('grid gap-2 text-sm', currentAge >= 55 ? 'grid-cols-2 md:grid-cols-5' : 'grid-cols-2 md:grid-cols-4')}>
             <div className="p-2 bg-muted/50 rounded">
               <div className="text-xs text-muted-foreground">OA</div>
               <div className="font-semibold text-green-600">{formatCurrency(cpfOA)}</div>
@@ -250,6 +265,12 @@ export function CpfSection() {
               <div className="text-xs text-muted-foreground">SA</div>
               <div className="font-semibold text-green-600">{formatCurrency(cpfSA)}</div>
             </div>
+            {currentAge >= 55 && (
+              <div className="p-2 bg-muted/50 rounded">
+                <div className="text-xs text-muted-foreground">RA</div>
+                <div className="font-semibold text-green-600">{formatCurrency(cpfRA)}</div>
+              </div>
+            )}
             <div className="p-2 bg-muted/50 rounded">
               <div className="text-xs text-muted-foreground">MA</div>
               <div className="font-semibold text-green-600">{formatCurrency(cpfMA)}</div>
@@ -259,6 +280,11 @@ export function CpfSection() {
               <div className="font-semibold text-green-600">{formatCurrency(totalCpf)}</div>
             </div>
           </div>
+          {currentAge >= 55 && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              At 55, your SA was transferred to a Retirement Account (RA) per CPF rules. The RA funds your CPF LIFE payouts.
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>

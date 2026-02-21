@@ -23,66 +23,84 @@ export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
     [expanded, data]
   )
 
-  const columns = useMemo(() => [
-    columnHelper.accessor('age', {
-      header: 'Age',
-      cell: (info) => info.getValue(),
-    }),
-    columnHelper.accessor('salary', {
-      header: 'Salary',
-      cell: (info) => formatCurrency(info.getValue()),
-    }),
-    columnHelper.accessor('rentalIncome', {
-      header: 'Rental',
-      cell: (info) => {
-        const v = info.getValue()
-        return v > 0 ? formatCurrency(v) : '-'
-      },
-    }),
-    columnHelper.accessor('investmentIncome', {
-      header: 'Invest.',
-      cell: (info) => {
-        const v = info.getValue()
-        return v > 0 ? formatCurrency(v) : '-'
-      },
-    }),
-    columnHelper.accessor('totalGross', {
-      header: 'Gross',
-      cell: (info) => formatCurrency(info.getValue()),
-    }),
-    columnHelper.accessor('sgTax', {
-      header: 'SG Tax',
-      cell: (info) => formatCurrency(info.getValue()),
-    }),
-    columnHelper.accessor('cpfEmployee', {
-      header: 'CPF (Emp)',
-      cell: (info) => formatCurrency(info.getValue()),
-    }),
-    columnHelper.accessor('totalNet', {
-      header: 'Net',
-      cell: (info) => formatCurrency(info.getValue()),
-    }),
-    columnHelper.accessor('annualSavings', {
-      header: 'Savings',
-      cell: (info) => formatCurrency(info.getValue()),
-    }),
-    columnHelper.accessor('cumulativeSavings', {
-      header: 'Cumul.',
-      cell: (info) => formatCurrency(info.getValue()),
-    }),
-    columnHelper.accessor('cpfOA', {
-      header: 'CPF OA',
-      cell: (info) => formatCurrency(info.getValue()),
-    }),
-    columnHelper.accessor('cpfSA', {
-      header: 'CPF SA',
-      cell: (info) => formatCurrency(info.getValue()),
-    }),
-    columnHelper.accessor('cpfMA', {
-      header: 'CPF MA',
-      cell: (info) => formatCurrency(info.getValue()),
-    }),
-  ], [])
+  const hasRA = data.some((r) => r.cpfRA > 0)
+
+  const columns = useMemo(() => {
+    const cols = [
+      columnHelper.accessor('age', {
+        header: 'Age',
+        cell: (info) => info.getValue(),
+      }),
+      columnHelper.accessor('salary', {
+        header: 'Salary',
+        cell: (info) => formatCurrency(info.getValue()),
+      }),
+      columnHelper.accessor('rentalIncome', {
+        header: 'Rental',
+        cell: (info) => {
+          const v = info.getValue()
+          return v > 0 ? formatCurrency(v) : '-'
+        },
+      }),
+      columnHelper.accessor('investmentIncome', {
+        header: 'Invest.',
+        cell: (info) => {
+          const v = info.getValue()
+          return v > 0 ? formatCurrency(v) : '-'
+        },
+      }),
+      columnHelper.accessor('totalGross', {
+        header: 'Gross',
+        cell: (info) => formatCurrency(info.getValue()),
+      }),
+      columnHelper.accessor('sgTax', {
+        header: 'SG Tax',
+        cell: (info) => formatCurrency(info.getValue()),
+      }),
+      columnHelper.accessor('cpfEmployee', {
+        header: 'CPF (Emp)',
+        cell: (info) => formatCurrency(info.getValue()),
+      }),
+      columnHelper.accessor('totalNet', {
+        header: 'Net',
+        cell: (info) => formatCurrency(info.getValue()),
+      }),
+      columnHelper.accessor('annualSavings', {
+        header: 'Savings',
+        cell: (info) => formatCurrency(info.getValue()),
+      }),
+      columnHelper.accessor('cumulativeSavings', {
+        header: 'Cumul.',
+        cell: (info) => formatCurrency(info.getValue()),
+      }),
+      columnHelper.accessor('cpfOA', {
+        header: 'CPF OA',
+        cell: (info) => formatCurrency(info.getValue()),
+      }),
+      columnHelper.accessor('cpfSA', {
+        header: 'CPF SA',
+        cell: (info) => formatCurrency(info.getValue()),
+      }),
+    ]
+
+    if (hasRA) {
+      cols.push(
+        columnHelper.accessor('cpfRA', {
+          header: 'CPF RA',
+          cell: (info) => formatCurrency(info.getValue()),
+        }),
+      )
+    }
+
+    cols.push(
+      columnHelper.accessor('cpfMA', {
+        header: 'CPF MA',
+        cell: (info) => formatCurrency(info.getValue()),
+      }),
+    )
+
+    return cols
+  }, [hasRA])
 
   const table = useReactTable({
     data: displayData,

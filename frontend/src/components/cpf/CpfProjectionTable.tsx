@@ -26,6 +26,7 @@ export function CpfProjectionTable() {
   const retirementAge = useProfileStore((s) => s.retirementAge)
 
   const hasHousingDeduction = rows?.some((r) => r.oaHousingDeduction > 0) ?? false
+  const hasRA = rows?.some((r) => r.raBalance > 0) ?? false
 
   const columns = useMemo((): ColumnDef<CpfProjectionRow, number>[] => {
     const cols: ColumnDef<CpfProjectionRow, number>[] = [
@@ -41,6 +42,18 @@ export function CpfProjectionTable() {
         header: 'SA',
         cell: (info) => currencyCell(info.getValue()),
       }),
+    ]
+
+    if (hasRA) {
+      cols.push(
+        columnHelper.accessor('raBalance', {
+          header: 'RA',
+          cell: (info) => currencyCell(info.getValue()),
+        }),
+      )
+    }
+
+    cols.push(
       columnHelper.accessor('maBalance', {
         header: 'MA',
         cell: (info) => currencyCell(info.getValue()),
@@ -53,7 +66,7 @@ export function CpfProjectionTable() {
         header: 'Contribution',
         cell: (info) => optionalCurrencyCell(info.getValue()),
       }),
-    ]
+    )
 
     if (hasHousingDeduction) {
       cols.push(
@@ -76,7 +89,7 @@ export function CpfProjectionTable() {
     )
 
     return cols
-  }, [hasHousingDeduction])
+  }, [hasHousingDeduction, hasRA])
 
   const table = useReactTable({
     data: rows ?? [],
@@ -127,6 +140,7 @@ export function CpfProjectionTable() {
                   original.milestone === 'brs' && 'bg-green-50/50 dark:bg-green-900/5',
                   original.milestone === 'ers' && 'bg-green-100 dark:bg-green-900/20',
                   original.milestone === 'cpfLifeStart' && 'bg-blue-50 dark:bg-blue-900/10',
+                  original.milestone === 'raCreated' && 'bg-purple-50 dark:bg-purple-900/10',
                 )}
               >
                 {row.getVisibleCells().map((cell) => (
@@ -143,6 +157,7 @@ export function CpfProjectionTable() {
                     {original.milestone === 'frs' && 'FRS reached'}
                     {original.milestone === 'ers' && 'ERS reached'}
                     {original.milestone === 'cpfLifeStart' && 'CPF LIFE starts'}
+                    {original.milestone === 'raCreated' && 'RA created'}
                   </td>
                 )}
               </tr>
