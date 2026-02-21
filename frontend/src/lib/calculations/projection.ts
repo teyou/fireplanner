@@ -418,7 +418,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     }
 
     // CPF and totals
-    const cpfTotal = incomeRow.cpfOA + incomeRow.cpfSA + incomeRow.cpfMA
+    const cpfTotal = incomeRow.cpfOA + incomeRow.cpfSA + incomeRow.cpfMA + incomeRow.cpfRA
     const totalNW = liquidNW + cpfTotal
 
     // FIRE progress
@@ -466,6 +466,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       cpfOA: incomeRow.cpfOA,
       cpfSA: incomeRow.cpfSA,
       cpfMA: incomeRow.cpfMA,
+      cpfRA: incomeRow.cpfRA,
       propertyEquity: effectivePropertyEquity,
       totalNWIncProperty: totalNW + effectivePropertyEquity,
       withdrawalAmount,

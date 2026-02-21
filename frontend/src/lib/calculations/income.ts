@@ -12,12 +12,13 @@ import type {
   CpfHousingMode,
 } from '@/lib/types'
 import { getMomSalary } from '@/lib/data/momSalary'
-import { calculateCpfContribution, calculateCpfExtraInterest, calculateCpfLifePayoutAtAge, calculateBrsFrsErs, getRetirementSumAmount } from './cpf'
+import { calculateCpfContribution, calculateCpfExtraInterestWithAge, calculateCpfLifePayoutAtAge, getRetirementSumAmount, performAge55Transfer, allocatePostAge55Contribution } from './cpf'
 import { calculateChargeableIncome, calculateProgressiveTax } from './tax'
 import {
   OA_INTEREST_RATE,
   SA_INTEREST_RATE,
   MA_INTEREST_RATE,
+  RA_INTEREST_RATE,
 } from '@/lib/data/cpfRates'
 
 export const DEFAULT_CAREER_PHASES: CareerPhase[] = [
@@ -247,7 +248,10 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
   let cpfOA = params.initialCpfOA
   let cpfSA = params.initialCpfSA
   let cpfMA = params.initialCpfMA
+  let cpfRA = params.initialCpfRA ?? 0
   let cumulativeSavings = 0
+  let saClosed = false
+  let raBalanceAtLifeStart = 0
 
   // CPF LIFE configuration (defaults for backward compat)
   const cpfLifeStartAge = params.cpfLifeStartAge ?? 65
@@ -263,9 +267,19 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     (s) => s.type === 'government' && s.isActive && s.name.toLowerCase().includes('cpf life')
   )
 
-  // Determine the retirement sum amount for CPF LIFE payout calculation
-  // We use the projected sum at the user's current age (will be recalculated at 55 if needed)
-  let retirementSumAt55 = getRetirementSumAmount(cpfRetirementSum, params.currentAge)
+  // Retirement sum target for RA transfer and post-55 contribution routing
+  const retirementSumTarget = getRetirementSumAmount(cpfRetirementSum, params.currentAge)
+
+  // For users already past 55: SA should have been transferred to RA
+  if (params.currentAge > 55) {
+    saClosed = true
+    if (cpfSA > 0 && cpfRA === 0) {
+      const transfer = performAge55Transfer(cpfOA, cpfSA, retirementSumTarget)
+      cpfOA = transfer.newOA
+      cpfSA = transfer.newSA
+      cpfRA = transfer.newRA
+    }
+  }
 
   for (let age = params.currentAge; age <= params.lifeExpectancy; age++) {
     const year = age - params.currentAge
@@ -326,15 +340,19 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       }
     }
 
-    // At age 55, set retirement sum based on user's selected level.
-    // The BRS/FRS/ERS selection represents the user's intended retirement sum
-    // (they can top up via OA transfers, cash, or voluntary contributions).
-    // We use the level amount directly, not capped at projected SA.
-    if (age === 55) {
-      const projected = calculateBrsFrsErs(params.currentAge)
-      retirementSumAt55 = cpfRetirementSum === 'brs' ? projected.brs
-        : cpfRetirementSum === 'ers' ? projected.ers
-        : projected.frs
+    // At age 55: transfer SA → RA (Retirement Account)
+    if (age === 55 && !saClosed) {
+      const transfer = performAge55Transfer(cpfOA, cpfSA, retirementSumTarget)
+      cpfOA = transfer.newOA
+      cpfSA = transfer.newSA
+      cpfRA = transfer.newRA
+      saClosed = true
+    }
+
+    // Zero out RA at CPF LIFE start age (money goes into annuity)
+    if (age === cpfLifeStartAge) {
+      raBalanceAtLifeStart = cpfRA
+      cpfRA = 0
     }
 
     // Automated CPF LIFE payout (skip if user has manual stream)
@@ -344,7 +362,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
         // 65+ users enter their known monthly payout directly
         cpfLifePayout = cpfLifeActualMonthlyPayout * 12
       } else {
-        cpfLifePayout = calculateCpfLifePayoutAtAge(retirementSumAt55, cpfLifePlan, cpfLifeStartAge, age)
+        cpfLifePayout = calculateCpfLifePayoutAtAge(raBalanceAtLifeStart, cpfLifePlan, cpfLifeStartAge, age)
       }
       governmentIncome += cpfLifePayout
     }
@@ -361,20 +379,37 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       cpfEmployee = cpf.employee
       cpfEmployer = cpf.employer
 
-      // Allocate to CPF accounts
-      cpfOA += cpf.oaAllocation
-      cpfSA += cpf.saAllocation
-      cpfMA += cpf.maAllocation
+      if (saClosed) {
+        // Post-55: SA allocation goes to RA (if room) or overflows to OA
+        const alloc = allocatePostAge55Contribution(cpf, cpfRA, retirementSumTarget)
+        cpfOA += alloc.oaAllocation
+        cpfRA += alloc.raAllocation
+        cpfMA += alloc.maAllocation
+      } else {
+        cpfOA += cpf.oaAllocation
+        cpfSA += cpf.saAllocation
+        cpfMA += cpf.maAllocation
+      }
     }
 
     // CPF interest
     const oaInterest = cpfOA * OA_INTEREST_RATE
-    const saInterest = cpfSA * SA_INTEREST_RATE
+    const saInterest = saClosed ? 0 : cpfSA * SA_INTEREST_RATE
     const maInterest = cpfMA * MA_INTEREST_RATE
-    const extraInterest = calculateCpfExtraInterest(cpfOA, cpfSA, cpfMA, age)
+    const raInterest = cpfRA * RA_INTEREST_RATE
+    const extraInterest = calculateCpfExtraInterestWithAge(cpfOA, cpfSA, cpfMA, cpfRA, age)
 
     cpfOA += oaInterest
-    cpfSA += saInterest + extraInterest
+    if (saClosed) {
+      if (age >= cpfLifeStartAge) {
+        // Post-LIFE: RA is annuitized, extra interest → OA
+        cpfOA += extraInterest
+      } else {
+        cpfRA += raInterest + extraInterest
+      }
+    } else {
+      cpfSA += saInterest + extraInterest
+    }
     cpfMA += maInterest
 
     // Tax: only on taxable income
@@ -418,6 +453,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       cpfOA,
       cpfSA,
       cpfMA,
+      cpfRA,
       isRetired,
       activeLifeEvents,
       cpfLifePayout,
