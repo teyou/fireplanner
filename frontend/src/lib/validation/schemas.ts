@@ -229,11 +229,43 @@ export function validateIncomeField(
 // ============================================================
 
 export const mcMethodSchema = z.enum(['parametric', 'bootstrap', 'fat_tail'])
-export const withdrawalStrategySchema = z.enum([
-  'constant_dollar', 'vpw', 'guardrails', 'vanguard_dynamic', 'cape_based', 'floor_ceiling',
-])
 export const nSimulationsSchema = z.number().int().min(100).max(100000)
 export const capeSchema = z.number().min(5).max(100)
+export const withdrawalStrategySchema = z.enum([
+  'constant_dollar', 'vpw', 'guardrails', 'vanguard_dynamic', 'cape_based', 'floor_ceiling',
+  'percent_of_portfolio', 'one_over_n', 'sensible_withdrawals', 'ninety_five_percent',
+  'endowment', 'hebeler_autopilot',
+])
+
+// ============================================================
+// Strategy Param Schemas (per-strategy validation)
+// ============================================================
+
+export const constantDollarParamsSchema = z.object({ swr: swrSchema })
+export const vpwParamsSchema = z.object({ expectedRealReturn: z.number().min(-0.05).max(0.15), targetEndValue: z.number().min(0).max(1) })
+export const guardrailsParamsSchema = z.object({ initialRate: swrSchema, ceilingTrigger: z.number().min(1.01).max(2), floorTrigger: z.number().min(0.5).max(0.99), adjustmentSize: z.number().min(0.01).max(0.5) })
+export const vanguardDynamicParamsSchema = z.object({ swr: swrSchema, ceiling: z.number().min(0.01).max(0.20), floor: z.number().min(0).max(0.10) })
+export const capeBasedParamsSchema = z.object({ baseRate: swrSchema, capeWeight: z.number().min(0).max(1), currentCape: capeSchema })
+export const floorCeilingParamsSchema = z.object({ floor: z.number().min(0), ceiling: z.number().min(0), targetRate: swrSchema })
+export const percentOfPortfolioParamsSchema = z.object({ rate: swrSchema })
+export const oneOverNParamsSchema = z.object({})
+export const sensibleWithdrawalsParamsSchema = z.object({ baseRate: swrSchema, extrasRate: z.number().min(0).max(1) })
+export const ninetyFivePercentParamsSchema = z.object({ swr: swrSchema })
+export const endowmentParamsSchema = z.object({ swr: swrSchema, smoothingWeight: z.number().min(0).max(1) })
+export const hebelerAutopilotParamsSchema = z.object({ expectedRealReturn: z.number().min(-0.05).max(0.15) })
+
+// ============================================================
+// RetirementWithdrawal Schema
+// ============================================================
+
+export const retirementWithdrawalSchema = z.object({
+  id: z.string(),
+  label: z.string().min(1),
+  amount: z.number().positive(),
+  age: z.number().int().min(18).max(120),
+  durationYears: z.number().int().min(1).max(50),
+  inflationAdjusted: z.boolean(),
+})
 
 /** Validate a single simulation field and return error message or null */
 export function validateSimulationField(

@@ -50,11 +50,13 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
     strategyParams: withdrawal.strategyParams,
     expenseRatio: profile.expenseRatio,
     inflation: profile.inflation,
+    retirementWithdrawals: profile.retirementWithdrawals,
   }), [
     analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights,
     profile.retirementAge, profile.lifeExpectancy, profile.expenseRatio, profile.inflation,
     allocation.returnOverrides, allocation.stdDevOverrides,
     strategy, withdrawal.strategyParams,
+    profile.retirementWithdrawals,
   ])
 
   const mutation = useMutation({
@@ -87,6 +89,19 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
         allocation.stdDevOverrides[i] ?? ac.stdDev
       )
 
+      // Convert retirement withdrawals to year-offset based one-time withdrawals
+      // Expand durationYears > 1 into multiple year entries
+      const retirementDuration = profile.lifeExpectancy - profile.retirementAge
+      const oneTimeWithdrawals: { year: number; amount: number }[] = []
+      for (const rw of profile.retirementWithdrawals) {
+        for (let d = 0; d < (rw.durationYears ?? 1); d++) {
+          const yearOffset = (rw.age + d) - profile.retirementAge
+          if (yearOffset >= 0 && yearOffset < retirementDuration) {
+            oneTimeWithdrawals.push({ year: yearOffset, amount: rw.amount })
+          }
+        }
+      }
+
       const params = {
         initialPortfolio: analysisPortfolio.retirementPortfolio,
         allocationWeights: analysisPortfolio.allocationWeights,
@@ -102,6 +117,7 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
         expenseRatio: profile.expenseRatio,
         inflation: profile.inflation,
         postRetirementIncome,
+        oneTimeWithdrawals: oneTimeWithdrawals.length > 0 ? oneTimeWithdrawals : undefined,
       }
 
       return runSequenceRiskWorker(params)

@@ -100,11 +100,14 @@ export function useBacktestQuery(): UseBacktestQueryResult {
 
   const buildParams = useCallback(() => {
     // Convert retirement withdrawals to year-offset based one-time withdrawals
+    // Expand durationYears > 1 into multiple year entries
     const oneTimeWithdrawals: { year: number; amount: number }[] = []
     for (const rw of profile.retirementWithdrawals) {
-      const yearOffset = rw.age - profile.retirementAge
-      if (yearOffset >= 0 && yearOffset < config.retirementDuration) {
-        oneTimeWithdrawals.push({ year: yearOffset, amount: rw.amount })
+      for (let d = 0; d < (rw.durationYears ?? 1); d++) {
+        const yearOffset = (rw.age + d) - profile.retirementAge
+        if (yearOffset >= 0 && yearOffset < config.retirementDuration) {
+          oneTimeWithdrawals.push({ year: yearOffset, amount: rw.amount })
+        }
       }
     }
 

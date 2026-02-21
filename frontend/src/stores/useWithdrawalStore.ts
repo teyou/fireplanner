@@ -132,13 +132,28 @@ export const useWithdrawalStore = create<WithdrawalState & WithdrawalActions>()(
     }),
     {
       name: 'fireplanner-withdrawal',
-      version: 1,
+      version: 2,
+      migrate: (persisted: unknown, version: number) => {
+        const state = persisted as Record<string, unknown>
+        if (version < 2) {
+          // v1 → v2: ensure all 12 strategy param keys exist
+          const params = (state.strategyParams ?? {}) as Record<string, unknown>
+          params.percent_of_portfolio ??= { rate: 0.04 }
+          params.one_over_n ??= {}
+          params.sensible_withdrawals ??= { baseRate: 0.03, extrasRate: 0.10 }
+          params.ninety_five_percent ??= { swr: 0.04 }
+          params.endowment ??= { swr: 0.04, smoothingWeight: 0.70 }
+          params.hebeler_autopilot ??= { expectedRealReturn: 0.03 }
+          state.strategyParams = params
+        }
+        return state as unknown as WithdrawalState
+      },
       partialize: (state) => {
         const data: Record<string, unknown> = {}
         for (const key of WITHDRAWAL_DATA_KEYS) {
           data[key] = state[key]
         }
-        return data
+        return data as unknown as WithdrawalState
       },
       onRehydrateStorage: () => (state) => {
         if (state) {

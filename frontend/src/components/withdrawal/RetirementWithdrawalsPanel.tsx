@@ -26,6 +26,7 @@ export function RetirementWithdrawalsPanel() {
       label: entries.length === 0 ? 'Home Renovation' : `Withdrawal ${entries.length + 1}`,
       amount: 50000,
       age: retirementAge + 5,
+      durationYears: 1,
       inflationAdjusted: true,
     }
     addEntry(entry)

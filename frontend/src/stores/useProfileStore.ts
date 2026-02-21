@@ -209,7 +209,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 9,
+      version: 10,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -253,6 +253,13 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
         }
         if (version < 9) {
           state.cpfRA = state.cpfRA ?? 0
+        }
+        if (version < 10) {
+          const rws = state.retirementWithdrawals as Array<Record<string, unknown>> | undefined
+          state.retirementWithdrawals = (rws ?? []).map(rw => ({
+            ...rw,
+            durationYears: rw.durationYears ?? 1,
+          }))
         }
         return state
       },

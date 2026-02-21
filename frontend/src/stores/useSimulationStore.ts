@@ -114,7 +114,7 @@ export const useSimulationStore = create<SimulationState & SimulationActions>()(
     }),
     {
       name: 'fireplanner-simulation',
-      version: 3,
+      version: 4,
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -128,6 +128,17 @@ export const useSimulationStore = create<SimulationState & SimulationActions>()(
           // v2 → v3: add last success rates
           state.lastMCSuccessRate = null
           state.lastBacktestSuccessRate = null
+        }
+        if (version < 4) {
+          // v3 → v4: ensure all 12 strategy param keys exist
+          const params = (state.strategyParams ?? {}) as Record<string, unknown>
+          params.percent_of_portfolio ??= { rate: 0.04 }
+          params.one_over_n ??= {}
+          params.sensible_withdrawals ??= { baseRate: 0.03, extrasRate: 0.10 }
+          params.ninety_five_percent ??= { swr: 0.04 }
+          params.endowment ??= { swr: 0.04, smoothingWeight: 0.70 }
+          params.hebeler_autopilot ??= { expectedRealReturn: 0.03 }
+          state.strategyParams = params
         }
         return state as unknown as SimulationState
       },

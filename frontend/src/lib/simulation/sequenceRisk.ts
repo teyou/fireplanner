@@ -42,6 +42,7 @@ export interface SequenceRiskEngineParams {
   expenseRatio: number
   inflation: number
   postRetirementIncome: number[]
+  oneTimeWithdrawals?: { year: number; amount: number }[]
   crisis: {
     id: string
     name: string
@@ -106,6 +107,7 @@ function runSingleScenario(
   expenseRatio: number,
   postRetirementIncome: number[],
   crisisReturns: number[] | null,
+  oneTimeWithdrawals?: { year: number; amount: number }[],
 ): SingleScenarioResult {
   const nCrisis = crisisReturns !== null ? crisisReturns.length : 0
 
@@ -169,8 +171,13 @@ function runSingleScenario(
         prevYearGains,
       )
 
+      // Add one-time withdrawals for this year offset
+      const oneTime = (oneTimeWithdrawals ?? [])
+        .filter(w => w.year === t)
+        .reduce((sum, w) => sum + w.amount, 0)
+
       const income = t < postRetirementIncome.length ? postRetirementIncome[t] : 0.0
-      let netWithdrawal = Math.max(0, withdrawal - income)
+      let netWithdrawal = Math.max(0, (withdrawal + oneTime) - income)
       // Don't withdraw more than the portfolio
       netWithdrawal = Math.min(netWithdrawal, balances[s][t])
 
@@ -251,6 +258,7 @@ interface RunMitigationParams {
   expenseRatio: number
   postRetirementIncome: number[]
   crisisReturns: number[]
+  oneTimeWithdrawals?: { year: number; amount: number }[]
   mitigationName: string
   mitigationDesc: string
   baselineCrisisRate: number
@@ -284,6 +292,7 @@ function runMitigation(p: RunMitigationParams): MitigationImpact {
     p.expenseRatio,
     effIncome,
     null,
+    p.oneTimeWithdrawals,
   )
 
   // Crisis run for this mitigation
@@ -304,6 +313,7 @@ function runMitigation(p: RunMitigationParams): MitigationImpact {
     p.expenseRatio,
     effIncome,
     p.crisisReturns,
+    p.oneTimeWithdrawals,
   )
 
   return {
@@ -344,6 +354,7 @@ export function runSequenceRisk(params: SequenceRiskEngineParams): SequenceRiskE
     expenseRatio,
     inflation,
     postRetirementIncome,
+    oneTimeWithdrawals,
     crisis,
   } = params
 
@@ -373,6 +384,7 @@ export function runSequenceRisk(params: SequenceRiskEngineParams): SequenceRiskE
     expenseRatio,
     postRetirementIncome,
     null,
+    oneTimeWithdrawals,
   )
 
   // --- Crisis scenario ---
@@ -393,6 +405,7 @@ export function runSequenceRisk(params: SequenceRiskEngineParams): SequenceRiskE
     expenseRatio,
     postRetirementIncome,
     crisisReturns.length > 0 ? crisisReturns : null,
+    oneTimeWithdrawals,
   )
 
   const baselineCrisisRate = crisisResult.success_rate
@@ -430,6 +443,7 @@ export function runSequenceRisk(params: SequenceRiskEngineParams): SequenceRiskE
     expenseRatio,
     postRetirementIncome,
     crisisReturns,
+    oneTimeWithdrawals,
     mitigationName: 'Conservative Allocation',
     mitigationDesc:
       'Shift 20% from equities to bonds throughout retirement to reduce volatility exposure.',
@@ -479,6 +493,7 @@ export function runSequenceRisk(params: SequenceRiskEngineParams): SequenceRiskE
     expenseRatio,
     postRetirementIncome,
     crisisReturns,
+    oneTimeWithdrawals,
     mitigationName: 'Cash Buffer (2 Years)',
     mitigationDesc:
       'Hold 2 years of expenses in cash outside the portfolio, drawing from buffer in early crisis years.',
@@ -516,6 +531,7 @@ export function runSequenceRisk(params: SequenceRiskEngineParams): SequenceRiskE
     expenseRatio,
     postRetirementIncome,
     crisisReturns,
+    oneTimeWithdrawals,
     mitigationName: 'Flexible Spending (-15%)',
     mitigationDesc:
       'Reduce withdrawal rate by 15% to preserve capital during market downturns.',

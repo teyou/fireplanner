@@ -59,7 +59,8 @@ export interface RetirementWithdrawal {
   id: string
   label: string
   amount: number
-  age: number           // age at which the withdrawal occurs
+  age: number              // age at which the withdrawal starts
+  durationYears: number    // how many years (1 = one-off, default 1)
   inflationAdjusted: boolean  // if true, amount is in today's dollars
 }
 

@@ -386,10 +386,11 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
         strategyWithdrawal = Math.min(strategyWithdrawal, startLiquidNW)
       }
 
-      // One-time retirement withdrawals at this age
+      // One-time retirement withdrawals at this age (supports durationYears range)
       let oneTimeWithdrawalTotal = 0
       for (const rw of params.retirementWithdrawals ?? []) {
-        if (rw.age === age) {
+        const endAge = rw.age + (rw.durationYears ?? 1)
+        if (age >= rw.age && age < endAge) {
           const amount = rw.inflationAdjusted
             ? rw.amount * Math.pow(1 + inflation, year)
             : rw.amount

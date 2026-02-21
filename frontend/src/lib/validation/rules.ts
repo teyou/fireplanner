@@ -5,7 +5,7 @@ import type { ValidationErrors, ProfileState, IncomeState, AllocationState, With
  * Returns a map of field names to error messages.
  */
 export function validateProfileConsistency(
-  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'lifeStage' | 'cpfLifeStartAge' | 'parentSupportEnabled' | 'parentSupport' | 'healthcareConfig'>
+  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'lifeStage' | 'cpfLifeStartAge' | 'parentSupportEnabled' | 'parentSupport' | 'healthcareConfig' | 'retirementWithdrawals'>
 ): ValidationErrors {
   const errors: ValidationErrors = {}
 
@@ -33,6 +33,18 @@ export function validateProfileConsistency(
       if (entry.endAge > profile.lifeExpectancy) {
         errors[`parentSupport_${entry.id}_endAge`] = `End age cannot exceed life expectancy (${profile.lifeExpectancy})`
       }
+    }
+  }
+
+  // Retirement withdrawal validation
+  for (const rw of profile.retirementWithdrawals ?? []) {
+    if (rw.age < profile.retirementAge) {
+      errors[`retirementWithdrawal_${rw.id}_age`] =
+        `Withdrawal age (${rw.age}) must be >= retirement age (${profile.retirementAge})`
+    }
+    if (rw.age + (rw.durationYears ?? 1) > profile.lifeExpectancy) {
+      errors[`retirementWithdrawal_${rw.id}_durationYears`] =
+        `Withdrawal end age (${rw.age + (rw.durationYears ?? 1)}) exceeds life expectancy (${profile.lifeExpectancy})`
     }
   }
 

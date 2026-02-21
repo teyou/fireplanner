@@ -28,6 +28,7 @@ describe('validateProfileConsistency edge cases', () => {
       parentSupportEnabled: false,
       parentSupport: [],
       healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
     })
     expect(errors.cpfLifeStartAge).toBeTruthy()
   })
@@ -44,6 +45,7 @@ describe('validateProfileConsistency edge cases', () => {
         { id: 'ps1', label: 'Mom', monthlyAmount: 500, startAge: 16, endAge: 65, growthRate: 0 },
       ],
       healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
     })
     expect(errors['parentSupport_ps1_startAge']).toBeTruthy()
   })
@@ -60,6 +62,7 @@ describe('validateProfileConsistency edge cases', () => {
         { id: 'ps1', label: 'Mom', monthlyAmount: 500, startAge: 30, endAge: 95, growthRate: 0 },
       ],
       healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
     })
     expect(errors['parentSupport_ps1_endAge']).toBeTruthy()
   })
@@ -78,6 +81,7 @@ describe('validateProfileConsistency edge cases', () => {
         enabled: true,
         oopBaseAmount: 60000, // exceeds $50,000 max
       },
+      retirementWithdrawals: [],
     })
     expect(errors['healthcareConfig.oopBaseAmount']).toBeTruthy()
   })
@@ -96,6 +100,7 @@ describe('validateProfileConsistency edge cases', () => {
         enabled: true,
         mediSaveTopUpAnnual: 50000, // exceeds $37,740 max
       },
+      retirementWithdrawals: [],
     })
     expect(errors['healthcareConfig.mediSaveTopUpAnnual']).toBeTruthy()
   })
@@ -114,6 +119,7 @@ describe('validateProfileConsistency edge cases', () => {
         enabled: false,
         oopBaseAmount: 60000, // would be invalid if enabled
       },
+      retirementWithdrawals: [],
     })
     expect(errors['healthcareConfig.oopBaseAmount']).toBeUndefined()
   })

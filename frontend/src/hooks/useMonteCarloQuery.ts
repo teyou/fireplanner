@@ -161,15 +161,16 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
       }
 
       // Convert retirement withdrawals to negative portfolio adjustments
+      // Expand durationYears > 1 into multiple year entries
       const effectiveStartAge = analysisPortfolio.skipAccumulation
         ? profile.retirementAge : profile.currentAge
+      const nYearsTotal = profile.lifeExpectancy - effectiveStartAge
       for (const rw of profile.retirementWithdrawals) {
-        const mcYear = rw.age - effectiveStartAge
-        const nYearsTotal = profile.lifeExpectancy - effectiveStartAge
-        if (mcYear >= 0 && mcYear < nYearsTotal) {
-          // Negative amount = withdrawal from portfolio
-          // Inflation adjustment is handled per-sim in the engine via the adjustments array
-          portfolioAdjustments.push({ year: mcYear, amount: -rw.amount })
+        for (let d = 0; d < (rw.durationYears ?? 1); d++) {
+          const mcYear = (rw.age + d) - effectiveStartAge
+          if (mcYear >= 0 && mcYear < nYearsTotal) {
+            portfolioAdjustments.push({ year: mcYear, amount: -rw.amount })
+          }
         }
       }
 
