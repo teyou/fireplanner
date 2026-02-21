@@ -432,9 +432,9 @@ describe('calculateIncomeSummary', () => {
 
   it('computes correct peak earning for simple projection', () => {
     const rows: IncomeProjectionRow[] = [
-      { year: 0, age: 30, salary: 72000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 72000, sgTax: 2000, cpfEmployee: 14400, cpfEmployer: 12240, totalNet: 55600, annualSavings: 7600, cumulativeSavings: 7600, cpfOA: 16560, cpfSA: 4320, cpfMA: 5760, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfLifeAnnuityPremium: 0 },
-      { year: 1, age: 31, salary: 80000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 80000, sgTax: 3000, cpfEmployee: 16000, cpfEmployer: 13600, totalNet: 61000, annualSavings: 13000, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfLifeAnnuityPremium: 0 },
-      { year: 2, age: 32, salary: 0, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0, cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: true, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfLifeAnnuityPremium: 0 },
+      { year: 0, age: 30, salary: 72000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 72000, sgTax: 2000, cpfEmployee: 14400, cpfEmployer: 12240, totalNet: 55600, annualSavings: 7600, cumulativeSavings: 7600, cpfOA: 16560, cpfSA: 4320, cpfMA: 5760, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0 },
+      { year: 1, age: 31, salary: 80000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 80000, sgTax: 3000, cpfEmployee: 16000, cpfEmployer: 13600, totalNet: 61000, annualSavings: 13000, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0 },
+      { year: 2, age: 32, salary: 0, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0, cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: true, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0 },
     ]
 
     const summary = calculateIncomeSummary(rows, 48000)
@@ -1467,5 +1467,74 @@ describe('integration tests', () => {
     // At 90 (endAge): no longer receiving
     const row90 = rows.find((r) => r.age === 90)!
     expect(row90.governmentIncome).toBe(0)
+  })
+
+  it('tracks SRS accumulation, drawdown at age 63, and stops after 10 years', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 55,
+      retirementAge: 55,
+      lifeExpectancy: 80,
+      salaryModel: 'simple',
+      annualSalary: 0,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: false,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 48000,
+      inflation: 0,
+      personalReliefs: { earnedIncome: true },
+      srsAnnualContribution: 15300,
+      initialCpfOA: 0,
+      initialCpfSA: 0,
+      initialCpfMA: 0,
+      initialCpfRA: 0,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+      cpfHousingMode: 'none',
+      cpfHousingMonthly: 0,
+      cpfMortgageYearsLeft: 0,
+      residencyStatus: 'citizen',
+      srsBalance: 100000,
+      srsInvestmentReturn: 0.04,
+      srsDrawdownStartAge: 63,
+    })
+
+    // Age 55 = retirementAge: isRetired = (age > retirementAge), so age 55 still contributes
+    const row55 = rows.find((r) => r.age === 55)!
+    expect(row55.srsContribution).toBe(15300) // last working year
+    expect(row55.srsWithdrawal).toBe(0)
+    // ($100K + $15,300) * 1.04 = $119,912
+    expect(row55.srsBalance).toBeCloseTo((100000 + 15300) * 1.04, 0)
+
+    // Age 56+: retired, no more contributions, but balance grows with returns
+    const row56 = rows.find((r) => r.age === 56)!
+    expect(row56.srsContribution).toBe(0)
+    expect(row56.srsWithdrawal).toBe(0)
+
+    const row62 = rows.find((r) => r.age === 62)!
+    expect(row62.srsWithdrawal).toBe(0)
+    expect(row62.srsBalance).toBeGreaterThan(100000) // should have grown
+
+    // Drawdown starts at age 63
+    const row63 = rows.find((r) => r.age === 63)!
+    expect(row63.srsWithdrawal).toBeGreaterThan(0)
+    expect(row63.srsTaxableWithdrawal).toBeCloseTo(row63.srsWithdrawal * 0.5, 2)
+    // SRS withdrawal appears in governmentIncome
+    expect(row63.governmentIncome).toBeGreaterThanOrEqual(row63.srsWithdrawal)
+
+    // Age 72: last drawdown year (63 + 10 - 1 = 72)
+    const row72 = rows.find((r) => r.age === 72)!
+    expect(row72.srsWithdrawal).toBeGreaterThan(0)
+
+    // Age 73: drawdown finished, no more SRS
+    const row73 = rows.find((r) => r.age === 73)!
+    expect(row73.srsWithdrawal).toBe(0)
+    expect(row73.srsBalance).toBeCloseTo(0, 0)
   })
 })
