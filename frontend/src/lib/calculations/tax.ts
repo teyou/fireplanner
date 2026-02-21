@@ -1,5 +1,5 @@
 import type { TaxResult } from '@/lib/types'
-import { TAX_BRACKETS, SRS_ANNUAL_CAP } from '@/lib/data/taxBrackets'
+import { TAX_BRACKETS, SRS_ANNUAL_CAP, SRS_ANNUAL_CAP_FOREIGNER } from '@/lib/data/taxBrackets'
 
 /**
  * Calculate Singapore progressive income tax for a given chargeable income.
@@ -49,9 +49,10 @@ export function calculateChargeableIncome(
   totalIncome: number,
   cpfEmployee: number,
   srsContribution: number,
-  personalReliefs: number
+  personalReliefs: number,
+  residencyStatus: 'citizen' | 'pr' | 'foreigner' = 'citizen'
 ): number {
-  const srsDeduction = calculateSrsDeduction(srsContribution)
+  const srsDeduction = calculateSrsDeduction(srsContribution, residencyStatus)
   return Math.max(0, totalIncome - cpfEmployee - srsDeduction - personalReliefs)
 }
 
@@ -64,8 +65,13 @@ export function calculateEffectiveTaxRate(taxPayable: number, grossIncome: numbe
 }
 
 /**
- * SRS deduction is capped at the annual maximum ($15,300 for citizens/PR).
+ * SRS deduction is capped at the annual maximum.
+ * $15,300 for citizens/PR, $35,700 for foreigners.
  */
-export function calculateSrsDeduction(srsContribution: number): number {
-  return Math.min(Math.max(0, srsContribution), SRS_ANNUAL_CAP)
+export function calculateSrsDeduction(
+  srsContribution: number,
+  residencyStatus: 'citizen' | 'pr' | 'foreigner' = 'citizen'
+): number {
+  const cap = residencyStatus === 'foreigner' ? SRS_ANNUAL_CAP_FOREIGNER : SRS_ANNUAL_CAP
+  return Math.min(Math.max(0, srsContribution), cap)
 }

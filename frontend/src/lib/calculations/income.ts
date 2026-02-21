@@ -239,6 +239,8 @@ export interface IncomeProjectionParams {
   cpfMortgageYearsLeft?: number
   // 65+ users can enter their actual CPF LIFE payout directly
   cpfLifeActualMonthlyPayout?: number
+  // Residency status for correct SRS cap
+  residencyStatus?: 'citizen' | 'pr' | 'foreigner'
 }
 
 /**
@@ -438,7 +440,8 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       taxableIncome,
       cpfEmployee,
       params.srsAnnualContribution,
-      params.personalReliefs
+      params.personalReliefs,
+      params.residencyStatus
     )
     const taxResult = calculateProgressiveTax(chargeableIncome)
     const sgTax = taxResult.taxPayable

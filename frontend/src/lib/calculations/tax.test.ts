@@ -185,6 +185,18 @@ describe('calculateSrsDeduction', () => {
   it('returns 0 for negative', () => {
     expect(calculateSrsDeduction(-5000)).toBe(0)
   })
+
+  it('caps at $15,300 for citizens/PR', () => {
+    expect(calculateSrsDeduction(20000, 'citizen')).toBe(15300)
+    expect(calculateSrsDeduction(15300, 'pr')).toBe(15300)
+    expect(calculateSrsDeduction(10000, 'citizen')).toBe(10000)
+  })
+
+  it('caps at $35,700 for foreigners', () => {
+    expect(calculateSrsDeduction(40000, 'foreigner')).toBe(35700)
+    expect(calculateSrsDeduction(35700, 'foreigner')).toBe(35700)
+    expect(calculateSrsDeduction(20000, 'foreigner')).toBe(20000)
+  })
 })
 
 describe('computeTotalReliefs', () => {

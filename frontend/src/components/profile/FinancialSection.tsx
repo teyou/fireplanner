@@ -57,7 +57,11 @@ export function FinancialSection() {
             value={store.srsAnnualContribution}
             onChange={(v) => store.setField('srsAnnualContribution', v)}
             error={store.validationErrors.srsAnnualContribution}
-            tooltip="Annual SRS contribution (max $15,300 for citizens/PR)"
+            tooltip={
+              store.residencyStatus === 'foreigner'
+                ? 'Annual SRS contribution (max $35,700 for foreigners)'
+                : 'Annual SRS contribution (max $15,300 for citizens/PR)'
+            }
           />
         </div>
       </CardContent>
