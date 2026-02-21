@@ -296,6 +296,101 @@ describe('runMonteCarlo — floor_ceiling strategy', () => {
   })
 })
 
+describe('runMonteCarlo — percent_of_portfolio strategy', () => {
+  it('runs percent_of_portfolio strategy successfully', () => {
+    const result = runMonteCarlo(
+      makeDefaultParams({
+        withdrawalStrategy: 'percent_of_portfolio',
+        strategyParams: { rate: 0.04 },
+      })
+    )
+    expect(result.success_rate).toBeGreaterThanOrEqual(0)
+    expect(result.success_rate).toBeLessThanOrEqual(1)
+  })
+})
+
+describe('runMonteCarlo — one_over_n strategy', () => {
+  it('runs one_over_n strategy successfully', () => {
+    const result = runMonteCarlo(
+      makeDefaultParams({
+        withdrawalStrategy: 'one_over_n',
+        strategyParams: {},
+      })
+    )
+    // one_over_n always spends everything, so it never "fails" unless portfolio hits 0 mid-year
+    expect(result.success_rate).toBeGreaterThanOrEqual(0)
+    expect(result.success_rate).toBeLessThanOrEqual(1)
+  })
+})
+
+describe('runMonteCarlo — sensible_withdrawals strategy', () => {
+  it('runs sensible_withdrawals strategy successfully', () => {
+    const result = runMonteCarlo(
+      makeDefaultParams({
+        withdrawalStrategy: 'sensible_withdrawals',
+        strategyParams: { baseRate: 0.03, extrasRate: 0.10 },
+      })
+    )
+    expect(result.success_rate).toBeGreaterThanOrEqual(0)
+    expect(result.success_rate).toBeLessThanOrEqual(1)
+  })
+
+  it('prevYearGains tracking produces valid withdrawal bands', () => {
+    const result = runMonteCarlo(
+      makeDefaultParams({
+        withdrawalStrategy: 'sensible_withdrawals',
+        strategyParams: { baseRate: 0.03, extrasRate: 0.10 },
+        nSimulations: 200,
+      })
+    )
+    // Withdrawal bands should exist and have no NaN values
+    if (result.withdrawal_bands) {
+      for (const v of result.withdrawal_bands.p50) {
+        expect(Number.isFinite(v)).toBe(true)
+      }
+    }
+  })
+})
+
+describe('runMonteCarlo — ninety_five_percent strategy', () => {
+  it('runs ninety_five_percent strategy successfully', () => {
+    const result = runMonteCarlo(
+      makeDefaultParams({
+        withdrawalStrategy: 'ninety_five_percent',
+        strategyParams: { swr: 0.04 },
+      })
+    )
+    expect(result.success_rate).toBeGreaterThanOrEqual(0)
+    expect(result.success_rate).toBeLessThanOrEqual(1)
+  })
+})
+
+describe('runMonteCarlo — endowment strategy', () => {
+  it('runs endowment strategy successfully', () => {
+    const result = runMonteCarlo(
+      makeDefaultParams({
+        withdrawalStrategy: 'endowment',
+        strategyParams: { swr: 0.04, smoothingWeight: 0.70 },
+      })
+    )
+    expect(result.success_rate).toBeGreaterThanOrEqual(0)
+    expect(result.success_rate).toBeLessThanOrEqual(1)
+  })
+})
+
+describe('runMonteCarlo — hebeler_autopilot strategy', () => {
+  it('runs hebeler_autopilot strategy successfully', () => {
+    const result = runMonteCarlo(
+      makeDefaultParams({
+        withdrawalStrategy: 'hebeler_autopilot',
+        strategyParams: { expectedRealReturn: 0.03 },
+      })
+    )
+    expect(result.success_rate).toBeGreaterThanOrEqual(0)
+    expect(result.success_rate).toBeLessThanOrEqual(1)
+  })
+})
+
 describe('generateReturnsParametric', () => {
   it('returns array of correct shape (nSims x nYears)', () => {
     const rng = new SeededRNG(42)

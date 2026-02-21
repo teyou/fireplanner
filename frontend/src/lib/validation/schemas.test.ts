@@ -19,6 +19,7 @@ import {
   validateIncomeField,
   validateAllocationField,
   validateSimulationField,
+  retirementWithdrawalSchema,
 } from './schemas'
 import {
   validateProfileConsistency,
@@ -729,5 +730,52 @@ describe('validateSimulationField', () => {
 
   it('returns null for unknown fields', () => {
     expect(validateSimulationField('unknownField', 'anything')).toBeNull()
+  })
+})
+
+describe('retirementWithdrawalSchema', () => {
+  const validEntry = {
+    id: 'rw1',
+    label: 'Home Renovation',
+    amount: 50000,
+    age: 60,
+    durationYears: 1,
+    inflationAdjusted: true,
+  }
+
+  it('accepts valid retirement withdrawal', () => {
+    expect(retirementWithdrawalSchema.safeParse(validEntry).success).toBe(true)
+  })
+
+  it('accepts durationYears = 1 (one-off)', () => {
+    expect(retirementWithdrawalSchema.safeParse({ ...validEntry, durationYears: 1 }).success).toBe(true)
+  })
+
+  it('accepts durationYears = 50 (max)', () => {
+    expect(retirementWithdrawalSchema.safeParse({ ...validEntry, durationYears: 50 }).success).toBe(true)
+  })
+
+  it('rejects durationYears = 0', () => {
+    expect(retirementWithdrawalSchema.safeParse({ ...validEntry, durationYears: 0 }).success).toBe(false)
+  })
+
+  it('rejects durationYears = 51 (exceeds max)', () => {
+    expect(retirementWithdrawalSchema.safeParse({ ...validEntry, durationYears: 51 }).success).toBe(false)
+  })
+
+  it('rejects non-integer durationYears', () => {
+    expect(retirementWithdrawalSchema.safeParse({ ...validEntry, durationYears: 2.5 }).success).toBe(false)
+  })
+
+  it('rejects empty label', () => {
+    expect(retirementWithdrawalSchema.safeParse({ ...validEntry, label: '' }).success).toBe(false)
+  })
+
+  it('rejects zero amount', () => {
+    expect(retirementWithdrawalSchema.safeParse({ ...validEntry, amount: 0 }).success).toBe(false)
+  })
+
+  it('rejects negative amount', () => {
+    expect(retirementWithdrawalSchema.safeParse({ ...validEntry, amount: -1000 }).success).toBe(false)
   })
 })

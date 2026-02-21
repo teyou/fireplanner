@@ -259,5 +259,64 @@ describe('useProfileStore', () => {
       // v8→v9 fields
       expect(migrated.cpfRA).toBe(0)
     })
+
+    it('v9→v10: backfills durationYears on retirementWithdrawals', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = {
+        retirementWithdrawals: [
+          { id: 'rw1', label: 'Car', amount: 50000, age: 60, inflationAdjusted: true },
+          { id: 'rw2', label: 'Reno', amount: 80000, age: 65, inflationAdjusted: false },
+        ],
+      }
+      const migrated = migrate!(oldState, 9) as Record<string, unknown>
+      const rws = migrated.retirementWithdrawals as Array<Record<string, unknown>>
+      expect(rws).toHaveLength(2)
+      expect(rws[0].durationYears).toBe(1)
+      expect(rws[1].durationYears).toBe(1)
+    })
+
+    it('v9→v10: preserves existing durationYears if already present', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = {
+        retirementWithdrawals: [
+          { id: 'rw1', label: 'Eldercare', amount: 2000, age: 75, durationYears: 10, inflationAdjusted: true },
+        ],
+      }
+      const migrated = migrate!(oldState, 9) as Record<string, unknown>
+      const rws = migrated.retirementWithdrawals as Array<Record<string, unknown>>
+      expect(rws[0].durationYears).toBe(10)
+    })
+
+    it('v9→v10: handles empty retirementWithdrawals', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = { retirementWithdrawals: [] }
+      const migrated = migrate!(oldState, 9) as Record<string, unknown>
+      expect(migrated.retirementWithdrawals).toEqual([])
+    })
+
+    it('v9→v10: handles missing retirementWithdrawals (undefined)', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = {}
+      const migrated = migrate!(oldState, 9) as Record<string, unknown>
+      const rws = migrated.retirementWithdrawals as Array<Record<string, unknown>>
+      expect(rws).toEqual([])
+    })
+
+    it('full migration v0→v10 applies all steps including durationYears', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = {
+        currentAge: 25,
+        retirementWithdrawals: [
+          { id: 'rw1', label: 'Car', amount: 50000, age: 60, inflationAdjusted: true },
+        ],
+      }
+      const migrated = migrate!(oldState, 0) as Record<string, unknown>
+      // Earlier migrations
+      expect(migrated.cpfLifeStartAge).toBe(65)
+      expect(migrated.cpfRA).toBe(0)
+      // v9→v10: durationYears backfilled
+      const rws = migrated.retirementWithdrawals as Array<Record<string, unknown>>
+      expect(rws[0].durationYears).toBe(1)
+    })
   })
 })

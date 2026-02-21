@@ -116,7 +116,7 @@ describe('runBacktest', () => {
   // All 6 withdrawal strategies
   // ---------------------------------------------------------------------------
 
-  it('works with all 6 withdrawal strategies', () => {
+  it('works with all 12 withdrawal strategies', () => {
     const strategies = [
       'constant_dollar',
       'vpw',
@@ -124,6 +124,12 @@ describe('runBacktest', () => {
       'vanguard_dynamic',
       'cape_based',
       'floor_ceiling',
+      'percent_of_portfolio',
+      'one_over_n',
+      'sensible_withdrawals',
+      'ninety_five_percent',
+      'endowment',
+      'hebeler_autopilot',
     ] as const
 
     for (const s of strategies) {
@@ -145,6 +151,24 @@ describe('runBacktest', () => {
         case 'floor_ceiling':
           strategyParams = { floorAmount: 40000, ceilingAmount: 100000, targetRate: 0.045 }
           break
+        case 'percent_of_portfolio':
+          strategyParams = { rate: 0.04 }
+          break
+        case 'one_over_n':
+          strategyParams = {}
+          break
+        case 'sensible_withdrawals':
+          strategyParams = { baseRate: 0.03, extrasRate: 0.10 }
+          break
+        case 'ninety_five_percent':
+          strategyParams = { swr: 0.04 }
+          break
+        case 'endowment':
+          strategyParams = { swr: 0.04, smoothingWeight: 0.70 }
+          break
+        case 'hebeler_autopilot':
+          strategyParams = { expectedRealReturn: 0.03 }
+          break
         default:
           strategyParams = { swr: 0.04 }
       }
@@ -157,6 +181,19 @@ describe('runBacktest', () => {
       expect(result.summary.success_rate).toBeGreaterThanOrEqual(0)
       expect(result.summary.success_rate).toBeLessThanOrEqual(1)
       expect(result.results.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('sensible_withdrawals produces finite results with prevYearGains', () => {
+    const result = runBacktest({
+      ...PARAMS,
+      withdrawalStrategy: 'sensible_withdrawals',
+      strategyParams: { baseRate: 0.03, extrasRate: 0.10 },
+    })
+    // Verify no NaN/Infinity in results (would indicate broken prevYearGains tracking)
+    for (const r of result.results) {
+      expect(Number.isFinite(r.ending_balance)).toBe(true)
+      expect(Number.isFinite(r.total_withdrawn)).toBe(true)
     }
   })
 

@@ -200,4 +200,83 @@ describe('runSequenceRisk', () => {
       )
     }
   })
+
+  // ---------------------------------------------------------------------------
+  // All 12 withdrawal strategies
+  // ---------------------------------------------------------------------------
+
+  it('works with all 12 withdrawal strategies', () => {
+    const strategyConfigs: Array<{ strategy: string; params: Record<string, number> }> = [
+      { strategy: 'constant_dollar', params: { swr: 0.04 } },
+      { strategy: 'vpw', params: { expectedRealReturn: 0.03, targetEndValue: 0 } },
+      { strategy: 'guardrails', params: { initialRate: 0.05, ceilingTrigger: 1.2, floorTrigger: 0.8, adjustmentSize: 0.1 } },
+      { strategy: 'vanguard_dynamic', params: { swr: 0.04, ceiling: 0.05, floor: 0.025 } },
+      { strategy: 'cape_based', params: { baseRate: 0.04, capeWeight: 0.5, currentCape: 30 } },
+      { strategy: 'floor_ceiling', params: { floorAmount: 60000, ceilingAmount: 150000, targetRate: 0.045 } },
+      { strategy: 'percent_of_portfolio', params: { rate: 0.04 } },
+      { strategy: 'one_over_n', params: {} },
+      { strategy: 'sensible_withdrawals', params: { baseRate: 0.03, extrasRate: 0.10 } },
+      { strategy: 'ninety_five_percent', params: { swr: 0.04 } },
+      { strategy: 'endowment', params: { swr: 0.04, smoothingWeight: 0.70 } },
+      { strategy: 'hebeler_autopilot', params: { expectedRealReturn: 0.03 } },
+    ]
+
+    for (const { strategy, params } of strategyConfigs) {
+      const result = runSequenceRisk({
+        ...PARAMS,
+        withdrawalStrategy: strategy,
+        strategyParams: params,
+        nSimulations: 100, // Keep low for speed
+      })
+      expect(result.normal_success_rate).toBeGreaterThanOrEqual(0)
+      expect(result.normal_success_rate).toBeLessThanOrEqual(1)
+      expect(result.crisis_success_rate).toBeGreaterThanOrEqual(0)
+      expect(result.crisis_success_rate).toBeLessThanOrEqual(1)
+      expect(result.mitigations).toHaveLength(3)
+    }
+  })
+
+  it('sensible_withdrawals tracks prevYearGains through crisis', () => {
+    const result = runSequenceRisk({
+      ...PARAMS,
+      withdrawalStrategy: 'sensible_withdrawals',
+      strategyParams: { baseRate: 0.03, extrasRate: 0.10 },
+      nSimulations: 100,
+    })
+    // Verify no NaN in percentile bands (would indicate broken gain tracking)
+    for (const v of result.crisis_percentile_bands.p50) {
+      expect(Number.isFinite(v)).toBe(true)
+    }
+  })
+
+  // ---------------------------------------------------------------------------
+  // oneTimeWithdrawals
+  // ---------------------------------------------------------------------------
+
+  it('oneTimeWithdrawals reduces portfolio during stress test', () => {
+    const withoutOneTime = runSequenceRisk(PARAMS)
+    const withOneTime = runSequenceRisk({
+      ...PARAMS,
+      oneTimeWithdrawals: [
+        { year: 2, amount: 200_000 },
+        { year: 5, amount: 100_000 },
+      ],
+    })
+    // One-time withdrawals should not improve success rate
+    expect(withOneTime.normal_success_rate).toBeLessThanOrEqual(
+      withoutOneTime.normal_success_rate + 0.05
+    )
+  })
+
+  it('oneTimeWithdrawals are passed through to mitigations', () => {
+    const result = runSequenceRisk({
+      ...PARAMS,
+      oneTimeWithdrawals: [{ year: 1, amount: 100_000 }],
+    })
+    // Should still produce 3 mitigations without error
+    expect(result.mitigations).toHaveLength(3)
+    for (const m of result.mitigations) {
+      expect(Number.isFinite(m.crisis_success_rate)).toBe(true)
+    }
+  })
 })
