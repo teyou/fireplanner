@@ -47,7 +47,7 @@ function getBaseInputs(
   allocation: ReturnType<typeof useAllocationStore.getState>,
   property: ReturnType<typeof usePropertyStore.getState>,
 ) {
-  const cpfTotal = profile.cpfOA + profile.cpfSA + profile.cpfMA
+  const cpfTotal = profile.cpfOA + profile.cpfSA + profile.cpfMA + profile.cpfRA
 
   // Effective income from income projection
   let effectiveIncome = profile.annualIncome
@@ -75,6 +75,7 @@ function getBaseInputs(
       initialCpfOA: profile.cpfOA,
       initialCpfSA: profile.cpfSA,
       initialCpfMA: profile.cpfMA,
+      initialCpfRA: profile.cpfRA,
       cpfLifeStartAge: profile.cpfLifeStartAge,
       cpfLifePlan: profile.cpfLifePlan,
       cpfRetirementSum: profile.cpfRetirementSum,

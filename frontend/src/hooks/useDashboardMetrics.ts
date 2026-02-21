@@ -53,7 +53,7 @@ export function useDashboardMetrics(): DashboardMetrics {
       coastFireNumber: metrics.coastFireNumber,
       baristaFireIncome: metrics.baristaFireIncome,
       savingsRate: metrics.savingsRate,
-      totalNetWorth: profile.liquidNetWorth + profile.cpfOA + profile.cpfSA + profile.cpfMA,
+      totalNetWorth: profile.liquidNetWorth + profile.cpfOA + profile.cpfSA + profile.cpfMA + profile.cpfRA,
     }
-  }, [metrics, projSummary, profile.currentAge, profile.liquidNetWorth, profile.cpfOA, profile.cpfSA, profile.cpfMA])
+  }, [metrics, projSummary, profile.currentAge, profile.liquidNetWorth, profile.cpfOA, profile.cpfSA, profile.cpfMA, profile.cpfRA])
 }

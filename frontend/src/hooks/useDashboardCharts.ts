@@ -25,7 +25,7 @@ export function useDashboardCharts(): DashboardChartData {
       return { accumulationData: [], fireNumberLine: null }
     }
 
-    const currentNW = profile.liquidNetWorth + profile.cpfOA + profile.cpfSA + profile.cpfMA
+    const currentNW = profile.liquidNetWorth + profile.cpfOA + profile.cpfSA + profile.cpfMA + profile.cpfRA
     const annualSavings = metrics.annualSavings
     const realReturn = profile.expectedReturn - profile.inflation - profile.expenseRatio
     const years = profile.lifeExpectancy - profile.currentAge
@@ -51,6 +51,7 @@ export function useDashboardCharts(): DashboardChartData {
     profile.cpfOA,
     profile.cpfSA,
     profile.cpfMA,
+    profile.cpfRA,
     profile.currentAge,
     profile.retirementAge,
     profile.lifeExpectancy,

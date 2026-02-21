@@ -35,7 +35,7 @@ export function useFireCalculations(): FireCalculationsResult {
       return { metrics: null, hasErrors: true, errors: profileErrors }
     }
 
-    const cpfTotal = profile.cpfOA + profile.cpfSA + profile.cpfMA
+    const cpfTotal = profile.cpfOA + profile.cpfSA + profile.cpfMA + profile.cpfRA
 
     // Try to get effective income from income projection
     let effectiveIncome = profile.annualIncome
@@ -65,6 +65,7 @@ export function useFireCalculations(): FireCalculationsResult {
         initialCpfOA: profile.cpfOA,
         initialCpfSA: profile.cpfSA,
         initialCpfMA: profile.cpfMA,
+        initialCpfRA: profile.cpfRA,
         cpfLifeStartAge: profile.cpfLifeStartAge,
         cpfLifePlan: profile.cpfLifePlan,
         cpfRetirementSum: profile.cpfRetirementSum,
@@ -128,6 +129,7 @@ export function useFireCalculations(): FireCalculationsResult {
     profile.cpfOA,
     profile.cpfSA,
     profile.cpfMA,
+    profile.cpfRA,
     profile.swr,
     profile.expectedReturn,
     profile.usePortfolioReturn,

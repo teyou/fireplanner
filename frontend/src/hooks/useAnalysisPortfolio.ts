@@ -37,7 +37,7 @@ export function useAnalysisPortfolio(): AnalysisPortfolioResult {
 
   return useMemo(() => {
     const currentWeights = allocation.currentWeights
-    const totalNW = profile.liquidNetWorth + profile.cpfOA + profile.cpfSA + profile.cpfMA
+    const totalNW = profile.liquidNetWorth + profile.cpfOA + profile.cpfSA + profile.cpfMA + profile.cpfRA
 
     // Compute retirement-age weights (for fireTarget and myPlan's retirementPortfolio)
     const retirementWeights = getRetirementAgeWeights(
@@ -93,6 +93,7 @@ export function useAnalysisPortfolio(): AnalysisPortfolioResult {
     profile.cpfOA,
     profile.cpfSA,
     profile.cpfMA,
+    profile.cpfRA,
     profile.currentAge,
     profile.retirementAge,
     profile.annualIncome,

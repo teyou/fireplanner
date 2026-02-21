@@ -45,7 +45,7 @@ export function useOneMoreYear(): OneMoreYearResult {
       return { scenarios: [], hasData: false }
     }
 
-    const cpfTotal = profile.cpfOA + profile.cpfSA + profile.cpfMA
+    const cpfTotal = profile.cpfOA + profile.cpfSA + profile.cpfMA + profile.cpfRA
     const totalNW = profile.liquidNetWorth + cpfTotal
 
     // Effective income
@@ -73,6 +73,7 @@ export function useOneMoreYear(): OneMoreYearResult {
         initialCpfOA: profile.cpfOA,
         initialCpfSA: profile.cpfSA,
         initialCpfMA: profile.cpfMA,
+        initialCpfRA: profile.cpfRA,
         cpfLifeStartAge: profile.cpfLifeStartAge,
         cpfLifePlan: profile.cpfLifePlan,
         cpfRetirementSum: profile.cpfRetirementSum,

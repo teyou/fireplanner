@@ -8,12 +8,13 @@ export interface CpfProjectionRow {
   oaBalance: number
   saBalance: number
   maBalance: number
+  raBalance: number
   totalBalance: number
   annualContribution: number
   annualInterest: number
   cpfLifePayout: number
   oaHousingDeduction: number
-  milestone: 'brs' | 'frs' | 'ers' | 'cpfLifeStart' | null
+  milestone: 'brs' | 'frs' | 'ers' | 'cpfLifeStart' | 'raCreated' | null
 }
 
 /**
@@ -43,9 +44,9 @@ export function useCpfProjection(): {
     const rows: CpfProjectionRow[] = projection.map((row, i) => {
       const prevRow = i > 0 ? projection[i - 1] : null
       const prevTotal = prevRow
-        ? prevRow.cpfOA + prevRow.cpfSA + prevRow.cpfMA
+        ? prevRow.cpfOA + prevRow.cpfSA + prevRow.cpfMA + prevRow.cpfRA
         : 0
-      const totalBalance = row.cpfOA + row.cpfSA + row.cpfMA
+      const totalBalance = row.cpfOA + row.cpfSA + row.cpfMA + row.cpfRA
       const annualContribution = row.cpfEmployee + row.cpfEmployer
       // Interest approximation: balance change minus contributions, plus housing deductions
       const annualInterest = i > 0
@@ -70,12 +71,16 @@ export function useCpfProjection(): {
         milestone = 'cpfLifeStart'
         cpfLifeStarted = true
       }
+      if (row.age === 55 && row.cpfRA > 0 && milestone === null) {
+        milestone = 'raCreated'
+      }
 
       return {
         age: row.age,
         oaBalance: row.cpfOA,
         saBalance: row.cpfSA,
         maBalance: row.cpfMA,
+        raBalance: row.cpfRA,
         totalBalance,
         annualContribution,
         annualInterest: Math.max(0, annualInterest),

@@ -17,7 +17,7 @@ import { formatCurrency, formatPercent } from '@/lib/utils'
 
 export function CpfSection() {
   const {
-    currentAge, retirementAge, annualIncome, cpfOA, cpfSA, cpfMA,
+    currentAge, retirementAge, annualIncome, cpfOA, cpfSA, cpfMA, cpfRA,
     cpfLifeStartAge, cpfLifePlan, cpfRetirementSum,
     cpfHousingMode, cpfHousingMonthly, cpfMortgageYearsLeft,
     lifeStage, retirementPhase, cpfLifeActualMonthlyPayout,
@@ -54,7 +54,7 @@ export function CpfSection() {
     { key: 'ers', label: 'ERS', value: brsFrsErs.ers, baseline: ERS_2024 },
   ]
 
-  const totalCpf = cpfOA + cpfSA + cpfMA
+  const totalCpf = cpfOA + cpfSA + cpfMA + cpfRA
 
   // Project SA at 55 to check if user can reach selected retirement sum
   const { projection } = useIncomeProjection()

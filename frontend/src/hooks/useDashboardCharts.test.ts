@@ -78,7 +78,7 @@ describe('useDashboardCharts', () => {
       validationErrors: {},
     })
     const { result } = renderHook(() => useDashboardCharts())
-    // First data point should be liquidNW + cpfOA + cpfSA + cpfMA = 200000
+    // First data point should be liquidNW + cpfOA + cpfSA + cpfMA + cpfRA = 200000
     expect(result.current.accumulationData[0].value).toBe(200000)
   })
 

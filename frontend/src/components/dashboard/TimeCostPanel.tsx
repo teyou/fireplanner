@@ -29,7 +29,7 @@ export function TimeCostPanel() {
   const baseInput = useMemo<TimeCostBaseInput | null>(() => {
     if (Object.keys(profile.validationErrors).length > 0) return null
 
-    const cpfTotal = profile.cpfOA + profile.cpfSA + profile.cpfMA
+    const cpfTotal = profile.cpfOA + profile.cpfSA + profile.cpfMA + profile.cpfRA
 
     let effectiveIncome = profile.annualIncome
     if (Object.keys(income.validationErrors).length === 0) {
@@ -55,6 +55,7 @@ export function TimeCostPanel() {
         initialCpfOA: profile.cpfOA,
         initialCpfSA: profile.cpfSA,
         initialCpfMA: profile.cpfMA,
+        initialCpfRA: profile.cpfRA,
         cpfLifeStartAge: profile.cpfLifeStartAge,
         cpfLifePlan: profile.cpfLifePlan,
         cpfRetirementSum: profile.cpfRetirementSum,
