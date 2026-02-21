@@ -129,6 +129,37 @@ describe('calculateSellAndRent', () => {
     })
     expect(result.netProceedsToPortfolio).toBe(0)
   })
+
+  it('deducts CPF refund from net proceeds', () => {
+    const result = calculateSellAndRent({
+      salePrice: 800000,
+      outstandingMortgage: 200000,
+      monthlyRent: 2500,
+      cpfRefund: 150000,
+    })
+    // net = 800000 - 200000 - 150000 = 450000
+    expect(result.netProceedsToPortfolio).toBe(450000)
+    expect(result.annualRent).toBe(30000)
+  })
+
+  it('handles zero CPF refund (backwards compatible)', () => {
+    const result = calculateSellAndRent({
+      salePrice: 800000,
+      outstandingMortgage: 200000,
+      monthlyRent: 2500,
+    })
+    expect(result.netProceedsToPortfolio).toBe(600000)
+  })
+
+  it('clamps to zero when mortgage + CPF refund exceed sale price', () => {
+    const result = calculateSellAndRent({
+      salePrice: 300000,
+      outstandingMortgage: 200000,
+      monthlyRent: 2000,
+      cpfRefund: 200000,
+    })
+    expect(result.netProceedsToPortfolio).toBe(0)
+  })
 })
 
 describe('calculateABSD', () => {

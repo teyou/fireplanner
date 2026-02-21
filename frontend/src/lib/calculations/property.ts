@@ -235,13 +235,15 @@ export function calculateSellAndRent(params: {
   salePrice: number
   outstandingMortgage: number
   monthlyRent: number
+  cpfRefund?: number
 }): SellAndRentResult {
-  const netProceeds = Math.max(0, params.salePrice - params.outstandingMortgage)
+  const { salePrice, outstandingMortgage, monthlyRent, cpfRefund = 0 } = params
+  const netProceeds = Math.max(0, salePrice - outstandingMortgage - cpfRefund)
   return {
-    grossProceeds: params.salePrice,
-    outstandingMortgage: params.outstandingMortgage,
+    grossProceeds: salePrice,
+    outstandingMortgage,
     netProceedsToPortfolio: netProceeds,
-    annualRent: params.monthlyRent * 12,
+    annualRent: monthlyRent * 12,
   }
 }
 
