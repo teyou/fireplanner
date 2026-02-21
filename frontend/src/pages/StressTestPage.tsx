@@ -24,6 +24,7 @@ import { BacktestControls } from '@/components/backtest/BacktestControls'
 import { SummaryPanel } from '@/components/backtest/SummaryPanel'
 import { ResultsTable } from '@/components/backtest/ResultsTable'
 import { SwrHeatmap } from '@/components/backtest/SwrHeatmap'
+import { BacktestDrillDown } from '@/components/backtest/BacktestDrillDown'
 import { useBacktestQuery } from '@/hooks/useBacktestQuery'
 
 // Sequence Risk imports
@@ -230,6 +231,7 @@ function WithdrawalSchedule({ bands, strategy }: { bands: PercentileBands; strat
 
 function BacktestTab() {
   const { mutate, data, isPending, error, canRun, validationErrors, config, setConfig, isStale } = useBacktestQuery()
+  const [drillDownCell, setDrillDownCell] = useState<{ swr: number; duration: number; successRate: number } | null>(null)
 
   const btInterpretation = data ? (() => {
     const rate = data.summary.success_rate
@@ -301,9 +303,28 @@ function BacktestTab() {
             <InterpretationCallout level={btInterpretation.level} message={btInterpretation.message} />
           )}
           <SummaryPanel summary={data.summary} computationTimeMs={data.computation_time_ms} />
-          {data.heatmap && <SwrHeatmap data={data.heatmap} />}
+          {data.heatmap && (
+            <SwrHeatmap
+              data={data.heatmap}
+              onCellClick={(swr, duration, successRate) =>
+                setDrillDownCell({ swr, duration, successRate })
+              }
+            />
+          )}
           <ResultsTable results={data.results} />
         </>
+      )}
+
+      {drillDownCell && (
+        <BacktestDrillDown
+          swr={drillDownCell.swr}
+          duration={drillDownCell.duration}
+          successRate={drillDownCell.successRate}
+          open={true}
+          onClose={() => setDrillDownCell(null)}
+          dataset={config.dataset}
+          blendRatio={config.blendRatio}
+        />
       )}
     </div>
   )

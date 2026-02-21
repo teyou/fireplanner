@@ -6,9 +6,10 @@ import type { HeatmapData } from '@/lib/types'
 
 interface SwrHeatmapProps {
   data: HeatmapData
+  onCellClick?: (swr: number, duration: number, successRate: number) => void
 }
 
-export function SwrHeatmap({ data }: SwrHeatmapProps) {
+export function SwrHeatmap({ data, onCellClick }: SwrHeatmapProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -68,6 +69,11 @@ export function SwrHeatmap({ data }: SwrHeatmapProps) {
           .on('mouseleave', function () {
             d3.select(this).attr('stroke', 'none')
             tooltip.style('opacity', 0)
+          })
+          .on('click', function () {
+            if (onCellClick) {
+              onCellClick(data.swr_values[row], data.duration_values[col], rate)
+            }
           })
 
         // Cell text
