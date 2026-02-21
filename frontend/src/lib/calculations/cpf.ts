@@ -9,6 +9,8 @@ import {
   EXTRA_INTEREST_RATE,
   EXTRA_INTEREST_COMBINED_CAP,
   EXTRA_INTEREST_OA_CAP,
+  EXTRA_INTEREST_OA_CAP_55_PLUS,
+  EXTRA_INTEREST_RA_ADDITIONAL,
   BRS_2024,
   FRS_2024,
   ERS_2024,
@@ -81,6 +83,91 @@ export function calculateCpfExtraInterest(
 
   const totalQualifying = oaQualifying + saQualifying + maQualifying
   return totalQualifying * EXTRA_INTEREST_RATE
+}
+
+/**
+ * Age-aware extra interest calculation for CPF balances.
+ *
+ * Under 55: Extra 1% on first $20K OA, extra 1% on next $40K combined (OA+SA+MA), capped at $60K total.
+ * 55 and over: Extra 1% on first $30K OA (raised cap), extra 2% on first $30K of RA,
+ *   extra 1% on next $30K combined (OA+SA+MA+RA), capped at $60K total qualifying.
+ */
+export function calculateCpfExtraInterestWithAge(
+  oaBalance: number,
+  saBalance: number,
+  maBalance: number,
+  raBalance: number,
+  age: number
+): number {
+  if (age <= 55) {
+    // Under 55: same as original — ignore RA (should be 0 anyway)
+    return calculateCpfExtraInterest(oaBalance, saBalance, maBalance, age)
+  }
+
+  // 55 and over:
+  // Tier 1: Extra 1% on first $30K of OA (raised from $20K)
+  const oaQualifying = Math.min(oaBalance, EXTRA_INTEREST_OA_CAP_55_PLUS)
+
+  // Tier 2: Extra 2% on first $30K of RA (additional 1% on top of RA's base extra 1%)
+  const raQualifyingForAdditional = Math.min(raBalance, 30000)
+  const raAdditionalInterest = raQualifyingForAdditional * EXTRA_INTEREST_RA_ADDITIONAL
+
+  // Tier 3: Extra 1% on remaining combined balances up to $60K total qualifying
+  // Total qualifying from OA already counted, now fill from SA, MA, RA
+  const remainingCap = EXTRA_INTEREST_COMBINED_CAP - oaQualifying
+  const saQualifying = Math.min(saBalance, remainingCap)
+  const raForCombined = Math.min(raBalance, Math.max(0, remainingCap - saQualifying))
+  const maQualifying = Math.min(maBalance, Math.max(0, remainingCap - saQualifying - raForCombined))
+
+  const totalQualifying = oaQualifying + saQualifying + raForCombined + maQualifying
+  const baseExtraInterest = totalQualifying * EXTRA_INTEREST_RATE
+
+  return baseExtraInterest + raAdditionalInterest
+}
+
+/**
+ * At age 55, transfer SA (then OA) into the new Retirement Account (RA),
+ * up to the retirement sum target. SA is always fully closed.
+ */
+export function performAge55Transfer(
+  oaBalance: number,
+  saBalance: number,
+  retirementSumTarget: number
+): { newOA: number; newSA: number; newRA: number } {
+  // Step 1: Transfer SA → RA (SA always fully transfers)
+  const saToRA = Math.min(saBalance, retirementSumTarget)
+  let raBalance = saToRA
+  const remainingTarget = retirementSumTarget - saToRA
+
+  // Step 2: Transfer OA → RA for the shortfall
+  const oaToRA = Math.min(oaBalance, Math.max(0, remainingTarget))
+  raBalance += oaToRA
+
+  return {
+    newOA: oaBalance - oaToRA,
+    newSA: 0, // SA is always closed at 55
+    newRA: raBalance,
+  }
+}
+
+/**
+ * Post-age-55 CPF contributions: redirect SA allocation to RA (if room) or OA.
+ * MA allocation unchanged.
+ */
+export function allocatePostAge55Contribution(
+  cpfContribution: CpfContribution,
+  raBalance: number,
+  retirementSumTarget: number
+): { oaAllocation: number; raAllocation: number; maAllocation: number } {
+  const raRoom = Math.max(0, retirementSumTarget - raBalance)
+  const saPortionToRA = Math.min(cpfContribution.saAllocation, raRoom)
+  const saOverflowToOA = cpfContribution.saAllocation - saPortionToRA
+
+  return {
+    oaAllocation: cpfContribution.oaAllocation + saOverflowToOA,
+    raAllocation: saPortionToRA,
+    maAllocation: cpfContribution.maAllocation,
+  }
 }
 
 /**

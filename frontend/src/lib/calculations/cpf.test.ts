@@ -3,12 +3,15 @@ import * as fc from 'fast-check'
 import {
   calculateCpfContribution,
   calculateCpfExtraInterest,
+  calculateCpfExtraInterestWithAge,
   projectCpfBalances,
   calculateBrsFrsErs,
   estimateCpfLifePayout,
   calculateCpfLifePayoutAtAge,
   getRetirementSumAmount,
   autoDetectRetirementSum,
+  performAge55Transfer,
+  allocatePostAge55Contribution,
 } from './cpf'
 
 describe('calculateCpfContribution', () => {
@@ -347,5 +350,123 @@ describe('autoDetectRetirementSum', () => {
 
   it('returns FRS when SA is below BRS even with property', () => {
     expect(autoDetectRetirementSum(50000, frsAt55, true)).toBe('frs')
+  })
+})
+
+describe('performAge55Transfer', () => {
+  it('SA covers full target → RA = target, OA unchanged', () => {
+    const result = performAge55Transfer(100000, 250000, 213000)
+    expect(result.newRA).toBe(213000)
+    expect(result.newOA).toBe(100000) // OA untouched
+    expect(result.newSA).toBe(0) // SA always closed
+  })
+
+  it('SA partial + OA fills gap → RA = target', () => {
+    const result = performAge55Transfer(100000, 150000, 213000)
+    expect(result.newRA).toBe(213000) // 150K from SA + 63K from OA
+    expect(result.newOA).toBe(100000 - 63000) // 37K remaining
+    expect(result.newSA).toBe(0)
+  })
+
+  it('SA + OA < target → RA = SA + OA', () => {
+    const result = performAge55Transfer(50000, 100000, 213000)
+    expect(result.newRA).toBe(150000) // all of SA + all of OA
+    expect(result.newOA).toBe(0)
+    expect(result.newSA).toBe(0)
+  })
+
+  it('SA = 0 edge case → only OA transfers', () => {
+    const result = performAge55Transfer(300000, 0, 213000)
+    expect(result.newRA).toBe(213000) // 213K from OA
+    expect(result.newOA).toBe(87000) // 300K - 213K
+    expect(result.newSA).toBe(0)
+  })
+
+  it('both balances 0 → RA = 0', () => {
+    const result = performAge55Transfer(0, 0, 213000)
+    expect(result.newRA).toBe(0)
+    expect(result.newOA).toBe(0)
+    expect(result.newSA).toBe(0)
+  })
+})
+
+describe('allocatePostAge55Contribution', () => {
+  const makeCpfContribution = (oa: number, sa: number, ma: number) => ({
+    employee: 0, employer: 0, total: 0,
+    oaAllocation: oa, saAllocation: sa, maAllocation: ma,
+  })
+
+  it('RA has room → SA portion goes to RA', () => {
+    const cpf = makeCpfContribution(5000, 2000, 3000)
+    const result = allocatePostAge55Contribution(cpf, 200000, 213000)
+    expect(result.raAllocation).toBe(2000) // full SA portion → RA
+    expect(result.oaAllocation).toBe(5000) // OA unchanged
+    expect(result.maAllocation).toBe(3000)
+  })
+
+  it('RA at cap → SA overflow goes to OA', () => {
+    const cpf = makeCpfContribution(5000, 2000, 3000)
+    const result = allocatePostAge55Contribution(cpf, 213000, 213000)
+    expect(result.raAllocation).toBe(0) // no room
+    expect(result.oaAllocation).toBe(7000) // 5K OA + 2K overflow
+    expect(result.maAllocation).toBe(3000)
+  })
+
+  it('partial room → split SA between RA and OA', () => {
+    const cpf = makeCpfContribution(5000, 2000, 3000)
+    const result = allocatePostAge55Contribution(cpf, 212000, 213000)
+    expect(result.raAllocation).toBe(1000) // only 1K room
+    expect(result.oaAllocation).toBe(6000) // 5K OA + 1K overflow
+    expect(result.maAllocation).toBe(3000)
+  })
+})
+
+describe('calculateCpfExtraInterestWithAge', () => {
+  it('under 55 matches old calculateCpfExtraInterest behavior', () => {
+    const old = calculateCpfExtraInterest(20000, 30000, 10000, 30)
+    const withAge = calculateCpfExtraInterestWithAge(20000, 30000, 10000, 0, 30)
+    expect(withAge).toBe(old)
+  })
+
+  it('age 55 uses under-55 rules (boundary)', () => {
+    const old = calculateCpfExtraInterest(20000, 30000, 10000, 55)
+    const withAge = calculateCpfExtraInterestWithAge(20000, 30000, 10000, 0, 55)
+    expect(withAge).toBe(old)
+  })
+
+  it('age 56: OA cap raised to $30K', () => {
+    // $30K OA qualifies (not $20K), $30K remaining from SA/RA
+    const result = calculateCpfExtraInterestWithAge(50000, 0, 0, 100000, 56)
+    // OA: $30K × 1% = $300
+    // RA additional: min(100K, 30K) × 1% = $300
+    // Remaining combined cap: $60K - $30K = $30K, from RA: $30K
+    // Total base extra: ($30K + $30K) × 1% = $600
+    // Total = $600 + $300 = $900
+    expect(result).toBeCloseTo(900, 0)
+  })
+
+  it('age 56: RA gets additional 2% total extra on first $30K', () => {
+    // RA only, $50K balance, age 56
+    const result = calculateCpfExtraInterestWithAge(0, 0, 0, 50000, 56)
+    // OA: $0 qualifying
+    // RA additional: min(50K, 30K) × 1% = $300
+    // Remaining combined cap: $60K - $0 = $60K, from RA: min(50K, 60K) = $50K
+    // Total base extra: ($0 + $50K) × 1% = $500
+    // Total = $500 + $300 = $800
+    expect(result).toBeCloseTo(800, 0)
+  })
+
+  it('age 56: small balances get proportional extra', () => {
+    const result = calculateCpfExtraInterestWithAge(10000, 0, 5000, 20000, 56)
+    // OA: $10K qualifying (under $30K cap)
+    // RA additional: min(20K, 30K) × 1% = $200
+    // Remaining combined cap: $60K - $10K = $50K, from RA: $20K, from MA: $5K
+    // Total base extra: ($10K + $20K + $5K) × 1% = $350
+    // Total = $350 + $200 = $550
+    expect(result).toBeCloseTo(550, 0)
+  })
+
+  it('age 56: zero balances → zero extra', () => {
+    expect(calculateCpfExtraInterestWithAge(0, 0, 0, 0, 56)).toBe(0)
   })
 })

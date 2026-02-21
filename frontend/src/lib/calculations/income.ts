@@ -226,6 +226,7 @@ export interface IncomeProjectionParams {
   initialCpfOA: number
   initialCpfSA: number
   initialCpfMA: number
+  initialCpfRA?: number
   // CPF LIFE configuration
   cpfLifeStartAge?: number
   cpfLifePlan?: CpfLifePlan

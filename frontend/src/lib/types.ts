@@ -203,6 +203,7 @@ export interface IncomeProjectionRow {
   cpfOA: number
   cpfSA: number
   cpfMA: number
+  cpfRA: number
   isRetired: boolean
   activeLifeEvents: string[]
   cpfLifePayout: number
@@ -705,6 +706,7 @@ export interface ProjectionRow {
   cpfOA: number
   cpfSA: number
   cpfMA: number
+  cpfRA: number
   // Expanded: withdrawal detail
   withdrawalAmount: number
   maxPermittedWithdrawal: number

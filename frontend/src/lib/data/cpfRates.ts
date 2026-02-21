@@ -80,6 +80,11 @@ export const EXTRA_INTEREST_RATE = 0.01 // 1% extra
 export const EXTRA_INTEREST_COMBINED_CAP = 60000
 export const EXTRA_INTEREST_OA_CAP = 20000
 
+// Retirement Account (RA) — created at age 55
+export const RA_INTEREST_RATE = 0.04 // 4.0%, same as SA
+export const EXTRA_INTEREST_OA_CAP_55_PLUS = 30000 // raised from $20K post-55
+export const EXTRA_INTEREST_RA_ADDITIONAL = 0.01 // extra 1% on first $30K of RA (total 2% extra)
+
 // BRS/FRS/ERS (2024 values)
 export const BRS_2024 = 106500
 export const FRS_2024 = 213000
