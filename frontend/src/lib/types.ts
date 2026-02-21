@@ -695,6 +695,9 @@ export interface DownsizingConfig {
   rentGrowthRate: number
 }
 
+export type HdbFlatType = '2-room' | '3-room' | '4-room' | '5-room' | 'executive'
+export type HdbMonetizationStrategy = 'none' | 'lbs' | 'sublet' | 'sell-and-rent'
+
 export interface PropertyState {
   // New purchase analysis
   propertyType: PropertyType
@@ -717,6 +720,13 @@ export interface PropertyState {
   existingMortgageRemainingYears: number
   // Downsizing
   downsizing: DownsizingConfig
+  // HDB monetization
+  hdbFlatType: HdbFlatType
+  hdbMonetizationStrategy: HdbMonetizationStrategy
+  hdbLbsRetainedLease: number
+  hdbSublettingRooms: number
+  hdbSublettingRate: number
+  hdbCpfUsedForHousing: number
   validationErrors: ValidationErrors
 }
 

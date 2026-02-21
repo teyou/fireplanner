@@ -34,6 +34,8 @@ const PROPERTY_DATA_KEYS = [
   'existingMonthlyPayment', 'existingRentalIncome',
   'existingMortgageRate', 'existingMortgageRemainingYears',
   'downsizing',
+  'hdbFlatType', 'hdbMonetizationStrategy', 'hdbLbsRetainedLease',
+  'hdbSublettingRooms', 'hdbSublettingRate', 'hdbCpfUsedForHousing',
 ] as const
 
 const DEFAULT_PROPERTY: Omit<PropertyState, 'validationErrors'> = {
@@ -55,6 +57,12 @@ const DEFAULT_PROPERTY: Omit<PropertyState, 'validationErrors'> = {
   existingMortgageRate: 0.035,
   existingMortgageRemainingYears: 25,
   downsizing: DEFAULT_DOWNSIZING,
+  hdbFlatType: '4-room',
+  hdbMonetizationStrategy: 'none',
+  hdbLbsRetainedLease: 30,
+  hdbSublettingRooms: 1,
+  hdbSublettingRate: 800,
+  hdbCpfUsedForHousing: 0,
 }
 
 function extractPropertyData(
@@ -179,7 +187,7 @@ export const usePropertyStore = create<PropertyState & PropertyActions>()(
     }),
     {
       name: 'fireplanner-property',
-      version: 3,
+      version: 4,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -193,6 +201,14 @@ export const usePropertyStore = create<PropertyState & PropertyActions>()(
           state.existingMortgageRate = state.existingMortgageRate ?? 0.035
           state.existingMortgageRemainingYears = state.existingMortgageRemainingYears ?? 25
           state.downsizing = state.downsizing ?? DEFAULT_DOWNSIZING
+        }
+        if (version < 4) {
+          state.hdbFlatType ??= '4-room'
+          state.hdbMonetizationStrategy ??= 'none'
+          state.hdbLbsRetainedLease ??= 30
+          state.hdbSublettingRooms ??= 1
+          state.hdbSublettingRate ??= 800
+          state.hdbCpfUsedForHousing ??= 0
         }
         return state
       },
