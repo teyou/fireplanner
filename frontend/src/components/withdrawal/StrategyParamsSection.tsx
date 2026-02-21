@@ -9,8 +9,19 @@ import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import type { WithdrawalStrategyType } from '@/lib/types'
 
-const ALL_STRATEGIES: WithdrawalStrategyType[] = [
-  'constant_dollar', 'vpw', 'guardrails', 'vanguard_dynamic', 'cape_based', 'floor_ceiling',
+const STRATEGY_GROUPS: { label: string; strategies: WithdrawalStrategyType[] }[] = [
+  {
+    label: 'Basic',
+    strategies: ['constant_dollar', 'percent_of_portfolio', 'one_over_n'],
+  },
+  {
+    label: 'Adaptive',
+    strategies: ['vpw', 'guardrails', 'vanguard_dynamic', 'ninety_five_percent'],
+  },
+  {
+    label: 'Smoothed',
+    strategies: ['cape_based', 'floor_ceiling', 'endowment', 'sensible_withdrawals', 'hebeler_autopilot'],
+  },
 ]
 
 const STRATEGY_DESCRIPTIONS: Record<WithdrawalStrategyType, string> = {
@@ -42,20 +53,27 @@ export function StrategyParamsSection() {
             Active Strategies
             <InfoTooltip text="Toggle strategies on/off to include in the comparison. Each selected strategy runs on a deterministic median-return path." />
           </Label>
-          <div className="flex flex-wrap gap-2">
-            {ALL_STRATEGIES.map((s) => {
-              const active = withdrawal.selectedStrategies.includes(s)
-              return (
-                <Button
-                  key={s}
-                  variant={active ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => withdrawal.toggleStrategy(s)}
-                >
-                  {getStrategyLabel(s)}
-                </Button>
-              )
-            })}
+          <div className="space-y-3">
+            {STRATEGY_GROUPS.map((group) => (
+              <div key={group.label}>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{group.label}</span>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {group.strategies.map((s) => {
+                    const active = withdrawal.selectedStrategies.includes(s)
+                    return (
+                      <Button
+                        key={s}
+                        variant={active ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => withdrawal.toggleStrategy(s)}
+                      >
+                        {getStrategyLabel(s)}
+                      </Button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
           {withdrawal.validationErrors.selectedStrategies && (
             <p className="text-sm text-destructive mt-1">{withdrawal.validationErrors.selectedStrategies}</p>
@@ -102,7 +120,7 @@ function StrategyParamCard({ strategy }: { strategy: WithdrawalStrategyType }) {
         {strategy === 'vpw' && (
           <>
             <ParamInput label="Expected Real Return" value={(params as { expectedRealReturn: number }).expectedRealReturn * 100} onChange={(v) => setParam('expectedRealReturn', v / 100)} suffix="%" step={0.1} />
-            <ParamInput label="Legacy Buffer" value={(params as { targetEndValue: number }).targetEndValue * 100} onChange={(v) => setParam('targetEndValue', v / 100)} suffix="%" step={1} tooltip="Percentage of portfolio to aim to keep at end of retirement. 0% = spend everything, 10% = leave 10% as safety buffer." />
+            <ParamInput label="Legacy Buffer" value={(params as { targetEndValue: number }).targetEndValue * 100} onChange={(v) => setParam('targetEndValue', v / 100)} suffix="%" step={1} tooltip="Percentage of portfolio to aim to keep at end of retirement. Set to 0% for Dynamic SWR behavior (spend everything)." />
           </>
         )}
         {strategy === 'guardrails' && (
@@ -133,6 +151,30 @@ function StrategyParamCard({ strategy }: { strategy: WithdrawalStrategyType }) {
             <ParamInput label="Ceiling" value={(params as { ceiling: number }).ceiling} onChange={(v) => setParam('ceiling', v)} prefix="$" step={1000} />
             <ParamInput label="Target Rate" value={(params as { targetRate: number }).targetRate * 100} onChange={(v) => setParam('targetRate', v / 100)} suffix="%" step={0.1} />
           </>
+        )}
+        {strategy === 'percent_of_portfolio' && (
+          <ParamInput label="Rate" value={(params as { rate: number }).rate * 100} onChange={(v) => setParam('rate', v / 100)} suffix="%" step={0.1} />
+        )}
+        {strategy === 'one_over_n' && (
+          <span className="text-xs text-muted-foreground col-span-full">No parameters — withdraws portfolio / remaining years each year.</span>
+        )}
+        {strategy === 'sensible_withdrawals' && (
+          <>
+            <ParamInput label="Base Rate" value={(params as { baseRate: number }).baseRate * 100} onChange={(v) => setParam('baseRate', v / 100)} suffix="%" step={0.1} tooltip="Minimum withdrawal rate applied to portfolio each year." />
+            <ParamInput label="Extras Rate" value={(params as { extrasRate: number }).extrasRate * 100} onChange={(v) => setParam('extrasRate', v / 100)} suffix="%" step={1} tooltip="Percentage of prior year's gains added as bonus spending." />
+          </>
+        )}
+        {strategy === 'ninety_five_percent' && (
+          <ParamInput label="SWR" value={(params as { swr: number }).swr * 100} onChange={(v) => setParam('swr', v / 100)} suffix="%" step={0.1} tooltip="Target withdrawal rate. Actual withdrawal never drops below 95% of prior year." />
+        )}
+        {strategy === 'endowment' && (
+          <>
+            <ParamInput label="SWR" value={(params as { swr: number }).swr * 100} onChange={(v) => setParam('swr', v / 100)} suffix="%" step={0.1} />
+            <ParamInput label="Smoothing Weight" value={(params as { smoothingWeight: number }).smoothingWeight * 100} onChange={(v) => setParam('smoothingWeight', v / 100)} suffix="%" step={5} tooltip="Weight on prior withdrawal (inflation-adjusted). Higher = smoother income, slower response to market." />
+          </>
+        )}
+        {strategy === 'hebeler_autopilot' && (
+          <ParamInput label="Expected Real Return" value={(params as { expectedRealReturn: number }).expectedRealReturn * 100} onChange={(v) => setParam('expectedRealReturn', v / 100)} suffix="%" step={0.1} tooltip="Real return assumption for the annuity factor (PMT) calculation." />
         )}
       </div>
     </div>

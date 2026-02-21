@@ -12,6 +12,12 @@ const STRATEGY_COLORS: Record<string, string> = {
   vanguard_dynamic: '#9333ea',
   cape_based: '#dc2626',
   floor_ceiling: '#0891b2',
+  percent_of_portfolio: '#d97706',
+  one_over_n: '#059669',
+  sensible_withdrawals: '#7c3aed',
+  ninety_five_percent: '#be185d',
+  endowment: '#0d9488',
+  hebeler_autopilot: '#6366f1',
 }
 
 interface WithdrawalChartProps {

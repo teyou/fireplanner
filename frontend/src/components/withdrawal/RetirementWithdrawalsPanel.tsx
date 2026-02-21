@@ -68,20 +68,28 @@ export function RetirementWithdrawalsPanel() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <CurrencyInput
                 label="Amount"
                 value={entry.amount}
                 onChange={(v) => updateEntry(entry.id, { amount: v })}
-                tooltip="The withdrawal amount from your portfolio"
+                tooltip="The annual withdrawal amount from your portfolio"
               />
               <NumberInput
-                label="Age"
+                label="Start Age"
                 value={entry.age}
                 onChange={(v) => updateEntry(entry.id, { age: v })}
                 min={retirementAge}
                 max={lifeExpectancy}
-                tooltip="Your age when this withdrawal occurs"
+                tooltip="Your age when this withdrawal starts"
+              />
+              <NumberInput
+                label="Duration (years)"
+                value={entry.durationYears ?? 1}
+                onChange={(v) => updateEntry(entry.id, { durationYears: Math.max(1, v) })}
+                min={1}
+                max={Math.max(1, lifeExpectancy - entry.age)}
+                tooltip="Number of years this withdrawal repeats. 1 = one-time expense."
               />
               <div className="space-y-1">
                 <Label className="text-xs flex items-center gap-1">
