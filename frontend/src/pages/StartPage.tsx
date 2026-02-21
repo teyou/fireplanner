@@ -50,6 +50,7 @@ export function StartPage() {
   const [draftRetirementAge, setDraftRetirementAge] = useState(profileStore.retirementAge)
   const [draftIncome, setDraftIncome] = useState(profileStore.annualIncome)
   const [draftNetWorth, setDraftNetWorth] = useState(profileStore.liquidNetWorth)
+  const [draftExpenses, setDraftExpenses] = useState(profileStore.annualExpenses)
 
   const handlePathwayClick = (pathway: ActivePathway) => {
     if (activePathway === pathway) {
@@ -62,14 +63,18 @@ export function StartPage() {
     setDraftAge(profileStore.currentAge)
     setDraftRetirementAge(profileStore.retirementAge)
     setDraftIncome(profileStore.annualIncome)
+    setDraftExpenses(profileStore.annualExpenses)
     setDraftNetWorth(profileStore.liquidNetWorth)
   }
 
   const handleGoalFirstContinue = () => {
     profileStore.setField('currentAge', draftAge)
     profileStore.setField('retirementAge', draftRetirementAge)
+    profileStore.setField('annualIncome', draftIncome)
+    profileStore.setField('annualExpenses', draftExpenses)
     profileStore.setField('liquidNetWorth', draftNetWorth)
     profileStore.setField('lifeStage', 'pre-fire')
+    incomeStore.setField('annualSalary', draftIncome)
     setUIField('sectionOrder', 'goal-first')
     navigate('/inputs')
   }
@@ -77,7 +82,7 @@ export function StartPage() {
   const handleStoryFirstContinue = () => {
     profileStore.setField('currentAge', draftAge)
     profileStore.setField('annualIncome', draftIncome)
-    profileStore.setField('annualExpenses', Math.max(12000, Math.round(draftIncome * 0.667 / 1000) * 1000))
+    profileStore.setField('annualExpenses', draftExpenses)
     profileStore.setField('liquidNetWorth', draftNetWorth)
     profileStore.setField('lifeStage', 'pre-fire')
     incomeStore.setField('annualSalary', draftIncome)
@@ -88,6 +93,8 @@ export function StartPage() {
   const handleAlreadyFirePhase = (phase: RetirementPhase) => {
     profileStore.setField('currentAge', draftAge)
     profileStore.setField('retirementAge', draftAge)
+    profileStore.setField('annualIncome', draftIncome)
+    profileStore.setField('annualExpenses', draftExpenses)
     profileStore.setField('liquidNetWorth', draftNetWorth)
     profileStore.setField('lifeStage', 'post-fire')
     profileStore.setField('retirementPhase', phase)
@@ -172,7 +179,7 @@ export function StartPage() {
             <CardTitle className="text-lg">Quick Setup</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div className="space-y-1">
                 <Label className="text-sm">Current Age</Label>
                 <NumberInput
@@ -198,6 +205,18 @@ export function StartPage() {
                   <p className="text-xs text-destructive">Must be after current age</p>
                 )}
               </div>
+              <CurrencyInput
+                label="Annual Income"
+                value={draftIncome}
+                onChange={setDraftIncome}
+                tooltip="Total annual income before tax and CPF"
+              />
+              <CurrencyInput
+                label="Annual Expenses"
+                value={draftExpenses}
+                onChange={setDraftExpenses}
+                tooltip="Total annual spending including housing, food, transport, etc."
+              />
               <CurrencyInput
                 label="Liquid Net Worth"
                 value={draftNetWorth}
@@ -225,7 +244,7 @@ export function StartPage() {
             <CardTitle className="text-lg">Quick Setup</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-1">
                 <Label className="text-sm">Current Age</Label>
                 <NumberInput
@@ -242,6 +261,12 @@ export function StartPage() {
                 value={draftIncome}
                 onChange={setDraftIncome}
                 tooltip="Total annual income before tax and CPF"
+              />
+              <CurrencyInput
+                label="Annual Expenses"
+                value={draftExpenses}
+                onChange={setDraftExpenses}
+                tooltip="Total annual spending including housing, food, transport, etc."
               />
               <CurrencyInput
                 label="Liquid Net Worth"
@@ -271,7 +296,7 @@ export function StartPage() {
               <CardTitle className="text-lg">Quick Setup</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="space-y-1">
                   <Label className="text-sm">Current Age</Label>
                   <NumberInput
@@ -283,6 +308,18 @@ export function StartPage() {
                     className="border-blue-300"
                   />
                 </div>
+                <CurrencyInput
+                  label="Annual Income"
+                  value={draftIncome}
+                  onChange={setDraftIncome}
+                  tooltip="Total annual income before tax and CPF"
+                />
+                <CurrencyInput
+                  label="Annual Expenses"
+                  value={draftExpenses}
+                  onChange={setDraftExpenses}
+                  tooltip="Total annual spending including housing, food, transport, etc."
+                />
                 <CurrencyInput
                   label="Liquid Portfolio"
                   value={draftNetWorth}
