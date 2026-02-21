@@ -1,5 +1,5 @@
 // Historical Returns Dataset for FIRE Planner
-// Last updated: 2026-02-20
+// Last updated: 2026-02-21
 //
 // ========== PRIMARY SOURCES (downloaded Excel files) ==========
 //
@@ -38,10 +38,15 @@
 //     null before 1972 (index inception)
 //     Downloaded: 2026-02-20
 //
-//   Intl Equities (MSCI World Gross Total Return USD): Training knowledge
-//     NOTE: No downloadable source obtained for MSCI World annual returns.
-//     Values are from model training data. Cross-validate before relying on these.
+//   Intl Equities (MSCI World Gross Total Return USD):
+//     Wikipedia "MSCI World" article → "Total annual returns" table
+//     https://en.wikipedia.org/wiki/MSCI_World
+//     Labeled "Gross Annual Return" incl. reinvested dividends, USD
+//     Source cited by Wikipedia: MSCI World Index factsheet (msci.com)
+//     Cross-validated against curvo.eu NET total return (1979-2024)
+//       Gross-NET gap ~0.4-0.8%/yr consistently (withholding tax on dividends)
 //     null before 1970 (MSCI World inception 1969, first full year 1970)
+//     Fetched via Playwright: 2026-02-21
 //
 //   SG Equities (STI): 1stock1.com STI price return + est. 3% dividend, 1988-2024
 //     https://www.1stock1.com/1stock1_777.htm
@@ -143,22 +148,22 @@ export const HISTORICAL_RETURNS: HistoricalReturnRow[] = [
   { year: 1968, usEquities: 0.1081, sgEquities: null, intlEquities: null, usBonds: 0.0327, reits: null, gold: 0.1247, cash: 0.0534, cpfBlended: 0.03, usCpi: 0.0471, sgCpi: 0.0066, usdSgdChange: null },
   { year: 1969, usEquities: -0.0824, sgEquities: null, intlEquities: null, usBonds: -0.0501, reits: null, gold: 0.0501, cash: 0.0667, cpfBlended: 0.03, usCpi: 0.0590, sgCpi: -0.0027, usdSgdChange: null },
   // 1970-1979: Intl equities start 1970, REITs start 1972
-  { year: 1970, usEquities: 0.0356, sgEquities: null, intlEquities: -0.0255, usBonds: 0.1675, reits: null, gold: -0.0945, cash: 0.0639, cpfBlended: 0.03, usCpi: 0.0557, sgCpi: 0.0046, usdSgdChange: null },
+  { year: 1970, usEquities: 0.0356, sgEquities: null, intlEquities: -0.0198, usBonds: 0.1675, reits: null, gold: -0.0945, cash: 0.0639, cpfBlended: 0.03, usCpi: 0.0557, sgCpi: 0.0046, usdSgdChange: null },
   { year: 1971, usEquities: 0.1422, sgEquities: null, intlEquities: 0.1956, usBonds: 0.0979, reits: null, gold: 0.1669, cash: 0.0433, cpfBlended: 0.03, usCpi: 0.0327, sgCpi: 0.0176, usdSgdChange: null },
   { year: 1972, usEquities: 0.1876, sgEquities: null, intlEquities: 0.2355, usBonds: 0.0282, reits: 0.0801, gold: 0.4878, cash: 0.0406, cpfBlended: 0.03, usCpi: 0.0341, sgCpi: 0.0208, usdSgdChange: null },
   { year: 1973, usEquities: -0.1431, sgEquities: null, intlEquities: -0.1451, usBonds: 0.0366, reits: -0.1552, gold: 0.7296, cash: 0.0704, cpfBlended: 0.03, usCpi: 0.0894, sgCpi: 0.1964, usdSgdChange: null },
   { year: 1974, usEquities: -0.2590, sgEquities: null, intlEquities: -0.2448, usBonds: 0.0199, reits: -0.2140, gold: 0.6615, cash: 0.0785, cpfBlended: 0.03, usCpi: 0.1210, sgCpi: 0.2237, usdSgdChange: null },
   { year: 1975, usEquities: 0.3700, sgEquities: null, intlEquities: 0.3450, usBonds: 0.0361, reits: 0.1930, gold: -0.2480, cash: 0.0579, cpfBlended: 0.03, usCpi: 0.0713, sgCpi: 0.0254, usdSgdChange: null },
   { year: 1976, usEquities: 0.2383, sgEquities: null, intlEquities: 0.1471, usBonds: 0.1598, reits: 0.4759, gold: -0.0410, cash: 0.0498, cpfBlended: 0.03, usCpi: 0.0504, sgCpi: -0.0184, usdSgdChange: null },
-  { year: 1977, usEquities: -0.0698, sgEquities: null, intlEquities: 0.0200, usBonds: 0.0129, reits: 0.2242, gold: 0.2264, cash: 0.0526, cpfBlended: 0.03, usCpi: 0.0668, sgCpi: 0.0316, usdSgdChange: null },
-  { year: 1978, usEquities: 0.0651, sgEquities: null, intlEquities: 0.1774, usBonds: -0.0078, reits: 0.1034, gold: 0.3701, cash: 0.0718, cpfBlended: 0.03, usCpi: 0.0899, sgCpi: 0.0487, usdSgdChange: null },
-  { year: 1979, usEquities: 0.1852, sgEquities: null, intlEquities: 0.1159, usBonds: 0.0067, reits: 0.3586, gold: 1.2655, cash: 0.1005, cpfBlended: 0.03, usCpi: 0.1325, sgCpi: 0.0408, usdSgdChange: null },
+  { year: 1977, usEquities: -0.0698, sgEquities: null, intlEquities: 0.0500, usBonds: 0.0129, reits: 0.2242, gold: 0.2264, cash: 0.0526, cpfBlended: 0.03, usCpi: 0.0668, sgCpi: 0.0316, usdSgdChange: null },
+  { year: 1978, usEquities: 0.0651, sgEquities: null, intlEquities: 0.1822, usBonds: -0.0078, reits: 0.1034, gold: 0.3701, cash: 0.0718, cpfBlended: 0.03, usCpi: 0.0899, sgCpi: 0.0487, usdSgdChange: null },
+  { year: 1979, usEquities: 0.1852, sgEquities: null, intlEquities: 0.1267, usBonds: 0.0067, reits: 0.3586, gold: 1.2655, cash: 0.1005, cpfBlended: 0.03, usCpi: 0.1325, sgCpi: 0.0408, usdSgdChange: null },
   // 1980-1989: USD/SGD starts 1981, STI starts 1988
-  { year: 1980, usEquities: 0.3174, sgEquities: null, intlEquities: 0.2806, usBonds: -0.0299, reits: 0.2437, gold: 0.1519, cash: 0.1139, cpfBlended: 0.03, usCpi: 0.1235, sgCpi: 0.0853, usdSgdChange: null },
-  { year: 1981, usEquities: -0.0470, sgEquities: null, intlEquities: -0.0479, usBonds: 0.0820, reits: 0.0600, gold: -0.3260, cash: 0.1404, cpfBlended: 0.03, usCpi: 0.0891, sgCpi: 0.0818, usdSgdChange: -0.0154 },
-  { year: 1982, usEquities: 0.2042, sgEquities: null, intlEquities: 0.1049, usBonds: 0.3281, reits: 0.2160, gold: 0.1562, cash: 0.1060, cpfBlended: 0.03, usCpi: 0.0383, sgCpi: 0.0392, usdSgdChange: 0.0168 },
-  { year: 1983, usEquities: 0.2234, sgEquities: null, intlEquities: 0.2275, usBonds: 0.0320, reits: 0.3064, gold: -0.1680, cash: 0.0862, cpfBlended: 0.03, usCpi: 0.0379, sgCpi: 0.0120, usdSgdChange: -0.0157 },
-  { year: 1984, usEquities: 0.0615, sgEquities: null, intlEquities: 0.0522, usBonds: 0.1373, reits: 0.2093, gold: -0.1938, cash: 0.0954, cpfBlended: 0.03, usCpi: 0.0404, sgCpi: 0.0260, usdSgdChange: 0.0199 },
+  { year: 1980, usEquities: 0.3174, sgEquities: null, intlEquities: 0.2772, usBonds: -0.0299, reits: 0.2437, gold: 0.1519, cash: 0.1139, cpfBlended: 0.03, usCpi: 0.1235, sgCpi: 0.0853, usdSgdChange: null },
+  { year: 1981, usEquities: -0.0470, sgEquities: null, intlEquities: -0.0330, usBonds: 0.0820, reits: 0.0600, gold: -0.3260, cash: 0.1404, cpfBlended: 0.03, usCpi: 0.0891, sgCpi: 0.0818, usdSgdChange: -0.0154 },
+  { year: 1982, usEquities: 0.2042, sgEquities: null, intlEquities: 0.1127, usBonds: 0.3281, reits: 0.2160, gold: 0.1562, cash: 0.1060, cpfBlended: 0.03, usCpi: 0.0383, sgCpi: 0.0392, usdSgdChange: 0.0168 },
+  { year: 1983, usEquities: 0.2234, sgEquities: null, intlEquities: 0.2328, usBonds: 0.0320, reits: 0.3064, gold: -0.1680, cash: 0.0862, cpfBlended: 0.03, usCpi: 0.0379, sgCpi: 0.0120, usdSgdChange: -0.0157 },
+  { year: 1984, usEquities: 0.0615, sgEquities: null, intlEquities: 0.0577, usBonds: 0.1373, reits: 0.2093, gold: -0.1938, cash: 0.0954, cpfBlended: 0.03, usCpi: 0.0404, sgCpi: 0.0260, usdSgdChange: 0.0199 },
   { year: 1985, usEquities: 0.3124, sgEquities: null, intlEquities: 0.4171, usBonds: 0.2571, reits: 0.1910, gold: 0.0600, cash: 0.0747, cpfBlended: 0.03, usCpi: 0.0379, sgCpi: 0.0048, usdSgdChange: 0.0341 },
   { year: 1986, usEquities: 0.1849, sgEquities: null, intlEquities: 0.4282, usBonds: 0.2428, reits: 0.1916, gold: 0.1896, cash: 0.0597, cpfBlended: 0.03, usCpi: 0.0119, sgCpi: -0.0139, usdSgdChange: -0.0186 },
   { year: 1987, usEquities: 0.0581, sgEquities: null, intlEquities: 0.1674, usBonds: -0.0496, reits: -0.0364, gold: 0.2453, cash: 0.0578, cpfBlended: 0.03, usCpi: 0.0433, sgCpi: 0.0052, usdSgdChange: -0.0329 },

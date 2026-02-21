@@ -305,3 +305,46 @@ describe('historicalReturnsFull — Damodaran XLS exact spot-checks', () => {
     expect(rowByYear(1980).gold).toBeCloseTo(0.1519, 3)
   })
 })
+
+describe('historicalReturnsFull — MSCI World (Wikipedia GROSS) spot-checks', () => {
+  const rowByYear = (y: number) => HISTORICAL_RETURNS.find((r) => r.year === y)!
+
+  // Wikipedia "MSCI World" article, "Total annual returns" table
+  // Labeled "Gross Annual Return (a)" including reinvested dividends, USD
+  // Source: https://en.wikipedia.org/wiki/MSCI_World
+  // Fetched via Playwright: 2026-02-21
+
+  it('1970 intlEquities = -0.0198 (MSCI World inception year)', () => {
+    expect(rowByYear(1970).intlEquities).toBeCloseTo(-0.0198, 3)
+  })
+
+  it('1977 intlEquities = 0.0500 (early MSCI era)', () => {
+    expect(rowByYear(1977).intlEquities).toBeCloseTo(0.0500, 3)
+  })
+
+  it('1986 intlEquities = 0.4280 (best year - weak USD)', () => {
+    expect(rowByYear(1986).intlEquities).toBeCloseTo(0.4280, 3)
+  })
+
+  it('2008 intlEquities = -0.4033 (GFC)', () => {
+    expect(rowByYear(2008).intlEquities).toBeCloseTo(-0.4033, 3)
+  })
+
+  it('2024 intlEquities = 0.1919 (most recent year)', () => {
+    expect(rowByYear(2024).intlEquities).toBeCloseTo(0.1919, 3)
+  })
+
+  it('curvo.eu NET returns are consistently lower than our GROSS values (withholding tax)', () => {
+    // curvo.eu provides NET total return; our data is GROSS
+    // The gap should be ~0.3-0.8% (withholding tax on dividends)
+    const curvoNetSamples: Record<number, number> = {
+      2020: 0.1590, 2021: 0.2182, 2022: -0.1814, 2023: 0.2379, 2024: 0.1867,
+    }
+    for (const [year, netReturn] of Object.entries(curvoNetSamples)) {
+      const grossReturn = rowByYear(Number(year)).intlEquities!
+      const gap = grossReturn - netReturn
+      expect(gap).toBeGreaterThan(0.003) // at least 0.3% gap
+      expect(gap).toBeLessThan(0.010)    // at most 1.0% gap
+    }
+  })
+})
