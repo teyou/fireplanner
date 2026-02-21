@@ -47,6 +47,7 @@ import { PropertyInputForm } from '@/components/property/PropertyInputForm'
 import { PropertyAnalysisPanel } from '@/components/property/PropertyAnalysisPanel'
 import { DownsizingScenarioForm } from '@/components/property/DownsizingScenarioForm'
 import { DownsizingResultsPanel } from '@/components/property/DownsizingResultsPanel'
+import { HdbMonetizationSection } from '@/components/property/HdbMonetizationSection'
 
 // Shared
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
@@ -408,6 +409,7 @@ function derivePropertyStatus(
 
 function PropertyContent() {
   const ownsProperty = usePropertyStore((s) => s.ownsProperty)
+  const propertyType = usePropertyStore((s) => s.propertyType)
   const existingPropertyValue = usePropertyStore((s) => s.existingPropertyValue)
   const existingMortgageBalance = usePropertyStore((s) => s.existingMortgageBalance)
   const existingMonthlyPayment = usePropertyStore((s) => s.existingMonthlyPayment)
@@ -468,6 +470,23 @@ function PropertyContent() {
 
           {ownsProperty && (
             <>
+              <div className="space-y-1">
+                <span className="text-sm text-muted-foreground">Property Type</span>
+                <Select
+                  value={propertyType}
+                  onValueChange={(v) => setField('propertyType', v as 'hdb' | 'condo' | 'landed')}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hdb">HDB</SelectItem>
+                    <SelectItem value="condo">Condo</SelectItem>
+                    <SelectItem value="landed">Landed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <CurrencyInput
                   label="Current Property Value"
@@ -519,6 +538,10 @@ function PropertyContent() {
           <DownsizingScenarioForm />
           <DownsizingResultsPanel />
         </>
+      )}
+
+      {ownsProperty && propertyType === 'hdb' && (
+        <HdbMonetizationSection />
       )}
 
       <Card>
