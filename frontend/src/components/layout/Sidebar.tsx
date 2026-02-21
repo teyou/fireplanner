@@ -345,6 +345,38 @@ function DataActions() {
   )
 }
 
+function ModeToggle() {
+  const mode = useUIStore((s) => s.mode)
+  const setField = useUIStore((s) => s.setField)
+
+  return (
+    <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-muted text-xs">
+      <button
+        onClick={() => setField('mode', 'simple')}
+        className={cn(
+          'flex-1 px-3 py-1 rounded-md transition-colors',
+          mode === 'simple'
+            ? 'bg-background text-foreground shadow-sm font-medium'
+            : 'text-muted-foreground hover:text-foreground'
+        )}
+      >
+        Simple
+      </button>
+      <button
+        onClick={() => setField('mode', 'advanced')}
+        className={cn(
+          'flex-1 px-3 py-1 rounded-md transition-colors',
+          mode === 'advanced'
+            ? 'bg-background text-foreground shadow-sm font-medium'
+            : 'text-muted-foreground hover:text-foreground'
+        )}
+      >
+        Advanced
+      </button>
+    </div>
+  )
+}
+
 export function Sidebar() {
   const location = useLocation()
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -365,6 +397,7 @@ export function Sidebar() {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-60 border-r bg-muted/30 p-4 gap-6 h-screen overflow-y-auto shrink-0">
         <div className="font-bold text-lg px-2">FIRE Planner</div>
+        <ModeToggle />
         <NavGroups />
         <div className="mt-auto border-t pt-3 space-y-2">
           <ScenarioManager />
@@ -402,6 +435,7 @@ export function Sidebar() {
                 <X className="h-5 w-5" />
               </button>
             </div>
+            <ModeToggle />
             <NavGroups onNavigate={() => setDrawerOpen(false)} />
             <div className="mt-6 border-t pt-3 space-y-2">
               <ScenarioManager />

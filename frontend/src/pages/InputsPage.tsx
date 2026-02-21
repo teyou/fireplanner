@@ -69,6 +69,7 @@ import { useSectionCompletion } from '@/hooks/useSectionCompletion'
 import { useIncomeProjection } from '@/hooks/useIncomeProjection'
 import { useWithdrawalComparison } from '@/hooks/useWithdrawalComparison'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
+import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { pushUndo } from '@/lib/undo'
@@ -164,6 +165,7 @@ function FireSettingsContent() {
 function IncomeContent() {
   const income = useIncomeStore()
   const profile = useProfileStore()
+  const mode = useEffectiveMode()
   const { projection, summary, hasErrors, errors } = useIncomeProjection()
 
   // Sync salary model's annualSalary → profile.annualIncome
@@ -204,18 +206,20 @@ function IncomeContent() {
         </label>
       </div>
 
-      <TaxReliefSection />
+      {mode === 'advanced' && <TaxReliefSection />}
 
-      <IncomeStreamsSection />
-      <LifeEventsSection />
+      {mode === 'advanced' && <IncomeStreamsSection />}
+      {mode === 'advanced' && <LifeEventsSection />}
 
       {projection && summary && (
         <>
           <SummaryPanel summary={summary} />
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Year-by-Year Projection</h3>
-            <ProjectionTable data={projection} retirementAge={profile.retirementAge} />
-          </div>
+          {mode === 'advanced' && (
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Year-by-Year Projection</h3>
+              <ProjectionTable data={projection} retirementAge={profile.retirementAge} />
+            </div>
+          )}
         </>
       )}
     </>
@@ -228,6 +232,7 @@ function ExpensesContent() {
   const setProfileField = useProfileStore((s) => s.setField)
   const expensesError = useProfileStore((s) => s.validationErrors.annualExpenses)
   const adjustmentError = useProfileStore((s) => s.validationErrors.retirementSpendingAdjustment)
+  const mode = useEffectiveMode()
 
   const retirementExpenses = annualExpenses * retirementSpendingAdjustment
 
@@ -295,16 +300,18 @@ function ExpensesContent() {
 
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-semibold">Withdrawal Strategy</h3>
-        <button
-          onClick={() => setStrategyExpanded(!strategyExpanded)}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {strategyExpanded ? (
-            <>Hide strategies <ChevronUp className="h-4 w-4" /></>
-          ) : (
-            <>Show withdrawal strategies <ChevronDown className="h-4 w-4" /></>
-          )}
-        </button>
+        {mode === 'advanced' && (
+          <button
+            onClick={() => setStrategyExpanded(!strategyExpanded)}
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {strategyExpanded ? (
+              <>Hide strategies <ChevronUp className="h-4 w-4" /></>
+            ) : (
+              <>Show withdrawal strategies <ChevronDown className="h-4 w-4" /></>
+            )}
+          </button>
+        )}
       </div>
 
       <Card>
@@ -331,16 +338,18 @@ function ExpensesContent() {
         </CardContent>
       </Card>
 
-      <StrategyComparisonCard
-        activeStrategy={activeStrategy}
-        onSelect={(s) => handleActiveStrategyChange(s)}
-      />
+      {mode === 'advanced' && (
+        <StrategyComparisonCard
+          activeStrategy={activeStrategy}
+          onSelect={(s) => handleActiveStrategyChange(s)}
+        />
+      )}
 
       <RetirementWithdrawalsPanel />
 
-      <AnalysisModeToggle portfolioLabel={portfolioLabel} />
+      {mode === 'advanced' && <AnalysisModeToggle portfolioLabel={portfolioLabel} />}
 
-      {hasErrors && (
+      {mode === 'advanced' && hasErrors && (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
           <p className="text-sm text-destructive font-medium">
             Fix validation errors before comparison results can be computed.
@@ -353,7 +362,7 @@ function ExpensesContent() {
         </div>
       )}
 
-      {strategyExpanded && (
+      {mode === 'advanced' && strategyExpanded && (
         <>
           <StrategyParamsSection />
 
@@ -571,36 +580,11 @@ function PropertyContent() {
 function AllocationContent() {
   const validationErrors = useAllocationStore((s) => s.validationErrors)
   const hasErrors = Object.keys(validationErrors).length > 0
-  const allocationAdvanced = useUIStore((s) => s.allocationAdvanced)
-  const setUIField = useUIStore((s) => s.setField)
+  const mode = useEffectiveMode()
+  const isAdvanced = mode === 'advanced'
 
   return (
     <>
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
-          <button
-            onClick={() => setUIField('allocationAdvanced', false)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              !allocationAdvanced
-                ? 'bg-background shadow-sm text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Simple
-          </button>
-          <button
-            onClick={() => setUIField('allocationAdvanced', true)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              allocationAdvanced
-                ? 'bg-background shadow-sm text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Advanced
-          </button>
-        </div>
-      </div>
-
       {hasErrors && (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
           <p className="text-sm text-destructive font-medium">
@@ -610,8 +594,8 @@ function AllocationContent() {
       )}
 
       <AllocationBuilder />
-      <PortfolioStatsPanel compact={!allocationAdvanced} />
-      {allocationAdvanced && (
+      <PortfolioStatsPanel compact={!isAdvanced} />
+      {isAdvanced && (
         <>
           <AdvancedOverrides />
           <GlidePathSection />

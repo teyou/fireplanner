@@ -9,7 +9,7 @@ beforeEach(() => {
     cpfEnabled: true,
     propertyEnabled: false,
     healthcareEnabled: false,
-    allocationAdvanced: false,
+    mode: 'simple',
   })
 })
 
@@ -22,7 +22,7 @@ describe('useUIStore', () => {
       expect(state.cpfEnabled).toBe(true)
       expect(state.propertyEnabled).toBe(false)
       expect(state.healthcareEnabled).toBe(false)
-      expect(state.allocationAdvanced).toBe(false)
+      expect(state.mode).toBe('simple')
     })
   })
 
@@ -48,41 +48,58 @@ describe('useUIStore', () => {
     })
 
     it('sets stats position', () => {
-      useUIStore.getState().setField('statsPosition', 'sidebar')
-      expect(useUIStore.getState().statsPosition).toBe('sidebar')
+      useUIStore.getState().setField('statsPosition', 'top')
+      expect(useUIStore.getState().statsPosition).toBe('top')
     })
 
-    it('toggles allocationAdvanced', () => {
-      useUIStore.getState().setField('allocationAdvanced', true)
-      expect(useUIStore.getState().allocationAdvanced).toBe(true)
+    it('toggles mode', () => {
+      useUIStore.getState().setField('mode', 'advanced')
+      expect(useUIStore.getState().mode).toBe('advanced')
     })
   })
 
   describe('persist migration', () => {
-    it('v1→v2: adds boolean toggle defaults', () => {
+    it('v1→v3: adds boolean toggle defaults and migrates to mode', () => {
       const { migrate } = useUIStore.persist.getOptions()
       const oldState: Record<string, unknown> = { sectionOrder: 'story-first', statsPosition: 'top' }
       const migrated = migrate!(oldState, 1) as Record<string, unknown>
       expect(migrated.cpfEnabled).toBe(true)
       expect(migrated.propertyEnabled).toBe(false)
       expect(migrated.healthcareEnabled).toBe(false)
-      expect(migrated.allocationAdvanced).toBe(false)
+      expect(migrated.mode).toBe('simple')
       // Preserves existing fields
       expect(migrated.sectionOrder).toBe('story-first')
       expect(migrated.statsPosition).toBe('top')
     })
 
-    it('v2 state passes through unchanged', () => {
+    it('v2→v3: migrates allocationAdvanced to mode', () => {
       const { migrate } = useUIStore.persist.getOptions()
       const state: Record<string, unknown> = {
         sectionOrder: 'already-fire',
         cpfEnabled: false,
         propertyEnabled: true,
+        allocationAdvanced: true,
+        statsPosition: 'sidebar',
       }
       const migrated = migrate!(state, 2) as Record<string, unknown>
+      expect(migrated.mode).toBe('advanced')
+      expect(migrated.allocationAdvanced).toBeUndefined()
+      expect(migrated.statsPosition).toBe('bottom') // sidebar migrated to bottom
+    })
+
+    it('v3 state passes through unchanged', () => {
+      const { migrate } = useUIStore.persist.getOptions()
+      const state: Record<string, unknown> = {
+        sectionOrder: 'already-fire',
+        cpfEnabled: false,
+        propertyEnabled: true,
+        mode: 'advanced',
+      }
+      const migrated = migrate!(state, 3) as Record<string, unknown>
       expect(migrated.sectionOrder).toBe('already-fire')
       expect(migrated.cpfEnabled).toBe(false)
       expect(migrated.propertyEnabled).toBe(true)
+      expect(migrated.mode).toBe('advanced')
     })
   })
 })

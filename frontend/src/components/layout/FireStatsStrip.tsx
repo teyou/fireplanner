@@ -8,7 +8,7 @@ import { formatCurrency } from '@/lib/utils'
 import { Settings2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type StatsPosition = 'bottom' | 'top' | 'sidebar'
+type StatsPosition = 'bottom' | 'top'
 
 interface StatChip {
   label: string
@@ -95,7 +95,6 @@ function PositionPicker() {
   const options: { value: StatsPosition; label: string }[] = [
     { value: 'top', label: 'Top bar' },
     { value: 'bottom', label: 'Bottom bar' },
-    { value: 'sidebar', label: 'Right sidebar' },
   ]
 
   return (
@@ -137,29 +136,6 @@ function PositionPicker() {
 
 export function FireStatsStrip({ position }: { position: StatsPosition }) {
   const stats = useStatsData()
-
-  if (position === 'sidebar') {
-    return (
-      <>
-        <aside className="hidden lg:flex flex-col w-56 border-l bg-muted/20 p-4 gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground">FIRE Stats</span>
-            <PositionPicker />
-          </div>
-          {stats.map((stat) => (
-            <div key={stat.label} className="flex flex-col">
-              <span className="text-xs text-muted-foreground">{stat.label}</span>
-              <span className="text-sm font-semibold">{stat.value}</span>
-            </div>
-          ))}
-        </aside>
-        {/* Floating picker on smaller screens where sidebar is hidden */}
-        <div className="lg:hidden fixed bottom-14 right-3 z-40 bg-background border rounded-full shadow-md p-1.5">
-          <PositionPicker />
-        </div>
-      </>
-    )
-  }
 
   const isTop = position === 'top'
 

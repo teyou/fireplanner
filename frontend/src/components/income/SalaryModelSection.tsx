@@ -8,6 +8,7 @@ import { PercentInput } from '@/components/shared/PercentInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { calculateSimpleSalary, calculateRealisticSalary, calculateDataDrivenSalary } from '@/lib/calculations/income'
 import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -17,6 +18,7 @@ export function SalaryModelSection() {
   const income = useIncomeStore()
   const profile = useProfileStore()
   const errors = income.validationErrors
+  const mode = useEffectiveMode()
 
   return (
     <Card>
@@ -27,24 +29,27 @@ export function SalaryModelSection() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-1">
-          <Label className="text-sm">Model</Label>
-          <Select
-            value={income.salaryModel}
-            onValueChange={(v) => income.setField('salaryModel', v as SalaryModel)}
-          >
-            <SelectTrigger className="border-blue-300">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="simple">Simple (fixed annual growth)</SelectItem>
-              <SelectItem value="realistic">Realistic (career phases + promotions)</SelectItem>
-              <SelectItem value="data-driven">Data-Driven (MOM benchmarks)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {mode === 'advanced' && (
+          <div className="space-y-1">
+            <Label className="text-sm">Model</Label>
+            <Select
+              value={income.salaryModel}
+              onValueChange={(v) => income.setField('salaryModel', v as SalaryModel)}
+            >
+              <SelectTrigger className="border-blue-300">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="simple">Simple (fixed annual growth)</SelectItem>
+                <SelectItem value="realistic">Realistic (career phases + promotions)</SelectItem>
+                <SelectItem value="data-driven">Data-Driven (MOM benchmarks)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
-        {income.salaryModel === 'simple' && (
+        {/* Simple mode: always show Simple panel. Advanced: show selected model. */}
+        {(mode === 'simple' || income.salaryModel === 'simple') && (
           <SimplePanel
             salary={income.annualSalary}
             growthRate={income.salaryGrowthRate}
@@ -56,7 +61,7 @@ export function SalaryModelSection() {
           />
         )}
 
-        {income.salaryModel === 'realistic' && (
+        {mode === 'advanced' && income.salaryModel === 'realistic' && (
           <RealisticPanel
             salary={income.annualSalary}
             currentAge={profile.currentAge}
@@ -69,7 +74,7 @@ export function SalaryModelSection() {
           />
         )}
 
-        {income.salaryModel === 'data-driven' && (
+        {mode === 'advanced' && income.salaryModel === 'data-driven' && (
           <DataDrivenPanel
             currentAge={profile.currentAge}
             education={income.momEducation}

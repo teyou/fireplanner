@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 type SectionOrder = 'goal-first' | 'story-first' | 'already-fire'
-type StatsPosition = 'bottom' | 'top' | 'sidebar'
+type StatsPosition = 'bottom' | 'top'
 
 interface UIState {
   sectionOrder: SectionOrder
@@ -10,7 +10,7 @@ interface UIState {
   cpfEnabled: boolean
   propertyEnabled: boolean
   healthcareEnabled: boolean
-  allocationAdvanced: boolean
+  mode: 'simple' | 'advanced'
 }
 
 interface UIActions {
@@ -23,7 +23,7 @@ const DEFAULT_UI: UIState = {
   cpfEnabled: true,
   propertyEnabled: false,
   healthcareEnabled: false,
-  allocationAdvanced: false,
+  mode: 'simple',
 }
 
 export const useUIStore = create<UIState & UIActions>()(
@@ -35,17 +35,21 @@ export const useUIStore = create<UIState & UIActions>()(
     }),
     {
       name: 'fireplanner-ui',
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
-          // Existing users: CPF ON (preserve their data), others OFF
-          return {
-            ...state,
-            cpfEnabled: true,
-            propertyEnabled: false,
-            healthcareEnabled: false,
-            allocationAdvanced: false,
+          state.cpfEnabled = true
+          state.propertyEnabled = false
+          state.healthcareEnabled = false
+        }
+        if (version < 3) {
+          // Migrate allocationAdvanced → mode
+          state.mode = state.allocationAdvanced ? 'advanced' : 'simple'
+          delete state.allocationAdvanced
+          // Migrate sidebar → bottom
+          if (state.statsPosition === 'sidebar') {
+            state.statsPosition = 'bottom'
           }
         }
         return state
