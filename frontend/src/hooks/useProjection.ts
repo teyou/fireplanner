@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import type { ProjectionRow, ProjectionSummary } from '@/lib/types'
 import { generateProjection } from '@/lib/calculations/projection'
 import { calculatePortfolioReturn } from '@/lib/calculations/portfolio'
+import { computeHdbSublettingIncome } from '@/lib/calculations/hdb'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useSimulationStore } from '@/stores/useSimulationStore'
@@ -77,7 +78,16 @@ export function useProjection(): ProjectionResult {
         ? Math.max(0, property.existingPropertyValue - property.existingMortgageBalance)
         : 0,
       annualMortgagePayment: property.ownsProperty ? property.existingMonthlyPayment * 12 : 0,
-      annualRentalIncome: property.ownsProperty ? property.existingRentalIncome * 12 : 0,
+      annualRentalIncome: property.ownsProperty
+        ? property.existingRentalIncome * 12 + (
+            property.propertyType === 'hdb' && property.hdbMonetizationStrategy === 'sublet'
+              ? computeHdbSublettingIncome({
+                  rooms: property.hdbSublettingRooms,
+                  monthlyRate: property.hdbSublettingRate,
+                }).annualGross
+              : 0
+          )
+        : 0,
       downsizing: property.ownsProperty && property.downsizing.scenario !== 'none'
         ? property.downsizing
         : null,
@@ -127,6 +137,10 @@ export function useProjection(): ProjectionResult {
     property.existingMortgageRemainingYears,
     property.downsizing,
     property.residencyForAbsd,
+    property.propertyType,
+    property.hdbMonetizationStrategy,
+    property.hdbSublettingRooms,
+    property.hdbSublettingRate,
     profile.parentSupportEnabled,
     profile.parentSupport,
     profile.healthcareConfig,
