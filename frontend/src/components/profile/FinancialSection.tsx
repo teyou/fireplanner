@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
+import { PercentInput } from '@/components/shared/PercentInput'
+import { NumberInput } from '@/components/shared/NumberInput'
 
 export function FinancialSection() {
   const store = useProfileStore()
@@ -62,6 +64,25 @@ export function FinancialSection() {
                 ? 'Annual SRS contribution (max $35,700 for foreigners)'
                 : 'Annual SRS contribution (max $15,300 for citizens/PR)'
             }
+          />
+
+          <PercentInput
+            label="SRS Investment Return"
+            value={store.srsInvestmentReturn}
+            onChange={(v) => store.setField('srsInvestmentReturn', v)}
+            error={store.validationErrors.srsInvestmentReturn}
+            tooltip="Expected return on SRS investments. Default 4% assumes a balanced portfolio."
+          />
+
+          <NumberInput
+            label="SRS Drawdown Start Age"
+            value={store.srsDrawdownStartAge}
+            onChange={(v) => store.setField('srsDrawdownStartAge', v)}
+            error={store.validationErrors.srsDrawdownStartAge}
+            tooltip="Age to begin SRS withdrawals (10-year drawdown window). Default 63 is the statutory retirement age."
+            integer
+            min={55}
+            max={75}
           />
         </div>
       </CardContent>
