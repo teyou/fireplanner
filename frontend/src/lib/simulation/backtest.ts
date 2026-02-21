@@ -14,12 +14,7 @@ import {
   type HistoricalReturnRow,
 } from '@/lib/data/historicalReturnsFull.ts'
 import {
-  constantDollar,
-  vpw,
-  guardrails,
-  vanguardDynamic,
-  capeBased,
-  floorCeiling,
+  computeWithdrawal,
 } from '@/lib/calculations/withdrawal.ts'
 import type { PerYearResult, BacktestSummary, HeatmapData } from '@/lib/types.ts'
 
@@ -129,86 +124,6 @@ function getPortfolioReturns(
 }
 
 // ============================================================
-// Withdrawal dispatch
-// ============================================================
-
-/**
- * Compute the withdrawal for a single year in a backtest window.
- * Mirrors the Python _run_single_window dispatch.
- */
-function computeWithdrawal(
-  strategy: string,
-  strategyParams: Record<string, number>,
-  portfolio: number,
-  year: number,
-  remaining: number,
-  initialWithdrawal: number,
-  prevWithdrawal: number,
-  inflation: number,
-  prevYearReturn?: number,
-): number {
-  switch (strategy) {
-    case 'constant_dollar':
-      return constantDollar(portfolio, year, initialWithdrawal, inflation)
-
-    case 'vpw':
-      return vpw(
-        portfolio,
-        remaining,
-        strategyParams.expectedRealReturn ?? 0.03,
-        strategyParams.targetEndValue ?? 0,
-      )
-
-    case 'guardrails':
-      return guardrails(
-        portfolio,
-        year,
-        initialWithdrawal,
-        prevWithdrawal,
-        inflation,
-        strategyParams.initialRate ?? 0.05,
-        strategyParams.ceilingTrigger ?? 1.20,
-        strategyParams.floorTrigger ?? 0.80,
-        strategyParams.adjustmentSize ?? 0.10,
-        prevYearReturn,
-      )
-
-    case 'vanguard_dynamic':
-      return vanguardDynamic(
-        portfolio,
-        year,
-        initialWithdrawal,
-        prevWithdrawal,
-        inflation,
-        strategyParams.swr ?? 0.04,
-        strategyParams.ceiling ?? 0.05,
-        strategyParams.floor ?? 0.025,
-      )
-
-    case 'cape_based':
-      return capeBased(
-        portfolio,
-        year,
-        strategyParams.baseRate ?? 0.04,
-        strategyParams.capeWeight ?? 0.50,
-        strategyParams.currentCape ?? 30,
-      )
-
-    case 'floor_ceiling':
-      return floorCeiling(
-        portfolio,
-        strategyParams.floorAmount ?? 60000,
-        strategyParams.ceilingAmount ?? 150000,
-        strategyParams.targetRate ?? 0.045,
-      )
-
-    default:
-      // Fallback to constant dollar
-      return constantDollar(portfolio, year, initialWithdrawal, inflation)
-  }
-}
-
-// ============================================================
 // Single rolling window
 // ============================================================
 
@@ -259,17 +174,16 @@ function runSingleWindow(
     const inf = rawCpi !== null ? rawCpi : inflationFixed
     const remaining = duration - y
 
-    let withdrawal = computeWithdrawal(
-      strategy,
-      strategyParams,
+    let withdrawal = computeWithdrawal(strategy, {
       portfolio,
-      y,
-      remaining,
+      year: y,
+      remainingYears: remaining,
       initialWithdrawal,
       prevWithdrawal,
-      inf,
+      inflation: inf,
+      strategyParams,
       prevYearReturn,
-    )
+    })
 
     // Add one-time withdrawals for this year offset
     const oneTime = (oneTimeWithdrawals ?? [])
@@ -393,17 +307,16 @@ export function runDetailedWindow(
     const inf = rawCpi !== null ? rawCpi : inflationFixed
     const remaining = retirementDuration - y
 
-    let withdrawal = computeWithdrawal(
-      withdrawalStrategy,
-      strategyParams,
+    let withdrawal = computeWithdrawal(withdrawalStrategy, {
       portfolio,
-      y,
-      remaining,
+      year: y,
+      remainingYears: remaining,
       initialWithdrawal,
       prevWithdrawal,
-      inf,
+      inflation: inf,
+      strategyParams,
       prevYearReturn,
-    )
+    })
 
     // Add one-time withdrawals for this year offset
     const oneTime = (oneTimeWithdrawals ?? [])

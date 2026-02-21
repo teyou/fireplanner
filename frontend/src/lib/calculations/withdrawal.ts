@@ -143,6 +143,93 @@ export function floorCeiling(
 }
 
 // ============================================================
+// Shared Withdrawal Dispatch
+// ============================================================
+
+/**
+ * Context object for the shared withdrawal dispatch.
+ * All 3 call sites (deterministic, MC, backtest) build this from their
+ * local state and delegate to `computeWithdrawal`.
+ */
+export interface WithdrawalContext {
+  portfolio: number
+  year: number               // decumulation year (0-based)
+  remainingYears: number     // duration - year
+  initialWithdrawal: number  // portfolio * swr at start of decumulation
+  prevWithdrawal: number     // 0 at year 0
+  inflation: number
+  strategyParams: Record<string, number>
+  prevYearReturn?: number    // for Guardrails PMR rule
+  prevYearGains?: number     // for sensible_withdrawals (added in sub-task 1)
+}
+
+/**
+ * Single shared dispatch for all withdrawal strategies.
+ * Replaces 3 duplicate switch blocks (withdrawal.ts, monteCarlo.ts, backtest.ts).
+ *
+ * Uses camelCase param keys. The `floor_ceiling` strategy supports both
+ * `floorAmount`/`ceilingAmount` (from workerClient flattening) and
+ * `floor`/`ceiling` (raw store params) via fallback.
+ */
+export function computeWithdrawal(strategy: string, ctx: WithdrawalContext): number {
+  const {
+    portfolio, year, remainingYears, initialWithdrawal, prevWithdrawal,
+    inflation, strategyParams: sp, prevYearReturn,
+  } = ctx
+
+  switch (strategy) {
+    case 'constant_dollar': {
+      const swr = sp.swr ?? 0.04
+      const iw = initialWithdrawal > 0 ? initialWithdrawal : portfolio * swr
+      return constantDollar(portfolio, year, iw, inflation)
+    }
+    case 'vpw':
+      return vpw(
+        portfolio,
+        remainingYears,
+        sp.expectedRealReturn ?? 0.03,
+        sp.targetEndValue ?? 0,
+      )
+    case 'guardrails': {
+      const pw = year > 0 ? prevWithdrawal : 0
+      return guardrails(
+        portfolio, year, initialWithdrawal, pw, inflation,
+        sp.initialRate ?? 0.05,
+        sp.ceilingTrigger ?? 1.20,
+        sp.floorTrigger ?? 0.80,
+        sp.adjustmentSize ?? 0.10,
+        prevYearReturn,
+      )
+    }
+    case 'vanguard_dynamic': {
+      const pw = year > 0 ? prevWithdrawal : 0
+      return vanguardDynamic(
+        portfolio, year, initialWithdrawal, pw, inflation,
+        sp.swr ?? 0.04,
+        sp.ceiling ?? 0.05,
+        sp.floor ?? 0.025,
+      )
+    }
+    case 'cape_based':
+      return capeBased(
+        portfolio, year,
+        sp.baseRate ?? 0.04,
+        sp.capeWeight ?? 0.50,
+        sp.currentCape ?? 30,
+      )
+    case 'floor_ceiling':
+      return floorCeiling(
+        portfolio,
+        sp.floorAmount ?? sp.floor ?? 60_000,
+        sp.ceilingAmount ?? sp.ceiling ?? 150_000,
+        sp.targetRate ?? 0.045,
+      )
+    default:
+      throw new Error(`Unknown withdrawal strategy: ${strategy}`)
+  }
+}
+
+// ============================================================
 // Deterministic Comparison (single median-return path)
 // ============================================================
 
@@ -205,33 +292,17 @@ export function runDeterministicComparison(params: {
         continue
       }
 
-      let withdrawal: number
       const remaining = duration - y
 
-      switch (strategy) {
-        case 'constant_dollar':
-          withdrawal = constantDollar(portfolio, y, initialW, inflation)
-          break
-        case 'vpw':
-          withdrawal = vpw(portfolio, remaining, sp.expectedRealReturn ?? 0.03, sp.targetEndValue ?? 0)
-          break
-        case 'guardrails':
-          withdrawal = guardrails(portfolio, y, initialW, prevWithdrawal, inflation,
-            sp.initialRate ?? 0.05, sp.ceilingTrigger ?? 1.20, sp.floorTrigger ?? 0.80, sp.adjustmentSize ?? 0.10)
-          break
-        case 'vanguard_dynamic':
-          withdrawal = vanguardDynamic(portfolio, y, initialW, prevWithdrawal, inflation,
-            sp.swr ?? 0.04, sp.ceiling ?? 0.05, sp.floor ?? 0.025)
-          break
-        case 'cape_based':
-          withdrawal = capeBased(portfolio, y, sp.baseRate ?? 0.04, sp.capeWeight ?? 0.50, sp.currentCape ?? 30)
-          break
-        case 'floor_ceiling':
-          withdrawal = floorCeiling(portfolio, sp.floor ?? 60000, sp.ceiling ?? 150000, sp.targetRate ?? 0.045)
-          break
-        default:
-          withdrawal = constantDollar(portfolio, y, initialW, inflation)
-      }
+      let withdrawal = computeWithdrawal(strategy, {
+        portfolio,
+        year: y,
+        remainingYears: remaining,
+        initialWithdrawal: initialW,
+        prevWithdrawal,
+        inflation,
+        strategyParams: sp,
+      })
 
       withdrawal = Math.min(withdrawal, portfolio)
       years.push({ year: y, age: retirementAge + y, portfolio, withdrawal })

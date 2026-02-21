@@ -379,7 +379,7 @@ describe('computeWithdrawalsForYear', () => {
         {},
         undefined,
       )
-    ).toThrow('Unknown strategy')
+    ).toThrow('Unknown withdrawal strategy')
   })
 })
 

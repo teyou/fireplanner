@@ -12,6 +12,7 @@ import {
   vanguardDynamic,
   capeBased,
   floorCeiling,
+  computeWithdrawal,
   runDeterministicComparison,
 } from './withdrawal'
 
@@ -246,5 +247,96 @@ describe('runDeterministicComparison', () => {
         expect(yr.withdrawal).toBeGreaterThanOrEqual(0)
       }
     }
+  })
+})
+
+// ============================================================
+// computeWithdrawal dispatch
+// ============================================================
+
+describe('computeWithdrawal dispatch', () => {
+  const baseCtx = {
+    portfolio: PORTFOLIO,
+    year: 0,
+    remainingYears: 30,
+    initialWithdrawal: INITIAL_WITHDRAWAL,
+    prevWithdrawal: 0,
+    inflation: INFLATION,
+    strategyParams: {} as Record<string, number>,
+  }
+
+  it('constant_dollar: matches direct call', () => {
+    const direct = constantDollar(PORTFOLIO, 5, INITIAL_WITHDRAWAL, INFLATION)
+    const dispatched = computeWithdrawal('constant_dollar', {
+      ...baseCtx,
+      year: 5,
+      strategyParams: { swr: SWR },
+    })
+    expect(dispatched).toBeCloseTo(direct, 6)
+  })
+
+  it('vpw: matches direct call', () => {
+    const direct = vpw(PORTFOLIO, 25, 0.03, 0)
+    const dispatched = computeWithdrawal('vpw', {
+      ...baseCtx,
+      remainingYears: 25,
+      strategyParams: { expectedRealReturn: 0.03, targetEndValue: 0 },
+    })
+    expect(dispatched).toBeCloseTo(direct, 6)
+  })
+
+  it('guardrails: matches direct call at year 1', () => {
+    const direct = guardrails(PORTFOLIO, 1, 100_000, 100_000, INFLATION, 0.05, 1.20, 0.80, 0.10)
+    const dispatched = computeWithdrawal('guardrails', {
+      ...baseCtx,
+      year: 1,
+      initialWithdrawal: 100_000,
+      prevWithdrawal: 100_000,
+      strategyParams: { initialRate: 0.05, ceilingTrigger: 1.20, floorTrigger: 0.80, adjustmentSize: 0.10 },
+    })
+    expect(dispatched).toBeCloseTo(direct, 6)
+  })
+
+  it('vanguard_dynamic: matches direct call', () => {
+    const direct = vanguardDynamic(PORTFOLIO, 1, INITIAL_WITHDRAWAL, INITIAL_WITHDRAWAL, INFLATION, 0.04, 0.05, 0.025)
+    const dispatched = computeWithdrawal('vanguard_dynamic', {
+      ...baseCtx,
+      year: 1,
+      prevWithdrawal: INITIAL_WITHDRAWAL,
+      strategyParams: { swr: 0.04, ceiling: 0.05, floor: 0.025 },
+    })
+    expect(dispatched).toBeCloseTo(direct, 6)
+  })
+
+  it('cape_based: matches direct call', () => {
+    const direct = capeBased(PORTFOLIO, 5, 0.04, 0.50, 30)
+    const dispatched = computeWithdrawal('cape_based', {
+      ...baseCtx,
+      year: 5,
+      strategyParams: { baseRate: 0.04, capeWeight: 0.50, currentCape: 30 },
+    })
+    expect(dispatched).toBeCloseTo(direct, 6)
+  })
+
+  it('floor_ceiling: matches direct call with floorAmount/ceilingAmount', () => {
+    const direct = floorCeiling(PORTFOLIO, 60_000, 150_000, 0.045)
+    const dispatched = computeWithdrawal('floor_ceiling', {
+      ...baseCtx,
+      strategyParams: { floorAmount: 60_000, ceilingAmount: 150_000, targetRate: 0.045 },
+    })
+    expect(dispatched).toBeCloseTo(direct, 6)
+  })
+
+  it('floor_ceiling: handles raw store params (floor/ceiling)', () => {
+    const direct = floorCeiling(PORTFOLIO, 60_000, 150_000, 0.045)
+    const dispatched = computeWithdrawal('floor_ceiling', {
+      ...baseCtx,
+      strategyParams: { floor: 60_000, ceiling: 150_000, targetRate: 0.045 },
+    })
+    expect(dispatched).toBeCloseTo(direct, 6)
+  })
+
+  it('throws on unknown strategy', () => {
+    expect(() => computeWithdrawal('unknown_strategy', baseCtx)).toThrow('Unknown withdrawal strategy')
   })
 })

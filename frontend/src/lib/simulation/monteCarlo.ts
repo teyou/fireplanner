@@ -12,12 +12,7 @@ import { SeededRNG } from '@/lib/math/random.ts'
 import { choleskyDecomposition, buildCovarianceMatrix, dot } from '@/lib/math/linalg.ts'
 import { percentile, studentTQuantile } from '@/lib/math/stats.ts'
 import {
-  constantDollar,
-  vpw,
-  guardrails,
-  vanguardDynamic,
-  capeBased,
-  floorCeiling,
+  computeWithdrawal,
 } from '@/lib/calculations/withdrawal.ts'
 import {
   HISTORICAL_RETURNS,
@@ -241,9 +236,9 @@ function generateReturnsFatTail(
 
 /**
  * Compute withdrawal amount for a single simulation at a given decumulation year.
- * Dispatches to the appropriate scalar strategy function.
+ * Thin wrapper around the shared `computeWithdrawal` dispatch.
  *
- * Exported for reuse by sequence risk engine (Task 5).
+ * Exported for reuse by sequence risk engine.
  */
 export function computeWithdrawalsForYear(
   strategy: string,
@@ -255,70 +250,19 @@ export function computeWithdrawalsForYear(
   inflation: number,
   strategyParams: Record<string, number>,
   prevYearReturn: number | undefined,
+  prevYearGains?: number,
 ): number {
-  switch (strategy) {
-    case 'constant_dollar': {
-      const swr = strategyParams.swr ?? 0.04
-      const iw = initialWithdrawal > 0 ? initialWithdrawal : portfolio * swr
-      return constantDollar(portfolio, year, iw, inflation)
-    }
-    case 'vpw': {
-      const remaining = nYearsDecum - year
-      return vpw(
-        portfolio,
-        remaining,
-        strategyParams.expectedRealReturn ?? strategyParams.expected_real_return ?? 0.03,
-        strategyParams.targetEndValue ?? strategyParams.target_end_value ?? 0,
-      )
-    }
-    case 'guardrails': {
-      const pw = year > 0 ? prevWithdrawal : 0
-      return guardrails(
-        portfolio,
-        year,
-        initialWithdrawal,
-        pw,
-        inflation,
-        strategyParams.initialRate ?? strategyParams.initial_rate ?? 0.05,
-        strategyParams.ceilingTrigger ?? strategyParams.ceiling_trigger ?? 1.20,
-        strategyParams.floorTrigger ?? strategyParams.floor_trigger ?? 0.80,
-        strategyParams.adjustmentSize ?? strategyParams.adjustment_size ?? 0.10,
-        prevYearReturn,
-      )
-    }
-    case 'vanguard_dynamic': {
-      const pw = year > 0 ? prevWithdrawal : 0
-      return vanguardDynamic(
-        portfolio,
-        year,
-        initialWithdrawal,
-        pw,
-        inflation,
-        strategyParams.swr ?? 0.04,
-        strategyParams.ceiling ?? 0.05,
-        strategyParams.floor ?? 0.025,
-      )
-    }
-    case 'cape_based': {
-      return capeBased(
-        portfolio,
-        year,
-        strategyParams.baseRate ?? strategyParams.base_rate ?? 0.04,
-        strategyParams.capeWeight ?? strategyParams.cape_weight ?? 0.50,
-        strategyParams.currentCape ?? strategyParams.current_cape ?? 30,
-      )
-    }
-    case 'floor_ceiling': {
-      return floorCeiling(
-        portfolio,
-        strategyParams.floorAmount ?? strategyParams.floor_amount ?? 60_000,
-        strategyParams.ceilingAmount ?? strategyParams.ceiling_amount ?? 150_000,
-        strategyParams.targetRate ?? strategyParams.target_rate ?? 0.045,
-      )
-    }
-    default:
-      throw new Error(`Unknown strategy: ${strategy}`)
-  }
+  return computeWithdrawal(strategy, {
+    portfolio,
+    year,
+    remainingYears: nYearsDecum - year,
+    initialWithdrawal,
+    prevWithdrawal,
+    inflation,
+    strategyParams,
+    prevYearReturn,
+    prevYearGains,
+  })
 }
 
 // ============================================================
