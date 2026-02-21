@@ -25,40 +25,58 @@ export function CpfProjectionTable() {
   const { rows, hasErrors } = useCpfProjection()
   const retirementAge = useProfileStore((s) => s.retirementAge)
 
-  const columns = useMemo((): ColumnDef<CpfProjectionRow, number>[] => [
-    columnHelper.accessor('age', {
-      header: 'Age',
-      cell: (info) => info.getValue(),
-    }),
-    columnHelper.accessor('oaBalance', {
-      header: 'OA',
-      cell: (info) => currencyCell(info.getValue()),
-    }),
-    columnHelper.accessor('saBalance', {
-      header: 'SA',
-      cell: (info) => currencyCell(info.getValue()),
-    }),
-    columnHelper.accessor('maBalance', {
-      header: 'MA',
-      cell: (info) => currencyCell(info.getValue()),
-    }),
-    columnHelper.accessor('totalBalance', {
-      header: 'Total',
-      cell: (info) => currencyCell(info.getValue()),
-    }),
-    columnHelper.accessor('annualContribution', {
-      header: 'Contribution',
-      cell: (info) => optionalCurrencyCell(info.getValue()),
-    }),
-    columnHelper.accessor('annualInterest', {
-      header: 'Interest',
-      cell: (info) => optionalCurrencyCell(info.getValue()),
-    }),
-    columnHelper.accessor('cpfLifePayout', {
-      header: 'CPF LIFE',
-      cell: (info) => optionalCurrencyCell(info.getValue()),
-    }),
-  ] as ColumnDef<CpfProjectionRow, number>[], [])
+  const hasHousingDeduction = rows?.some((r) => r.oaHousingDeduction > 0) ?? false
+
+  const columns = useMemo((): ColumnDef<CpfProjectionRow, number>[] => {
+    const cols: ColumnDef<CpfProjectionRow, number>[] = [
+      columnHelper.accessor('age', {
+        header: 'Age',
+        cell: (info) => info.getValue(),
+      }),
+      columnHelper.accessor('oaBalance', {
+        header: 'OA',
+        cell: (info) => currencyCell(info.getValue()),
+      }),
+      columnHelper.accessor('saBalance', {
+        header: 'SA',
+        cell: (info) => currencyCell(info.getValue()),
+      }),
+      columnHelper.accessor('maBalance', {
+        header: 'MA',
+        cell: (info) => currencyCell(info.getValue()),
+      }),
+      columnHelper.accessor('totalBalance', {
+        header: 'Total',
+        cell: (info) => currencyCell(info.getValue()),
+      }),
+      columnHelper.accessor('annualContribution', {
+        header: 'Contribution',
+        cell: (info) => optionalCurrencyCell(info.getValue()),
+      }),
+    ]
+
+    if (hasHousingDeduction) {
+      cols.push(
+        columnHelper.accessor('oaHousingDeduction', {
+          header: 'OA Withdrawal',
+          cell: (info) => optionalCurrencyCell(info.getValue()),
+        }) as ColumnDef<CpfProjectionRow, number>,
+      )
+    }
+
+    cols.push(
+      columnHelper.accessor('annualInterest', {
+        header: 'Interest',
+        cell: (info) => optionalCurrencyCell(info.getValue()),
+      }),
+      columnHelper.accessor('cpfLifePayout', {
+        header: 'CPF LIFE',
+        cell: (info) => optionalCurrencyCell(info.getValue()),
+      }),
+    )
+
+    return cols
+  }, [hasHousingDeduction])
 
   const table = useReactTable({
     data: rows ?? [],
