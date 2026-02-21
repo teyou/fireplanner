@@ -25,7 +25,7 @@ import {
   type HistoricalReturnRow,
 } from '@/lib/data/historicalReturnsFull.ts'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns.ts'
-import type { MonteCarloResult, PercentileBands, TerminalStats, FailureDistribution } from '@/lib/types.ts'
+import type { MonteCarloResult, PercentileBands, TerminalStats, FailureDistribution, SpendingMetrics, HistogramBucket, HistogramSnapshot } from '@/lib/types.ts'
 
 // ============================================================
 // Types
@@ -407,6 +407,8 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
 
   // Withdrawal tracking for percentile bands (reuse buffer each year)
   const withdrawalCol: number[] = new Array(nSims).fill(0)
+  // Per-sim withdrawal history for spending metrics (~3MB for 10K sims x 30-40 years)
+  const allNetWithdrawals: number[][] = Array.from({ length: nSims }, () => [])
   const wb_years: number[] = []
   const wb_ages: number[] = []
   const wb_p5: number[] = []
@@ -470,6 +472,7 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
 
         // Track net withdrawal (what actually leaves the portfolio)
         withdrawalCol[s] = netWithdrawal
+        allNetWithdrawals[s].push(netWithdrawal)
 
         balances[s][t + 1] =
           (currentBalance - netWithdrawal) * (1 + portfolioReturns[s][t] - expenseRatio)
@@ -589,11 +592,76 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
     p75: wb_p75, p90: wb_p90, p95: wb_p95,
   }
 
+  // ---- Spending metrics ----
+  let volatileCount = 0
+  let smallSpendCount = 0
+  let largeEndCount = 0
+  let smallEndCount = 0
+
+  for (let s = 0; s < nSims; s++) {
+    const ws = allNetWithdrawals[s]
+    // Volatile: any year with >25% YoY change
+    for (let y = 1; y < ws.length; y++) {
+      if (ws[y - 1] > 0 && Math.abs(ws[y] - ws[y - 1]) / ws[y - 1] > 0.25) {
+        volatileCount++
+        break
+      }
+    }
+    // Small spending: any year < 50% of first year
+    const firstW = ws[0] || 0
+    if (firstW > 0 && ws.some(w => w < firstW * 0.5)) smallSpendCount++
+    // Large end portfolio: > 200% initial
+    if (terminals[s] > initialPortfolio * 2) largeEndCount++
+    // Small end portfolio: nonzero but < 50% initial
+    if (terminals[s] > 0 && terminals[s] < initialPortfolio * 0.5) smallEndCount++
+  }
+
+  const spendingMetrics: SpendingMetrics = {
+    volatileSpending: volatileCount / nSims,
+    smallSpending: smallSpendCount / nSims,
+    largeEndPortfolio: largeEndCount / nSims,
+    smallEndPortfolio: smallEndCount / nSims,
+  }
+
+  // ---- Histogram snapshots ----
+  function computeHistogramBuckets(values: number[], nBuckets = 20): HistogramBucket[] {
+    const min = Math.min(...values)
+    const max = Math.max(...values)
+    const step = (max - min) / nBuckets || 1
+    const buckets: HistogramBucket[] = Array.from({ length: nBuckets }, (_, i) => ({
+      min: min + i * step,
+      max: min + (i + 1) * step,
+      count: 0,
+    }))
+    for (const v of values) {
+      const idx = Math.min(Math.floor((v - min) / step), nBuckets - 1)
+      buckets[idx].count++
+    }
+    return buckets
+  }
+
+  const snapshotYears = [nYearsAccum, nYearsAccum + 10, nYearsAccum + 20, nYearsTotal]
+    .filter(y => y >= 0 && y <= nYearsTotal)
+    .filter((v, i, a) => a.indexOf(v) === i) // deduplicate
+
+  const histogramSnapshots: HistogramSnapshot[] = snapshotYears.map(y => {
+    const col = new Array(nSims)
+    for (let s = 0; s < nSims; s++) col[s] = balances[s][y]
+    return {
+      age: currentAge + y,
+      year: y,
+      buckets: computeHistogramBuckets(col),
+      nBuckets: 20,
+    }
+  })
+
   return {
     success_rate: successRate,
     percentile_bands: percentileBands,
     terminal_stats: terminalStats,
     failure_distribution: failureDistribution,
     withdrawal_bands: withdrawalBands,
+    spending_metrics: spendingMetrics,
+    histogram_snapshots: histogramSnapshots,
   }
 }

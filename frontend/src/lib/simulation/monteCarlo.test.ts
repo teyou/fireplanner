@@ -499,4 +499,95 @@ describe('MC success rate invariants', () => {
       expect(result.withdrawal_bands.years.length).toBe(nYearsDecum)
     }
   })
+
+  // ---------------------------------------------------------------------------
+  // Spending metrics
+  // ---------------------------------------------------------------------------
+
+  it('spending_metrics values are between 0 and 1', () => {
+    const result = runMonteCarlo(makeDefaultParams())
+    const sm = result.spending_metrics!
+    expect(sm.volatileSpending).toBeGreaterThanOrEqual(0)
+    expect(sm.volatileSpending).toBeLessThanOrEqual(1)
+    expect(sm.smallSpending).toBeGreaterThanOrEqual(0)
+    expect(sm.smallSpending).toBeLessThanOrEqual(1)
+    expect(sm.largeEndPortfolio).toBeGreaterThanOrEqual(0)
+    expect(sm.largeEndPortfolio).toBeLessThanOrEqual(1)
+    expect(sm.smallEndPortfolio).toBeGreaterThanOrEqual(0)
+    expect(sm.smallEndPortfolio).toBeLessThanOrEqual(1)
+  })
+
+  it('constant_dollar strategy has low volatile spending', () => {
+    const result = runMonteCarlo(makeDefaultParams({
+      withdrawalStrategy: 'constant_dollar',
+      strategyParams: { swr: 0.04 },
+    }))
+    // Constant dollar withdraws same inflation-adjusted amount — only volatile
+    // when portfolio depletes (withdrawals drop to 0 or are capped).
+    // With modest SWR and good savings, most sims should be non-volatile.
+    expect(result.spending_metrics!.volatileSpending).toBeLessThan(0.5)
+  })
+
+  it('different strategies produce different spending metrics', () => {
+    const cd = runMonteCarlo(makeDefaultParams({
+      withdrawalStrategy: 'constant_dollar',
+      strategyParams: { swr: 0.04 },
+    }))
+    const vpwResult = runMonteCarlo(makeDefaultParams({
+      withdrawalStrategy: 'vpw',
+      strategyParams: { expectedRealReturn: 0.03, targetEndValue: 0 },
+    }))
+    // Both should have valid metrics, and they should differ
+    expect(cd.spending_metrics!.volatileSpending).toBeDefined()
+    expect(vpwResult.spending_metrics!.volatileSpending).toBeDefined()
+    // VPW and constant_dollar have fundamentally different withdrawal patterns
+    const cdMetrics = cd.spending_metrics!
+    const vpwMetrics = vpwResult.spending_metrics!
+    // At least one metric should differ between the two strategies
+    const allSame =
+      cdMetrics.volatileSpending === vpwMetrics.volatileSpending &&
+      cdMetrics.smallSpending === vpwMetrics.smallSpending &&
+      cdMetrics.largeEndPortfolio === vpwMetrics.largeEndPortfolio &&
+      cdMetrics.smallEndPortfolio === vpwMetrics.smallEndPortfolio
+    expect(allSame).toBe(false)
+  })
+
+  // ---------------------------------------------------------------------------
+  // Histogram snapshots
+  // ---------------------------------------------------------------------------
+
+  it('histogram_snapshots exist at expected years', () => {
+    const params = makeDefaultParams()
+    const result = runMonteCarlo(params)
+    const snapshots = result.histogram_snapshots!
+    expect(snapshots.length).toBeGreaterThanOrEqual(1)
+    // First snapshot should be at retirement age
+    expect(snapshots[0].age).toBe(params.retirementAge)
+  })
+
+  it('histogram bucket counts sum to nSims', () => {
+    const params = makeDefaultParams({ nSimulations: 200 })
+    const result = runMonteCarlo(params)
+    for (const snap of result.histogram_snapshots!) {
+      const totalCount = snap.buckets.reduce((sum, b) => sum + b.count, 0)
+      expect(totalCount).toBe(200)
+    }
+  })
+
+  it('histogram has correct number of buckets', () => {
+    const result = runMonteCarlo(makeDefaultParams())
+    for (const snap of result.histogram_snapshots!) {
+      expect(snap.buckets.length).toBe(snap.nBuckets)
+      expect(snap.nBuckets).toBe(20)
+    }
+  })
+
+  it('histogram buckets are contiguous', () => {
+    const result = runMonteCarlo(makeDefaultParams())
+    for (const snap of result.histogram_snapshots!) {
+      for (let i = 1; i < snap.buckets.length; i++) {
+        expect(snap.buckets[i].min).toBeCloseTo(snap.buckets[i - 1].max, 2)
+      }
+    }
+  })
 })

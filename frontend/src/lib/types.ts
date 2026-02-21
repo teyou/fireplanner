@@ -439,6 +439,26 @@ export interface FailureDistribution {
   total_failures: number
 }
 
+export interface SpendingMetrics {
+  volatileSpending: number    // fraction of sims with any >25% YoY withdrawal change
+  smallSpending: number       // fraction with any year < 50% of initial withdrawal
+  largeEndPortfolio: number   // fraction ending > 200% initial portfolio
+  smallEndPortfolio: number   // fraction ending < 50% initial (nonzero)
+}
+
+export interface HistogramBucket {
+  min: number
+  max: number
+  count: number
+}
+
+export interface HistogramSnapshot {
+  age: number
+  year: number
+  buckets: HistogramBucket[]
+  nBuckets: number
+}
+
 export interface MonteCarloResult {
   success_rate: number
   percentile_bands: PercentileBands
@@ -446,6 +466,8 @@ export interface MonteCarloResult {
   safe_swr: SafeSwr | null
   failure_distribution: FailureDistribution
   withdrawal_bands?: PercentileBands
+  spending_metrics?: SpendingMetrics
+  histogram_snapshots?: HistogramSnapshot[]
   n_simulations: number
   computation_time_ms: number
   cached: boolean
