@@ -82,6 +82,24 @@ describe('useDashboardCharts', () => {
     expect(result.current.accumulationData[0].value).toBe(200000)
   })
 
+  it('accumulation data includes cpfRA in starting NW', () => {
+    useProfileStore.setState({
+      ...useProfileStore.getState(),
+      currentAge: 56,
+      retirementAge: 58,
+      lifeExpectancy: 90,
+      liquidNetWorth: 100000,
+      cpfOA: 50000,
+      cpfSA: 0,
+      cpfMA: 20000,
+      cpfRA: 200000,
+      validationErrors: {},
+    })
+    const { result } = renderHook(() => useDashboardCharts())
+    // First data point: 100K + 50K + 0 + 20K + 200K = 370K
+    expect(result.current.accumulationData[0].value).toBe(370000)
+  })
+
   it('values grow during accumulation phase', () => {
     useProfileStore.setState({
       ...useProfileStore.getState(),

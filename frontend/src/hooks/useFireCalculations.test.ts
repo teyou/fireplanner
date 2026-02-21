@@ -147,4 +147,36 @@ describe('useFireCalculations', () => {
     // Should still compute (using profile.annualIncome as fallback)
     expect(result.current.metrics).not.toBeNull()
   })
+
+  it('cpfTotal includes cpfRA in progress calculation', () => {
+    useProfileStore.setState({
+      currentAge: 55,
+      retirementAge: 58,
+      lifeExpectancy: 90,
+      annualIncome: 0,
+      annualExpenses: 80000,
+      liquidNetWorth: 1500000,
+      cpfOA: 100000,
+      cpfSA: 0,
+      cpfMA: 50000,
+      cpfRA: 200000,
+      swr: 0.04,
+      fireType: 'regular',
+      fireNumberBasis: 'today',
+      retirementSpendingAdjustment: 1.0,
+      usePortfolioReturn: false,
+      expectedReturn: 0.07,
+      inflation: 0.025,
+      expenseRatio: 0.003,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: { ...useProfileStore.getState().healthcareConfig, enabled: false },
+      validationErrors: {},
+    })
+    const { result } = renderHook(() => useFireCalculations())
+    expect(result.current.metrics).not.toBeNull()
+    // FIRE = 80K / 0.04 = 2M. NW = 1.5M + 100K + 0 + 50K + 200K = 1.85M
+    // Progress = 1.85M / 2M = 92.5%
+    expect(result.current.metrics!.progress).toBeCloseTo(0.925, 1)
+  })
 })

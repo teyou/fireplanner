@@ -40,6 +40,22 @@ describe('useAnalysisPortfolio', () => {
       expect(result.current.skipAccumulation).toBe(false)
     })
 
+    it('initialPortfolio includes cpfRA', () => {
+      useProfileStore.setState({
+        ...useProfileStore.getState(),
+        liquidNetWorth: 500000,
+        cpfOA: 100000,
+        cpfSA: 0,
+        cpfMA: 30000,
+        cpfRA: 150000,
+        validationErrors: {},
+      })
+      useSimulationStore.setState({ ...useSimulationStore.getState(), analysisMode: 'myPlan' })
+      const { result } = renderHook(() => useAnalysisPortfolio())
+      // 500K + 100K + 0 + 30K + 150K = 780K
+      expect(result.current.initialPortfolio).toBe(780000)
+    })
+
     it('retirementPortfolio is projected forward', () => {
       useProfileStore.setState({
         ...useProfileStore.getState(),

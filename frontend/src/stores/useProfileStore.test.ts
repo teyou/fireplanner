@@ -225,7 +225,21 @@ describe('useProfileStore', () => {
       expect(hc.oopReferenceAge).toBe(40)
     })
 
-    it('full migration v0→v7 applies all steps', () => {
+    it('v8→v9: adds cpfRA with default 0', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = { currentAge: 55 }
+      const migrated = migrate!(oldState, 8) as Record<string, unknown>
+      expect(migrated.cpfRA).toBe(0)
+    })
+
+    it('v8→v9: preserves existing cpfRA if already present', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = { currentAge: 55, cpfRA: 250000 }
+      const migrated = migrate!(oldState, 8) as Record<string, unknown>
+      expect(migrated.cpfRA).toBe(250000)
+    })
+
+    it('full migration v0→v9 applies all steps', () => {
       const { migrate } = useProfileStore.persist.getOptions()
       const oldState: Record<string, unknown> = { currentAge: 25 }
       const migrated = migrate!(oldState, 0) as Record<string, unknown>
@@ -242,6 +256,8 @@ describe('useProfileStore', () => {
       // v6→v7 fields
       const hc = migrated.healthcareConfig as Record<string, unknown>
       expect(hc.oopInflationRate).toBe(0.03)
+      // v8→v9 fields
+      expect(migrated.cpfRA).toBe(0)
     })
   })
 })

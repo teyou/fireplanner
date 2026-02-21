@@ -40,6 +40,7 @@ describe('buildProjectionParams', () => {
     expect(params.initialCpfOA).toBe(profile.cpfOA)
     expect(params.initialCpfSA).toBe(profile.cpfSA)
     expect(params.initialCpfMA).toBe(profile.cpfMA)
+    expect(params.initialCpfRA).toBe(profile.cpfRA)
     expect(params.cpfLifeStartAge).toBe(profile.cpfLifeStartAge)
     expect(params.cpfLifePlan).toBe(profile.cpfLifePlan)
   })

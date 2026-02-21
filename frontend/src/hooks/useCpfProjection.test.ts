@@ -30,10 +30,47 @@ describe('useCpfProjection', () => {
     expect(result.current.rows![0].annualInterest).toBe(0)
   })
 
-  it('totalBalance = OA + SA + MA', () => {
+  it('totalBalance = OA + SA + MA + RA', () => {
     const { result } = renderHook(() => useCpfProjection())
     const row = result.current.rows![5]
-    expect(row.totalBalance).toBeCloseTo(row.oaBalance + row.saBalance + row.maBalance, 0)
+    expect(row.totalBalance).toBeCloseTo(row.oaBalance + row.saBalance + row.maBalance + row.raBalance, 0)
+  })
+
+  it('raBalance appears after age 55 transfer', () => {
+    useProfileStore.setState({
+      ...useProfileStore.getState(),
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      validationErrors: {},
+    })
+    const { result } = renderHook(() => useCpfProjection())
+    const rows = result.current.rows!
+    const row54 = rows.find(r => r.age === 54)
+    const row55 = rows.find(r => r.age === 55)
+    if (row54 && row55) {
+      expect(row54.raBalance).toBe(0)
+      expect(row55.raBalance).toBeGreaterThan(0)
+      expect(row55.saBalance).toBe(0)
+    }
+  })
+
+  it('raCreated milestone at age 55', () => {
+    useProfileStore.setState({
+      ...useProfileStore.getState(),
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      validationErrors: {},
+    })
+    const { result } = renderHook(() => useCpfProjection())
+    const rows = result.current.rows!
+    const row55 = rows.find(r => r.age === 55)
+    // raCreated fires at 55 unless another milestone takes priority
+    if (row55 && row55.raBalance > 0) {
+      // milestone could be 'brs'/'frs'/'ers' if those thresholds also crossed at 55
+      expect(['raCreated', 'brs', 'frs', 'ers']).toContain(row55.milestone)
+    }
   })
 
   it('CPF balances grow over working years', () => {

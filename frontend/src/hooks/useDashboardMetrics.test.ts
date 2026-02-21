@@ -64,6 +64,21 @@ describe('useDashboardMetrics', () => {
     expect(result.current.totalNetWorth).toBe(680000)
   })
 
+  it('totalNetWorth includes cpfRA', () => {
+    useProfileStore.setState({
+      ...useProfileStore.getState(),
+      liquidNetWorth: 500000,
+      cpfOA: 100000,
+      cpfSA: 0,
+      cpfMA: 30000,
+      cpfRA: 200000,
+      validationErrors: {},
+    })
+    const { result } = renderHook(() => useDashboardMetrics())
+    // 500K + 100K + 0 + 30K + 200K = 830K
+    expect(result.current.totalNetWorth).toBe(830000)
+  })
+
   it('savingsRate is computed', () => {
     const { result } = renderHook(() => useDashboardMetrics())
     expect(result.current.savingsRate).not.toBeNull()
