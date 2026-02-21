@@ -1,5 +1,7 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useId } from 'react'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { InfoTooltip } from '@/components/shared/InfoTooltip'
 
 interface NumberInputProps {
   value: number
@@ -12,6 +14,9 @@ interface NumberInputProps {
   className?: string
   disabled?: boolean
   id?: string
+  label?: string
+  tooltip?: string
+  error?: string
 }
 
 /**
@@ -30,7 +35,12 @@ export function NumberInput({
   className,
   disabled,
   id,
+  label,
+  tooltip,
+  error,
 }: NumberInputProps) {
+  const autoId = useId()
+  const inputId = id ?? autoId
   const format = (v: number) => (integer ? String(Math.round(v)) : String(v))
 
   const [localValue, setLocalValue] = useState(() => format(value))
@@ -81,9 +91,9 @@ export function NumberInput({
     []
   )
 
-  return (
+  const input = (
     <Input
-      id={id}
+      id={inputId}
       type="number"
       inputMode={integer ? "numeric" : "decimal"}
       value={localValue}
@@ -97,5 +107,18 @@ export function NumberInput({
       className={className}
       disabled={disabled}
     />
+  )
+
+  if (!label) return input
+
+  return (
+    <div className="space-y-1">
+      <Label htmlFor={inputId} className="text-sm flex items-center gap-1">
+        {label}
+        {tooltip && <InfoTooltip text={tooltip} />}
+      </Label>
+      {input}
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
   )
 }

@@ -33,7 +33,7 @@ export function SummaryPanel({ summary }: SummaryPanelProps) {
   return (
     <div className="flex flex-wrap justify-center gap-3">
       {metrics.map((m) => (
-        <Card key={m.label} className="min-w-[160px] flex-1 max-w-[260px]">
+        <Card key={m.label} className="w-[calc(50%-0.375rem)] md:w-[calc(33.333%-0.5rem)] xl:w-[calc(20%-0.6rem)]">
           <CardContent className="p-3">
             <p className="text-xs text-muted-foreground">{m.label}</p>
             <p className="text-sm font-semibold mt-1">{m.value}</p>
