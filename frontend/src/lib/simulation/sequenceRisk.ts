@@ -141,17 +141,20 @@ function runSingleScenario(
   const failed: boolean[] = new Array(nSims).fill(false)
   const failureYear: number[] = new Array(nSims).fill(nYearsDecum)
   const prevWithdrawals: number[] = new Array(nSims).fill(0)
+  // Track previous balance for sensible_withdrawals gain calculation
+  const prevBalances: number[] = new Array(nSims).fill(initialPortfolio)
 
   const swr = resolveInitialRate(strategyParams)
   const initialWithdrawalAmount = initialPortfolio * swr
 
   for (let t = 0; t < nYearsDecum; t++) {
-    // Previous year's return for Guyton-Klinger PMR check
-    // Python: pyr = all_returns[:, t - 1] if t > 0 else None
-    // We handle per-sim below
-
     for (let s = 0; s < nSims; s++) {
       const prevYearReturn = t > 0 ? allReturns[s][t - 1] : undefined
+
+      // Previous year gains for sensible_withdrawals
+      const prevYearGains = t > 0
+        ? balances[s][t] - prevBalances[s] + prevWithdrawals[s]
+        : 0
 
       const withdrawal = computeWithdrawalsForYear(
         strategy,
@@ -163,6 +166,7 @@ function runSingleScenario(
         inflation,
         strategyParams,
         prevYearReturn,
+        prevYearGains,
       )
 
       const income = t < postRetirementIncome.length ? postRetirementIncome[t] : 0.0
@@ -171,6 +175,7 @@ function runSingleScenario(
       netWithdrawal = Math.min(netWithdrawal, balances[s][t])
 
       prevWithdrawals[s] = withdrawal
+      prevBalances[s] = balances[s][t]
 
       balances[s][t + 1] =
         (balances[s][t] - netWithdrawal) * (1 + allReturns[s][t] - expenseRatio)

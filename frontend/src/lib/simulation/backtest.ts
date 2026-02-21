@@ -152,6 +152,7 @@ function runSingleWindow(
   let portfolio = initialPortfolio
   const initialWithdrawal = initialPortfolio * swr
   let prevWithdrawal = 0
+  let prevPortfolio = initialPortfolio
   let totalWithdrawn = 0
   let minBalance = initialPortfolio
   let worstYearOffset = 0
@@ -174,6 +175,11 @@ function runSingleWindow(
     const inf = rawCpi !== null ? rawCpi : inflationFixed
     const remaining = duration - y
 
+    // Previous year gains for sensible_withdrawals
+    const prevYearGains = y > 0
+      ? portfolio - prevPortfolio + prevWithdrawal
+      : 0
+
     let withdrawal = computeWithdrawal(strategy, {
       portfolio,
       year: y,
@@ -183,6 +189,7 @@ function runSingleWindow(
       inflation: inf,
       strategyParams,
       prevYearReturn,
+      prevYearGains,
     })
 
     // Add one-time withdrawals for this year offset
@@ -195,6 +202,7 @@ function runSingleWindow(
     withdrawal = Math.min(withdrawal, portfolio)
     totalWithdrawn += withdrawal
     prevWithdrawal = withdrawal
+    prevPortfolio = portfolio
     prevYearReturn = ret
 
     portfolio = (portfolio - withdrawal) * (1 + ret - expenseRatio)
@@ -284,6 +292,7 @@ export function runDetailedWindow(
   let portfolio = initialPortfolio
   const initialWithdrawal = initialPortfolio * swr
   let prevWithdrawal = 0
+  let prevPortfolio = initialPortfolio
   let survived = true
   let prevYearReturn: number | undefined = undefined
 
@@ -307,6 +316,11 @@ export function runDetailedWindow(
     const inf = rawCpi !== null ? rawCpi : inflationFixed
     const remaining = retirementDuration - y
 
+    // Previous year gains for sensible_withdrawals
+    const prevYearGains = y > 0
+      ? portfolio - prevPortfolio + prevWithdrawal
+      : 0
+
     let withdrawal = computeWithdrawal(withdrawalStrategy, {
       portfolio,
       year: y,
@@ -316,6 +330,7 @@ export function runDetailedWindow(
       inflation: inf,
       strategyParams,
       prevYearReturn,
+      prevYearGains,
     })
 
     // Add one-time withdrawals for this year offset
@@ -327,6 +342,7 @@ export function runDetailedWindow(
     // Cap withdrawal at current portfolio value
     withdrawal = Math.min(withdrawal, portfolio)
     prevWithdrawal = withdrawal
+    prevPortfolio = portfolio
     prevYearReturn = ret
 
     portfolio = (portfolio - withdrawal) * (1 + ret - expenseRatio)

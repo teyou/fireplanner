@@ -345,6 +345,8 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
   const failed: boolean[] = new Array(nSims).fill(false)
   const failureYear: number[] = new Array(nSims).fill(nYearsTotal)
   const prevWithdrawals: number[] = new Array(nSims).fill(0)
+  // Track previous balance for sensible_withdrawals gain calculation
+  const prevBalances: number[] = new Array(nSims).fill(initialPortfolio)
 
   const swr = resolveInitialRate(strategyParams)
   let initialWithdrawalAmount = 0
@@ -391,6 +393,11 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
           ? portfolioReturns[s][t - 1]
           : undefined
 
+        // Previous year gains for sensible_withdrawals
+        const prevYearGains = decumYear > 0
+          ? currentBalance - prevBalances[s] + prevWithdrawals[s]
+          : 0
+
         const withdrawal = computeWithdrawalsForYear(
           strategy,
           currentBalance,
@@ -401,6 +408,7 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
           inflation,
           strategyParams,
           prevYearReturn,
+          prevYearGains,
         )
 
         // Subtract post-retirement income
@@ -413,6 +421,7 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
         netWithdrawal = Math.min(netWithdrawal, currentBalance)
 
         prevWithdrawals[s] = withdrawal
+        prevBalances[s] = currentBalance
 
         // Track net withdrawal (what actually leaves the portfolio)
         withdrawalCol[s] = netWithdrawal
