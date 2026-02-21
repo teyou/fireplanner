@@ -1,4 +1,5 @@
 import { CPF_OA_RATE } from '@/lib/data/hdbRates'
+import { getBalaFactor } from '@/lib/data/balaTable'
 
 interface CpfRefundParams {
   cpfUsedForHousing: number
@@ -57,4 +58,47 @@ export function computeHdbSublettingIncome(params: SublettingParams): Subletting
     annualNet: annualGross,
     taxImpact: annualGross,
   }
+}
+
+// ============================================================
+// Lease Buyback Scheme (LBS)
+// ============================================================
+
+interface LbsParams {
+  flatValue: number
+  remainingLease: number
+  retainedLease: number
+  cpfRaBalance: number
+  retirementSum: number
+}
+
+interface LbsResult {
+  totalProceeds: number
+  cpfRaTopUp: number
+  cashProceeds: number
+  estimatedMonthlyLifeBoost: number
+}
+
+/**
+ * Calculate LBS proceeds from selling tail-end lease back to HDB.
+ * Uses Bala's Table to determine value of lease sold.
+ * Proceeds go to CPF RA (up to retirement sum shortfall), remainder as cash.
+ */
+export function computeLbsProceeds(params: LbsParams): LbsResult {
+  const { flatValue, remainingLease, retainedLease, cpfRaBalance, retirementSum } = params
+
+  // Value of lease sold = flat value * (current factor - retained factor)
+  const currentFactor = getBalaFactor(remainingLease)
+  const retainedFactor = getBalaFactor(retainedLease)
+  const totalProceeds = Math.max(0, flatValue * (currentFactor - retainedFactor))
+
+  // CPF RA top-up: up to shortfall of retirement sum
+  const raShortfall = Math.max(0, retirementSum - cpfRaBalance)
+  const cpfRaTopUp = Math.min(totalProceeds, raShortfall)
+  const cashProceeds = totalProceeds - cpfRaTopUp
+
+  // Estimated monthly CPF LIFE boost from RA top-up (~6.3% Standard plan rate)
+  const estimatedMonthlyLifeBoost = cpfRaTopUp * 0.063 / 12
+
+  return { totalProceeds, cpfRaTopUp, cashProceeds, estimatedMonthlyLifeBoost }
 }

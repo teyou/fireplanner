@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeHdbCpfRefund, computeHdbSublettingIncome } from './hdb'
+import { computeHdbCpfRefund, computeHdbSublettingIncome, computeLbsProceeds } from './hdb'
 
 describe('computeHdbCpfRefund', () => {
   it('calculates refund with accrued interest', () => {
@@ -77,5 +77,77 @@ describe('computeHdbSublettingIncome', () => {
     expect(result.annualGross).toBe(0)
     expect(result.annualNet).toBe(0)
     expect(result.taxImpact).toBe(0)
+  })
+})
+
+describe('computeLbsProceeds', () => {
+  it('calculates proceeds from selling tail-end lease', () => {
+    // 60-year remaining lease, retaining 30 years
+    // Bala factor at 60 = 0.82, at 30 = 0.48
+    // Proceeds = $500K * (0.82 - 0.48) = $170,000
+    const result = computeLbsProceeds({
+      flatValue: 500000,
+      remainingLease: 60,
+      retainedLease: 30,
+      cpfRaBalance: 100000,
+      retirementSum: 213000,
+    })
+    expect(result.totalProceeds).toBeCloseTo(170000, -2)
+    // RA shortfall = 213000 - 100000 = 113000
+    // cpfRaTopUp = min(170000, 113000) = 113000
+    expect(result.cpfRaTopUp).toBe(113000)
+    expect(result.cashProceeds).toBeCloseTo(170000 - 113000, -2)
+    expect(result.totalProceeds).toBe(result.cpfRaTopUp + result.cashProceeds)
+  })
+
+  it('caps RA top-up at total proceeds when proceeds < shortfall', () => {
+    // Small flat: $200K * (0.82 - 0.48) = $68K proceeds
+    // RA shortfall = 213000 - 100000 = $113K > $68K
+    const result = computeLbsProceeds({
+      flatValue: 200000,
+      remainingLease: 60,
+      retainedLease: 30,
+      cpfRaBalance: 100000,
+      retirementSum: 213000,
+    })
+    expect(result.cpfRaTopUp).toBeCloseTo(68000, -2)
+    expect(result.cashProceeds).toBeCloseTo(0, 0)
+  })
+
+  it('gives all proceeds as cash when RA already meets retirement sum', () => {
+    const result = computeLbsProceeds({
+      flatValue: 500000,
+      remainingLease: 60,
+      retainedLease: 30,
+      cpfRaBalance: 250000,
+      retirementSum: 213000,
+    })
+    expect(result.cpfRaTopUp).toBe(0)
+    expect(result.cashProceeds).toBe(result.totalProceeds)
+  })
+
+  it('returns zero proceeds when retained equals remaining lease', () => {
+    const result = computeLbsProceeds({
+      flatValue: 500000,
+      remainingLease: 30,
+      retainedLease: 30,
+      cpfRaBalance: 100000,
+      retirementSum: 213000,
+    })
+    expect(result.totalProceeds).toBe(0)
+    expect(result.cpfRaTopUp).toBe(0)
+    expect(result.cashProceeds).toBe(0)
+  })
+
+  it('calculates estimated CPF LIFE boost from RA top-up', () => {
+    const result = computeLbsProceeds({
+      flatValue: 500000,
+      remainingLease: 60,
+      retainedLease: 30,
+      cpfRaBalance: 100000,
+      retirementSum: 213000,
+    })
+    // Boost = cpfRaTopUp * 0.063 / 12 (monthly)
+    expect(result.estimatedMonthlyLifeBoost).toBeCloseTo(113000 * 0.063 / 12, 0)
   })
 })
