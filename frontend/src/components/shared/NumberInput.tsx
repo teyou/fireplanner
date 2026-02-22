@@ -8,6 +8,8 @@ interface NumberInputProps {
   onChange: (value: number) => void
   /** If true, parse as integer. Default: false (float). */
   integer?: boolean
+  /** If true, display with commas on blur, strip on focus. Uses type="text" + inputMode="numeric". */
+  formatWithCommas?: boolean
   min?: number
   max?: number
   step?: number
@@ -29,6 +31,7 @@ export function NumberInput({
   value,
   onChange,
   integer = false,
+  formatWithCommas = false,
   min,
   max,
   step,
@@ -41,7 +44,11 @@ export function NumberInput({
 }: NumberInputProps) {
   const autoId = useId()
   const inputId = id ?? autoId
-  const format = (v: number) => (integer ? String(Math.round(v)) : String(v))
+  const effectiveInteger = integer || formatWithCommas
+  const format = useCallback((v: number) => {
+    if (formatWithCommas) return Math.round(v).toLocaleString('en-SG')
+    return effectiveInteger ? String(Math.round(v)) : String(v)
+  }, [formatWithCommas, effectiveInteger])
 
   const [localValue, setLocalValue] = useState(() => format(value))
   const [prevValue, setPrevValue] = useState(value)
@@ -60,27 +67,32 @@ export function NumberInput({
       const raw = e.target.value
       setLocalValue(raw)
 
-      const parsed = integer ? parseInt(raw, 10) : parseFloat(raw)
+      const stripped = formatWithCommas ? raw.replace(/,/g, '') : raw
+      const parsed = effectiveInteger ? parseInt(stripped, 10) : parseFloat(stripped)
       if (!isNaN(parsed)) {
         onChange(parsed)
       }
     },
-    [onChange, integer]
+    [onChange, effectiveInteger, formatWithCommas]
   )
 
   const handleFocus = useCallback(() => {
     setIsFocused(true)
-  }, [])
+    if (formatWithCommas) {
+      setLocalValue((prev) => prev.replace(/,/g, ''))
+    }
+  }, [formatWithCommas])
 
   const handleBlur = useCallback(() => {
     setIsFocused(false)
-    const parsed = integer ? parseInt(localValue, 10) : parseFloat(localValue)
-    if (isNaN(parsed) || localValue.trim() === '') {
+    const stripped = formatWithCommas ? localValue.replace(/,/g, '') : localValue
+    const parsed = effectiveInteger ? parseInt(stripped, 10) : parseFloat(stripped)
+    if (isNaN(parsed) || stripped.trim() === '') {
       setLocalValue(format(value))
     } else {
       setLocalValue(format(parsed))
     }
-  }, [localValue, value, integer])
+  }, [localValue, value, effectiveInteger, formatWithCommas, format])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -94,16 +106,16 @@ export function NumberInput({
   const input = (
     <Input
       id={inputId}
-      type="number"
-      inputMode={integer ? "numeric" : "decimal"}
+      type={formatWithCommas ? 'text' : 'number'}
+      inputMode="numeric"
       value={localValue}
       onChange={handleChange}
       onFocus={handleFocus}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      min={min}
-      max={max}
-      step={step}
+      min={formatWithCommas ? undefined : min}
+      max={formatWithCommas ? undefined : max}
+      step={formatWithCommas ? undefined : step}
       className={className}
       disabled={disabled}
     />

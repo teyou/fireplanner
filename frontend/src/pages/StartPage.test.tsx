@@ -82,14 +82,14 @@ describe('StartPage', () => {
     expect(screen.queryByText('Desired Retirement Age')).not.toBeInTheDocument()
   })
 
-  it('shows section toggles after picking any pathway', async () => {
+  it('shows section toggles inline after picking any pathway', async () => {
     const user = userEvent.setup()
     renderStartPage()
     // No toggles visible initially
-    expect(screen.queryByText('Customise your plan')).not.toBeInTheDocument()
+    expect(screen.queryByText('What should we include?')).not.toBeInTheDocument()
 
     await user.click(screen.getByText('I know when I want to retire'))
-    expect(screen.getByText('Customise your plan')).toBeInTheDocument()
+    expect(screen.getByText('What should we include?')).toBeInTheDocument()
     expect(screen.getByText('CPF Integration')).toBeInTheDocument()
     expect(screen.getByText('Property Analysis')).toBeInTheDocument()
   })
@@ -103,10 +103,19 @@ describe('StartPage', () => {
     expect(screen.getByText('Healthcare Planning')).toBeInTheDocument()
   })
 
-  it('has a "Continue planning" link for returning users', () => {
+  it('shows returning user link only when localStorage has profile', () => {
+    // No profile — link should not appear
+    localStorage.removeItem('fireplanner-profile')
+    const { unmount } = renderStartPage()
+    expect(screen.queryByText(/continue where you left off/i)).not.toBeInTheDocument()
+    unmount()
+
+    // Set profile — link should appear
+    localStorage.setItem('fireplanner-profile', '{}')
     renderStartPage()
-    const continueLink = screen.getByText('Continue planning')
+    const continueLink = screen.getByText(/continue where you left off/i)
     expect(continueLink.closest('a')).toHaveAttribute('href', '/inputs')
+    localStorage.removeItem('fireplanner-profile')
   })
 
   it('goal-first Continue button is disabled when retirement age <= current age', async () => {

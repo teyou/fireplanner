@@ -38,6 +38,8 @@ export function CurrencyInput({
           id={inputId}
           value={value}
           onChange={onChange}
+          integer
+          formatWithCommas
           className={cn(
             'pl-7 border-blue-300',
             error && 'border-destructive'

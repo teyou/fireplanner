@@ -11,9 +11,16 @@ import { Switch } from '@/components/ui/switch'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { Label } from '@/components/ui/label'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { RetirementPhase } from '@/lib/types'
 
 type ActivePathway = 'goal-first' | 'story-first' | 'already-fire' | null
+
+const PATHWAY_TITLES: Record<NonNullable<ActivePathway>, string> = {
+  'goal-first': 'Set your targets',
+  'story-first': 'Tell us about your finances',
+  'already-fire': 'Your current situation',
+}
 
 const PHASE_CARDS: { phase: RetirementPhase; label: string; description: string; icon: typeof Clock }[] = [
   {
@@ -45,6 +52,11 @@ export function StartPage() {
   const healthcareEnabled = useUIStore((s) => s.healthcareEnabled)
   const navigate = useNavigate()
   const [activePathway, setActivePathway] = useState<ActivePathway>(null)
+
+  // Check if returning user (has saved profile in localStorage)
+  const [isReturningUser] = useState(
+    () => localStorage.getItem('fireplanner-profile') !== null
+  )
 
   // Local draft state for inline forms
   const [draftAge, setDraftAge] = useState(profileStore.currentAge)
@@ -156,6 +168,54 @@ export function StartPage() {
 
   const alreadyFireValid = draftAge >= 18 && draftAge <= 100
 
+  // Shared section toggles — rendered inline within each pathway's form card
+  const sectionToggles = (
+    <div className="space-y-4 pt-4 border-t">
+      <div className="text-sm font-medium">What should we include?</div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Landmark className="h-4 w-4 text-muted-foreground" />
+          <div>
+            <div className="text-sm font-medium">CPF Integration</div>
+            <p className="text-xs text-muted-foreground">CPF balances, contributions, and LIFE payouts</p>
+          </div>
+        </div>
+        <Switch
+          checked={cpfEnabled}
+          onCheckedChange={(v) => setUIField('cpfEnabled', v)}
+        />
+      </div>
+      {cpfEnabled && (
+        <div className="flex items-center justify-between ml-4 pl-4 border-l-2 border-muted-foreground/20">
+          <div className="flex items-center gap-3">
+            <Heart className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <div className="text-sm font-medium">Healthcare Planning</div>
+              <p className="text-xs text-muted-foreground">MediShield, CareShield, and out-of-pocket estimates</p>
+            </div>
+          </div>
+          <Switch
+            checked={healthcareEnabled}
+            onCheckedChange={(v) => setUIField('healthcareEnabled', v)}
+          />
+        </div>
+      )}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Building className="h-4 w-4 text-muted-foreground" />
+          <div>
+            <div className="text-sm font-medium">Property Analysis</div>
+            <p className="text-xs text-muted-foreground">Existing property, mortgage tracking, and purchase analysis</p>
+          </div>
+        </div>
+        <Switch
+          checked={propertyEnabled}
+          onCheckedChange={(v) => setUIField('propertyEnabled', v)}
+        />
+      </div>
+    </div>
+  )
+
   return (
     <div className="space-y-8">
       <div className="py-8">
@@ -176,8 +236,10 @@ export function StartPage() {
           >
             <Card className={`h-full transition-all duration-200 cursor-pointer ${
               activePathway === key
-                ? 'border-2 border-primary shadow-md'
-                : 'hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5'
+                ? 'bg-primary/5 ring-2 ring-primary/20 border-primary shadow-md'
+                : activePathway !== null
+                  ? 'opacity-75 hover:opacity-100 hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5'
+                  : 'hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5'
             }`}>
               <CardContent className="py-6 md:py-6">
                 <div className="flex items-start gap-4">
@@ -201,7 +263,7 @@ export function StartPage() {
       {activePathway === 'goal-first' && (
         <Card className="bg-muted/30">
           <CardHeader>
-            <CardTitle className="text-lg">Quick Setup</CardTitle>
+            <CardTitle className="text-lg">{PATHWAY_TITLES['goal-first']}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -243,13 +305,14 @@ export function StartPage() {
                 tooltip="Total annual spending including housing, food, transport, etc."
               />
               <CurrencyInput
-                label="Liquid Net Worth"
+                label="Savings & Investments"
                 value={draftNetWorth}
                 onChange={setDraftNetWorth}
-                tooltip="Cash, stocks, bonds — excluding CPF and property"
+                tooltip="Cash, savings, stocks, bonds, and other investments — excluding CPF and property"
               />
             </div>
             {showResults && <QuickResults fireNumber={draftFireNumber} yearsToFire={draftYearsToFire} fireAge={draftFireAge} savingsRate={draftSavingsRate} progress={draftProgress} />}
+            {sectionToggles}
             <div className="flex justify-end">
               <Button
                 onClick={handleGoalFirstContinue}
@@ -267,7 +330,7 @@ export function StartPage() {
       {activePathway === 'story-first' && (
         <Card className="bg-muted/30">
           <CardHeader>
-            <CardTitle className="text-lg">Quick Setup</CardTitle>
+            <CardTitle className="text-lg">{PATHWAY_TITLES['story-first']}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -295,13 +358,14 @@ export function StartPage() {
                 tooltip="Total annual spending including housing, food, transport, etc."
               />
               <CurrencyInput
-                label="Liquid Net Worth"
+                label="Savings & Investments"
                 value={draftNetWorth}
                 onChange={setDraftNetWorth}
-                tooltip="Cash, stocks, bonds — excluding CPF and property"
+                tooltip="Cash, savings, stocks, bonds, and other investments — excluding CPF and property"
               />
             </div>
             {showResults && <QuickResults fireNumber={draftFireNumber} yearsToFire={draftYearsToFire} fireAge={draftFireAge} savingsRate={draftSavingsRate} progress={draftProgress} />}
+            {sectionToggles}
             <div className="flex justify-end">
               <Button
                 onClick={handleStoryFirstContinue}
@@ -320,7 +384,7 @@ export function StartPage() {
         <div className="space-y-4">
           <Card className="bg-muted/30">
             <CardHeader>
-              <CardTitle className="text-lg">Quick Setup</CardTitle>
+              <CardTitle className="text-lg">{PATHWAY_TITLES['already-fire']}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -348,12 +412,13 @@ export function StartPage() {
                   tooltip="Total annual spending including housing, food, transport, etc."
                 />
                 <CurrencyInput
-                  label="Liquid Portfolio"
+                  label="Savings & Investments"
                   value={draftNetWorth}
                   onChange={setDraftNetWorth}
-                  tooltip="Cash, stocks, bonds — excluding CPF and property"
+                  tooltip="Cash, savings, stocks, bonds, and other investments — excluding CPF and property"
                 />
               </div>
+              {sectionToggles}
             </CardContent>
           </Card>
 
@@ -395,70 +460,20 @@ export function StartPage() {
         </div>
       )}
 
-      {/* Section toggles — visible after picking a pathway */}
-      {activePathway !== null && (
-        <Card className="bg-muted/30">
-          <CardHeader>
-            <CardTitle className="text-lg">Customise your plan</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Landmark className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <div className="text-sm font-medium">CPF Integration</div>
-                  <p className="text-xs text-muted-foreground">CPF balances, contributions, and LIFE payouts</p>
-                </div>
-              </div>
-              <Switch
-                checked={cpfEnabled}
-                onCheckedChange={(v) => setUIField('cpfEnabled', v)}
-              />
-            </div>
-            {cpfEnabled && (
-              <div className="flex items-center justify-between ml-4 pl-4 border-l-2 border-muted-foreground/20">
-                <div className="flex items-center gap-3">
-                  <Heart className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <div className="text-sm font-medium">Healthcare Planning</div>
-                    <p className="text-xs text-muted-foreground">MediShield, CareShield, and out-of-pocket estimates</p>
-                  </div>
-                </div>
-                <Switch
-                  checked={healthcareEnabled}
-                  onCheckedChange={(v) => setUIField('healthcareEnabled', v)}
-                />
-              </div>
-            )}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Building className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <div className="text-sm font-medium">Property Analysis</div>
-                  <p className="text-xs text-muted-foreground">Existing property, mortgage tracking, and purchase analysis</p>
-                </div>
-              </div>
-              <Switch
-                checked={propertyEnabled}
-                onCheckedChange={(v) => setUIField('propertyEnabled', v)}
-              />
-            </div>
-          </CardContent>
-        </Card>
+      {/* Continue link for returning users only */}
+      {isReturningUser && (
+        <div className="text-center">
+          <Button variant="ghost" size="sm" asChild>
+            <Link
+              to="/inputs"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Welcome back — continue where you left off
+              <ArrowRight className="ml-1 h-3 w-3" />
+            </Link>
+          </Button>
+        </div>
       )}
-
-      {/* Continue link for returning users */}
-      <div className="text-center">
-        <Button variant="ghost" size="sm" asChild>
-          <Link
-            to="/inputs"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Continue planning
-            <ArrowRight className="ml-1 h-3 w-3" />
-          </Link>
-        </Button>
-      </div>
     </div>
   )
 }
@@ -476,52 +491,64 @@ function QuickResults({
   savingsRate: number
   progress: number
 }) {
+  const pct = (progress * 100).toFixed(1)
   return (
     <div className="col-span-full mt-4 p-4 rounded-lg border bg-muted/30 space-y-3">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span className="inline-block w-2 h-2 rounded-full bg-amber-500" />
-        Preliminary estimate
+      {/* Hero: FIRE Age */}
+      <div className="text-center space-y-1">
+        <div className="text-2xl font-bold">
+          You could retire at Age {fireAge}
+        </div>
+        <div className="text-sm text-muted-foreground">
+          That's {Math.ceil(yearsToFire)} years from now
+        </div>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+      {/* Supporting metrics row */}
+      <div className="flex items-center justify-center gap-6 text-sm">
         <div>
-          <div className="text-xs text-muted-foreground">FIRE Number</div>
-          <div className="text-lg font-semibold">
+          <span className="text-muted-foreground">FIRE Number: </span>
+          <span className="font-semibold">
             ${fireNumber.toLocaleString('en-SG', { maximumFractionDigits: 0 })}
-          </div>
+          </span>
         </div>
+        <span className="text-muted-foreground">|</span>
         <div>
-          <div className="text-xs text-muted-foreground">Years to FIRE</div>
-          <div className="text-lg font-semibold">
-            {Math.ceil(yearsToFire)} years
-          </div>
+          <span className="text-muted-foreground">Savings Rate: </span>
+          <span className="font-semibold">{(savingsRate * 100).toFixed(1)}%</span>
         </div>
+        <span className="text-muted-foreground">|</span>
         <div>
-          <div className="text-xs text-muted-foreground">FIRE Age</div>
-          <div className="text-lg font-semibold">Age {fireAge}</div>
-        </div>
-        <div>
-          <div className="text-xs text-muted-foreground">Savings Rate</div>
-          <div className="text-lg font-semibold">
-            {(savingsRate * 100).toFixed(1)}%
-          </div>
+          <span className="text-muted-foreground">Progress: </span>
+          <span className="font-semibold">{pct}%</span>
         </div>
       </div>
-      <div>
-        <div className="flex justify-between text-xs text-muted-foreground mb-1">
-          <span>Progress</span>
-          <span>{(progress * 100).toFixed(1)}%</span>
-        </div>
-        <div className="h-2 rounded-full bg-muted overflow-hidden">
+
+      {/* Progress bar with percentage at end */}
+      <div className="flex items-center gap-2">
+        <div className="h-2 rounded-full bg-muted overflow-hidden flex-1">
           <div
             className="h-full rounded-full bg-primary transition-all"
             style={{ width: `${progress * 100}%` }}
           />
         </div>
+        <span className="text-xs text-muted-foreground whitespace-nowrap">{pct}%</span>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Based on default assumptions (4% SWR, ~7% return, 2.5% inflation).
-        Refine your plan for a more accurate projection.
-      </p>
+
+      {/* Disclaimer as tooltip on badge */}
+      <TooltipProvider delayDuration={0}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex items-center gap-2 text-sm text-muted-foreground cursor-help">
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              Preliminary estimate
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            Based on 4% SWR, ~7% return, 2.5% inflation. Refine your plan for accuracy.
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   )
 }
