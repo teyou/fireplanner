@@ -154,7 +154,7 @@ export const allocationSchema = z.object({
   currentWeights: allocationWeightsSchema,
   targetWeights: allocationWeightsSchema,
   selectedTemplate: z.enum([
-    'conservative', 'balanced', 'aggressive', 'allWeather', 'singaporeCentric', 'cpfHeavy', 'custom',
+    'conservative', 'balanced', 'aggressive', 'allWeather', 'singaporeCentric', 'custom',
   ]),
   returnOverrides: z.array(z.number().nullable()).length(8),
   stdDevOverrides: z.array(z.number().nullable()).length(8),

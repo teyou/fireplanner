@@ -72,7 +72,9 @@ export function AdvancedOverrides() {
                   </tr>
                 </thead>
                 <tbody>
-                  {ASSET_CLASSES.map((ac, i) => (
+                  {ASSET_CLASSES.map((ac, i) => {
+                    if (ac.key === 'cpf') return null
+                    return (
                     <tr key={ac.key} className="border-b last:border-b-0">
                       <td className="py-2 pr-4">{ac.label}</td>
                       <td className="py-2 px-2">
@@ -103,7 +105,8 @@ export function AdvancedOverrides() {
                         />
                       </td>
                     </tr>
-                  ))}
+                  )
+                  })}
                 </tbody>
               </table>
             </div>

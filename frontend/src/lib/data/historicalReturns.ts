@@ -44,17 +44,17 @@ export const CORRELATION_MATRIX: number[][] = [
 ]
 
 /**
- * 6 pre-built allocation templates from master plan.
+ * 5 pre-built allocation templates.
  * Weights are percentages (0-1) in asset class order, must sum to 1.0.
  * Order: US Eq, SG Eq, Intl Eq, Bonds, REITs, Gold, Cash, CPF
+ * CPF is always 0 — CPF balances are tracked separately in the CPF section.
  */
 export const ALLOCATION_TEMPLATES: Record<Exclude<AllocationTemplate, 'custom'>, number[]> = {
-  conservative:     [0.15, 0.05, 0.05, 0.45, 0.05, 0.05, 0.15, 0.05],
-  balanced:         [0.30, 0.10, 0.10, 0.25, 0.05, 0.05, 0.10, 0.05],
-  aggressive:       [0.45, 0.15, 0.15, 0.10, 0.05, 0.05, 0.00, 0.05],
+  conservative:     [0.15, 0.05, 0.05, 0.50, 0.05, 0.05, 0.15, 0.00],
+  balanced:         [0.30, 0.10, 0.10, 0.30, 0.05, 0.05, 0.10, 0.00],
+  aggressive:       [0.50, 0.15, 0.15, 0.10, 0.05, 0.05, 0.00, 0.00],
   allWeather:       [0.30, 0.00, 0.00, 0.40, 0.00, 0.15, 0.15, 0.00],
-  singaporeCentric: [0.15, 0.25, 0.10, 0.20, 0.10, 0.05, 0.10, 0.05],
-  cpfHeavy:         [0.20, 0.10, 0.05, 0.15, 0.05, 0.05, 0.05, 0.35],
+  singaporeCentric: [0.15, 0.30, 0.10, 0.20, 0.10, 0.05, 0.10, 0.00],
 }
 
 /** Risk-free rate proxy (Cash return) used for Sharpe ratio calculation */
@@ -74,6 +74,5 @@ export const TEMPLATE_LABELS: Record<AllocationTemplate, string> = {
   aggressive: 'Aggressive (80/20)',
   allWeather: 'All-Weather',
   singaporeCentric: 'Singapore-Centric',
-  cpfHeavy: 'CPF-Heavy',
   custom: 'Custom',
 }

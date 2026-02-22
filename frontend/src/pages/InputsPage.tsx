@@ -30,8 +30,6 @@ import { AllocationBuilder } from '@/components/allocation/AllocationBuilder'
 import { PortfolioStatsPanel } from '@/components/allocation/PortfolioStatsPanel'
 import { AdvancedOverrides } from '@/components/allocation/AdvancedOverrides'
 import { GlidePathSection } from '@/components/allocation/GlidePathSection'
-import { CorrelationHeatmap } from '@/components/allocation/CorrelationHeatmap'
-
 // Withdrawal sections
 import { StrategyParamsSection } from '@/components/withdrawal/StrategyParamsSection'
 import { ComparisonTable } from '@/components/withdrawal/ComparisonTable'
@@ -761,7 +759,6 @@ function AllocationContent() {
         <>
           <AdvancedOverrides />
           <GlidePathSection />
-          <CorrelationHeatmap />
         </>
       )}
     </>

@@ -180,7 +180,37 @@ export const useAllocationStore = create<AllocationState & AllocationActions>()(
     }),
     {
       name: 'fireplanner-allocation',
-      version: 1,
+      version: 2,
+      migrate: (persisted, version) => {
+        const state = persisted as Record<string, unknown>
+        if (version < 2) {
+          // cpfHeavy template removed; CPF no longer in portfolio allocation
+          if (state.selectedTemplate === 'cpfHeavy') {
+            state.selectedTemplate = 'balanced'
+            state.currentWeights = [...ALLOCATION_TEMPLATES.balanced]
+          }
+          // Zero out CPF weight (index 7) and normalize
+          const zeroOutCpf = (weights: unknown) => {
+            if (!Array.isArray(weights) || weights.length !== 8) return weights
+            const w = [...weights] as number[]
+            const cpfWeight = w[7] || 0
+            w[7] = 0
+            if (cpfWeight > 0) {
+              // Redistribute proportionally to other non-zero weights
+              const otherSum = w.slice(0, 7).reduce((a, b) => a + b, 0)
+              if (otherSum > 0) {
+                for (let i = 0; i < 7; i++) {
+                  w[i] = w[i] + (w[i] / otherSum) * cpfWeight
+                }
+              }
+            }
+            return w
+          }
+          state.currentWeights = zeroOutCpf(state.currentWeights)
+          state.targetWeights = zeroOutCpf(state.targetWeights)
+        }
+        return state
+      },
       partialize: (state) => {
         const data: Record<string, unknown> = {}
         for (const key of ALLOCATION_DATA_KEYS) {

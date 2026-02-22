@@ -327,7 +327,7 @@ export interface MomSalaryEntry {
 
 export type AssetClass = 'usEquities' | 'sgEquities' | 'intlEquities' | 'bonds' | 'reits' | 'gold' | 'cash' | 'cpf'
 
-export type AllocationTemplate = 'conservative' | 'balanced' | 'aggressive' | 'allWeather' | 'singaporeCentric' | 'cpfHeavy' | 'custom'
+export type AllocationTemplate = 'conservative' | 'balanced' | 'aggressive' | 'allWeather' | 'singaporeCentric' | 'custom'
 
 export type GlidePathMethod = 'linear' | 'slowStart' | 'fastStart'
 
@@ -707,7 +707,7 @@ export interface DownsizingConfig {
 }
 
 export type HdbFlatType = '2-room' | '3-room' | '4-room' | '5-room' | 'executive'
-export type HdbMonetizationStrategy = 'none' | 'lbs' | 'sublet' | 'sell-and-rent'
+export type HdbMonetizationStrategy = 'none' | 'lbs' | 'sublet'
 
 export interface PropertyState {
   // New purchase analysis
