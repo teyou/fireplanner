@@ -141,13 +141,15 @@ export function calculateHealthcareCostAtAge(
     : 0
 
   // 4. Out-of-pocket (with medical inflation compounding from reference age)
-  const refAge = config.oopReferenceAge ?? age   // backward compat: no inflation if not set
+  const refAge = config.oopReferenceAge ?? 30    // default: curve anchor at age 30
   const inflationRate = config.oopInflationRate ?? 0
   const inflationFactor = Math.pow(1 + inflationRate, Math.max(0, age - refAge))
 
   let oopExpense: number
   if (config.oopModel === 'age-curve') {
-    oopExpense = config.oopBaseAmount * interpolateOopMultiplier(age, config.oopCurveVariant ?? 'study-backed') * inflationFactor
+    const curveVariant = config.oopCurveVariant ?? 'study-backed'
+    const refMultiplier = interpolateOopMultiplier(refAge, curveVariant)
+    oopExpense = config.oopBaseAmount * (interpolateOopMultiplier(age, curveVariant) / refMultiplier) * inflationFactor
   } else {
     oopExpense = config.oopBaseAmount * inflationFactor
   }

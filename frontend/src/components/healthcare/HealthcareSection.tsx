@@ -9,6 +9,7 @@ import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { formatCurrency } from '@/lib/utils'
 import { calculateHealthcareCostAtAge, ISP_TIER_ORDER } from '@/lib/calculations/healthcare'
+import { interpolateOopMultiplier } from '@/lib/data/healthcareOop'
 import type { HealthcareConfig, IspTierOption, OopModel, OopCurveVariant } from '@/lib/types'
 
 const ISP_TIER_OPTIONS: { value: IspTierOption; label: string; description: string }[] = [
@@ -49,6 +50,19 @@ export function HealthcareSection() {
     },
     [config, setField],
   )
+
+  // Scale OOP presets to the user's current age
+  const ageMultiplier = useMemo(
+    () => interpolateOopMultiplier(currentAge, config.oopCurveVariant ?? 'study-backed'),
+    [currentAge, config.oopCurveVariant],
+  )
+
+  const oopPresets = useMemo(() => [
+    { label: 'Bottom-Up Estimate', amount: Math.round(1170 * ageMultiplier), source: 'GP + dental + optical + meds' },
+    { label: 'World Bank (Nominal)', amount: Math.round(1335 * ageMultiplier), source: 'WB OOP per capita 2023' },
+    { label: 'SingStat HES 2023', amount: Math.round(1896 * ageMultiplier), source: 'Household expenditure survey' },
+    { label: 'World Bank (PPP)', amount: Math.round(2200 * ageMultiplier), source: 'WB PPP-adjusted 2023' },
+  ], [ageMultiplier])
 
   // Cost preview at key ages
   const previewRows = useMemo(() => {
@@ -229,15 +243,10 @@ export function HealthcareSection() {
             <div className="space-y-2">
               <Label className="text-sm flex items-center gap-1">
                 OOP Presets
-                <InfoTooltip text="Research-backed annual out-of-pocket estimates at age 30. Sources: World Bank health expenditure data (2023), SingStat HES 2023, and bottom-up cost modeling. The age multiplier and medical inflation scale this up over time." />
+                <InfoTooltip text={`Research-backed annual out-of-pocket estimates scaled to your age (${currentAge}). Sources: World Bank health expenditure data (2023), SingStat HES 2023, and bottom-up cost modeling. Medical inflation scales this up over time.`} />
               </Label>
               <div className="grid grid-cols-2 gap-2">
-                {([
-                  { label: 'Bottom-Up Estimate', amount: 1170, source: 'GP + dental + optical + meds' },
-                  { label: 'World Bank (Nominal)', amount: 1335, source: 'WB OOP per capita 2023' },
-                  { label: 'SingStat HES 2023', amount: 1896, source: 'Household expenditure survey' },
-                  { label: 'World Bank (PPP)', amount: 2200, source: 'WB PPP-adjusted 2023' },
-                ] as const).map((preset) => (
+                {oopPresets.map((preset) => (
                   <button
                     key={preset.label}
                     onClick={() => updateConfig('oopBaseAmount', preset.amount)}
@@ -283,13 +292,13 @@ export function HealthcareSection() {
             )}
 
             <CurrencyInput
-              label={config.oopModel === 'age-curve' ? 'OOP Base Amount (at age 30)' : 'Annual OOP Amount'}
+              label={config.oopModel === 'age-curve' ? `OOP Base Amount (at age ${currentAge})` : 'Annual OOP Amount'}
               value={config.oopBaseAmount}
               onChange={(v) => updateConfig('oopBaseAmount', v)}
               error={validationErrors['healthcareConfig.oopBaseAmount']}
               tooltip={
                 config.oopModel === 'age-curve'
-                  ? 'Base annual out-of-pocket healthcare spending at age 30. This scales up with age using a research-based multiplier curve.'
+                  ? `Your annual out-of-pocket healthcare spending at age ${currentAge}. The age multiplier curve scales this up as you get older.`
                   : 'Fixed annual out-of-pocket healthcare spending, applied at every age.'
               }
             />

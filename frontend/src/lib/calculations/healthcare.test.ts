@@ -127,8 +127,9 @@ describe('calculateHealthcareCostAtAge', () => {
       oopReferenceAge: 45,
     }
     const result = calculateHealthcareCostAtAge(config, 45)
-    // multiplier at 45 = 1.4, inflation factor = 1.03^0 = 1
-    expect(result.oopExpense).toBeCloseTo(1200 * 1.4, 0)
+    // At reference age: multiplier(45)/multiplier(45) = 1.0, inflation = 1.03^0 = 1
+    // OOP = base amount (user enters what they spend at their age)
+    expect(result.oopExpense).toBeCloseTo(1200, 0)
   })
 
   it('applies inflation from reference age 45 to age 65', () => {
@@ -138,8 +139,8 @@ describe('calculateHealthcareCostAtAge', () => {
       oopReferenceAge: 45,
     }
     const result = calculateHealthcareCostAtAge(config, 65)
-    // multiplier at 65 = 3.2, inflation = 1.03^20
-    const expected = 1200 * 3.2 * Math.pow(1.03, 20) // ≈ 6,934
+    // multiplier(65)/multiplier(45) = 3.2/1.4 ≈ 2.286, inflation = 1.03^20
+    const expected = 1200 * (3.2 / 1.4) * Math.pow(1.03, 20) // ≈ 4,954
     expect(result.oopExpense).toBeCloseTo(expected, 0)
   })
 

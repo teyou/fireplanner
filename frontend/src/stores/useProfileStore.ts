@@ -1,8 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ProfileState, ParentSupport, RetirementWithdrawal, HealthcareConfig, ValidationErrors } from '@/lib/types'
+import type { ProfileState, ParentSupport, RetirementWithdrawal, HealthcareConfig, OopCurveVariant, ValidationErrors } from '@/lib/types'
 import { validateProfileField } from '@/lib/validation/schemas'
 import { validateProfileConsistency } from '@/lib/validation/rules'
+import { interpolateOopMultiplier } from '@/lib/data/healthcareOop'
 
 interface ProfileActions {
   setField: <K extends keyof Omit<ProfileState, 'validationErrors'>>(
@@ -214,7 +215,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 13,
+      version: 14,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -277,6 +278,17 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
           }
         }
         // v13: ISP downgrade fields are optional (undefined = no downgrade), no migration needed
+        if (version < 14) {
+          // v14: OOP base amount now means "spending at your age" (normalized by age multiplier)
+          // Previously it meant "spending at age 30" regardless of oopReferenceAge.
+          // Adjust stored amount so projections remain identical.
+          const hc = state.healthcareConfig as Record<string, unknown> | undefined
+          if (hc && hc.oopReferenceAge != null && (hc.oopReferenceAge as number) !== 30 && hc.oopModel === 'age-curve') {
+            const refAge = hc.oopReferenceAge as number
+            const refMultiplier = interpolateOopMultiplier(refAge, (hc.oopCurveVariant as OopCurveVariant) ?? 'study-backed')
+            hc.oopBaseAmount = Math.round(((hc.oopBaseAmount as number) ?? 1200) * refMultiplier)
+          }
+        }
         return state
       },
       partialize: (state) => {
