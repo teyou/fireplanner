@@ -297,11 +297,11 @@ function ExpensesContent() {
         <CardContent>
           <div className="max-w-sm">
             <CurrencyInput
-              label="Annual Expenses"
+              label="Annual Expenses (excl. healthcare & mortgage)"
               value={annualExpenses}
               onChange={(v) => setProfileField('annualExpenses', v)}
               error={expensesError}
-              tooltip="Total annual spending excluding healthcare insurance and mortgage payments — those are modelled separately in their own sections."
+              tooltip="Healthcare insurance and mortgage payments are modelled separately in their own sections."
             />
           </div>
         </CardContent>

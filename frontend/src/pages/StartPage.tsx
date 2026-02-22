@@ -299,10 +299,10 @@ export function StartPage() {
                 tooltip="Total annual income before tax and CPF"
               />
               <CurrencyInput
-                label="Annual Expenses"
+                label="Annual Expenses (excl. healthcare & mortgage)"
                 value={draftExpenses}
                 onChange={setDraftExpenses}
-                tooltip="Total annual spending excluding healthcare insurance and mortgage payments — those are modelled separately."
+                tooltip="Healthcare insurance and mortgage payments are modelled separately in their own sections."
               />
               <CurrencyInput
                 label="Savings & Investments"
@@ -352,10 +352,10 @@ export function StartPage() {
                 tooltip="Total annual income before tax and CPF"
               />
               <CurrencyInput
-                label="Annual Expenses"
+                label="Annual Expenses (excl. healthcare & mortgage)"
                 value={draftExpenses}
                 onChange={setDraftExpenses}
-                tooltip="Total annual spending excluding healthcare insurance and mortgage payments — those are modelled separately."
+                tooltip="Healthcare insurance and mortgage payments are modelled separately in their own sections."
               />
               <CurrencyInput
                 label="Savings & Investments"
