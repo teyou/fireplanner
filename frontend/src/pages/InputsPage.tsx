@@ -126,6 +126,7 @@ type SectionId =
   | 'section-expenses'
   | 'section-net-worth'
   | 'section-cpf'
+  | 'section-healthcare'
   | 'section-property'
   | 'section-allocation'
 
@@ -145,6 +146,7 @@ const GOAL_FIRST_ORDER: SectionId[] = [
   'section-expenses',
   'section-net-worth',
   'section-cpf',
+  'section-healthcare',
   'section-property',
   'section-allocation',
 ]
@@ -155,6 +157,7 @@ const STORY_FIRST_ORDER: SectionId[] = [
   'section-expenses',
   'section-net-worth',
   'section-cpf',
+  'section-healthcare',
   'section-property',
   'section-allocation',
   'section-fire-settings',
@@ -165,6 +168,7 @@ const ALREADY_FIRE_ORDER: SectionId[] = [
   'section-net-worth',
   'section-property',
   'section-expenses',
+  'section-healthcare',
   'section-allocation',
   'section-fire-settings',
   'section-cpf',
@@ -526,17 +530,18 @@ function NetWorthContent() {
 }
 
 function CpfContent() {
-  const healthcareEnabled = useUIStore((s) => s.healthcareEnabled)
-
   return (
     <>
       <CpfSection />
-      {healthcareEnabled && (
-        <>
-          <HealthcareSection />
-          <HealthcareCostChart />
-        </>
-      )}
+    </>
+  )
+}
+
+function HealthcareContent() {
+  return (
+    <>
+      <HealthcareSection />
+      <HealthcareCostChart />
     </>
   )
 }
@@ -956,6 +961,14 @@ export function InputsPage() {
       onReset: resetProfile,
       content: <CpfContent />,
     },
+    'section-healthcare': {
+      id: 'section-healthcare',
+      title: 'Healthcare & Insurance',
+      description: 'MediShield Life, Integrated Shield Plans, CareShield LIFE, and out-of-pocket costs.',
+      resetLabel: 'Reset Profile',
+      onReset: resetProfile,
+      content: <HealthcareContent />,
+    },
     'section-property': {
       id: 'section-property',
       title: 'Property',
@@ -974,8 +987,11 @@ export function InputsPage() {
     },
   }
 
+  const healthcareEnabled = useUIStore((s) => s.healthcareEnabled)
+
   const hiddenSections = new Set<SectionId>()
   if (!cpfEnabled) hiddenSections.add('section-cpf')
+  if (!healthcareEnabled) hiddenSections.add('section-healthcare')
   if (!propertyEnabled) hiddenSections.add('section-property')
 
   const baseOrder = sectionOrder === 'goal-first'

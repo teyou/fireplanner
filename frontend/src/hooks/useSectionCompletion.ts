@@ -10,6 +10,7 @@ export type SectionId =
   | 'section-expenses'
   | 'section-net-worth'
   | 'section-cpf'
+  | 'section-healthcare'
   | 'section-property'
   | 'section-allocation'
 
@@ -86,6 +87,7 @@ export function useSectionCompletion(): UseSectionCompletionResult {
   const expensesCustomized = profile.annualExpenses !== 48000
   const nwCustomized = profile.liquidNetWorth !== 0
   const cpfCustomized = profile.cpfOA !== 0 || profile.cpfSA !== 0
+  const healthcareCustomized = profile.healthcareConfig.enabled
   const propertyCustomized = property.ownsProperty !== false
   const allocationCustomized = allocation.selectedTemplate !== 'balanced'
 
@@ -119,6 +121,11 @@ export function useSectionCompletion(): UseSectionCompletionResult {
       isComplete: cpfCustomized,
       status: getStatus(cpfCustomized, cpfErrors),
       errorCount: cpfErrors,
+    },
+    'section-healthcare': {
+      isComplete: healthcareCustomized,
+      status: getStatus(healthcareCustomized, 0),
+      errorCount: 0,
     },
     'section-property': {
       isComplete: propertyCustomized,
