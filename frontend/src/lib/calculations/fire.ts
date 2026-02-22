@@ -236,7 +236,8 @@ export function calculateAllFireMetrics(params: {
 
   // Apply retirement spending adjustment and FIRE type multiplier to expenses for the FIRE number
   const multiplier = FIRE_TYPE_MULTIPLIERS[fireType]
-  let effectiveExpenses = annualExpenses * retirementSpendingAdjustment * multiplier
+  const baseExpenses = annualExpenses * retirementSpendingAdjustment * multiplier
+  let effectiveExpenses = baseExpenses
 
   // Add parent support at retirement age (additive, NOT subject to adjustment/multiplier)
   const parentSupportAnnual = parentSupportEnabled
@@ -349,5 +350,11 @@ export function calculateAllFireMetrics(params: {
     cpfDependency,
     liquidBridgeGapYears,
     liquidDepletionAge,
+    expensesBreakdown: {
+      baseExpenses,
+      parentSupportAnnual,
+      healthcareCashOutlay,
+      effectiveExpenses,
+    },
   }
 }
