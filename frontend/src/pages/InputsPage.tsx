@@ -101,6 +101,14 @@ const STRATEGY_LABELS: Record<WithdrawalStrategyType, string> = {
   hebeler_autopilot: 'Hebeler Autopilot II',
 }
 
+/** The 4 most well-known strategies shown in Simple mode */
+const SIMPLE_STRATEGIES: Set<WithdrawalStrategyType> = new Set([
+  'constant_dollar',
+  'vpw',
+  'guardrails',
+  'vanguard_dynamic',
+])
+
 const ADVANCED_LABELS: Partial<Record<SectionId, { modeSectionId: ModeSectionId; label: string }>> = {
   'section-fire-settings': { modeSectionId: 'section-fire-settings', label: 'FIRE types, number basis, manual returns' },
   'section-income': { modeSectionId: 'section-income', label: 'tax reliefs, income streams, life events' },
@@ -347,9 +355,11 @@ function ExpensesContent() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(STRATEGY_LABELS) as WithdrawalStrategyType[]).map((key) => (
-                    <SelectItem key={key} value={key}>{STRATEGY_LABELS[key]}</SelectItem>
-                  ))}
+                  {(Object.keys(STRATEGY_LABELS) as WithdrawalStrategyType[])
+                    .filter((key) => mode === 'advanced' || SIMPLE_STRATEGIES.has(key))
+                    .map((key) => (
+                      <SelectItem key={key} value={key}>{STRATEGY_LABELS[key]}</SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -378,7 +388,9 @@ function ExpensesContent() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
-            {WITHDRAWAL_STRATEGY_METADATA.map((meta) => {
+            {WITHDRAWAL_STRATEGY_METADATA
+            .filter((meta) => mode === 'advanced' || SIMPLE_STRATEGIES.has(meta.key))
+            .map((meta) => {
               const isActive = meta.key === activeStrategy
               return (
                 <div
