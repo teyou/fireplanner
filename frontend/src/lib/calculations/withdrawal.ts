@@ -362,6 +362,8 @@ export interface WithdrawalYearResult {
   age: number
   portfolio: number
   withdrawal: number
+  /** What the strategy recommends based on portfolio value (informational). */
+  strategyWithdrawal: number
 }
 
 export interface WithdrawalSummary {
@@ -408,15 +410,17 @@ export function runDeterministicComparison(params: {
     let prevWithdrawal = 0
     let prevPortfolio = initialPortfolio
     const sp = strategyParams[strategy] ?? {}
-    // Use actual retirement expenses as the initial withdrawal amount.
-    // Previously used portfolio * SWR, which disconnected withdrawals from expenses.
+    // Actual withdrawal uses retirement expenses (what you really spend).
     const initialW = annualExpenses > 0 ? annualExpenses : initialPortfolio * (sp.swr ?? sp.initialRate ?? sp.targetRate ?? swr)
+    // Strategy-recommended withdrawal uses portfolio * SWR (what the strategy says is safe).
+    const strategyInitialW = initialPortfolio * (sp.swr ?? sp.initialRate ?? sp.targetRate ?? swr)
+    let prevStrategyWithdrawal = 0
     let survived = true
 
     for (let y = 0; y < duration; y++) {
       if (portfolio <= 0) {
         survived = false
-        years.push({ year: y, age: retirementAge + y, portfolio: 0, withdrawal: 0 })
+        years.push({ year: y, age: retirementAge + y, portfolio: 0, withdrawal: 0, strategyWithdrawal: 0 })
         continue
       }
 
@@ -425,6 +429,19 @@ export function runDeterministicComparison(params: {
       // prevYearGains: market growth component for sensible_withdrawals
       const prevYearGains = y > 0 ? prevPortfolio * netReturn : 0
 
+      // What the strategy recommends based on current portfolio value
+      const strategyW = computeWithdrawal(strategy, {
+        portfolio,
+        year: y,
+        remainingYears: remaining,
+        initialWithdrawal: strategyInitialW,
+        prevWithdrawal: prevStrategyWithdrawal,
+        inflation,
+        strategyParams: sp,
+        prevYearGains,
+      })
+
+      // Actual withdrawal = expenses-based (what you really take from the portfolio)
       let withdrawal = computeWithdrawal(strategy, {
         portfolio,
         year: y,
@@ -437,8 +454,9 @@ export function runDeterministicComparison(params: {
       })
 
       withdrawal = Math.min(withdrawal, portfolio)
-      years.push({ year: y, age: retirementAge + y, portfolio, withdrawal })
+      years.push({ year: y, age: retirementAge + y, portfolio, withdrawal, strategyWithdrawal: strategyW })
       prevWithdrawal = withdrawal
+      prevStrategyWithdrawal = strategyW
       prevPortfolio = portfolio
       portfolio = (portfolio - withdrawal) * (1 + netReturn)
     }

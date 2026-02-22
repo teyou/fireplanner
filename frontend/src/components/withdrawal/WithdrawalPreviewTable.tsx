@@ -31,7 +31,7 @@ export function WithdrawalPreviewTable({
     return yearData.map((yr) => ({
       age: yr.age,
       expenses: baseExpenses * (1 + inflation) ** (yr.age - currentAge),
-      withdrawal: yr.withdrawal,
+      strategyWithdrawal: yr.strategyWithdrawal,
       portfolio: yr.portfolio,
       depleted: yr.portfolio <= 0 && yr.year > 0,
     }))
@@ -65,12 +65,12 @@ export function WithdrawalPreviewTable({
               >
                 <td className="px-2 py-1.5 whitespace-nowrap tabular-nums">{row.age}</td>
                 <td className="px-2 py-1.5 whitespace-nowrap tabular-nums">{formatCurrency(row.expenses)}</td>
-                <td className="px-2 py-1.5 whitespace-nowrap tabular-nums">{formatCurrency(row.withdrawal)}</td>
+                <td className="px-2 py-1.5 whitespace-nowrap tabular-nums">{formatCurrency(row.strategyWithdrawal)}</td>
                 <td className={cn(
                   'px-2 py-1.5 whitespace-nowrap tabular-nums',
-                  row.withdrawal - row.expenses >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                  row.strategyWithdrawal - row.expenses >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                 )}>
-                  {formatCurrency(row.withdrawal - row.expenses)}
+                  {formatCurrency(row.strategyWithdrawal - row.expenses)}
                 </td>
                 <td className="px-2 py-1.5 whitespace-nowrap tabular-nums">{formatCurrency(row.portfolio)}</td>
               </tr>
