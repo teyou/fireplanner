@@ -58,13 +58,17 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
       expectedReturn = calculatePortfolioReturn(allocation.currentWeights, effectiveReturns)
     }
 
-    // In myPlan mode, use liquidNetWorth only (CPF not freely withdrawable).
-    // In fireTarget mode, use the analysis hook's computed portfolio.
+    // Project everything to retirement age (nominal/future dollars).
+    // All columns in the preview table must use the same dollar basis.
+    const yearsToRetirement = Math.max(0, profile.retirementAge - profile.currentAge)
+    const netReturn = expectedReturn - profile.expenseRatio
+
+    // In myPlan mode, grow current liquidNetWorth to retirement at expected net return.
+    // In fireTarget mode, the analysis hook already computes the target portfolio.
     const initialPortfolio = analysisMode === 'myPlan'
-      ? profile.liquidNetWorth
+      ? profile.liquidNetWorth * (1 + netReturn) ** yearsToRetirement
       : analysisPortfolio.initialPortfolio
 
-    const yearsToRetirement = Math.max(0, profile.retirementAge - profile.currentAge)
     const retirementExpenses = profile.annualExpenses
       * (profile.retirementSpendingAdjustment ?? 1)
       * (1 + profile.inflation) ** yearsToRetirement
