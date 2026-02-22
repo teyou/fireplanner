@@ -303,6 +303,7 @@ Simulation engine tests (`lib/simulation/` and `lib/math/`):
 - **Do not add a backend server.** All computation runs client-side. No database. No authentication. Browser-only persistence.
 - **Do not skip validation.** Every calculation hook must check input validity before computing.
 - **Do not import from one store inside another store's definition.** Cross-store reads happen in hooks and components, not in store definitions.
+- **Do not mix dollar bases in the same view.** When a table, chart, or comparison shows values across multiple columns/series, ALL values must be in the same dollar basis (all today's dollars OR all future/nominal dollars). If one column is inflation-adjusted to a future date, every other monetary column must be too. Project portfolios forward at expected net return, inflate expenses at the inflation rate, over the same time horizon.
 
 ## Build Phases
 
