@@ -10,7 +10,7 @@ import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useIncomeProjection } from '@/hooks/useIncomeProjection'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { calculateCpfContribution, calculateBrsFrsErs, estimateCpfLifePayout, calculateCpfLifePayoutAtAge, getRetirementSumAmount } from '@/lib/calculations/cpf'
-import type { CpfLifePlan, CpfRetirementSum, CpfHousingMode } from '@/lib/types'
+import type { CpfLifePlan, CpfRetirementSum } from '@/lib/types'
 import { getCpfRatesForAge, BRS_2024, FRS_2024, ERS_2024 } from '@/lib/data/cpfRates'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { CpfProjectionTable } from '@/components/cpf/CpfProjectionTable'
@@ -20,7 +20,6 @@ export function CpfSection() {
   const {
     currentAge, retirementAge, annualIncome, cpfOA, cpfSA, cpfMA, cpfRA,
     cpfLifeStartAge, cpfLifePlan, cpfRetirementSum,
-    cpfHousingMode, cpfHousingMonthly, cpfMortgageYearsLeft,
     lifeStage, retirementPhase, cpfLifeActualMonthlyPayout,
     validationErrors, setField,
   } = useProfileStore()
@@ -463,76 +462,6 @@ export function CpfSection() {
 
         {mode === 'advanced' && (
           <>
-            <Separator />
-
-            {/* CPF OA Housing — Advanced only */}
-            <div>
-              <h4 className="text-sm font-medium flex items-center mb-2">
-                CPF OA Housing Deduction
-                <InfoTooltip text="Monthly CPF OA deduction for housing loan repayment. Reduces OA balance growth in projections." />
-              </h4>
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <Label className="text-xs">Mode</Label>
-                  <Select
-                    value={cpfHousingMode}
-                    onValueChange={(v) => setField('cpfHousingMode', v as CpfHousingMode)}
-                  >
-                    <SelectTrigger className="h-8 border-blue-300">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      <SelectItem value="simple">Simple (fixed monthly amount)</SelectItem>
-                      <SelectItem value="property-linked">Property-linked (from property analysis)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {cpfHousingMode === 'simple' && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Monthly OA Deduction ($)</Label>
-                      <NumberInput
-                        min={0}
-                        value={cpfHousingMonthly}
-                        onChange={(v) => setField('cpfHousingMonthly', v)}
-                        className="h-8 border-blue-300"
-                      />
-                      {validationErrors.cpfHousingMonthly && (
-                        <p className="text-xs text-destructive">{validationErrors.cpfHousingMonthly}</p>
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Mortgage Years Remaining</Label>
-                      <NumberInput
-                        integer
-                        min={0}
-                        max={40}
-                        value={cpfMortgageYearsLeft}
-                        onChange={(v) => setField('cpfMortgageYearsLeft', v)}
-                        className="h-8 border-blue-300"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Deductions end at age {currentAge + cpfMortgageYearsLeft}
-                      </p>
-                      {currentAge + cpfMortgageYearsLeft > retirementAge && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400">
-                          Mortgage extends {currentAge + cpfMortgageYearsLeft - retirementAge} years past retirement (age {retirementAge}). Post-retirement payments will draw from CPF OA or liquid portfolio.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {cpfHousingMode === 'property-linked' && (
-                  <p className="text-xs text-muted-foreground">
-                    Housing deduction will be computed from your property analysis mortgage details.
-                  </p>
-                )}
-              </div>
-            </div>
-
             <Separator />
 
             {/* CPF Projection Table — Advanced only */}

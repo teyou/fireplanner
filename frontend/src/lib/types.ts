@@ -252,6 +252,13 @@ export interface FireMetrics {
   cpfDependency: boolean
   liquidBridgeGapYears: number | null
   liquidDepletionAge: number | null
+  /** Breakdown of effective annual expenses used to compute FIRE number */
+  expensesBreakdown: {
+    baseExpenses: number          // annualExpenses × retirementSpendingAdjustment × fireTypeMultiplier
+    parentSupportAnnual: number   // additive, 0 if disabled
+    healthcareCashOutlay: number  // additive, 0 if disabled
+    effectiveExpenses: number     // final total: fireNumber = effectiveExpenses / SWR
+  }
 }
 
 export interface CpfContribution {
@@ -720,6 +727,7 @@ export interface PropertyState {
   existingRentalIncome: number
   existingMortgageRate: number
   existingMortgageRemainingYears: number
+  mortgageCpfMonthly: number
   // Downsizing
   downsizing: DownsizingConfig
   // HDB monetization

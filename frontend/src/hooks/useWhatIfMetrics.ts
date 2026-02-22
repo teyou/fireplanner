@@ -7,6 +7,7 @@ import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { usePropertyStore } from '@/stores/usePropertyStore'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
+import type { CpfHousingMode } from '@/lib/types'
 
 export interface WhatIfOverrides {
   annualExpenses?: number
@@ -79,9 +80,9 @@ function getBaseInputs(
       cpfLifeStartAge: profile.cpfLifeStartAge,
       cpfLifePlan: profile.cpfLifePlan,
       cpfRetirementSum: profile.cpfRetirementSum,
-      cpfHousingMode: profile.cpfHousingMode,
-      cpfHousingMonthly: profile.cpfHousingMonthly,
-      cpfMortgageYearsLeft: profile.cpfMortgageYearsLeft,
+      cpfHousingMode: (property.mortgageCpfMonthly > 0 ? 'simple' : 'none') as CpfHousingMode,
+      cpfHousingMonthly: property.mortgageCpfMonthly,
+      cpfMortgageYearsLeft: property.existingMortgageRemainingYears,
     })
     if (projection.length > 0) {
       effectiveIncome = projection[0].totalGross

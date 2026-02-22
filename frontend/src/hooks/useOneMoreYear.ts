@@ -5,7 +5,9 @@ import { generateIncomeProjection } from '@/lib/calculations/income'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
+import { usePropertyStore } from '@/stores/usePropertyStore'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
+import type { CpfHousingMode } from '@/lib/types'
 
 export type RiskLevel = 'safe' | 'marginal' | 'risky'
 
@@ -39,6 +41,7 @@ export function useOneMoreYear(): OneMoreYearResult {
   const profile = useProfileStore()
   const income = useIncomeStore()
   const allocation = useAllocationStore()
+  const property = usePropertyStore()
 
   return useMemo(() => {
     if (Object.keys(profile.validationErrors).length > 0) {
@@ -77,9 +80,9 @@ export function useOneMoreYear(): OneMoreYearResult {
         cpfLifeStartAge: profile.cpfLifeStartAge,
         cpfLifePlan: profile.cpfLifePlan,
         cpfRetirementSum: profile.cpfRetirementSum,
-        cpfHousingMode: profile.cpfHousingMode,
-        cpfHousingMonthly: profile.cpfHousingMonthly,
-        cpfMortgageYearsLeft: profile.cpfMortgageYearsLeft,
+        cpfHousingMode: (property.mortgageCpfMonthly > 0 ? 'simple' : 'none') as CpfHousingMode,
+        cpfHousingMonthly: property.mortgageCpfMonthly,
+        cpfMortgageYearsLeft: property.existingMortgageRemainingYears,
       })
       if (projection.length > 0) effectiveIncome = projection[0].totalGross
     }
@@ -140,5 +143,5 @@ export function useOneMoreYear(): OneMoreYearResult {
     }
 
     return { scenarios, hasData: scenarios.length > 0 }
-  }, [profile, income, allocation])
+  }, [profile, income, allocation, property])
 }

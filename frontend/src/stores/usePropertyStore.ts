@@ -33,6 +33,7 @@ const PROPERTY_DATA_KEYS = [
   'ownsProperty', 'existingPropertyValue', 'existingMortgageBalance',
   'existingMonthlyPayment', 'existingRentalIncome',
   'existingMortgageRate', 'existingMortgageRemainingYears',
+  'mortgageCpfMonthly',
   'downsizing',
   'hdbFlatType', 'hdbMonetizationStrategy', 'hdbLbsRetainedLease',
   'hdbSublettingRooms', 'hdbSublettingRate', 'hdbCpfUsedForHousing',
@@ -56,6 +57,7 @@ const DEFAULT_PROPERTY: Omit<PropertyState, 'validationErrors'> = {
   existingRentalIncome: 0,
   existingMortgageRate: 0.035,
   existingMortgageRemainingYears: 25,
+  mortgageCpfMonthly: 0,
   downsizing: DEFAULT_DOWNSIZING,
   hdbFlatType: '4-room',
   hdbMonetizationStrategy: 'none',
@@ -114,6 +116,12 @@ function computeValidationErrors(
     }
     if (state.existingMortgageRemainingYears < 0 || state.existingMortgageRemainingYears > 35) {
       errors.existingMortgageRemainingYears = 'Remaining years must be between 0 and 35'
+    }
+    if (state.mortgageCpfMonthly < 0) {
+      errors.mortgageCpfMonthly = 'CPF portion cannot be negative'
+    }
+    if (state.mortgageCpfMonthly > state.existingMonthlyPayment) {
+      errors.mortgageCpfMonthly = 'CPF portion cannot exceed total monthly payment'
     }
 
     const ds = state.downsizing
@@ -187,7 +195,7 @@ export const usePropertyStore = create<PropertyState & PropertyActions>()(
     }),
     {
       name: 'fireplanner-property',
-      version: 4,
+      version: 5,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -209,6 +217,9 @@ export const usePropertyStore = create<PropertyState & PropertyActions>()(
           state.hdbSublettingRooms ??= 1
           state.hdbSublettingRate ??= 800
           state.hdbCpfUsedForHousing ??= 0
+        }
+        if (version < 5) {
+          state.mortgageCpfMonthly ??= 0
         }
         return state
       },

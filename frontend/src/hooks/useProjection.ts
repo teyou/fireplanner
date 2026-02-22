@@ -91,7 +91,10 @@ export function useProjection(): ProjectionResult {
       propertyEquity: property.ownsProperty
         ? Math.max(0, property.existingPropertyValue - property.existingMortgageBalance)
         : 0,
-      annualMortgagePayment: property.ownsProperty ? property.existingMonthlyPayment * 12 : 0,
+      // Cash portion only — CPF portion is handled by income.ts OA deduction
+      annualMortgagePayment: property.ownsProperty
+        ? (property.existingMonthlyPayment - property.mortgageCpfMonthly) * 12
+        : 0,
       annualRentalIncome: property.ownsProperty
         ? property.existingRentalIncome * 12 + (
             property.propertyType === 'hdb' && property.hdbMonetizationStrategy === 'sublet'
@@ -146,6 +149,7 @@ export function useProjection(): ProjectionResult {
     property.existingPropertyValue,
     property.existingMortgageBalance,
     property.existingMonthlyPayment,
+    property.mortgageCpfMonthly,
     property.existingRentalIncome,
     property.existingMortgageRate,
     property.existingMortgageRemainingYears,

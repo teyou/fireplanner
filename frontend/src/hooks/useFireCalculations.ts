@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { FireMetrics } from '@/lib/types'
+import type { FireMetrics, CpfHousingMode } from '@/lib/types'
 import { calculateAllFireMetrics } from '@/lib/calculations/fire'
 import { calculatePortfolioReturn } from '@/lib/calculations/portfolio'
 import { generateIncomeProjection } from '@/lib/calculations/income'
@@ -69,9 +69,9 @@ export function useFireCalculations(): FireCalculationsResult {
         cpfLifeStartAge: profile.cpfLifeStartAge,
         cpfLifePlan: profile.cpfLifePlan,
         cpfRetirementSum: profile.cpfRetirementSum,
-        cpfHousingMode: profile.cpfHousingMode,
-        cpfHousingMonthly: profile.cpfHousingMonthly,
-        cpfMortgageYearsLeft: profile.cpfMortgageYearsLeft,
+        cpfHousingMode: (property.mortgageCpfMonthly > 0 ? 'simple' : 'none') as CpfHousingMode,
+        cpfHousingMonthly: property.mortgageCpfMonthly,
+        cpfMortgageYearsLeft: property.existingMortgageRemainingYears,
       })
 
       if (projection.length > 0) {
@@ -142,9 +142,8 @@ export function useFireCalculations(): FireCalculationsResult {
     profile.cpfLifeStartAge,
     profile.cpfLifePlan,
     profile.cpfRetirementSum,
-    profile.cpfHousingMode,
-    profile.cpfHousingMonthly,
-    profile.cpfMortgageYearsLeft,
+    property.mortgageCpfMonthly,
+    property.existingMortgageRemainingYears,
     profile.validationErrors,
     income.salaryModel,
     income.annualSalary,

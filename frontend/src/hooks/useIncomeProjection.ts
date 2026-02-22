@@ -1,10 +1,20 @@
 import { useMemo } from 'react'
-import type { IncomeProjectionRow, IncomeSummaryStats, ProfileState, IncomeState } from '@/lib/types'
+import type { IncomeProjectionRow, IncomeSummaryStats, ProfileState, IncomeState, CpfHousingMode } from '@/lib/types'
 import type { IncomeProjectionParams } from '@/lib/calculations/income'
 import { generateIncomeProjection, calculateIncomeSummary } from '@/lib/calculations/income'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
+import { usePropertyStore } from '@/stores/usePropertyStore'
 import { validateCrossStoreRules } from '@/lib/validation/rules'
+
+/** Derive CPF housing params from property store (single source of truth) */
+function deriveCpfHousingFromProperty(property: { mortgageCpfMonthly: number; existingMortgageRemainingYears: number }) {
+  return {
+    cpfHousingMode: (property.mortgageCpfMonthly > 0 ? 'simple' : 'none') as CpfHousingMode,
+    cpfHousingMonthly: property.mortgageCpfMonthly,
+    cpfMortgageYearsLeft: property.existingMortgageRemainingYears,
+  }
+}
 
 /**
  * Build projection params from store state (non-hook helper).
@@ -19,6 +29,9 @@ export function buildProjectionParams(
   if (Object.keys(profileErrors).length > 0 || Object.keys(incomeErrors).length > 0) {
     return null
   }
+  // Read CPF housing from property store (single source of truth)
+  const property = usePropertyStore.getState()
+  const cpfHousing = deriveCpfHousingFromProperty(property)
   return {
     currentAge: profile.currentAge,
     retirementAge: profile.retirementAge,
@@ -45,9 +58,9 @@ export function buildProjectionParams(
     cpfLifeStartAge: profile.cpfLifeStartAge,
     cpfLifePlan: profile.cpfLifePlan,
     cpfRetirementSum: profile.cpfRetirementSum,
-    cpfHousingMode: profile.cpfHousingMode,
-    cpfHousingMonthly: profile.cpfHousingMonthly,
-    cpfMortgageYearsLeft: profile.cpfMortgageYearsLeft,
+    cpfHousingMode: cpfHousing.cpfHousingMode,
+    cpfHousingMonthly: cpfHousing.cpfHousingMonthly,
+    cpfMortgageYearsLeft: cpfHousing.cpfMortgageYearsLeft,
     cpfLifeActualMonthlyPayout: profile.cpfLifeActualMonthlyPayout,
     residencyStatus: profile.residencyStatus,
     srsBalance: profile.srsBalance,
@@ -71,6 +84,8 @@ interface IncomeProjectionResult {
 export function useIncomeProjection(): IncomeProjectionResult {
   const profile = useProfileStore()
   const income = useIncomeStore()
+  const property = usePropertyStore()
+  const cpfHousing = deriveCpfHousingFromProperty(property)
 
   return useMemo(() => {
     const profileErrors = profile.validationErrors
@@ -120,9 +135,9 @@ export function useIncomeProjection(): IncomeProjectionResult {
       cpfLifeStartAge: profile.cpfLifeStartAge,
       cpfLifePlan: profile.cpfLifePlan,
       cpfRetirementSum: profile.cpfRetirementSum,
-      cpfHousingMode: profile.cpfHousingMode,
-      cpfHousingMonthly: profile.cpfHousingMonthly,
-      cpfMortgageYearsLeft: profile.cpfMortgageYearsLeft,
+      cpfHousingMode: cpfHousing.cpfHousingMode,
+      cpfHousingMonthly: cpfHousing.cpfHousingMonthly,
+      cpfMortgageYearsLeft: cpfHousing.cpfMortgageYearsLeft,
       cpfLifeActualMonthlyPayout: profile.cpfLifeActualMonthlyPayout,
       residencyStatus: profile.residencyStatus,
       srsBalance: profile.srsBalance,
@@ -147,9 +162,9 @@ export function useIncomeProjection(): IncomeProjectionResult {
     profile.cpfLifeStartAge,
     profile.cpfLifePlan,
     profile.cpfRetirementSum,
-    profile.cpfHousingMode,
-    profile.cpfHousingMonthly,
-    profile.cpfMortgageYearsLeft,
+    cpfHousing.cpfHousingMode,
+    cpfHousing.cpfHousingMonthly,
+    cpfHousing.cpfMortgageYearsLeft,
     profile.cpfLifeActualMonthlyPayout,
     profile.residencyStatus,
     profile.srsBalance,

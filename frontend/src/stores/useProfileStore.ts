@@ -25,7 +25,8 @@ const PROFILE_DATA_KEYS = [
   'fireType', 'swr', 'fireNumberBasis', 'retirementSpendingAdjustment',
   'expectedReturn', 'usePortfolioReturn', 'inflation', 'expenseRatio', 'rebalanceFrequency',
   'retirementPhase', 'cpfLifeActualMonthlyPayout',
-  'cpfLifeStartAge', 'cpfLifePlan', 'cpfRetirementSum', 'cpfHousingMode', 'cpfHousingMonthly', 'cpfMortgageYearsLeft',
+  'cpfLifeStartAge', 'cpfLifePlan', 'cpfRetirementSum',
+  // cpfHousingMode, cpfHousingMonthly, cpfMortgageYearsLeft — DEPRECATED: now derived from property store
   'parentSupportEnabled', 'parentSupport',
   'healthcareConfig',
   'retirementWithdrawals',
@@ -76,6 +77,7 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   cpfLifeStartAge: 65,
   cpfLifePlan: 'standard',
   cpfRetirementSum: 'frs',
+  // DEPRECATED: CPF housing now sourced from property store. Kept for backward compat on load.
   cpfHousingMode: 'none',
   cpfHousingMonthly: 0,
   cpfMortgageYearsLeft: 25,

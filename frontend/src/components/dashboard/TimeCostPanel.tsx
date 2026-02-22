@@ -7,8 +7,10 @@ import { Clock, ShoppingCart } from 'lucide-react'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
+import { usePropertyStore } from '@/stores/usePropertyStore'
 import { calculatePortfolioReturn } from '@/lib/calculations/portfolio'
 import { generateIncomeProjection } from '@/lib/calculations/income'
+import type { CpfHousingMode } from '@/lib/types'
 import { calculateOneTimeCost, calculateRecurringCost, type TimeCostBaseInput } from '@/lib/calculations/timeCost'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
 import { formatCurrency } from '@/lib/utils'
@@ -20,6 +22,7 @@ export function TimeCostPanel() {
   const profile = useProfileStore()
   const income = useIncomeStore()
   const allocation = useAllocationStore()
+  const property = usePropertyStore()
 
   const [mode, setMode] = useState<CostMode>('one-time')
   const [oneTimeAmount, setOneTimeAmount] = useState(50000)
@@ -59,9 +62,9 @@ export function TimeCostPanel() {
         cpfLifeStartAge: profile.cpfLifeStartAge,
         cpfLifePlan: profile.cpfLifePlan,
         cpfRetirementSum: profile.cpfRetirementSum,
-        cpfHousingMode: profile.cpfHousingMode,
-        cpfHousingMonthly: profile.cpfHousingMonthly,
-        cpfMortgageYearsLeft: profile.cpfMortgageYearsLeft,
+        cpfHousingMode: (property.mortgageCpfMonthly > 0 ? 'simple' : 'none') as CpfHousingMode,
+        cpfHousingMonthly: property.mortgageCpfMonthly,
+        cpfMortgageYearsLeft: property.existingMortgageRemainingYears,
       })
       if (projection.length > 0) effectiveIncome = projection[0].totalGross
     }
@@ -86,7 +89,7 @@ export function TimeCostPanel() {
       retirementAge: profile.retirementAge,
       currentAge: profile.currentAge,
     }
-  }, [profile, income, allocation])
+  }, [profile, income, allocation, property])
 
   const result = useMemo(() => {
     if (!baseInput) return null

@@ -559,6 +559,7 @@ function PropertyContent() {
   const existingMortgageBalance = usePropertyStore((s) => s.existingMortgageBalance)
   const existingMonthlyPayment = usePropertyStore((s) => s.existingMonthlyPayment)
   const existingRentalIncome = usePropertyStore((s) => s.existingRentalIncome)
+  const mortgageCpfMonthly = usePropertyStore((s) => s.mortgageCpfMonthly)
   const setField = usePropertyStore((s) => s.setField)
   const validationErrors = usePropertyStore((s) => s.validationErrors)
 
@@ -571,10 +572,12 @@ function PropertyContent() {
     setPropertyStatus(status)
     if (status === 'none') {
       setField('ownsProperty', false)
+      setField('mortgageCpfMonthly', 0)
     } else if (status === 'fully-paid') {
       setField('ownsProperty', true)
       setField('existingMortgageBalance', 0)
       setField('existingMonthlyPayment', 0)
+      setField('mortgageCpfMonthly', 0)
     } else {
       setField('ownsProperty', true)
     }
@@ -652,10 +655,28 @@ function PropertyContent() {
                     <CurrencyInput
                       label="Monthly Mortgage Payment"
                       value={existingMonthlyPayment}
-                      onChange={(v) => setField('existingMonthlyPayment', v)}
+                      onChange={(v) => {
+                        setField('existingMonthlyPayment', v)
+                        // Clamp CPF portion if it exceeds new total
+                        if (mortgageCpfMonthly > v) {
+                          setField('mortgageCpfMonthly', v)
+                        }
+                      }}
                       error={validationErrors.existingMonthlyPayment}
                       tooltip="Monthly mortgage repayment amount (principal + interest)"
                     />
+                    <CurrencyInput
+                      label="Of which, CPF OA"
+                      value={mortgageCpfMonthly}
+                      onChange={(v) => setField('mortgageCpfMonthly', v)}
+                      error={validationErrors.mortgageCpfMonthly}
+                      tooltip="Portion of monthly mortgage paid from CPF OA. This reduces your OA balance growth. The remainder is paid from cash/savings."
+                    />
+                    <div className="md:col-span-2 p-2 bg-muted/50 rounded text-sm">
+                      <span className="text-muted-foreground">Cash portion: </span>
+                      <span className="font-semibold">{formatCurrency(Math.max(0, existingMonthlyPayment - mortgageCpfMonthly))}/mo</span>
+                      <span className="text-muted-foreground"> (deducted from savings)</span>
+                    </div>
                   </>
                 )}
                 <CurrencyInput
