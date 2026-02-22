@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { Link } from 'react-router-dom'
 import { ChevronDown, ChevronUp, CheckCircle2, Circle, ArrowRight } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 // Profile sections
 import { PersonalSection } from '@/components/profile/PersonalSection'
@@ -22,6 +23,7 @@ import { LifeEventsSection } from '@/components/income/LifeEventsSection'
 import { ProjectionTable } from '@/components/income/ProjectionTable'
 import { SummaryPanel } from '@/components/income/SummaryPanel'
 import { TaxReliefSection } from '@/components/income/TaxReliefSection'
+import { SrsTaxPlanningCard } from '@/components/income/SrsTaxPlanningCard'
 
 // Allocation sections
 import { AllocationBuilder } from '@/components/allocation/AllocationBuilder'
@@ -222,6 +224,7 @@ function IncomeContent() {
       </div>
 
       {mode === 'advanced' && <TaxReliefSection />}
+      {mode === 'advanced' && <SrsTaxPlanningCard />}
 
       {mode === 'advanced' && <IncomeStreamsSection />}
       {mode === 'advanced' && <LifeEventsSection />}
@@ -642,26 +645,32 @@ function SectionModeLink({ sectionId }: { sectionId: SectionId }) {
 
   if (!config) return null
 
-  if (mode === 'advanced') {
-    return (
+  return (
+    <div className="ml-7 inline-flex rounded-lg border border-border p-0.5 bg-muted/30">
       <button
         onClick={() => setSectionMode(config.modeSectionId, 'simple')}
-        className="ml-7 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground border border-border rounded-md px-2 py-0.5 transition-colors"
+        className={cn(
+          'rounded-md px-3 py-1 text-xs font-medium transition-all',
+          mode === 'simple'
+            ? 'bg-background text-foreground shadow-sm'
+            : 'text-muted-foreground hover:text-foreground'
+        )}
       >
-        &larr; Simple view
+        Simple
       </button>
-    )
-  }
-
-  return (
-    <button
-      onClick={() => setSectionMode(config.modeSectionId, 'advanced')}
-      className="ml-7 inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80 border border-primary/30 rounded-md px-2 py-0.5 transition-colors"
-    >
-      <span className="hidden sm:inline">Advanced: {config.label}</span>
-      <span className="sm:hidden">Advanced</span>
-      {' '}&rarr;
-    </button>
+      <button
+        onClick={() => setSectionMode(config.modeSectionId, 'advanced')}
+        title={config.label}
+        className={cn(
+          'rounded-md px-3 py-1 text-xs font-medium transition-all',
+          mode === 'advanced'
+            ? 'bg-background text-foreground shadow-sm'
+            : 'text-muted-foreground hover:text-foreground'
+        )}
+      >
+        Advanced
+      </button>
+    </div>
   )
 }
 
