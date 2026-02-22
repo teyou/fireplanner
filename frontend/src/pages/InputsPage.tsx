@@ -327,23 +327,7 @@ function ExpensesContent() {
 
       <Separator className="my-2" />
 
-      <div className="flex items-center justify-between">
-        {mode === 'advanced' ? (
-          <button
-            onClick={() => setStrategyExpanded(!strategyExpanded)}
-            className="flex items-center gap-2 text-left"
-          >
-            {strategyExpanded ? (
-              <ChevronUp className="h-5 w-5 text-muted-foreground shrink-0" />
-            ) : (
-              <ChevronDown className="h-5 w-5 text-muted-foreground shrink-0" />
-            )}
-            <h3 className="text-xl font-semibold">Withdrawal Strategy</h3>
-          </button>
-        ) : (
-          <h3 className="text-xl font-semibold">Withdrawal Strategy</h3>
-        )}
-      </div>
+      <h3 className="text-xl font-semibold">Withdrawal Strategy</h3>
 
       <Card>
         <CardContent className="pt-4 pb-4 md:pt-4 md:pb-4">
@@ -402,6 +386,17 @@ function ExpensesContent() {
             ))}
           </ul>
         </div>
+      )}
+
+      {mode === 'advanced' && (
+        <Card className="cursor-pointer" onClick={() => setStrategyExpanded(!strategyExpanded)}>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center justify-between">
+              Strategy Selection & Comparison
+              <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', strategyExpanded && 'rotate-180')} />
+            </CardTitle>
+          </CardHeader>
+        </Card>
       )}
 
       {mode === 'advanced' && strategyExpanded && (
