@@ -141,8 +141,8 @@ export function FireTargetsSection() {
                 <div className="flex items-center gap-0.5 mt-1.5 rounded-md bg-background border p-0.5">
                   {([
                     { value: 'today', label: "Today's $" },
-                    { value: 'retirement', label: 'Retirement' },
                     { value: 'fireAge', label: 'FIRE Age' },
+                    { value: 'retirement', label: 'Retirement' },
                   ] as const).map((opt) => (
                     <button
                       key={opt.value}
