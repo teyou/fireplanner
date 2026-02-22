@@ -25,7 +25,7 @@ const STRATEGY_GROUPS: { label: string; strategies: WithdrawalStrategyType[] }[]
   },
 ]
 
-const STRATEGY_DESCRIPTIONS: Record<WithdrawalStrategyType, string> = {
+export const STRATEGY_DESCRIPTIONS: Record<WithdrawalStrategyType, string> = {
   constant_dollar: 'Withdraw a fixed inflation-adjusted amount each year (the classic 4% rule).',
   vpw: 'Withdraw a variable percentage based on remaining years and portfolio size.',
   guardrails: 'Inflation-adjust spending but cut/raise when portfolio hits guardrails.',
@@ -124,7 +124,7 @@ export function StrategyParamsSection() {
   )
 }
 
-function StrategyParamCard({ strategy }: { strategy: WithdrawalStrategyType }) {
+export function StrategyParamCard({ strategy }: { strategy: WithdrawalStrategyType }) {
   const withdrawal = useWithdrawalStore()
   const simulation = useSimulationStore()
   const params = withdrawal.strategyParams[strategy]

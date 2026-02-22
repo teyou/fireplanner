@@ -13,7 +13,7 @@ import { useProjection } from '@/hooks/useProjection'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useSimulationStore } from '@/stores/useSimulationStore'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -24,6 +24,8 @@ import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { useSectionNudge } from '@/hooks/useSectionNudge'
 import { SectionNudge } from '@/components/shared/SectionNudge'
 import { useUIStore } from '@/stores/useUIStore'
+import { StrategyParamCard } from '@/components/withdrawal/StrategyParamsSection'
+import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
 
 const STRATEGY_SHORT_LABELS: Record<WithdrawalStrategyType, string> = {
   constant_dollar: '4% Rule',
@@ -70,6 +72,7 @@ export function ProjectionPage() {
   const { rows, summary, hasErrors } = useProjection()
   const retirementAge = useProfileStore((s) => s.retirementAge)
   const activeStrategy = useSimulationStore((s) => s.selectedStrategy)
+  const setSimField = useSimulationStore((s) => s.setField)
 
   const [viewMode, setViewMode] = useState<'table' | 'chart'>('table')
   const [activeGroups, setActiveGroups] = useState<Set<ColumnGroup>>(new Set())
@@ -277,13 +280,24 @@ export function ProjectionPage() {
           Deterministic trajectory showing income, portfolio growth, and FIRE progress.
           Verify your inputs produce sensible numbers before running Monte Carlo analysis.
         </p>
-        <div className="mt-2 flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">
-            Strategy: {STRATEGY_SHORT_LABELS[activeStrategy]}
-          </Badge>
-          <Link to="/inputs#section-expenses" className="text-xs text-primary hover:underline">
-            Change
-          </Link>
+        <div className="mt-3 flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium whitespace-nowrap">Withdrawal Strategy:</span>
+            <Select
+              value={activeStrategy}
+              onValueChange={(v) => setSimField('selectedStrategy', v as WithdrawalStrategyType)}
+            >
+              <SelectTrigger className="w-[280px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(STRATEGY_SHORT_LABELS) as WithdrawalStrategyType[]).map((key) => (
+                  <SelectItem key={key} value={key}>{getStrategyLabel(key)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <StrategyParamCard strategy={activeStrategy} />
         </div>
       </div>
 
