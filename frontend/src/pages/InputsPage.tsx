@@ -301,7 +301,7 @@ function ExpensesContent() {
               value={annualExpenses}
               onChange={(v) => setProfileField('annualExpenses', v)}
               error={expensesError}
-              tooltip="Total annual spending. This determines your FIRE number."
+              tooltip="Total annual spending excluding healthcare insurance and mortgage payments — those are modelled separately in their own sections."
             />
           </div>
         </CardContent>

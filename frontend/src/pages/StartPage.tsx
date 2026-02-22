@@ -302,7 +302,7 @@ export function StartPage() {
                 label="Annual Expenses"
                 value={draftExpenses}
                 onChange={setDraftExpenses}
-                tooltip="Total annual spending including housing, food, transport, etc."
+                tooltip="Total annual spending excluding healthcare insurance and mortgage payments — those are modelled separately."
               />
               <CurrencyInput
                 label="Savings & Investments"
@@ -355,7 +355,7 @@ export function StartPage() {
                 label="Annual Expenses"
                 value={draftExpenses}
                 onChange={setDraftExpenses}
-                tooltip="Total annual spending including housing, food, transport, etc."
+                tooltip="Total annual spending excluding healthcare insurance and mortgage payments — those are modelled separately."
               />
               <CurrencyInput
                 label="Savings & Investments"
@@ -409,7 +409,7 @@ export function StartPage() {
                   label="Annual Expenses"
                   value={draftExpenses}
                   onChange={setDraftExpenses}
-                  tooltip="Total annual spending including housing, food, transport, etc."
+                  tooltip="Total annual spending excluding healthcare insurance and mortgage payments — those are modelled separately."
                 />
                 <CurrencyInput
                   label="Savings & Investments"
