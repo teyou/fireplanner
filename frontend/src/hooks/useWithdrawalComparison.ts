@@ -28,6 +28,7 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
   const allocation = useAllocationStore()
   const withdrawal = useWithdrawalStore()
   const analysisMode = useSimulationStore((s) => s.analysisMode)
+  const activeStrategy = useSimulationStore((s) => s.selectedStrategy)
   const analysisPortfolio = useAnalysisPortfolio()
 
   return useMemo(() => {
@@ -74,7 +75,9 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
       inflation: profile.inflation,
       expenseRatio: profile.expenseRatio,
       swr: profile.swr,
-      strategies: withdrawal.selectedStrategies as string[],
+      strategies: (withdrawal.selectedStrategies as string[]).includes(activeStrategy)
+        ? withdrawal.selectedStrategies as string[]
+        : [...withdrawal.selectedStrategies as string[], activeStrategy],
       strategyParams: withdrawal.strategyParams as unknown as Record<string, Record<string, number>>,
     })
 
@@ -98,6 +101,7 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
     withdrawal.strategyParams,
     withdrawal.validationErrors,
     analysisMode,
+    activeStrategy,
     analysisPortfolio.initialPortfolio,
   ])
 }

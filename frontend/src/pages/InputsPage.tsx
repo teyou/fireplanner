@@ -644,9 +644,9 @@ function SectionModeLink({ sectionId }: { sectionId: SectionId }) {
     return (
       <button
         onClick={() => setSectionMode(config.modeSectionId, 'simple')}
-        className="ml-7 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        className="ml-7 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground border border-border rounded-md px-2 py-0.5 transition-colors"
       >
-        &larr; Switch to simple view
+        &larr; Simple view
       </button>
     )
   }
@@ -654,7 +654,7 @@ function SectionModeLink({ sectionId }: { sectionId: SectionId }) {
   return (
     <button
       onClick={() => setSectionMode(config.modeSectionId, 'advanced')}
-      className="ml-7 text-xs text-muted-foreground hover:text-primary transition-colors"
+      className="ml-7 inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80 border border-primary/30 rounded-md px-2 py-0.5 transition-colors"
     >
       <span className="hidden sm:inline">Advanced: {config.label}</span>
       <span className="sm:hidden">Advanced</span>
