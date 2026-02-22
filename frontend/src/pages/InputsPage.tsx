@@ -70,6 +70,7 @@ import { useIncomeProjection } from '@/hooks/useIncomeProjection'
 import { useWithdrawalComparison } from '@/hooks/useWithdrawalComparison'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
+import { useFireCalculations } from '@/hooks/useFireCalculations'
 import { useSectionNudge } from '@/hooks/useSectionNudge'
 import { SectionNudge } from '@/components/shared/SectionNudge'
 import type { ModeSectionId } from '@/hooks/useEffectiveMode'
@@ -649,7 +650,40 @@ function SectionModeLink({ sectionId }: { sectionId: SectionId }) {
   )
 }
 
+function FireSettingsNudge() {
+  const mode = useEffectiveMode('section-fire-settings')
+  const dismissedNudges = useUIStore((s) => s.dismissedNudges)
+  const fireType = useProfileStore((s) => s.fireType)
+  const liquidNetWorth = useProfileStore((s) => s.liquidNetWorth)
+  const cpfOA = useProfileStore((s) => s.cpfOA)
+  const cpfSA = useProfileStore((s) => s.cpfSA)
+  const cpfMA = useProfileStore((s) => s.cpfMA)
+  const { metrics } = useFireCalculations()
+
+  if (mode === 'advanced') return null
+  if (dismissedNudges.includes('fire-coast-reached')) return null
+  if (fireType !== 'regular') return null
+  if (!metrics) return null
+
+  const totalNW = liquidNetWorth + cpfOA + cpfSA + cpfMA
+  if (totalNW < metrics.coastFireNumber) return null
+
+  return (
+    <SectionNudge
+      nudgeId="fire-coast-reached"
+      sectionId="section-fire-settings"
+      message={`Your net worth (${formatCurrency(totalNW)}) has passed the Coast FIRE threshold (${formatCurrency(metrics.coastFireNumber)}). You could stop saving and still reach FIRE.`}
+      actionLabel="Explore FIRE types"
+    />
+  )
+}
+
 function SectionNudgeWrapper({ sectionId }: { sectionId: SectionId }) {
+  // Fire Settings uses a dedicated nudge component that depends on useFireCalculations
+  if (sectionId === 'section-fire-settings') {
+    return <FireSettingsNudge />
+  }
+
   const config = ADVANCED_LABELS[sectionId]
   if (!config) return null
 
