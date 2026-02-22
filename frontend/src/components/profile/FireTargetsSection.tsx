@@ -137,6 +137,31 @@ export function FireTargetsSection() {
                 {fireType === 'fat' && (
                   <div className="text-xs text-muted-foreground">150% of expenses</div>
                 )}
+                {/* Expense breakdown — only show when add-ons exist */}
+                {(metrics.expensesBreakdown.healthcareCashOutlay > 0 || metrics.expensesBreakdown.parentSupportAnnual > 0) && (
+                  <div className="text-[10px] text-muted-foreground mt-1 space-y-0.5">
+                    <div className="flex justify-between">
+                      <span>Expenses</span>
+                      <span>{formatCurrency(metrics.expensesBreakdown.baseExpenses)}</span>
+                    </div>
+                    {metrics.expensesBreakdown.healthcareCashOutlay > 0 && (
+                      <div className="flex justify-between">
+                        <span>+ Healthcare</span>
+                        <span>{formatCurrency(metrics.expensesBreakdown.healthcareCashOutlay)}</span>
+                      </div>
+                    )}
+                    {metrics.expensesBreakdown.parentSupportAnnual > 0 && (
+                      <div className="flex justify-between">
+                        <span>+ Parent support</span>
+                        <span>{formatCurrency(metrics.expensesBreakdown.parentSupportAnnual)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t border-border/50 pt-0.5 font-medium">
+                      <span>/ {(swr * 100).toFixed(1)}% SWR</span>
+                      <span>{formatCurrency(metrics.fireNumber)}</span>
+                    </div>
+                  </div>
+                )}
                 {/* Basis toggle */}
                 <div className="flex items-center gap-0.5 mt-1.5 rounded-md bg-background border p-0.5">
                   {([
