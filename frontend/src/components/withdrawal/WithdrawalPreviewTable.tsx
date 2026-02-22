@@ -9,6 +9,7 @@ interface WithdrawalPreviewTableProps {
   annualExpenses: number
   retirementSpendingAdjustment: number
   inflation: number
+  currentAge: number
 }
 
 export function WithdrawalPreviewTable({
@@ -17,6 +18,7 @@ export function WithdrawalPreviewTable({
   annualExpenses,
   retirementSpendingAdjustment,
   inflation,
+  currentAge,
 }: WithdrawalPreviewTableProps) {
   const [expanded, setExpanded] = useState(false)
 
@@ -28,12 +30,12 @@ export function WithdrawalPreviewTable({
   const rows = useMemo(() => {
     return yearData.map((yr) => ({
       age: yr.age,
-      expenses: baseExpenses * (1 + inflation) ** yr.year,
+      expenses: baseExpenses * (1 + inflation) ** (yr.age - currentAge),
       withdrawal: yr.withdrawal,
       portfolio: yr.portfolio,
       depleted: yr.portfolio <= 0 && yr.year > 0,
     }))
-  }, [yearData, baseExpenses, inflation])
+  }, [yearData, baseExpenses, inflation, currentAge])
 
   const displayRows = expanded ? rows : rows.slice(0, 5)
   const firstDepletedIndex = rows.findIndex((r) => r.depleted)

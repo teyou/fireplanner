@@ -245,6 +245,7 @@ function ExpensesContent() {
   const annualExpenses = useProfileStore((s) => s.annualExpenses)
   const retirementSpendingAdjustment = useProfileStore((s) => s.retirementSpendingAdjustment)
   const inflation = useProfileStore((s) => s.inflation)
+  const currentAge = useProfileStore((s) => s.currentAge)
   const setProfileField = useProfileStore((s) => s.setField)
   const expensesError = useProfileStore((s) => s.validationErrors.annualExpenses)
   const adjustmentError = useProfileStore((s) => s.validationErrors.retirementSpendingAdjustment)
@@ -361,6 +362,7 @@ function ExpensesContent() {
           annualExpenses={annualExpenses}
           retirementSpendingAdjustment={retirementSpendingAdjustment}
           inflation={inflation}
+          currentAge={currentAge}
         />
       )}
 
