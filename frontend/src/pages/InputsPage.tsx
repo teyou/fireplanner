@@ -327,7 +327,10 @@ function ExpensesContent() {
 
       <Separator className="my-2" />
 
-      <h3 className="text-xl font-semibold">Withdrawal Strategy</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-semibold">Withdrawal Strategy</h3>
+        <SectionModeLink sectionId="section-expenses" className="ml-0" />
+      </div>
 
       <Card>
         <CardContent className="pt-4 pb-4 md:pt-4 md:pb-4">
@@ -643,7 +646,7 @@ function AllocationContent() {
   )
 }
 
-function SectionModeLink({ sectionId }: { sectionId: SectionId }) {
+function SectionModeLink({ sectionId, className }: { sectionId: SectionId; className?: string }) {
   const config = ADVANCED_LABELS[sectionId]
   const modeSectionId = config?.modeSectionId ?? 'section-fire-settings'
   const mode = useEffectiveMode(modeSectionId)
@@ -652,7 +655,7 @@ function SectionModeLink({ sectionId }: { sectionId: SectionId }) {
   if (!config) return null
 
   return (
-    <div className="ml-7 flex items-center gap-2.5">
+    <div className={cn('flex items-center gap-2.5', className ?? 'ml-7')}>
       <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/30 shrink-0">
         <button
           onClick={() => setSectionMode(config.modeSectionId, 'simple')}
@@ -962,7 +965,7 @@ export function InputsPage() {
                   </Button>
                 )}
               </div>
-              {!isCollapsed && <SectionModeLink sectionId={sectionId} />}
+              {!isCollapsed && sectionId !== 'section-expenses' && <SectionModeLink sectionId={sectionId} />}
               {!isCollapsed && <SectionNudgeWrapper sectionId={sectionId} />}
             </div>
             {!isCollapsed && (
