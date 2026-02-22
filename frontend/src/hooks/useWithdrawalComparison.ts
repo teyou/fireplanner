@@ -63,8 +63,11 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
       ? profile.liquidNetWorth
       : analysisPortfolio.initialPortfolio
 
+    const retirementExpenses = profile.annualExpenses * (profile.retirementSpendingAdjustment ?? 1)
+
     const results = runDeterministicComparison({
       initialPortfolio,
+      annualExpenses: retirementExpenses,
       retirementAge: profile.retirementAge,
       lifeExpectancy: profile.lifeExpectancy,
       expectedReturn,
@@ -81,6 +84,7 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
     profile.retirementAge,
     profile.lifeExpectancy,
     profile.annualExpenses,
+    profile.retirementSpendingAdjustment,
     profile.expectedReturn,
     profile.usePortfolioReturn,
     profile.inflation,

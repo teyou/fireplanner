@@ -201,6 +201,7 @@ describe('runDeterministicComparison', () => {
   it('runs all 6 strategies', () => {
     const result = runDeterministicComparison({
       initialPortfolio: PORTFOLIO,
+      annualExpenses: INITIAL_WITHDRAWAL, // $80K matches PORTFOLIO * SWR
       retirementAge: 55,
       lifeExpectancy: 90,
       expectedReturn: 0.072,
@@ -235,6 +236,7 @@ describe('runDeterministicComparison', () => {
   it('property: withdrawal >= 0 for all years', () => {
     const result = runDeterministicComparison({
       initialPortfolio: PORTFOLIO,
+      annualExpenses: INITIAL_WITHDRAWAL,
       retirementAge: 55,
       lifeExpectancy: 90,
       expectedReturn: 0.072,

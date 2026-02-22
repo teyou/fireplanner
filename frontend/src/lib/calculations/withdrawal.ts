@@ -381,6 +381,7 @@ export interface DeterministicComparisonResult {
 
 export function runDeterministicComparison(params: {
   initialPortfolio: number
+  annualExpenses: number
   retirementAge: number
   lifeExpectancy: number
   expectedReturn: number
@@ -391,7 +392,7 @@ export function runDeterministicComparison(params: {
   strategyParams: Record<string, Record<string, number>>
 }): DeterministicComparisonResult {
   const {
-    initialPortfolio, retirementAge, lifeExpectancy,
+    initialPortfolio, annualExpenses, retirementAge, lifeExpectancy,
     expectedReturn, inflation, expenseRatio, swr,
     strategies, strategyParams,
   } = params
@@ -407,7 +408,9 @@ export function runDeterministicComparison(params: {
     let prevWithdrawal = 0
     let prevPortfolio = initialPortfolio
     const sp = strategyParams[strategy] ?? {}
-    const initialW = initialPortfolio * (sp.swr ?? sp.initialRate ?? sp.targetRate ?? swr)
+    // Use actual retirement expenses as the initial withdrawal amount.
+    // Previously used portfolio * SWR, which disconnected withdrawals from expenses.
+    const initialW = annualExpenses > 0 ? annualExpenses : initialPortfolio * (sp.swr ?? sp.initialRate ?? sp.targetRate ?? swr)
     let survived = true
 
     for (let y = 0; y < duration; y++) {

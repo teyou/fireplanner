@@ -107,15 +107,28 @@ function getWeightsAtAge(
 
 /**
  * Compute the initial withdrawal amount at retirement start.
- * Uses strategy-specific rate when available, falls back to profile SWR.
- * Matches the pattern in runDeterministicComparison.
+ * For expense-based strategies (constant_dollar, guardrails, vanguard_dynamic),
+ * uses actual retirement expenses so withdrawals track real spending needs.
+ * For portfolio-based strategies, falls back to portfolio * rate.
  */
 function computeInitialWithdrawal(
   portfolio: number,
   strategy: WithdrawalStrategyType,
   strategyParams: StrategyParamsMap,
   defaultSwr: number,
+  retirementExpenses?: number,
 ): number {
+  // Expense-based strategies: initial withdrawal = what you need to spend
+  if (retirementExpenses !== undefined && retirementExpenses > 0) {
+    switch (strategy) {
+      case 'constant_dollar':
+      case 'guardrails':
+      case 'vanguard_dynamic':
+        return retirementExpenses
+    }
+  }
+
+  // Portfolio-based strategies: initial withdrawal = portfolio * rate
   switch (strategy) {
     case 'constant_dollar':
       return portfolio * strategyParams.constant_dollar.swr
@@ -365,8 +378,9 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
 
       // Compute initial withdrawal at the start of retirement
       if (retirementYear === 0) {
+        const retirementExpenses = annualExpenses * retirementSpendingAdjustment
         initialWithdrawal = computeInitialWithdrawal(
-          startLiquidNW, withdrawalStrategy, strategyParams, swr,
+          startLiquidNW, withdrawalStrategy, strategyParams, swr, retirementExpenses,
         )
       }
 
