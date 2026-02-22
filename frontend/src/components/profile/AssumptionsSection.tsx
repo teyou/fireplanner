@@ -106,13 +106,15 @@ export function AssumptionsSection() {
             )}
           </div>
 
-          <PercentInput
-            label="Inflation Rate"
-            value={store.inflation}
-            onChange={(v) => store.setField('inflation', v)}
-            error={store.validationErrors.inflation}
-            tooltip="Expected annual inflation. Singapore historical average ~2.5%."
-          />
+          <div className="pt-3">
+            <PercentInput
+              label="Inflation Rate"
+              value={store.inflation}
+              onChange={(v) => store.setField('inflation', v)}
+              error={store.validationErrors.inflation}
+              tooltip="Expected annual inflation. Singapore historical average ~2.5%."
+            />
+          </div>
 
           <PercentInput
             label="Expense Ratio"
