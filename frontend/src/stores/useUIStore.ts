@@ -11,10 +11,15 @@ interface UIState {
   propertyEnabled: boolean
   healthcareEnabled: boolean
   mode: 'simple' | 'advanced'
+  sectionOverrides: Partial<Record<string, 'simple' | 'advanced'>>
+  dismissedNudges: string[]
 }
 
 interface UIActions {
   setField: <K extends keyof UIState>(field: K, value: UIState[K]) => void
+  setSectionMode: (section: string, mode: 'simple' | 'advanced') => void
+  clearSectionOverrides: () => void
+  dismissNudge: (nudgeId: string) => void
 }
 
 const DEFAULT_UI: UIState = {
@@ -24,18 +29,40 @@ const DEFAULT_UI: UIState = {
   propertyEnabled: false,
   healthcareEnabled: false,
   mode: 'simple',
+  sectionOverrides: {},
+  dismissedNudges: [],
 }
 
 export const useUIStore = create<UIState & UIActions>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...DEFAULT_UI,
 
-      setField: (field, value) => set({ [field]: value }),
+      setField: (field, value) => {
+        if (field === 'mode') {
+          set({ [field]: value, sectionOverrides: {} })
+        } else {
+          set({ [field]: value })
+        }
+      },
+
+      setSectionMode: (section, mode) =>
+        set((state) => ({
+          sectionOverrides: { ...state.sectionOverrides, [section]: mode },
+        })),
+
+      clearSectionOverrides: () => set({ sectionOverrides: {} }),
+
+      dismissNudge: (nudgeId) =>
+        set((state) => ({
+          dismissedNudges: state.dismissedNudges.includes(nudgeId)
+            ? state.dismissedNudges
+            : [...state.dismissedNudges, nudgeId],
+        })),
     }),
     {
       name: 'fireplanner-ui',
-      version: 3,
+      version: 4,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -51,6 +78,10 @@ export const useUIStore = create<UIState & UIActions>()(
           if (state.statsPosition === 'sidebar') {
             state.statsPosition = 'bottom'
           }
+        }
+        if (version < 4) {
+          state.sectionOverrides = {}
+          state.dismissedNudges = []
         }
         return state
       },
