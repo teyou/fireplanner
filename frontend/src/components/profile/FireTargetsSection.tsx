@@ -15,7 +15,7 @@ import type { FireType, FireNumberBasis } from '@/lib/types'
 
 export function FireTargetsSection() {
   const { fireType, swr, fireNumberBasis, inflation, retirementAge, currentAge, liquidNetWorth, setField, validationErrors } = useProfileStore()
-  const mode = useEffectiveMode()
+  const mode = useEffectiveMode('section-fire-settings')
   const { metrics, hasErrors } = useFireCalculations()
   const { summary: projSummary } = useProjection()
 

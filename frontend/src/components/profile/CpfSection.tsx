@@ -25,7 +25,7 @@ export function CpfSection() {
     validationErrors, setField,
   } = useProfileStore()
   const incomeStreams = useIncomeStore((s) => s.incomeStreams)
-  const mode = useEffectiveMode()
+  const mode = useEffectiveMode('section-cpf')
 
   // Phase-aware rendering only applies to post-fire users
   const isPostFire = lifeStage === 'post-fire'

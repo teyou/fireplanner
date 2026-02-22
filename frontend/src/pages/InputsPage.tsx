@@ -70,6 +70,9 @@ import { useIncomeProjection } from '@/hooks/useIncomeProjection'
 import { useWithdrawalComparison } from '@/hooks/useWithdrawalComparison'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
+import { useSectionNudge } from '@/hooks/useSectionNudge'
+import { SectionNudge } from '@/components/shared/SectionNudge'
+import type { ModeSectionId } from '@/hooks/useEffectiveMode'
 
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { pushUndo } from '@/lib/undo'
@@ -89,6 +92,16 @@ const STRATEGY_LABELS: Record<WithdrawalStrategyType, string> = {
   ninety_five_percent: '95% Rule',
   endowment: 'Endowment (Yale)',
   hebeler_autopilot: 'Hebeler Autopilot II',
+}
+
+const ADVANCED_LABELS: Partial<Record<SectionId, { modeSectionId: ModeSectionId; label: string }>> = {
+  'section-fire-settings': { modeSectionId: 'section-fire-settings', label: 'FIRE types, number basis, manual returns' },
+  'section-income': { modeSectionId: 'section-income', label: 'tax reliefs, income streams, life events' },
+  'section-expenses': { modeSectionId: 'section-expenses', label: 'all 12 strategies, comparison charts' },
+  'section-net-worth': { modeSectionId: 'section-net-worth', label: 'SRS return assumption, drawdown age' },
+  'section-cpf': { modeSectionId: 'section-cpf', label: 'projection table, extra interest details' },
+  'section-property': { modeSectionId: 'section-property', label: "stamp duty breakdown, Bala's Table, amortization" },
+  'section-allocation': { modeSectionId: 'section-allocation', label: 'custom overrides, glide path, correlations' },
 }
 
 type SectionId =
@@ -165,7 +178,7 @@ function FireSettingsContent() {
 function IncomeContent() {
   const income = useIncomeStore()
   const profile = useProfileStore()
-  const mode = useEffectiveMode()
+  const mode = useEffectiveMode('section-income')
   const { projection, summary, hasErrors, errors } = useIncomeProjection()
 
   // Sync salary model's annualSalary → profile.annualIncome
@@ -232,7 +245,7 @@ function ExpensesContent() {
   const setProfileField = useProfileStore((s) => s.setField)
   const expensesError = useProfileStore((s) => s.validationErrors.annualExpenses)
   const adjustmentError = useProfileStore((s) => s.validationErrors.retirementSpendingAdjustment)
-  const mode = useEffectiveMode()
+  const mode = useEffectiveMode('section-expenses')
 
   const retirementExpenses = annualExpenses * retirementSpendingAdjustment
 
@@ -580,7 +593,7 @@ function PropertyContent() {
 function AllocationContent() {
   const validationErrors = useAllocationStore((s) => s.validationErrors)
   const hasErrors = Object.keys(validationErrors).length > 0
-  const mode = useEffectiveMode()
+  const mode = useEffectiveMode('section-allocation')
   const isAdvanced = mode === 'advanced'
 
   return (
@@ -603,6 +616,53 @@ function AllocationContent() {
         </>
       )}
     </>
+  )
+}
+
+function SectionModeLink({ sectionId }: { sectionId: SectionId }) {
+  const config = ADVANCED_LABELS[sectionId]
+  if (!config) return null
+
+  const mode = useEffectiveMode(config.modeSectionId)
+  const setSectionMode = useUIStore((s) => s.setSectionMode)
+
+  if (mode === 'advanced') {
+    return (
+      <button
+        onClick={() => setSectionMode(config.modeSectionId, 'simple')}
+        className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+      >
+        &larr; Simplify
+      </button>
+    )
+  }
+
+  return (
+    <button
+      onClick={() => setSectionMode(config.modeSectionId, 'advanced')}
+      className="text-xs text-muted-foreground hover:text-primary transition-colors"
+    >
+      <span className="hidden sm:inline">Advanced: {config.label}</span>
+      <span className="sm:hidden">Advanced</span>
+      {' '}&rarr;
+    </button>
+  )
+}
+
+function SectionNudgeWrapper({ sectionId }: { sectionId: SectionId }) {
+  const config = ADVANCED_LABELS[sectionId]
+  if (!config) return null
+
+  const nudge = useSectionNudge(config.modeSectionId)
+  if (!nudge) return null
+
+  return (
+    <SectionNudge
+      nudgeId={nudge.id}
+      sectionId={nudge.sectionId}
+      message={nudge.message}
+      actionLabel={nudge.actionLabel}
+    />
   )
 }
 
@@ -803,33 +863,39 @@ export function InputsPage() {
             className="scroll-mt-16"
           >
             {index > 0 && <div className="border-t-2 border-border mb-6" />}
-            <div className="flex items-center justify-between mb-4">
-              <button
-                onClick={() => toggleSection(sectionId)}
-                className="flex items-center gap-2 text-left"
-              >
-                {isCollapsed ? (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground shrink-0" />
-                ) : (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground shrink-0" />
-                )}
-                <div>
-                  <h2 className="text-2xl font-bold flex items-center gap-2">
-                    {section.title}
-                    {sectionCompletion[sectionId]?.isComplete ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-                    ) : (
-                      <Circle className="h-5 w-5 text-muted-foreground/40 shrink-0" />
-                    )}
-                  </h2>
-                  <p className="text-muted-foreground text-sm">{section.description}</p>
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => toggleSection(sectionId)}
+                  className="flex items-center gap-2 text-left"
+                >
+                  {isCollapsed ? (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground shrink-0" />
+                  ) : (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground shrink-0" />
+                  )}
+                  <div>
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                      {section.title}
+                      {sectionCompletion[sectionId]?.isComplete ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                      ) : (
+                        <Circle className="h-5 w-5 text-muted-foreground/40 shrink-0" />
+                      )}
+                    </h2>
+                    <p className="text-muted-foreground text-sm">{section.description}</p>
+                  </div>
+                </button>
+                <div className="flex items-center gap-3 shrink-0">
+                  {!isCollapsed && <SectionModeLink sectionId={sectionId} />}
+                  {!isCollapsed && (
+                    <Button variant="outline" size="sm" onClick={section.onReset}>
+                      {section.resetLabel}
+                    </Button>
+                  )}
                 </div>
-              </button>
-              {!isCollapsed && (
-                <Button variant="outline" size="sm" onClick={section.onReset}>
-                  {section.resetLabel}
-                </Button>
-              )}
+              </div>
+              {!isCollapsed && <SectionNudgeWrapper sectionId={sectionId} />}
             </div>
             {!isCollapsed && (
               <div className="space-y-6">

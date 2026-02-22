@@ -18,7 +18,7 @@ export function SalaryModelSection() {
   const income = useIncomeStore()
   const profile = useProfileStore()
   const errors = income.validationErrors
-  const mode = useEffectiveMode()
+  const mode = useEffectiveMode('section-income')
 
   return (
     <Card>
