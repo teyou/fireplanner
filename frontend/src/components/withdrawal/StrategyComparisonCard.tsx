@@ -26,6 +26,13 @@ export function StrategyComparisonCard({ activeStrategy, onSelect }: Props) {
         <CardTitle className="text-lg">Strategy Comparison</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
+        {/* Category legend */}
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground pb-1">
+          <span><Badge variant="secondary" className={cn('text-[10px] px-1.5 py-0 mr-1', CATEGORY_COLOR.Basic)}>Basic</Badge>Fixed-formula, few parameters</span>
+          <span><Badge variant="secondary" className={cn('text-[10px] px-1.5 py-0 mr-1', CATEGORY_COLOR.Adaptive)}>Adaptive</Badge>Reacts to market conditions</span>
+          <span><Badge variant="secondary" className={cn('text-[10px] px-1.5 py-0 mr-1', CATEGORY_COLOR.Smoothed)}>Smoothed</Badge>Blends signals for stable income</span>
+        </div>
+
         {WITHDRAWAL_STRATEGY_METADATA.map((meta) => {
           const isActive = meta.key === activeStrategy
           const isExpanded = meta.key === expandedKey
