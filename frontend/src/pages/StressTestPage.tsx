@@ -9,6 +9,10 @@ import { AnalysisModeToggle } from '@/components/shared/AnalysisModeToggle'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 import { formatCurrency } from '@/lib/utils'
 import type { PercentileBands } from '@/lib/types'
+import { useEffectiveMode } from '@/hooks/useEffectiveMode'
+import { useSectionNudge } from '@/hooks/useSectionNudge'
+import { SectionNudge } from '@/components/shared/SectionNudge'
+import { useUIStore } from '@/stores/useUIStore'
 
 // Monte Carlo imports
 import { SimulationControls } from '@/components/simulation/SimulationControls'
@@ -63,7 +67,7 @@ function TabIntro({ children }: { children: React.ReactNode }) {
   )
 }
 
-function MonteCarloTab() {
+function MonteCarloTab({ isAdvanced }: { isAdvanced: boolean }) {
   const { mutate, data, isPending, error, canRun, validationErrors, isStale } = useMonteCarloQuery()
   const retirementAge = useProfileStore((s) => s.retirementAge)
   const selectedStrategy = useSimulationStore((s) => s.selectedStrategy)
@@ -133,14 +137,16 @@ function MonteCarloTab() {
             <SpendingMetricsPanel metrics={data.spending_metrics} nSimulations={data.n_simulations} />
           )}
           <FanChart bands={data.percentile_bands} retirementAge={retirementAge} />
-          {data.histogram_snapshots && data.histogram_snapshots.length > 0 && (
+          {isAdvanced && data.histogram_snapshots && data.histogram_snapshots.length > 0 && (
             <PortfolioHistogram snapshots={data.histogram_snapshots} />
           )}
-          <FailureDistributionChart
-            distribution={data.failure_distribution}
-            nSimulations={data.n_simulations}
-          />
-          {data.withdrawal_bands && (
+          {isAdvanced && (
+            <FailureDistributionChart
+              distribution={data.failure_distribution}
+              nSimulations={data.n_simulations}
+            />
+          )}
+          {isAdvanced && data.withdrawal_bands && (
             <WithdrawalSchedule bands={data.withdrawal_bands} strategy={selectedStrategy} />
           )}
         </>
@@ -511,6 +517,10 @@ function SequenceRiskTab() {
 
 export function StressTestPage() {
   const { portfolioLabel } = useAnalysisPortfolio()
+  const stressMode = useEffectiveMode('section-stress-test')
+  const stressNudge = useSectionNudge('section-stress-test')
+  const setSectionMode = useUIStore((s) => s.setSectionMode)
+  const isStressAdvanced = stressMode === 'advanced'
 
   return (
     <div className="space-y-6">
@@ -521,26 +531,56 @@ export function StressTestPage() {
         </p>
       </div>
 
+      <div className="flex items-center justify-end">
+        {isStressAdvanced ? (
+          <button
+            onClick={() => setSectionMode('section-stress-test', 'simple')}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            &larr; Simplify
+          </button>
+        ) : (
+          <button
+            onClick={() => setSectionMode('section-stress-test', 'advanced')}
+            className="text-xs text-muted-foreground hover:text-primary transition-colors"
+          >
+            Advanced: backtests, sequence risk, drill-down tables &rarr;
+          </button>
+        )}
+      </div>
+      {stressNudge && (
+        <SectionNudge
+          nudgeId={stressNudge.id}
+          sectionId={stressNudge.sectionId}
+          message={stressNudge.message}
+          actionLabel={stressNudge.actionLabel}
+        />
+      )}
+
       <AnalysisModeToggle portfolioLabel={portfolioLabel} />
 
       <Tabs defaultValue="monte-carlo">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className={`grid w-full ${isStressAdvanced ? 'grid-cols-3' : 'grid-cols-1'}`}>
           <TabsTrigger value="monte-carlo">Monte Carlo</TabsTrigger>
-          <TabsTrigger value="backtest">Historical Backtest</TabsTrigger>
-          <TabsTrigger value="sequence-risk">Sequence Risk</TabsTrigger>
+          {isStressAdvanced && <TabsTrigger value="backtest">Historical Backtest</TabsTrigger>}
+          {isStressAdvanced && <TabsTrigger value="sequence-risk">Sequence Risk</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="monte-carlo">
-          <MonteCarloTab />
+          <MonteCarloTab isAdvanced={isStressAdvanced} />
         </TabsContent>
 
-        <TabsContent value="backtest">
-          <BacktestTab />
-        </TabsContent>
+        {isStressAdvanced && (
+          <TabsContent value="backtest">
+            <BacktestTab />
+          </TabsContent>
+        )}
 
-        <TabsContent value="sequence-risk">
-          <SequenceRiskTab />
-        </TabsContent>
+        {isStressAdvanced && (
+          <TabsContent value="sequence-risk">
+            <SequenceRiskTab />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   )
