@@ -28,6 +28,7 @@ import {
   Download,
   Upload,
   CheckSquare,
+  HeartPulse,
 } from 'lucide-react'
 
 interface NavItem {
@@ -49,6 +50,7 @@ const GOAL_FIRST_SECTIONS: InputSectionItem[] = [
   { label: 'Expenses', sectionId: 'section-expenses', icon: <TrendingDown className="h-4 w-4" /> },
   { label: 'Net Worth', sectionId: 'section-net-worth', icon: <Wallet className="h-4 w-4" /> },
   { label: 'CPF', sectionId: 'section-cpf', icon: <Landmark className="h-4 w-4" /> },
+  { label: 'Healthcare', sectionId: 'section-healthcare', icon: <HeartPulse className="h-4 w-4" /> },
   { label: 'Property', sectionId: 'section-property', icon: <Building className="h-4 w-4" /> },
   { label: 'Allocation', sectionId: 'section-allocation', icon: <PieChart className="h-4 w-4" /> },
 ]
@@ -59,6 +61,7 @@ const STORY_FIRST_SECTIONS: InputSectionItem[] = [
   { label: 'Expenses', sectionId: 'section-expenses', icon: <TrendingDown className="h-4 w-4" /> },
   { label: 'Net Worth', sectionId: 'section-net-worth', icon: <Wallet className="h-4 w-4" /> },
   { label: 'CPF', sectionId: 'section-cpf', icon: <Landmark className="h-4 w-4" /> },
+  { label: 'Healthcare', sectionId: 'section-healthcare', icon: <HeartPulse className="h-4 w-4" /> },
   { label: 'Property', sectionId: 'section-property', icon: <Building className="h-4 w-4" /> },
   { label: 'Allocation', sectionId: 'section-allocation', icon: <PieChart className="h-4 w-4" /> },
   { label: 'FIRE Settings', sectionId: 'section-fire-settings', icon: <Target className="h-4 w-4" /> },
@@ -69,6 +72,7 @@ const ALREADY_FIRE_SECTIONS: InputSectionItem[] = [
   { label: 'Net Worth', sectionId: 'section-net-worth', icon: <Wallet className="h-4 w-4" /> },
   { label: 'Property', sectionId: 'section-property', icon: <Building className="h-4 w-4" /> },
   { label: 'Expenses', sectionId: 'section-expenses', icon: <TrendingDown className="h-4 w-4" /> },
+  { label: 'Healthcare', sectionId: 'section-healthcare', icon: <HeartPulse className="h-4 w-4" /> },
   { label: 'Allocation', sectionId: 'section-allocation', icon: <PieChart className="h-4 w-4" /> },
   { label: 'FIRE Settings', sectionId: 'section-fire-settings', icon: <Target className="h-4 w-4" /> },
   { label: 'CPF', sectionId: 'section-cpf', icon: <Landmark className="h-4 w-4" /> },
@@ -117,6 +121,7 @@ function useActiveSection() {
   const [activeSection, setActiveSection] = useState<string | null>(null)
   const isInputsPage = location.pathname === '/inputs'
   const cpfEnabled = useUIStore((s) => s.cpfEnabled)
+  const healthcareEnabled = useUIStore((s) => s.healthcareEnabled)
   const propertyEnabled = useUIStore((s) => s.propertyEnabled)
 
   useEffect(() => {
@@ -131,6 +136,7 @@ function useActiveSection() {
       'section-expenses',
       'section-net-worth',
       ...(cpfEnabled ? ['section-cpf'] : []),
+      ...(healthcareEnabled ? ['section-healthcare'] : []),
       ...(propertyEnabled ? ['section-property'] : []),
       'section-allocation',
     ]
@@ -157,7 +163,7 @@ function useActiveSection() {
     elements.forEach((el) => observer.observe(el))
 
     return () => observer.disconnect()
-  }, [isInputsPage, cpfEnabled, propertyEnabled])
+  }, [isInputsPage, cpfEnabled, healthcareEnabled, propertyEnabled])
 
   // When not on inputs page, don't report any active section
   return { activeSection: isInputsPage ? activeSection : null, isInputsPage }
@@ -184,10 +190,12 @@ function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
   const { sections } = useSectionCompletion()
 
   const cpfEnabled = useUIStore((s) => s.cpfEnabled)
+  const healthcareEnabled = useUIStore((s) => s.healthcareEnabled)
   const propertyEnabled = useUIStore((s) => s.propertyEnabled)
 
   const hiddenSectionIds = new Set<string>()
   if (!cpfEnabled) hiddenSectionIds.add('section-cpf')
+  if (!healthcareEnabled) hiddenSectionIds.add('section-healthcare')
   if (!propertyEnabled) hiddenSectionIds.add('section-property')
 
   const allInputSections = sectionOrder === 'goal-first'

@@ -5,8 +5,7 @@ import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { usePropertyStore } from '@/stores/usePropertyStore'
-import { computeHdbCpfRefund, computeHdbSublettingIncome, computeLbsProceeds } from '@/lib/calculations/hdb'
-import { calculateSellAndRent } from '@/lib/calculations/property'
+import { computeHdbSublettingIncome, computeLbsProceeds } from '@/lib/calculations/hdb'
 import { SUBLETTING_RATE_SUGGESTIONS, LBS_RETAINED_LEASE_OPTIONS } from '@/lib/data/hdbRates'
 import { formatCurrency } from '@/lib/utils'
 import { useProfileStore } from '@/stores/useProfileStore'
@@ -63,7 +62,6 @@ export function HdbMonetizationSection() {
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
                 <SelectItem value="sublet">Sublet Room(s)</SelectItem>
-                <SelectItem value="sell-and-rent">Sell & Rent</SelectItem>
                 <SelectItem value="lbs">Lease Buyback Scheme</SelectItem>
               </SelectContent>
             </Select>
@@ -78,10 +76,6 @@ export function HdbMonetizationSection() {
             onRoomsChange={(v) => store.setField('hdbSublettingRooms', v)}
             onRateChange={(v) => store.setField('hdbSublettingRate', v)}
           />
-        )}
-
-        {strategy === 'sell-and-rent' && (
-          <SellAndRentInputs />
         )}
 
         {strategy === 'lbs' && (
@@ -131,52 +125,6 @@ function SubletInputs({
         <span className="font-semibold">{formatCurrency(income.annualGross)}</span>
         <span className="text-muted-foreground"> (fully taxable)</span>
       </div>
-    </div>
-  )
-}
-
-function SellAndRentInputs() {
-  const store = usePropertyStore()
-  const ds = store.downsizing
-
-  const cpfRefundResult = computeHdbCpfRefund({
-    cpfUsedForHousing: store.hdbCpfUsedForHousing,
-    yearsOfMortgage: store.existingMortgageRemainingYears,
-  })
-
-  const sellResult = calculateSellAndRent({
-    salePrice: ds.expectedSalePrice,
-    outstandingMortgage: store.existingMortgageBalance,
-    monthlyRent: ds.monthlyRent,
-    cpfRefund: cpfRefundResult.totalRefund,
-  })
-
-  return (
-    <div className="space-y-3">
-      <CurrencyInput
-        label="CPF Used for Housing"
-        value={store.hdbCpfUsedForHousing}
-        onChange={(v) => store.setField('hdbCpfUsedForHousing', v)}
-        tooltip="Total CPF OA funds used for downpayment + mortgage. This amount + accrued interest must be refunded to CPF when selling."
-      />
-
-      <div className="p-3 rounded-lg bg-muted/30 space-y-1 text-sm">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">CPF Refund (principal + interest)</span>
-          <span className="font-medium">{formatCurrency(cpfRefundResult.totalRefund)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Net Proceeds to Portfolio</span>
-          <span className="font-semibold">{formatCurrency(sellResult.netProceedsToPortfolio)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Annual Rent</span>
-          <span className="font-medium">{formatCurrency(sellResult.annualRent)}</span>
-        </div>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Sale price and monthly rent are configured in the Downsizing section above.
-      </p>
     </div>
   )
 }

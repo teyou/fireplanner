@@ -195,7 +195,7 @@ export const usePropertyStore = create<PropertyState & PropertyActions>()(
     }),
     {
       name: 'fireplanner-property',
-      version: 5,
+      version: 6,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -220,6 +220,12 @@ export const usePropertyStore = create<PropertyState & PropertyActions>()(
         }
         if (version < 5) {
           state.mortgageCpfMonthly ??= 0
+        }
+        if (version < 6) {
+          // sell-and-rent removed from HDB monetization (covered by downsizing)
+          if (state.hdbMonetizationStrategy === 'sell-and-rent') {
+            state.hdbMonetizationStrategy = 'none'
+          }
         }
         return state
       },
