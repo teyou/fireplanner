@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { Link } from 'react-router-dom'
-import { ChevronDown, ChevronUp, CheckCircle2, Circle, ArrowRight } from 'lucide-react'
+import { ChevronDown, ChevronUp, CheckCircle2, Circle, ArrowRight, HelpCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // Profile sections
@@ -37,7 +37,9 @@ import { StrategyParamsSection } from '@/components/withdrawal/StrategyParamsSec
 import { ComparisonTable } from '@/components/withdrawal/ComparisonTable'
 import { WithdrawalChart } from '@/components/withdrawal/WithdrawalChart'
 import { PortfolioComparisonChart } from '@/components/withdrawal/PortfolioComparisonChart'
-import { StrategyComparisonCard } from '@/components/withdrawal/StrategyComparisonCard'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
+import { WITHDRAWAL_STRATEGY_METADATA } from '@/lib/data/withdrawalMetadata'
 import { WithdrawalPreviewTable } from '@/components/withdrawal/WithdrawalPreviewTable'
 import { RetirementWithdrawalsPanel } from '@/components/withdrawal/RetirementWithdrawalsPanel'
 
@@ -272,6 +274,7 @@ function ExpensesContent() {
   const { portfolioLabel } = useAnalysisPortfolio()
 
   const [strategyExpanded, setStrategyExpanded] = useState(false)
+  const [strategyGuideOpen, setStrategyGuideOpen] = useState(false)
 
   const handleActiveStrategyChange = (value: string) => {
     setSimField('selectedStrategy', value as WithdrawalStrategyType)
@@ -355,8 +358,94 @@ function ExpensesContent() {
               <Link to="/stress-test" className="underline text-primary">Stress Tests</Link>.
             </p>
           </div>
+          <button
+            onClick={() => setStrategyGuideOpen(true)}
+            className="mt-2 flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            <HelpCircle className="h-3.5 w-3.5" />
+            Not sure which to pick? Compare strategies
+          </button>
         </CardContent>
       </Card>
+
+      {/* Strategy Guide Dialog */}
+      <Dialog open={strategyGuideOpen} onOpenChange={setStrategyGuideOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Withdrawal Strategy Guide</DialogTitle>
+            <DialogDescription>
+              Choose how you'll draw down your portfolio in retirement. Click "Use this" to select a strategy.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            {WITHDRAWAL_STRATEGY_METADATA.map((meta) => {
+              const isActive = meta.key === activeStrategy
+              return (
+                <div
+                  key={meta.key}
+                  className={cn(
+                    'rounded-lg border p-3',
+                    isActive ? 'border-primary bg-primary/5' : 'border-border',
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-sm font-medium">{meta.label}</span>
+                      <Badge
+                        variant="secondary"
+                        className={cn('text-[10px] px-1.5 py-0 shrink-0', {
+                          'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': meta.category === 'Basic',
+                          'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': meta.category === 'Adaptive',
+                          'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400': meta.category === 'Smoothed',
+                        })}
+                      >
+                        {meta.category}
+                      </Badge>
+                    </div>
+                    {isActive ? (
+                      <Badge variant="default" className="text-[10px] px-1.5 py-0 shrink-0">Active</Badge>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          handleActiveStrategyChange(meta.key)
+                          setStrategyGuideOpen(false)
+                        }}
+                        className="text-xs text-primary hover:underline shrink-0"
+                      >
+                        Use this
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">{meta.shortDescription}</p>
+                  <div className="mt-2 grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="font-medium text-green-600 dark:text-green-400">Pros</span>
+                      <ul className="mt-0.5 space-y-0.5 list-disc list-inside text-muted-foreground">
+                        {meta.pros.map((p) => <li key={p}>{p}</li>)}
+                      </ul>
+                    </div>
+                    <div>
+                      <span className="font-medium text-red-600 dark:text-red-400">Cons</span>
+                      <ul className="mt-0.5 space-y-0.5 list-disc list-inside text-muted-foreground">
+                        {meta.cons.map((c) => <li key={c}>{c}</li>)}
+                      </ul>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    <span className="font-medium text-foreground">Best for: </span>
+                    {meta.bestFor}
+                  </p>
+                  {meta.remark && (
+                    <p className="text-xs text-muted-foreground italic border-l-2 border-primary/30 pl-2 mt-1.5">
+                      {meta.remark}
+                    </p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {results && (
         <WithdrawalPreviewTable
@@ -366,13 +455,6 @@ function ExpensesContent() {
           retirementSpendingAdjustment={retirementSpendingAdjustment}
           inflation={inflation}
           currentAge={currentAge}
-        />
-      )}
-
-      {mode === 'advanced' && (
-        <StrategyComparisonCard
-          activeStrategy={activeStrategy}
-          onSelect={(s) => handleActiveStrategyChange(s)}
         />
       )}
 
