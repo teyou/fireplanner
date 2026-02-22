@@ -634,10 +634,11 @@ function AllocationContent() {
 
 function SectionModeLink({ sectionId }: { sectionId: SectionId }) {
   const config = ADVANCED_LABELS[sectionId]
-  if (!config) return null
-
-  const mode = useEffectiveMode(config.modeSectionId)
+  const modeSectionId = config?.modeSectionId ?? 'section-fire-settings'
+  const mode = useEffectiveMode(modeSectionId)
   const setSectionMode = useUIStore((s) => s.setSectionMode)
+
+  if (!config) return null
 
   if (mode === 'advanced') {
     return (
@@ -691,16 +692,16 @@ function FireSettingsNudge() {
 }
 
 function SectionNudgeWrapper({ sectionId }: { sectionId: SectionId }) {
+  const config = ADVANCED_LABELS[sectionId]
+  const modeSectionId = config?.modeSectionId ?? 'section-fire-settings'
+  const nudge = useSectionNudge(modeSectionId)
+
   // Fire Settings uses a dedicated nudge component that depends on useFireCalculations
   if (sectionId === 'section-fire-settings') {
     return <FireSettingsNudge />
   }
 
-  const config = ADVANCED_LABELS[sectionId]
-  if (!config) return null
-
-  const nudge = useSectionNudge(config.modeSectionId)
-  if (!nudge) return null
+  if (!config || !nudge) return null
 
   return (
     <SectionNudge
