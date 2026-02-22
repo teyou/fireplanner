@@ -509,7 +509,6 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       cpfEmployee,
       cpfEmployer,
       totalNet,
-      expenses: inflationAdjustedExpenses,
       annualSavings,
       cumulativeSavings,
       cpfOA,

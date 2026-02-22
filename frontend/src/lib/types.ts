@@ -202,7 +202,6 @@ export interface IncomeProjectionRow {
   cpfEmployee: number
   cpfEmployer: number
   totalNet: number
-  expenses: number
   annualSavings: number
   cumulativeSavings: number
   cpfOA: number

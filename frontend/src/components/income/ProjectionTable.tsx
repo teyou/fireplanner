@@ -65,10 +65,6 @@ export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
         header: 'Net',
         cell: (info) => formatCurrency(info.getValue()),
       }),
-      columnHelper.accessor('expenses', {
-        header: 'Expenses',
-        cell: (info) => formatCurrency(info.getValue()),
-      }),
       columnHelper.accessor('annualSavings', {
         header: 'Savings',
         cell: (info) => formatCurrency(info.getValue()),
