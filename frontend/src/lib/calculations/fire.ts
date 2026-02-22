@@ -262,6 +262,9 @@ export function calculateAllFireMetrics(params: {
   // fireAge basis: iterative fixed-point convergence
   // FIRE number depends on FIRE age (inflation target), FIRE age depends on FIRE number (NPER).
   // Start with today's expenses, compute FIRE age, inflate to that age, recompute, repeat.
+  // Use effectiveExpenses (which already includes retirementSpendingAdjustment, parent support,
+  // and healthcare) as the base for inflation adjustment.
+  const baseExpensesForFireAge = effectiveExpenses
   let inflationFactor = 1
   if (fireNumberBasis === 'fireAge' && inflation > 0) {
     let prevYearsToFire = 0
@@ -269,7 +272,7 @@ export function calculateAllFireMetrics(params: {
     const TOLERANCE = 0.01
 
     for (let i = 0; i < MAX_ITERATIONS; i++) {
-      const currentFireNumber = calculateFireNumber(annualExpenses * multiplier * inflationFactor, swr)
+      const currentFireNumber = calculateFireNumber(baseExpensesForFireAge * inflationFactor, swr)
       const currentYearsToFire = calculateYearsToFire(netRealReturn, annualSavings, totalNetWorth, currentFireNumber)
 
       const yearsForInflation = isFinite(currentYearsToFire) ? Math.max(0, currentYearsToFire) : 0
@@ -279,7 +282,7 @@ export function calculateAllFireMetrics(params: {
       prevYearsToFire = currentYearsToFire
     }
 
-    effectiveExpenses = annualExpenses * multiplier * inflationFactor
+    effectiveExpenses = baseExpensesForFireAge * inflationFactor
   }
 
   const fireNumber = calculateFireNumber(effectiveExpenses, swr)
