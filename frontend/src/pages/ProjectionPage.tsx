@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import {
   useReactTable,
@@ -20,6 +20,10 @@ import { cn } from '@/lib/utils'
 import { Link } from 'react-router-dom'
 import { NWChartView } from '@/components/projection/NWChartView'
 import { TableIcon, BarChart3 } from 'lucide-react'
+import { useEffectiveMode } from '@/hooks/useEffectiveMode'
+import { useSectionNudge } from '@/hooks/useSectionNudge'
+import { SectionNudge } from '@/components/shared/SectionNudge'
+import { useUIStore } from '@/stores/useUIStore'
 
 const STRATEGY_SHORT_LABELS: Record<WithdrawalStrategyType, string> = {
   constant_dollar: '4% Rule',
@@ -69,6 +73,18 @@ export function ProjectionPage() {
 
   const [viewMode, setViewMode] = useState<'table' | 'chart'>('table')
   const [activeGroups, setActiveGroups] = useState<Set<ColumnGroup>>(new Set())
+
+  const mode = useEffectiveMode('section-projection')
+  const nudge = useSectionNudge('section-projection')
+  const setSectionMode = useUIStore((s) => s.setSectionMode)
+
+  useEffect(() => {
+    if (mode === 'advanced') {
+      setActiveGroups(new Set(['incomeBreakdown', 'taxCpf', 'cpfBalances', 'portfolio']))
+    } else {
+      setActiveGroups(new Set())
+    }
+  }, [mode])
 
   const toggleGroup = (group: ColumnGroup) => {
     setActiveGroups((prev) => {
@@ -270,6 +286,32 @@ export function ProjectionPage() {
           </Link>
         </div>
       </div>
+
+      <div className="flex items-center justify-end">
+        {mode === 'advanced' ? (
+          <button
+            onClick={() => setSectionMode('section-projection', 'simple')}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            &larr; Simplify
+          </button>
+        ) : (
+          <button
+            onClick={() => setSectionMode('section-projection', 'advanced')}
+            className="text-xs text-muted-foreground hover:text-primary transition-colors"
+          >
+            Advanced: Tax &amp; CPF columns, CPF balance detail &rarr;
+          </button>
+        )}
+      </div>
+      {nudge && (
+        <SectionNudge
+          nudgeId={nudge.id}
+          sectionId={nudge.sectionId}
+          message={nudge.message}
+          actionLabel={nudge.actionLabel}
+        />
+      )}
 
       {hasErrors && (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
