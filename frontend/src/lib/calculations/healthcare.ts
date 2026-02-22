@@ -33,6 +33,7 @@ export interface HealthcareConfig {
   oopModel: 'fixed' | 'age-curve'
   oopInflationRate?: number      // annual medical inflation rate (default 0)
   oopReferenceAge?: number       // age at which oopBaseAmount is in today's dollars
+  oopCurveVariant?: import('@/lib/types').OopCurveVariant  // which age multiplier curve
   mediSaveTopUpAnnual: number
 }
 
@@ -117,7 +118,7 @@ export function calculateHealthcareCostAtAge(
 
   let oopExpense: number
   if (config.oopModel === 'age-curve') {
-    oopExpense = config.oopBaseAmount * interpolateOopMultiplier(age) * inflationFactor
+    oopExpense = config.oopBaseAmount * interpolateOopMultiplier(age, config.oopCurveVariant ?? 'study-backed') * inflationFactor
   } else {
     oopExpense = config.oopBaseAmount * inflationFactor
   }

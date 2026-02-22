@@ -8,7 +8,7 @@ import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { formatCurrency } from '@/lib/utils'
 import { calculateHealthcareCostAtAge } from '@/lib/calculations/healthcare'
-import type { HealthcareConfig, IspTierOption, OopModel } from '@/lib/types'
+import type { HealthcareConfig, IspTierOption, OopModel, OopCurveVariant } from '@/lib/types'
 
 const ISP_TIER_OPTIONS: { value: IspTierOption; label: string; description: string }[] = [
   { value: 'none', label: 'None', description: 'MediShield Life only' },
@@ -138,28 +138,58 @@ export function HealthcareSection() {
             <div className="space-y-2">
               <Label className="text-sm flex items-center gap-1">
                 OOP Presets
-                <InfoTooltip text="Estimated annual out-of-pocket medical costs at age 30 (GP visits, dental, medication). The age multiplier and medical inflation scale this up over time." />
+                <InfoTooltip text="Research-backed annual out-of-pocket estimates at age 30. Sources: World Bank health expenditure data (2023), SingStat HES 2023, and bottom-up cost modeling. The age multiplier and medical inflation scale this up over time." />
               </Label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {([
-                  { label: 'Minimal', amount: 600 },
-                  { label: 'Moderate', amount: 1200 },
-                  { label: 'Conservative', amount: 2400 },
+                  { label: 'Bottom-Up Estimate', amount: 1170, source: 'GP + dental + optical + meds' },
+                  { label: 'World Bank (Nominal)', amount: 1335, source: 'WB OOP per capita 2023' },
+                  { label: 'SingStat HES 2023', amount: 1896, source: 'Household expenditure survey' },
+                  { label: 'World Bank (PPP)', amount: 2200, source: 'WB PPP-adjusted 2023' },
                 ] as const).map((preset) => (
                   <button
                     key={preset.label}
                     onClick={() => updateConfig('oopBaseAmount', preset.amount)}
-                    className={`px-3 py-1.5 rounded-md border text-sm transition-colors ${
+                    className={`p-2 rounded-md border text-sm text-left transition-colors ${
                       config.oopBaseAmount === preset.amount
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-muted hover:border-muted-foreground/30'
                     }`}
                   >
-                    {preset.label} (${preset.amount.toLocaleString()})
+                    <div className="font-medium">{preset.label}</div>
+                    <div className="text-xs text-muted-foreground">${preset.amount.toLocaleString()}/yr — {preset.source}</div>
                   </button>
                 ))}
               </div>
             </div>
+
+            {config.oopModel === 'age-curve' && (
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-1">
+                  Age Multiplier Curve
+                  <InfoTooltip text="Controls how steeply OOP costs increase with age. 'Study-Backed' uses compressed multipliers from academic research (PMC4862090) reflecting Singapore's elderly subsidies. 'Conservative' assumes higher costs for private care or no means-tested subsidies." />
+                </Label>
+                <div className="flex gap-2">
+                  {([
+                    { value: 'study-backed' as OopCurveVariant, label: 'Study-Backed (Recommended)', description: 'Accounts for SG elderly subsidies' },
+                    { value: 'conservative' as OopCurveVariant, label: 'Conservative', description: 'Private care / higher costs' },
+                  ]).map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => updateConfig('oopCurveVariant', opt.value)}
+                      className={`p-2 rounded-md border text-sm text-left transition-colors flex-1 ${
+                        (config.oopCurveVariant ?? 'study-backed') === opt.value
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-muted hover:border-muted-foreground/30'
+                      }`}
+                    >
+                      <div className="font-medium">{opt.label}</div>
+                      <div className="text-xs text-muted-foreground">{opt.description}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <CurrencyInput
               label={config.oopModel === 'age-curve' ? 'OOP Base Amount (at age 30)' : 'Annual OOP Amount'}
@@ -180,6 +210,11 @@ export function HealthcareSection() {
               tooltip="Annual increase in out-of-pocket costs above general inflation. Singapore CPI Healthcare averaged 2.24% over 20 years; 3% is moderately conservative. Set to 0% for no medical inflation."
             />
           </div>
+
+          {/* Disclaimer */}
+          <p className="text-xs text-muted-foreground italic">
+            These estimates are for planning purposes only. Actual costs vary widely by individual health, lifestyle, and care choices. For healthy individuals, real spending may be significantly lower than projected.
+          </p>
 
           {/* MediSave Top-Up */}
           <CurrencyInput

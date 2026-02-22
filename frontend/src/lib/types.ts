@@ -25,6 +25,7 @@ export type RetirementPhase = 'before-55' | '55-to-64' | '65-plus'
 
 export type IspTierOption = 'none' | 'basic' | 'standard' | 'enhanced'
 export type OopModel = 'fixed' | 'age-curve'
+export type OopCurveVariant = 'study-backed' | 'conservative'
 
 export interface HealthcareConfig {
   enabled: boolean
@@ -35,6 +36,7 @@ export interface HealthcareConfig {
   oopModel: OopModel
   oopInflationRate: number      // annual medical inflation rate (default 0.03)
   oopReferenceAge: number       // age at which oopBaseAmount is in today's dollars (default = currentAge)
+  oopCurveVariant?: OopCurveVariant  // which age multiplier curve to use for OOP costs (default: 'study-backed')
   mediSaveTopUpAnnual: number
 }
 

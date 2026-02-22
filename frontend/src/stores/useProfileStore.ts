@@ -40,6 +40,7 @@ const DEFAULT_HEALTHCARE_CONFIG: HealthcareConfig = {
   oopModel: 'age-curve',
   oopInflationRate: 0.03,
   oopReferenceAge: 30,
+  oopCurveVariant: 'study-backed',
   mediSaveTopUpAnnual: 0,
 }
 
@@ -211,7 +212,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 11,
+      version: 12,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -266,6 +267,12 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
         if (version < 11) {
           state.srsInvestmentReturn ??= 0.04
           state.srsDrawdownStartAge ??= 63
+        }
+        if (version < 12) {
+          const hc = state.healthcareConfig as Record<string, unknown> | undefined
+          if (hc) {
+            hc.oopCurveVariant = hc.oopCurveVariant ?? 'study-backed'
+          }
         }
         return state
       },
