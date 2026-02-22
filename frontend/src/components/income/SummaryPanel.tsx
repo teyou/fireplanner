@@ -40,14 +40,14 @@ export function SummaryPanel({ summary }: SummaryPanelProps) {
     <div className="flex flex-wrap justify-center gap-3">
       {metrics.map((m) => (
         <Card key={m.label} className="w-[calc(50%-0.375rem)] md:w-[calc(33.333%-0.5rem)] xl:w-[calc(20%-0.6rem)]">
-          <CardContent className="p-3 text-center">
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 text-center flex flex-col items-center justify-end h-full">
+            <p className="text-xs text-muted-foreground min-h-[2rem] flex items-center justify-center gap-0.5">
               {m.label}
               {'tooltip' in m && m.tooltip && (
                 <InfoTooltip text={m.tooltip} formula={'formula' in m ? m.formula : undefined} />
               )}
             </p>
-            <p className="text-sm font-semibold mt-1">{m.value}</p>
+            <p className="text-sm font-semibold">{m.value}</p>
           </CardContent>
         </Card>
       ))}
