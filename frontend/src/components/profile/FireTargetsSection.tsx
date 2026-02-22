@@ -99,37 +99,6 @@ export function FireTargetsSection() {
             </p>
           </div>
 
-          {mode === 'advanced' && (
-            <div className="space-y-1">
-              <Label className="text-sm flex items-center">
-                FIRE Number Basis
-                <InfoTooltip text="Today's $: current expenses. At Retirement: inflation-adjusted to retirement age. At FIRE Age: inflation-adjusted to when you actually reach FIRE." />
-              </Label>
-              <Select
-                value={fireNumberBasis}
-                onValueChange={(v) => setField('fireNumberBasis', v as FireNumberBasis)}
-              >
-                <SelectTrigger className="border-blue-300">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="today">Today's $</SelectItem>
-                  <SelectItem value="retirement">At Retirement</SelectItem>
-                  <SelectItem value="fireAge">At FIRE Age</SelectItem>
-                </SelectContent>
-              </Select>
-              {fireNumberBasis === 'retirement' && (
-                <p className="text-xs text-muted-foreground">
-                  Inflation-adjusted to age {retirementAge} at {(inflation * 100).toFixed(1)}%
-                </p>
-              )}
-              {fireNumberBasis === 'fireAge' && effectiveFireAge !== null && isFinite(effectiveFireAge) && (
-                <p className="text-xs text-muted-foreground">
-                  Inflation-adjusted to FIRE age {Math.ceil(effectiveFireAge)} at {(inflation * 100).toFixed(1)}%
-                </p>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Computed Metrics */}
@@ -150,24 +119,55 @@ export function FireTargetsSection() {
 
             {/* Headline metrics */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              <MetricCard
-                label="FIRE Number"
-                value={formatCurrency(metrics.fireNumber)}
-                subtitle={
-                  fireType === 'lean'
-                    ? '60% of expenses'
-                    : fireType === 'fat'
-                      ? '150% of expenses'
-                      : undefined
-                }
-                tooltip={
-                  fireType === 'lean'
-                    ? 'Lean FIRE: 60% of annual expenses / SWR'
-                    : fireType === 'fat'
-                      ? 'Fat FIRE: 150% of annual expenses / SWR'
-                      : 'Annual expenses / SWR'
-                }
-              />
+              <div className="p-3 rounded-md bg-muted/50">
+                <div className="text-xs text-muted-foreground flex items-center">
+                  FIRE Number
+                  <InfoTooltip text={
+                    fireType === 'lean'
+                      ? 'Lean FIRE: 60% of annual expenses / SWR'
+                      : fireType === 'fat'
+                        ? 'Fat FIRE: 150% of annual expenses / SWR'
+                        : 'Annual expenses / SWR'
+                  } />
+                </div>
+                <div className="text-lg font-semibold mt-0.5">{formatCurrency(metrics.fireNumber)}</div>
+                {fireType === 'lean' && (
+                  <div className="text-xs text-muted-foreground">60% of expenses</div>
+                )}
+                {fireType === 'fat' && (
+                  <div className="text-xs text-muted-foreground">150% of expenses</div>
+                )}
+                {/* Basis toggle */}
+                <div className="flex items-center gap-0.5 mt-1.5 rounded-md bg-background border p-0.5">
+                  {([
+                    { value: 'today', label: "Today's $" },
+                    { value: 'retirement', label: 'Retirement' },
+                    { value: 'fireAge', label: 'FIRE Age' },
+                  ] as const).map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setField('fireNumberBasis', opt.value as FireNumberBasis)}
+                      className={`px-1.5 py-0.5 rounded text-[10px] transition-colors flex-1 ${
+                        fireNumberBasis === opt.value
+                          ? 'bg-primary text-primary-foreground font-medium'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                {fireNumberBasis === 'retirement' && (
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    Adjusted to age {retirementAge} at {(inflation * 100).toFixed(1)}%
+                  </div>
+                )}
+                {fireNumberBasis === 'fireAge' && effectiveFireAge !== null && isFinite(effectiveFireAge) && (
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    Adjusted to age {Math.ceil(effectiveFireAge)} at {(inflation * 100).toFixed(1)}%
+                  </div>
+                )}
+              </div>
               <MetricCard
                 label="Years to FIRE"
                 value={
