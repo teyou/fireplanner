@@ -64,7 +64,10 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
       ? profile.liquidNetWorth
       : analysisPortfolio.initialPortfolio
 
-    const retirementExpenses = profile.annualExpenses * (profile.retirementSpendingAdjustment ?? 1)
+    const yearsToRetirement = Math.max(0, profile.retirementAge - profile.currentAge)
+    const retirementExpenses = profile.annualExpenses
+      * (profile.retirementSpendingAdjustment ?? 1)
+      * (1 + profile.inflation) ** yearsToRetirement
 
     const results = runDeterministicComparison({
       initialPortfolio,
@@ -84,6 +87,7 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
     return { results, hasErrors: false, errors: {} }
   }, [
     profile.liquidNetWorth,
+    profile.currentAge,
     profile.retirementAge,
     profile.lifeExpectancy,
     profile.annualExpenses,
