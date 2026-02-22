@@ -21,8 +21,6 @@ import { Link } from 'react-router-dom'
 import { NWChartView } from '@/components/projection/NWChartView'
 import { TableIcon, BarChart3 } from 'lucide-react'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
-import { useSectionNudge } from '@/hooks/useSectionNudge'
-import { SectionNudge } from '@/components/shared/SectionNudge'
 import { useUIStore } from '@/stores/useUIStore'
 import { StrategyParamCard } from '@/components/withdrawal/StrategyParamsSection'
 import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
@@ -78,7 +76,6 @@ export function ProjectionPage() {
   const [activeGroups, setActiveGroups] = useState<Set<ColumnGroup>>(new Set())
 
   const mode = useEffectiveMode('section-projection')
-  const nudge = useSectionNudge('section-projection')
   const setSectionMode = useUIStore((s) => s.setSectionMode)
 
   useEffect(() => {
@@ -275,11 +272,39 @@ export function ProjectionPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Year-by-Year Projection</h1>
-        <p className="text-muted-foreground text-sm">
-          Deterministic trajectory showing income, portfolio growth, and FIRE progress.
-          Verify your inputs produce sensible numbers before running Monte Carlo analysis.
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Year-by-Year Projection</h1>
+            <p className="text-muted-foreground text-sm">
+              Deterministic trajectory showing income, portfolio growth, and FIRE progress.
+              Verify your inputs produce sensible numbers before running Monte Carlo analysis.
+            </p>
+          </div>
+          <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/30 shrink-0 mt-1">
+            <button
+              onClick={() => setSectionMode('section-projection', 'simple')}
+              className={cn(
+                'rounded-md px-3 py-1 text-xs font-medium transition-all',
+                mode === 'simple'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Simple
+            </button>
+            <button
+              onClick={() => setSectionMode('section-projection', 'advanced')}
+              className={cn(
+                'rounded-md px-3 py-1 text-xs font-medium transition-all',
+                mode === 'advanced'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Advanced
+            </button>
+          </div>
+        </div>
         <div className="mt-3 flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium whitespace-nowrap">Withdrawal Strategy:</span>
@@ -300,32 +325,6 @@ export function ProjectionPage() {
           <StrategyParamCard strategy={activeStrategy} />
         </div>
       </div>
-
-      <div className="flex items-center justify-end">
-        {mode === 'advanced' ? (
-          <button
-            onClick={() => setSectionMode('section-projection', 'simple')}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            &larr; Simplify
-          </button>
-        ) : (
-          <button
-            onClick={() => setSectionMode('section-projection', 'advanced')}
-            className="text-xs text-muted-foreground hover:text-primary transition-colors"
-          >
-            Advanced: Tax &amp; CPF columns, CPF balance detail &rarr;
-          </button>
-        )}
-      </div>
-      {nudge && (
-        <SectionNudge
-          nudgeId={nudge.id}
-          sectionId={nudge.sectionId}
-          message={nudge.message}
-          actionLabel={nudge.actionLabel}
-        />
-      )}
 
       {hasErrors && (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
@@ -467,6 +466,11 @@ export function ProjectionPage() {
                 {group.label}
               </Button>
             ))}
+            {viewMode === 'table' && mode === 'simple' && (
+              <span className="hidden sm:inline text-xs text-muted-foreground">
+                Toggle columns or switch to Advanced for all
+              </span>
+            )}
           </div>
 
           {viewMode === 'chart' ? (
