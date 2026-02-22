@@ -12,7 +12,7 @@ export interface StrategyMetadata {
   pros: string[]
   cons: string[]
   bestFor: string
-  complexity: 'Low' | 'Medium' | 'High'
+  category: 'Basic' | 'Adaptive' | 'Smoothed'
   remark?: string
 }
 
@@ -33,7 +33,7 @@ export const WITHDRAWAL_STRATEGY_METADATA: StrategyMetadata[] = [
       'May leave large unspent balance',
     ],
     bestFor: 'Retirees who want simplicity and predictable spending.',
-    complexity: 'Low',
+    category: 'Basic',
     remark: 'One of the simplest methods that avoids overcomplicating retirement. Rather than switching to a complex strategy, consider simply using a lower withdrawal rate (e.g. 3%) for a larger safety margin.',
   },
   {
@@ -52,7 +52,7 @@ export const WITHDRAWAL_STRATEGY_METADATA: StrategyMetadata[] = [
       'Requires comfort with uncertainty',
     ],
     bestFor: 'Flexible retirees comfortable with variable income.',
-    complexity: 'Medium',
+    category: 'Adaptive',
   },
   {
     key: 'guardrails',
@@ -70,7 +70,7 @@ export const WITHDRAWAL_STRATEGY_METADATA: StrategyMetadata[] = [
       'Can be confusing at first',
     ],
     bestFor: 'Retirees who want mostly stable spending with guardrails against extremes.',
-    complexity: 'High',
+    category: 'Adaptive',
   },
   {
     key: 'vanguard_dynamic',
@@ -88,7 +88,7 @@ export const WITHDRAWAL_STRATEGY_METADATA: StrategyMetadata[] = [
       'Three parameters to tune',
     ],
     bestFor: 'Retirees who want gradual, bounded adjustments.',
-    complexity: 'Medium',
+    category: 'Adaptive',
   },
   {
     key: 'cape_based',
@@ -106,7 +106,7 @@ export const WITHDRAWAL_STRATEGY_METADATA: StrategyMetadata[] = [
       'More complex to explain',
     ],
     bestFor: 'Investors who follow market valuations and want to time withdrawals.',
-    complexity: 'High',
+    category: 'Smoothed',
   },
   {
     key: 'floor_ceiling',
@@ -124,7 +124,7 @@ export const WITHDRAWAL_STRATEGY_METADATA: StrategyMetadata[] = [
       'Requires knowing your spending bounds',
     ],
     bestFor: 'Retirees with clear minimum needs and maximum comfort levels.',
-    complexity: 'Low',
+    category: 'Smoothed',
   },
   {
     key: 'percent_of_portfolio',
@@ -142,7 +142,7 @@ export const WITHDRAWAL_STRATEGY_METADATA: StrategyMetadata[] = [
       'No inflation protection guarantee',
     ],
     bestFor: 'Retirees with flexible spending who can tolerate income swings.',
-    complexity: 'Low',
+    category: 'Basic',
   },
   {
     key: 'one_over_n',
@@ -160,7 +160,7 @@ export const WITHDRAWAL_STRATEGY_METADATA: StrategyMetadata[] = [
       'Early years have low withdrawals',
     ],
     bestFor: 'Retirees who want to maximize lifetime spending with no bequest goal.',
-    complexity: 'Low',
+    category: 'Basic',
   },
   {
     key: 'sensible_withdrawals',
@@ -178,7 +178,7 @@ export const WITHDRAWAL_STRATEGY_METADATA: StrategyMetadata[] = [
       'Two parameters to configure',
     ],
     bestFor: 'Retirees who want a stable base with upside participation.',
-    complexity: 'Medium',
+    category: 'Smoothed',
   },
   {
     key: 'ninety_five_percent',
@@ -196,7 +196,7 @@ export const WITHDRAWAL_STRATEGY_METADATA: StrategyMetadata[] = [
       'Less responsive to portfolio recovery',
     ],
     bestFor: 'Retirees who prioritize income stability over portfolio longevity.',
-    complexity: 'Low',
+    category: 'Adaptive',
   },
   {
     key: 'endowment',
@@ -214,7 +214,7 @@ export const WITHDRAWAL_STRATEGY_METADATA: StrategyMetadata[] = [
       'Can lag behind in rapid recovery',
     ],
     bestFor: 'Retirees who value income predictability above all else.',
-    complexity: 'Medium',
+    category: 'Smoothed',
   },
   {
     key: 'hebeler_autopilot',
@@ -232,6 +232,6 @@ export const WITHDRAWAL_STRATEGY_METADATA: StrategyMetadata[] = [
       'Income can drift from actual needs',
     ],
     bestFor: 'Analytically-minded retirees who want a disciplined, auto-adjusting approach.',
-    complexity: 'Medium',
+    category: 'Smoothed',
   },
 ]

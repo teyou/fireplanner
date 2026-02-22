@@ -11,10 +11,10 @@ interface Props {
   onSelect: (strategy: WithdrawalStrategyType) => void
 }
 
-const COMPLEXITY_COLOR: Record<string, string> = {
-  Low: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  Medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  High: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+const CATEGORY_COLOR: Record<string, string> = {
+  Basic: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  Adaptive: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+  Smoothed: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
 }
 
 export function StrategyComparisonCard({ activeStrategy, onSelect }: Props) {
@@ -54,9 +54,9 @@ export function StrategyComparisonCard({ activeStrategy, onSelect }: Props) {
                   <span className="text-sm font-medium truncate">{meta.label}</span>
                   <Badge
                     variant="secondary"
-                    className={cn('text-[10px] px-1.5 py-0 shrink-0', COMPLEXITY_COLOR[meta.complexity])}
+                    className={cn('text-[10px] px-1.5 py-0 shrink-0', CATEGORY_COLOR[meta.category])}
                   >
-                    {meta.complexity}
+                    {meta.category}
                   </Badge>
                 </button>
                 {!isActive && (
