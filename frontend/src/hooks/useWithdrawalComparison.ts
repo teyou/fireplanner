@@ -22,8 +22,12 @@ interface WithdrawalComparisonResult {
 /**
  * Derived hook: reads profile + allocation + withdrawal stores,
  * checks validation, runs deterministic withdrawal comparison.
+ *
+ * @param opts.initialPortfolioOverride - If provided, use this as the
+ *   retirement-age portfolio value instead of the simplified compound growth
+ *   formula. Typically sourced from useProjection()'s liquidNW at retirement age.
  */
-export function useWithdrawalComparison(): WithdrawalComparisonResult {
+export function useWithdrawalComparison(opts?: { initialPortfolioOverride?: number }): WithdrawalComparisonResult {
   const profile = useProfileStore()
   const allocation = useAllocationStore()
   const withdrawal = useWithdrawalStore()
@@ -63,10 +67,11 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
     const yearsToRetirement = Math.max(0, profile.retirementAge - profile.currentAge)
     const netReturn = expectedReturn - profile.expenseRatio
 
-    // In myPlan mode, grow current liquidNetWorth to retirement at expected net return.
+    // In myPlan mode, prefer the projection-derived override (full income engine)
+    // over the simplified compound growth formula.
     // In fireTarget mode, the analysis hook already computes the target portfolio.
     const initialPortfolio = analysisMode === 'myPlan'
-      ? profile.liquidNetWorth * (1 + netReturn) ** yearsToRetirement
+      ? (opts?.initialPortfolioOverride ?? profile.liquidNetWorth * (1 + netReturn) ** yearsToRetirement)
       : analysisPortfolio.initialPortfolio
 
     const retirementExpenses = profile.annualExpenses
@@ -111,6 +116,7 @@ export function useWithdrawalComparison(): WithdrawalComparisonResult {
     analysisMode,
     activeStrategy,
     analysisPortfolio.initialPortfolio,
+    opts?.initialPortfolioOverride,
   ])
 }
 

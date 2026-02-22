@@ -71,6 +71,7 @@ import { useUIStore } from '@/stores/useUIStore'
 import { useSectionCompletion } from '@/hooks/useSectionCompletion'
 import { useIncomeProjection } from '@/hooks/useIncomeProjection'
 import { useWithdrawalComparison } from '@/hooks/useWithdrawalComparison'
+import { useProjection } from '@/hooks/useProjection'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { useFireCalculations } from '@/hooks/useFireCalculations'
@@ -249,6 +250,7 @@ function ExpensesContent() {
   const retirementSpendingAdjustment = useProfileStore((s) => s.retirementSpendingAdjustment)
   const inflation = useProfileStore((s) => s.inflation)
   const currentAge = useProfileStore((s) => s.currentAge)
+  const retirementAge = useProfileStore((s) => s.retirementAge)
   const setProfileField = useProfileStore((s) => s.setField)
   const expensesError = useProfileStore((s) => s.validationErrors.annualExpenses)
   const adjustmentError = useProfileStore((s) => s.validationErrors.retirementSpendingAdjustment)
@@ -259,7 +261,14 @@ function ExpensesContent() {
   const activeStrategy = useSimulationStore((s) => s.selectedStrategy)
   const setSimField = useSimulationStore((s) => s.setField)
 
-  const { results, hasErrors, errors } = useWithdrawalComparison()
+  // Use the full projection engine to get the retirement-age portfolio value
+  const { rows: projectionRows } = useProjection()
+  const retirementRow = projectionRows?.find(r => r.age === retirementAge)
+  const projectedPortfolio = retirementRow?.liquidNW
+
+  const { results, hasErrors, errors } = useWithdrawalComparison({
+    initialPortfolioOverride: projectedPortfolio,
+  })
   const { portfolioLabel } = useAnalysisPortfolio()
 
   const [strategyExpanded, setStrategyExpanded] = useState(false)
@@ -646,30 +655,36 @@ function SectionModeLink({ sectionId }: { sectionId: SectionId }) {
   if (!config) return null
 
   return (
-    <div className="ml-7 inline-flex rounded-lg border border-border p-0.5 bg-muted/30">
-      <button
-        onClick={() => setSectionMode(config.modeSectionId, 'simple')}
-        className={cn(
-          'rounded-md px-3 py-1 text-xs font-medium transition-all',
-          mode === 'simple'
-            ? 'bg-background text-foreground shadow-sm'
-            : 'text-muted-foreground hover:text-foreground'
-        )}
-      >
-        Simple
-      </button>
-      <button
-        onClick={() => setSectionMode(config.modeSectionId, 'advanced')}
-        title={config.label}
-        className={cn(
-          'rounded-md px-3 py-1 text-xs font-medium transition-all',
-          mode === 'advanced'
-            ? 'bg-background text-foreground shadow-sm'
-            : 'text-muted-foreground hover:text-foreground'
-        )}
-      >
-        Advanced
-      </button>
+    <div className="ml-7 flex items-center gap-2.5">
+      <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/30 shrink-0">
+        <button
+          onClick={() => setSectionMode(config.modeSectionId, 'simple')}
+          className={cn(
+            'rounded-md px-3 py-1 text-xs font-medium transition-all',
+            mode === 'simple'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          Simple
+        </button>
+        <button
+          onClick={() => setSectionMode(config.modeSectionId, 'advanced')}
+          className={cn(
+            'rounded-md px-3 py-1 text-xs font-medium transition-all',
+            mode === 'advanced'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          Advanced
+        </button>
+      </div>
+      {mode === 'simple' && (
+        <span className="hidden sm:inline text-xs text-muted-foreground truncate">
+          Advanced adds {config.label}
+        </span>
+      )}
     </div>
   )
 }
