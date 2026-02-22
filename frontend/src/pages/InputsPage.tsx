@@ -332,6 +332,8 @@ function ExpensesContent() {
         <SectionModeLink sectionId="section-expenses" className="ml-0" />
       </div>
 
+      <SectionNudgeWrapper sectionId="section-expenses" />
+
       <Card>
         <CardContent className="pt-4 pb-4 md:pt-4 md:pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -966,7 +968,7 @@ export function InputsPage() {
                 )}
               </div>
               {!isCollapsed && sectionId !== 'section-expenses' && <SectionModeLink sectionId={sectionId} />}
-              {!isCollapsed && <SectionNudgeWrapper sectionId={sectionId} />}
+              {!isCollapsed && sectionId !== 'section-expenses' && <SectionNudgeWrapper sectionId={sectionId} />}
             </div>
             {!isCollapsed && (
               <div className="space-y-6">
