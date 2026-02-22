@@ -5,6 +5,9 @@ import {
   projectMediSaveTimeline,
   generateHealthcareProjection,
   calculateLifetimeHealthcareCost,
+  resolveIspTierAtAge,
+  calculateHealthcareLAE,
+  ISP_TIER_ORDER,
   type HealthcareConfig,
 } from './healthcare'
 
@@ -298,6 +301,178 @@ describe('calculateLifetimeHealthcareCost', () => {
   it('returns the lifetimeTotalCost from projection', () => {
     const projection = generateHealthcareProjection(DEFAULT_CONFIG, 30, 50)
     expect(calculateLifetimeHealthcareCost(projection)).toBe(projection.lifetimeTotalCost)
+  })
+})
+
+describe('resolveIspTierAtAge', () => {
+  it('returns primary tier when no downgrade is configured', () => {
+    expect(resolveIspTierAtAge({ ...DEFAULT_CONFIG, ispTier: 'enhanced' }, 50)).toBe('enhanced')
+    expect(resolveIspTierAtAge({ ...DEFAULT_CONFIG, ispTier: 'enhanced' }, 80)).toBe('enhanced')
+  })
+
+  it('returns primary tier before downgrade age', () => {
+    const config: HealthcareConfig = {
+      ...DEFAULT_CONFIG,
+      ispTier: 'enhanced',
+      ispDowngradeTier: 'basic',
+      ispDowngradeAge: 70,
+    }
+    expect(resolveIspTierAtAge(config, 50)).toBe('enhanced')
+    expect(resolveIspTierAtAge(config, 69)).toBe('enhanced')
+  })
+
+  it('returns downgrade tier at exactly the downgrade age', () => {
+    const config: HealthcareConfig = {
+      ...DEFAULT_CONFIG,
+      ispTier: 'enhanced',
+      ispDowngradeTier: 'basic',
+      ispDowngradeAge: 70,
+    }
+    expect(resolveIspTierAtAge(config, 70)).toBe('basic')
+  })
+
+  it('returns downgrade tier after downgrade age', () => {
+    const config: HealthcareConfig = {
+      ...DEFAULT_CONFIG,
+      ispTier: 'enhanced',
+      ispDowngradeTier: 'none',
+      ispDowngradeAge: 70,
+    }
+    expect(resolveIspTierAtAge(config, 80)).toBe('none')
+  })
+
+  it('returns primary tier when only ispDowngradeTier is set (no age)', () => {
+    const config: HealthcareConfig = {
+      ...DEFAULT_CONFIG,
+      ispTier: 'enhanced',
+      ispDowngradeTier: 'basic',
+    }
+    expect(resolveIspTierAtAge(config, 80)).toBe('enhanced')
+  })
+
+  it('returns primary tier when only ispDowngradeAge is set (no tier)', () => {
+    const config: HealthcareConfig = {
+      ...DEFAULT_CONFIG,
+      ispTier: 'enhanced',
+      ispDowngradeAge: 70,
+    }
+    expect(resolveIspTierAtAge(config, 80)).toBe('enhanced')
+  })
+})
+
+describe('ISP_TIER_ORDER', () => {
+  it('orders tiers correctly', () => {
+    expect(ISP_TIER_ORDER['none']).toBeLessThan(ISP_TIER_ORDER['basic'])
+    expect(ISP_TIER_ORDER['basic']).toBeLessThan(ISP_TIER_ORDER['standard'])
+    expect(ISP_TIER_ORDER['standard']).toBeLessThan(ISP_TIER_ORDER['enhanced'])
+  })
+})
+
+describe('calculateHealthcareCostAtAge with ISP downgrade', () => {
+  it('uses primary tier before downgrade age', () => {
+    const config: HealthcareConfig = {
+      ...DEFAULT_CONFIG,
+      ispTier: 'enhanced',
+      ispDowngradeTier: 'none',
+      ispDowngradeAge: 70,
+    }
+    const before = calculateHealthcareCostAtAge(config, 60)
+    const withoutDowngrade = calculateHealthcareCostAtAge({ ...DEFAULT_CONFIG, ispTier: 'enhanced' }, 60)
+    expect(before.ispAdditionalPremium).toBe(withoutDowngrade.ispAdditionalPremium)
+  })
+
+  it('uses downgrade tier at and after downgrade age', () => {
+    const config: HealthcareConfig = {
+      ...DEFAULT_CONFIG,
+      ispTier: 'enhanced',
+      ispDowngradeTier: 'none',
+      ispDowngradeAge: 70,
+    }
+    const after = calculateHealthcareCostAtAge(config, 75)
+    expect(after.ispAdditionalPremium).toBe(0) // 'none' tier = no ISP
+  })
+
+  it('downgrade to basic uses basic premiums', () => {
+    const config: HealthcareConfig = {
+      ...DEFAULT_CONFIG,
+      ispTier: 'enhanced',
+      ispDowngradeTier: 'basic',
+      ispDowngradeAge: 70,
+    }
+    const at70 = calculateHealthcareCostAtAge(config, 70)
+    const basicOnly = calculateHealthcareCostAtAge({ ...DEFAULT_CONFIG, ispTier: 'basic' }, 70)
+    expect(at70.ispAdditionalPremium).toBe(basicOnly.ispAdditionalPremium)
+  })
+})
+
+describe('calculateHealthcareLAE', () => {
+  it('returns 0 when healthcare is disabled', () => {
+    expect(calculateHealthcareLAE({ ...DEFAULT_CONFIG, enabled: false }, 65, 90, 0.04)).toBe(0)
+  })
+
+  it('returns point-in-time when retirement age >= life expectancy', () => {
+    const lae = calculateHealthcareLAE(DEFAULT_CONFIG, 90, 90, 0.04)
+    const pointInTime = calculateHealthcareCostAtAge(DEFAULT_CONFIG, 90).cashOutlay
+    expect(lae).toBe(pointInTime)
+  })
+
+  it('returns point-in-time when T = 0 (retirement = life expectancy)', () => {
+    const lae = calculateHealthcareLAE(DEFAULT_CONFIG, 85, 85, 0.04)
+    const pointInTime = calculateHealthcareCostAtAge(DEFAULT_CONFIG, 85).cashOutlay
+    expect(lae).toBe(pointInTime)
+  })
+
+  it('LAE > point-in-time at retirement for escalating costs (young retiree)', () => {
+    // For a 45-year-old retiree with life expectancy 90, costs escalate significantly
+    // LAE should be higher than the snapshot at age 45
+    const config: HealthcareConfig = { ...DEFAULT_CONFIG, ispTier: 'enhanced' }
+    const lae = calculateHealthcareLAE(config, 45, 90, 0.042)
+    const pointInTime = calculateHealthcareCostAtAge(config, 45).cashOutlay
+    expect(lae).toBeGreaterThan(pointInTime)
+  })
+
+  it('LAE is between min and max cash outlay over the period', () => {
+    const config: HealthcareConfig = { ...DEFAULT_CONFIG, ispTier: 'standard' }
+    const lae = calculateHealthcareLAE(config, 50, 90, 0.04)
+    let minCash = Infinity
+    let maxCash = 0
+    for (let age = 50; age <= 90; age++) {
+      const c = calculateHealthcareCostAtAge(config, age).cashOutlay
+      minCash = Math.min(minCash, c)
+      maxCash = Math.max(maxCash, c)
+    }
+    expect(lae).toBeGreaterThanOrEqual(minCash)
+    expect(lae).toBeLessThanOrEqual(maxCash)
+  })
+
+  it('LAE with 0% return equals simple average of cash outlays', () => {
+    const lae = calculateHealthcareLAE(DEFAULT_CONFIG, 60, 70, 0)
+    let sum = 0
+    for (let age = 60; age <= 70; age++) {
+      sum += calculateHealthcareCostAtAge(DEFAULT_CONFIG, age).cashOutlay
+    }
+    const avg = sum / 11
+    expect(lae).toBeCloseTo(avg, 2)
+  })
+
+  it('higher net real return lowers LAE (portfolio growth offsets escalation)', () => {
+    const config: HealthcareConfig = { ...DEFAULT_CONFIG, ispTier: 'enhanced' }
+    const laeLow = calculateHealthcareLAE(config, 50, 90, 0.02)
+    const laeHigh = calculateHealthcareLAE(config, 50, 90, 0.06)
+    expect(laeHigh).toBeLessThan(laeLow)
+  })
+
+  it('ISP downgrade reduces LAE vs no downgrade', () => {
+    const noDowngrade: HealthcareConfig = { ...DEFAULT_CONFIG, ispTier: 'enhanced' }
+    const withDowngrade: HealthcareConfig = {
+      ...DEFAULT_CONFIG,
+      ispTier: 'enhanced',
+      ispDowngradeTier: 'basic',
+      ispDowngradeAge: 70,
+    }
+    const laeNoDown = calculateHealthcareLAE(noDowngrade, 50, 90, 0.04)
+    const laeWithDown = calculateHealthcareLAE(withDowngrade, 50, 90, 0.04)
+    expect(laeWithDown).toBeLessThan(laeNoDown)
   })
 })
 

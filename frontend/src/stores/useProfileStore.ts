@@ -214,7 +214,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 12,
+      version: 13,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -276,6 +276,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
             hc.oopCurveVariant = hc.oopCurveVariant ?? 'study-backed'
           }
         }
+        // v13: ISP downgrade fields are optional (undefined = no downgrade), no migration needed
         return state
       },
       partialize: (state) => {

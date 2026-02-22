@@ -1,5 +1,5 @@
 import type { FireMetrics, FireType, FireNumberBasis, ParentSupport, HealthcareConfig } from '@/lib/types'
-import { calculateHealthcareCostAtAge } from './healthcare'
+import { calculateHealthcareLAE } from './healthcare'
 
 /** Expense multiplier for each FIRE type */
 const FIRE_TYPE_MULTIPLIERS: Record<FireType, number> = {
@@ -234,6 +234,9 @@ export function calculateAllFireMetrics(params: {
   const annualSavings = annualIncome - annualExpenses
   const savingsRate = annualIncome > 0 ? annualSavings / annualIncome : 0
 
+  // Net real return = nominal - inflation - expense ratio (computed first — needed by LAE)
+  const netRealReturn = expectedReturn - inflation - expenseRatio
+
   // Apply retirement spending adjustment and FIRE type multiplier to expenses for the FIRE number
   const multiplier = FIRE_TYPE_MULTIPLIERS[fireType]
   const baseExpenses = annualExpenses * retirementSpendingAdjustment * multiplier
@@ -245,14 +248,13 @@ export function calculateAllFireMetrics(params: {
     : 0
   effectiveExpenses += parentSupportAnnual
 
-  // Add healthcare cash outlay at retirement age (additive, NOT subject to adjustment/multiplier)
+  // Add healthcare LAE (Level Annual Equivalent) — the constant annual withdrawal that covers
+  // all escalating healthcare costs from retirement to life expectancy, given portfolio growth.
+  // This replaces the point-in-time snapshot which underestimates the FIRE target.
   const healthcareCashOutlay = healthcareConfig?.enabled
-    ? calculateHealthcareCostAtAge(healthcareConfig, retirementAge).cashOutlay
+    ? calculateHealthcareLAE(healthcareConfig, retirementAge, lifeExpectancy, netRealReturn)
     : 0
   effectiveExpenses += healthcareCashOutlay
-
-  // Net real return = nominal - inflation - expense ratio
-  const netRealReturn = expectedReturn - inflation - expenseRatio
 
   // Inflate expenses to retirement age if using retirement-dollar basis
   const yearsToRetirement = Math.max(0, retirementAge - currentAge)

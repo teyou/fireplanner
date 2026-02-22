@@ -146,7 +146,10 @@ export function FireTargetsSection() {
                     </div>
                     {metrics.expensesBreakdown.healthcareCashOutlay > 0 && (
                       <div className="flex justify-between">
-                        <span>+ Healthcare</span>
+                        <span className="flex items-center gap-0.5">
+                          + Healthcare
+                          <InfoTooltip text="Level Annual Equivalent (LAE): the constant annual withdrawal that covers all escalating healthcare costs from retirement to life expectancy, accounting for portfolio growth." />
+                        </span>
                         <span>{formatCurrency(metrics.expensesBreakdown.healthcareCashOutlay)}</span>
                       </div>
                     )}

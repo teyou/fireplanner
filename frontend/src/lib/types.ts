@@ -38,6 +38,8 @@ export interface HealthcareConfig {
   oopReferenceAge: number       // age at which oopBaseAmount is in today's dollars (default = currentAge)
   oopCurveVariant?: OopCurveVariant  // which age multiplier curve to use for OOP costs (default: 'study-backed')
   mediSaveTopUpAnnual: number
+  ispDowngradeTier?: IspTierOption   // tier to switch to (must be lower than ispTier)
+  ispDowngradeAge?: number           // age at which to switch
 }
 
 // ============================================================

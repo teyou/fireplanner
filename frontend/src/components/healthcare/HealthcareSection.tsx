@@ -2,12 +2,13 @@ import { useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { Input } from '@/components/ui/input'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { PercentInput } from '@/components/shared/PercentInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { formatCurrency } from '@/lib/utils'
-import { calculateHealthcareCostAtAge } from '@/lib/calculations/healthcare'
+import { calculateHealthcareCostAtAge, ISP_TIER_ORDER } from '@/lib/calculations/healthcare'
 import type { HealthcareConfig, IspTierOption, OopModel, OopCurveVariant } from '@/lib/types'
 
 const ISP_TIER_OPTIONS: { value: IspTierOption; label: string; description: string }[] = [
@@ -27,12 +28,24 @@ const PREVIEW_AGES = [40, 50, 60, 70, 80, 90]
 export function HealthcareSection() {
   const config = useProfileStore((s) => s.healthcareConfig)
   const retirementAge = useProfileStore((s) => s.retirementAge)
+  const currentAge = useProfileStore((s) => s.currentAge)
   const setField = useProfileStore((s) => s.setField)
   const validationErrors = useProfileStore((s) => s.validationErrors)
 
+  const hasDowngrade = config.ispDowngradeTier !== undefined && config.ispDowngradeAge !== undefined
+
   const updateConfig = useCallback(
     <K extends keyof HealthcareConfig>(key: K, value: HealthcareConfig[K]) => {
-      setField('healthcareConfig', { ...config, [key]: value })
+      const updated = { ...config, [key]: value }
+      // Auto-clear downgrade if primary tier changes to same or lower than downgrade tier
+      if (key === 'ispTier' && updated.ispDowngradeTier !== undefined) {
+        const newTier = value as IspTierOption
+        if (ISP_TIER_ORDER[newTier] <= ISP_TIER_ORDER[updated.ispDowngradeTier]) {
+          updated.ispDowngradeTier = undefined
+          updated.ispDowngradeAge = undefined
+        }
+      }
+      setField('healthcareConfig', updated)
     },
     [config, setField],
   )
@@ -112,6 +125,84 @@ export function HealthcareSection() {
               ))}
             </div>
           </div>
+
+          {/* ISP Tier Downgrade */}
+          {config.ispTier !== 'none' && (
+            <div className="space-y-3 pl-2 border-l-2 border-muted">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm flex items-center gap-1">
+                  ISP Tier Downgrade
+                  <InfoTooltip text="Optionally plan to downgrade your ISP tier at a later age to reduce premiums. Common strategy: Enhanced → Basic at 70 when hospitalization risk is better covered by MediSave." />
+                </Label>
+                <Switch
+                  checked={hasDowngrade}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      // Default to 'none' tier at age 70 (or currentAge + 1 if older)
+                      const defaultAge = Math.max(currentAge + 1, 70)
+                      updateConfig('ispDowngradeTier', 'none')
+                      setField('healthcareConfig', {
+                        ...config,
+                        ispDowngradeTier: 'none',
+                        ispDowngradeAge: defaultAge,
+                      })
+                    } else {
+                      setField('healthcareConfig', {
+                        ...config,
+                        ispDowngradeTier: undefined,
+                        ispDowngradeAge: undefined,
+                      })
+                    }
+                  }}
+                />
+              </div>
+
+              {hasDowngrade && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Downgrade to</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {ISP_TIER_OPTIONS
+                        .filter((opt) => ISP_TIER_ORDER[opt.value] < ISP_TIER_ORDER[config.ispTier])
+                        .map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => updateConfig('ispDowngradeTier', opt.value)}
+                            className={`p-2 rounded-md border text-sm text-left transition-colors ${
+                              config.ispDowngradeTier === opt.value
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-muted hover:border-muted-foreground/30'
+                            }`}
+                          >
+                            <div className="font-medium">{opt.label}</div>
+                            <div className="text-xs text-muted-foreground">{opt.description}</div>
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                      Downgrade at age
+                    </Label>
+                    <Input
+                      type="number"
+                      min={currentAge + 1}
+                      max={120}
+                      value={config.ispDowngradeAge ?? ''}
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value, 10)
+                        if (!isNaN(v)) {
+                          updateConfig('ispDowngradeAge', v)
+                        }
+                      }}
+                      className="w-24 border-blue-300"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* OOP Configuration */}
           <div className="space-y-3">

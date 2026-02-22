@@ -35,6 +35,8 @@ export interface HealthcareConfig {
   oopReferenceAge?: number       // age at which oopBaseAmount is in today's dollars
   oopCurveVariant?: import('@/lib/types').OopCurveVariant  // which age multiplier curve
   mediSaveTopUpAnnual: number
+  ispDowngradeTier?: IspTier     // tier to switch to (must be lower than ispTier)
+  ispDowngradeAge?: number       // age at which to switch
 }
 
 export interface HealthcareCostAtAge {
@@ -69,6 +71,32 @@ export interface HealthcareProjection {
 }
 
 // ============================================================
+// ISP Tier Resolution
+// ============================================================
+
+/** Ordering of ISP tiers from lowest to highest coverage */
+export const ISP_TIER_ORDER: Record<IspTier, number> = { none: 0, basic: 1, standard: 2, enhanced: 3 }
+
+/**
+ * Resolve the effective ISP tier at a given age, accounting for an optional
+ * downgrade configured in the healthcare settings.
+ *
+ * When both `ispDowngradeTier` and `ispDowngradeAge` are defined and the
+ * person's age is at or past the downgrade age, the downgrade tier is used.
+ * Otherwise the primary `ispTier` applies.
+ */
+export function resolveIspTierAtAge(config: HealthcareConfig, age: number): IspTier {
+  if (
+    config.ispDowngradeTier !== undefined &&
+    config.ispDowngradeAge !== undefined &&
+    age >= config.ispDowngradeAge
+  ) {
+    return config.ispDowngradeTier
+  }
+  return config.ispTier
+}
+
+// ============================================================
 // Core Calculation Functions
 // ============================================================
 
@@ -99,10 +127,11 @@ export function calculateHealthcareCostAtAge(
     ? lookupByAge(MEDISHIELD_LIFE_PREMIUMS, age)
     : 0
 
-  // 2. ISP additional premium
+  // 2. ISP additional premium (uses resolved tier for downgrade support)
+  const effectiveTier = resolveIspTierAtAge(config, age)
   let ispAdditionalPremium = 0
-  if (config.ispTier !== 'none') {
-    const tierTable = ISP_ADDITIONAL_PREMIUMS[config.ispTier]
+  if (effectiveTier !== 'none') {
+    const tierTable = ISP_ADDITIONAL_PREMIUMS[effectiveTier]
     ispAdditionalPremium = lookupByAge(tierTable, age)
   }
 
@@ -264,6 +293,56 @@ export function generateHealthcareProjection(
   }
 
   return { rows, lifetimeTotalCost, lifetimeCashOutlay, lifetimeMediSaveUsed }
+}
+
+/**
+ * Calculate the Level Annual Equivalent (LAE) of healthcare costs over retirement.
+ *
+ * The LAE is the constant annual withdrawal from a growing portfolio that would
+ * exactly cover all escalating healthcare cash outlays from retirement to life
+ * expectancy. It replaces the point-in-time snapshot (cost at retirement age)
+ * which underestimates the FIRE target for young retirees with escalating premiums.
+ *
+ * Formula:
+ *   PV  = Sum_{t=0}^{T} cashOutlay(retAge + t) / (1 + r)^t
+ *   AF  = Sum_{t=0}^{T} 1 / (1 + r)^t
+ *   LAE = PV / AF
+ *
+ * @param config Healthcare configuration
+ * @param retirementAge Age at which retirement (and healthcare withdrawals) begin
+ * @param lifeExpectancy Age through which healthcare costs must be covered
+ * @param netRealReturn Net real portfolio return (nominal − inflation − expense ratio)
+ * @returns The level annual healthcare cost to use in FIRE number calculation
+ */
+export function calculateHealthcareLAE(
+  config: HealthcareConfig,
+  retirementAge: number,
+  lifeExpectancy: number,
+  netRealReturn: number,
+): number {
+  if (!config.enabled) return 0
+
+  const T = lifeExpectancy - retirementAge
+  if (T <= 0) {
+    // Retirement at or past life expectancy — just use point-in-time
+    return calculateHealthcareCostAtAge(config, retirementAge).cashOutlay
+  }
+
+  let pv = 0
+  let annuityFactor = 0
+
+  for (let t = 0; t <= T; t++) {
+    const age = retirementAge + t
+    const cashOutlay = calculateHealthcareCostAtAge(config, age).cashOutlay
+    const discountFactor = Math.abs(netRealReturn) < 1e-10
+      ? 1
+      : 1 / Math.pow(1 + netRealReturn, t)
+    pv += cashOutlay * discountFactor
+    annuityFactor += discountFactor
+  }
+
+  if (annuityFactor <= 0) return 0
+  return pv / annuityFactor
 }
 
 /**
