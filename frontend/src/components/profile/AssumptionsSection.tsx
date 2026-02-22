@@ -55,34 +55,36 @@ export function AssumptionsSection() {
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <div className="flex items-center gap-1">
-              <Label className="text-sm">Expected Nominal Return</Label>
-              <InfoTooltip text="Choose 'From Allocation' to automatically compute your expected return from your asset allocation weights, or 'Manual' to enter your own estimate. The derived value updates when you change allocations." />
-            </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1">
+                <Label className="text-sm">Expected Nominal Return</Label>
+                <InfoTooltip text="Choose 'From Allocation' to automatically compute your expected return from your asset allocation weights, or 'Manual' to enter your own estimate. The derived value updates when you change allocations." />
+              </div>
 
-            <div className="inline-flex rounded-md border bg-muted p-0.5 mb-1">
-              <button
-                onClick={() => store.setField('usePortfolioReturn', true)}
-                className={cn(
-                  'rounded px-2.5 py-1 text-xs font-medium transition-colors',
-                  useAuto
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                From Allocation
-              </button>
-              <button
-                onClick={() => store.setField('usePortfolioReturn', false)}
-                className={cn(
-                  'rounded px-2.5 py-1 text-xs font-medium transition-colors',
-                  !useAuto
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                Manual
-              </button>
+              <div className="inline-flex rounded-md border bg-muted p-0.5">
+                <button
+                  onClick={() => store.setField('usePortfolioReturn', true)}
+                  className={cn(
+                    'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                    useAuto
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  From Allocation
+                </button>
+                <button
+                  onClick={() => store.setField('usePortfolioReturn', false)}
+                  className={cn(
+                    'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                    !useAuto
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  Manual
+                </button>
+              </div>
             </div>
 
             <PercentInput
