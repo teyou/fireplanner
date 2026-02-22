@@ -328,18 +328,20 @@ function ExpensesContent() {
       <Separator className="my-2" />
 
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold">Withdrawal Strategy</h3>
-        {mode === 'advanced' && (
+        {mode === 'advanced' ? (
           <button
             onClick={() => setStrategyExpanded(!strategyExpanded)}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-2 text-left"
           >
             {strategyExpanded ? (
-              <>Hide strategies <ChevronUp className="h-4 w-4" /></>
+              <ChevronUp className="h-5 w-5 text-muted-foreground shrink-0" />
             ) : (
-              <>Show withdrawal strategies <ChevronDown className="h-4 w-4" /></>
+              <ChevronDown className="h-5 w-5 text-muted-foreground shrink-0" />
             )}
+            <h3 className="text-xl font-semibold">Withdrawal Strategy</h3>
           </button>
+        ) : (
+          <h3 className="text-xl font-semibold">Withdrawal Strategy</h3>
         )}
       </div>
 
