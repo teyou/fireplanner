@@ -1,5 +1,5 @@
 /**
- * Metadata for the 6 withdrawal strategies.
+ * Metadata for the 12 withdrawal strategies.
  * Used by StrategyComparisonCard for at-a-glance comparison.
  */
 
@@ -125,5 +125,113 @@ export const WITHDRAWAL_STRATEGY_METADATA: StrategyMetadata[] = [
     ],
     bestFor: 'Retirees with clear minimum needs and maximum comfort levels.',
     complexity: 'Low',
+  },
+  {
+    key: 'percent_of_portfolio',
+    label: 'Percent of Portfolio',
+    shortDescription:
+      'Withdraw a fixed percentage of the current portfolio each year. Income rises and falls with the market.',
+    pros: [
+      'Impossible to deplete portfolio',
+      'Simple — one parameter',
+      'Naturally adapts to market conditions',
+    ],
+    cons: [
+      'Income is volatile year to year',
+      'Spending drops sharply in downturns',
+      'No inflation protection guarantee',
+    ],
+    bestFor: 'Retirees with flexible spending who can tolerate income swings.',
+    complexity: 'Low',
+  },
+  {
+    key: 'one_over_n',
+    label: '1/N (Remaining Years)',
+    shortDescription:
+      'Divide portfolio by remaining years of retirement. Withdrawals naturally increase as time shrinks, spending everything by the end.',
+    pros: [
+      'Zero parameters — fully automatic',
+      'Spending increases over time',
+      'Guarantees full portfolio utilisation',
+    ],
+    cons: [
+      'Portfolio reaches zero at life expectancy',
+      'No buffer for longevity risk',
+      'Early years have low withdrawals',
+    ],
+    bestFor: 'Retirees who want to maximize lifetime spending with no bequest goal.',
+    complexity: 'Low',
+  },
+  {
+    key: 'sensible_withdrawals',
+    label: 'Sensible Withdrawals',
+    shortDescription:
+      'Take a base withdrawal plus a share of the previous year\'s investment gains. No penalty in down years — extras only apply to positive gains.',
+    pros: [
+      'Bonus income in good years',
+      'Downside protected — no extra cuts',
+      'Intuitive "share the gains" logic',
+    ],
+    cons: [
+      'Base rate must be conservative',
+      'Income lumpy in volatile markets',
+      'Two parameters to configure',
+    ],
+    bestFor: 'Retirees who want a stable base with upside participation.',
+    complexity: 'Medium',
+  },
+  {
+    key: 'ninety_five_percent',
+    label: '95% Rule',
+    shortDescription:
+      'Withdraw at a target rate, but never less than 95% of last year\'s withdrawal. The floor prevents dramatic income drops during crashes.',
+    pros: [
+      'Limits worst-case income drop to 5%/yr',
+      'Simple floor rule on top of SWR',
+      'Smooths out market volatility',
+    ],
+    cons: [
+      'Floor can accelerate depletion in prolonged downturns',
+      'Ratchet effect may overspend',
+      'Less responsive to portfolio recovery',
+    ],
+    bestFor: 'Retirees who prioritize income stability over portfolio longevity.',
+    complexity: 'Low',
+  },
+  {
+    key: 'endowment',
+    label: 'Endowment (Yale Model)',
+    shortDescription:
+      'Smoothed blend of inflation-adjusted prior withdrawal and market-based target — the approach used by university endowments.',
+    pros: [
+      'Very smooth income transitions',
+      'Proven institutional approach',
+      'Balances inertia with market reality',
+    ],
+    cons: [
+      'Slow to react to big market moves',
+      'Smoothing weight is subjective',
+      'Can lag behind in rapid recovery',
+    ],
+    bestFor: 'Retirees who value income predictability above all else.',
+    complexity: 'Medium',
+  },
+  {
+    key: 'hebeler_autopilot',
+    label: 'Hebeler Autopilot II',
+    shortDescription:
+      '75% inflation-adjusted prior withdrawal + 25% actuarial PMT. Blends spending stability with mathematical precision.',
+    pros: [
+      'Actuarially grounded',
+      'Naturally adjusts as remaining years shrink',
+      'Good balance of stability and adaptability',
+    ],
+    cons: [
+      'Requires understanding of PMT/VPW math',
+      'Blending ratio is fixed at 75/25',
+      'Income can drift from actual needs',
+    ],
+    bestFor: 'Analytically-minded retirees who want a disciplined, auto-adjusting approach.',
+    complexity: 'Medium',
   },
 ]
