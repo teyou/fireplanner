@@ -644,9 +644,9 @@ function SectionModeLink({ sectionId }: { sectionId: SectionId }) {
     return (
       <button
         onClick={() => setSectionMode(config.modeSectionId, 'simple')}
-        className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+        className="ml-7 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
-        &larr; Simplify
+        &larr; Switch to simple view
       </button>
     )
   }
@@ -654,7 +654,7 @@ function SectionModeLink({ sectionId }: { sectionId: SectionId }) {
   return (
     <button
       onClick={() => setSectionMode(config.modeSectionId, 'advanced')}
-      className="text-xs text-muted-foreground hover:text-primary transition-colors"
+      className="ml-7 text-xs text-muted-foreground hover:text-primary transition-colors"
     >
       <span className="hidden sm:inline">Advanced: {config.label}</span>
       <span className="sm:hidden">Advanced</span>
@@ -933,15 +933,13 @@ export function InputsPage() {
                     <p className="text-muted-foreground text-sm">{section.description}</p>
                   </div>
                 </button>
-                <div className="flex items-center gap-3 shrink-0">
-                  {!isCollapsed && <SectionModeLink sectionId={sectionId} />}
-                  {!isCollapsed && (
-                    <Button variant="outline" size="sm" onClick={section.onReset}>
-                      {section.resetLabel}
-                    </Button>
-                  )}
-                </div>
+                {!isCollapsed && (
+                  <Button variant="outline" size="sm" className="shrink-0" onClick={section.onReset}>
+                    {section.resetLabel}
+                  </Button>
+                )}
               </div>
+              {!isCollapsed && <SectionModeLink sectionId={sectionId} />}
               {!isCollapsed && <SectionNudgeWrapper sectionId={sectionId} />}
             </div>
             {!isCollapsed && (
