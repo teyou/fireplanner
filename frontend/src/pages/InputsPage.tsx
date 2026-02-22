@@ -36,6 +36,7 @@ import { ComparisonTable } from '@/components/withdrawal/ComparisonTable'
 import { WithdrawalChart } from '@/components/withdrawal/WithdrawalChart'
 import { PortfolioComparisonChart } from '@/components/withdrawal/PortfolioComparisonChart'
 import { StrategyComparisonCard } from '@/components/withdrawal/StrategyComparisonCard'
+import { WithdrawalPreviewTable } from '@/components/withdrawal/WithdrawalPreviewTable'
 import { RetirementWithdrawalsPanel } from '@/components/withdrawal/RetirementWithdrawalsPanel'
 
 // Healthcare sections
@@ -243,6 +244,7 @@ function IncomeContent() {
 function ExpensesContent() {
   const annualExpenses = useProfileStore((s) => s.annualExpenses)
   const retirementSpendingAdjustment = useProfileStore((s) => s.retirementSpendingAdjustment)
+  const inflation = useProfileStore((s) => s.inflation)
   const setProfileField = useProfileStore((s) => s.setField)
   const expensesError = useProfileStore((s) => s.validationErrors.annualExpenses)
   const adjustmentError = useProfileStore((s) => s.validationErrors.retirementSpendingAdjustment)
@@ -351,6 +353,16 @@ function ExpensesContent() {
           </div>
         </CardContent>
       </Card>
+
+      {results && (
+        <WithdrawalPreviewTable
+          results={results}
+          activeStrategy={activeStrategy}
+          annualExpenses={annualExpenses}
+          retirementSpendingAdjustment={retirementSpendingAdjustment}
+          inflation={inflation}
+        />
+      )}
 
       {mode === 'advanced' && (
         <StrategyComparisonCard
