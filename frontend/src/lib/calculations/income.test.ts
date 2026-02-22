@@ -1487,7 +1487,7 @@ describe('integration tests', () => {
       lifeEventsEnabled: false,
       annualExpenses: 48000,
       inflation: 0,
-      personalReliefs: { earnedIncome: true },
+      personalReliefs: 0,
       srsAnnualContribution: 15300,
       initialCpfOA: 0,
       initialCpfSA: 0,
