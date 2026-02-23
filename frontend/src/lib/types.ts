@@ -360,6 +360,7 @@ export interface AllocationState {
   currentWeights: number[]
   targetWeights: number[]
   selectedTemplate: AllocationTemplate
+  selectedTargetTemplate: AllocationTemplate
   returnOverrides: (number | null)[]
   stdDevOverrides: (number | null)[]
   glidePathConfig: GlidePathConfig

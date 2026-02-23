@@ -21,6 +21,7 @@ export function AllocationBuilder() {
     currentWeights,
     targetWeights,
     selectedTemplate,
+    selectedTargetTemplate,
     validationErrors,
     setCurrentWeights,
     setTargetWeights,
@@ -53,6 +54,11 @@ export function AllocationBuilder() {
     applyTemplate(value as Exclude<AllocationTemplate, 'custom'>)
   }
 
+  function handleTargetTemplateChange(value: string) {
+    if (value === 'custom') return
+    applyTemplate(value as Exclude<AllocationTemplate, 'custom'>, 'target')
+  }
+
   const allTemplates: AllocationTemplate[] = [
     'conservative', 'balanced', 'aggressive', 'allWeather', 'singaporeCentric', 'custom',
   ]
@@ -68,7 +74,7 @@ export function AllocationBuilder() {
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-end gap-4">
           <div className="space-y-1">
-            <Label className="text-sm">Template</Label>
+            <Label className="text-sm">Current Template</Label>
             <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
               <SelectTrigger className="w-52 border-blue-300">
                 <SelectValue />
@@ -80,18 +86,19 @@ export function AllocationBuilder() {
               </SelectContent>
             </Select>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              if (selectedTemplate !== 'custom') {
-                applyTemplate(selectedTemplate as Exclude<AllocationTemplate, 'custom'>, 'target')
-              }
-            }}
-            disabled={selectedTemplate === 'custom'}
-          >
-            Copy to Target
-          </Button>
+          <div className="space-y-1">
+            <Label className="text-sm">Target Template</Label>
+            <Select value={selectedTargetTemplate} onValueChange={handleTargetTemplateChange}>
+              <SelectTrigger className="w-52 border-blue-300">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {allTemplates.map((t) => (
+                  <SelectItem key={t} value={t}>{TEMPLATE_LABELS[t]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="overflow-x-auto">

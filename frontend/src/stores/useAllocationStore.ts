@@ -19,7 +19,7 @@ interface AllocationActions {
 }
 
 const ALLOCATION_DATA_KEYS = [
-  'currentWeights', 'targetWeights', 'selectedTemplate',
+  'currentWeights', 'targetWeights', 'selectedTemplate', 'selectedTargetTemplate',
   'returnOverrides', 'stdDevOverrides', 'glidePathConfig',
 ] as const
 
@@ -27,6 +27,7 @@ const DEFAULT_ALLOCATION: Omit<AllocationState, 'validationErrors'> = {
   currentWeights: [...ALLOCATION_TEMPLATES.balanced],
   targetWeights: [...ALLOCATION_TEMPLATES.conservative],
   selectedTemplate: 'balanced',
+  selectedTargetTemplate: 'conservative',
   returnOverrides: [null, null, null, null, null, null, null, null],
   stdDevOverrides: [null, null, null, null, null, null, null, null],
   glidePathConfig: {
@@ -101,9 +102,10 @@ export const useAllocationStore = create<AllocationState & AllocationActions>()(
       setTargetWeights: (weights) =>
         set((state) => {
           const stateData = extractAllocationData(state)
-          const updated = { ...stateData, targetWeights: weights }
+          const updated = { ...stateData, targetWeights: weights, selectedTargetTemplate: 'custom' as AllocationTemplate }
           return {
             targetWeights: weights,
+            selectedTargetTemplate: 'custom',
             validationErrors: computeValidationErrors(updated),
           }
         }),
@@ -120,9 +122,10 @@ export const useAllocationStore = create<AllocationState & AllocationActions>()(
               validationErrors: computeValidationErrors(updated),
             }
           } else {
-            const updated = { ...stateData, targetWeights: templateWeights }
+            const updated = { ...stateData, targetWeights: templateWeights, selectedTargetTemplate: template }
             return {
               targetWeights: templateWeights,
+              selectedTargetTemplate: template,
               validationErrors: computeValidationErrors(updated),
             }
           }
@@ -180,7 +183,7 @@ export const useAllocationStore = create<AllocationState & AllocationActions>()(
     }),
     {
       name: 'fireplanner-allocation',
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -208,6 +211,12 @@ export const useAllocationStore = create<AllocationState & AllocationActions>()(
           }
           state.currentWeights = zeroOutCpf(state.currentWeights)
           state.targetWeights = zeroOutCpf(state.targetWeights)
+        }
+        if (version < 3) {
+          // Add selectedTargetTemplate for existing users
+          if (!state.selectedTargetTemplate) {
+            state.selectedTargetTemplate = 'custom'
+          }
         }
         return state
       },
