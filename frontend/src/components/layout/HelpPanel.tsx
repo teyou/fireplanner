@@ -86,7 +86,7 @@ export function HelpPanel({ mobile = false }: { mobile?: boolean }) {
       <div className="flex flex-col w-full">
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-3">
           {faqItems.length > 0 ? (
-            <Accordion type="multiple" className="w-full">
+            <Accordion key={contentKey} type="multiple" className="w-full">
               {faqItems.map((item, i) => (
                 <AccordionItem key={`${contentKey}-${i}`} value={`faq-${i}`}>
                   <AccordionTrigger className="text-sm text-left">
@@ -167,7 +167,7 @@ export function HelpPanel({ mobile = false }: { mobile?: boolean }) {
         {/* Scrollable content */}
         <div className={cn('flex-1 overflow-y-auto overflow-x-hidden px-4 py-3', needsBottomPad && 'pb-12')}>
           {faqItems.length > 0 ? (
-            <Accordion type="multiple" className="w-full">
+            <Accordion key={contentKey} type="multiple" className="w-full">
               {faqItems.map((item, i) => (
                 <AccordionItem key={`${contentKey}-${i}`} value={`faq-${i}`}>
                   <AccordionTrigger className="text-sm text-left">
