@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import {
   useReactTable,
@@ -74,17 +74,84 @@ function optionalCurrencyCell(value: number): string {
 export function ProjectionPage() {
   const { rows, summary, hasErrors } = useProjection()
   const retirementAge = useProfileStore((s) => s.retirementAge)
+  const currentAge = useProfileStore((s) => s.currentAge)
+  const inflation = useProfileStore((s) => s.inflation)
   const srsBalance = useProfileStore((s) => s.srsBalance)
   const srsAnnualContribution = useProfileStore((s) => s.srsAnnualContribution)
   const hasSrs = srsBalance > 0 || srsAnnualContribution > 0
   const activeStrategy = useSimulationStore((s) => s.selectedStrategy)
   const setSimField = useSimulationStore((s) => s.setField)
 
+  const dollarBasis = useUIStore((s) => s.dollarBasis)
+  const setUIField = useUIStore((s) => s.setField)
+
   const [viewMode, setViewMode] = useState<'table' | 'chart'>('table')
   const [activeGroups, setActiveGroups] = useState<Set<ColumnGroup>>(new Set())
 
   const mode = useEffectiveMode('section-projection')
   const setSectionMode = useUIStore((s) => s.setSectionMode)
+
+  // Deflate a nominal value to today's dollars: value / (1 + inflation)^year
+  const deflate = useCallback(
+    (value: number, year: number) =>
+      dollarBasis === 'real' ? value / Math.pow(1 + inflation, year) : value,
+    [dollarBasis, inflation],
+  )
+
+  // Pre-deflate all monetary fields so table, chart, and summary use consistent values
+  const displayRows = useMemo(() => {
+    if (!rows || dollarBasis === 'nominal') return rows
+    return rows.map((row) => {
+      const d = (v: number) => deflate(v, row.year)
+      return {
+        ...row,
+        totalIncome: d(row.totalIncome),
+        annualExpenses: d(row.annualExpenses),
+        savingsOrWithdrawal: d(row.savingsOrWithdrawal),
+        portfolioReturnDollar: d(row.portfolioReturnDollar),
+        liquidNW: d(row.liquidNW),
+        cpfTotal: d(row.cpfTotal),
+        totalNW: d(row.totalNW),
+        salary: d(row.salary),
+        rentalIncome: d(row.rentalIncome),
+        investmentIncome: d(row.investmentIncome),
+        businessIncome: d(row.businessIncome),
+        governmentIncome: d(row.governmentIncome),
+        srsWithdrawal: d(row.srsWithdrawal),
+        totalGross: d(row.totalGross),
+        sgTax: d(row.sgTax),
+        cpfEmployee: d(row.cpfEmployee),
+        cpfEmployer: d(row.cpfEmployer),
+        totalNet: d(row.totalNet),
+        cpfOA: d(row.cpfOA),
+        cpfSA: d(row.cpfSA),
+        cpfMA: d(row.cpfMA),
+        cpfRA: d(row.cpfRA),
+        withdrawalAmount: d(row.withdrawalAmount),
+        maxPermittedWithdrawal: d(row.maxPermittedWithdrawal),
+        withdrawalExcess: d(row.withdrawalExcess),
+        propertyEquity: d(row.propertyEquity),
+        totalNWIncProperty: d(row.totalNWIncProperty),
+        baseInflatedExpenses: d(row.baseInflatedExpenses),
+        parentSupportExpense: d(row.parentSupportExpense),
+        healthcareCashOutlay: d(row.healthcareCashOutlay),
+        mortgageCashPayment: d(row.mortgageCashPayment),
+        downsizingRentExpense: d(row.downsizingRentExpense),
+        cumulativeSavings: d(row.cumulativeSavings),
+      }
+    })
+  }, [rows, dollarBasis, deflate])
+
+  const displaySummary = useMemo(() => {
+    if (!summary || dollarBasis === 'nominal') return summary
+    const yearOf = (age: number) => age - currentAge
+    return {
+      ...summary,
+      peakTotalNW: deflate(summary.peakTotalNW, yearOf(summary.peakTotalNWAge)),
+      terminalLiquidNW: deflate(summary.terminalLiquidNW, rows ? rows.length - 1 : 0),
+      terminalTotalNW: deflate(summary.terminalTotalNW, rows ? rows.length - 1 : 0),
+    }
+  }, [summary, dollarBasis, deflate, currentAge, rows])
 
   useEffect(() => {
     if (mode === 'advanced') {
@@ -319,14 +386,14 @@ export function ProjectionPage() {
   ] as ColumnDef<ProjectionRow, number | string>[], [])
 
   const table = useReactTable({
-    data: rows ?? [],
+    data: displayRows ?? [],
     columns,
     getCoreRowModel: getCoreRowModel(),
     state: { columnVisibility },
   })
 
   // Identify special rows
-  const fireAchievedAge = summary?.fireAchievedAge ?? null
+  const fireAchievedAge = displaySummary?.fireAchievedAge ?? null
 
   const renderTable = (containerClass: string) => (
     <div className={cn('border rounded-md overflow-auto', containerClass)}>
@@ -410,6 +477,10 @@ export function ProjectionPage() {
             <p className="text-muted-foreground text-sm">
               Deterministic trajectory showing income, portfolio growth, and FIRE progress.
               Verify your inputs produce sensible numbers before running Monte Carlo analysis.
+              {' '}
+              <span className="font-medium">
+                {dollarBasis === 'real' ? "All values in today's dollars." : 'All values in future (nominal) dollars.'}
+              </span>
             </p>
           </div>
           <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/30 shrink-0 mt-1">
@@ -477,7 +548,7 @@ export function ProjectionPage() {
         </div>
       )}
 
-      {summary && (
+      {displaySummary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
@@ -487,7 +558,7 @@ export function ProjectionPage() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">
-                {summary.fireAchievedAge !== null ? `Age ${summary.fireAchievedAge}` : 'Not reached'}
+                {displaySummary.fireAchievedAge !== null ? `Age ${displaySummary.fireAchievedAge}` : 'Not reached'}
               </p>
             </CardContent>
           </Card>
@@ -499,8 +570,8 @@ export function ProjectionPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{formatCurrency(summary.peakTotalNW)}</p>
-              <p className="text-xs text-muted-foreground">at age {summary.peakTotalNWAge}</p>
+              <p className="text-2xl font-bold">{formatCurrency(displaySummary.peakTotalNW)}</p>
+              <p className="text-xs text-muted-foreground">at age {displaySummary.peakTotalNWAge}</p>
             </CardContent>
           </Card>
 
@@ -511,9 +582,9 @@ export function ProjectionPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{formatCurrency(summary.terminalTotalNW)}</p>
+              <p className="text-2xl font-bold">{formatCurrency(displaySummary.terminalTotalNW)}</p>
               <p className="text-xs text-muted-foreground">
-                Liquid: {formatCurrency(summary.terminalLiquidNW)}
+                Liquid: {formatCurrency(displaySummary.terminalLiquidNW)}
               </p>
             </CardContent>
           </Card>
@@ -527,17 +598,17 @@ export function ProjectionPage() {
             <CardContent>
               <p className={cn(
                 'text-2xl font-bold',
-                summary.portfolioDepletedAge !== null && 'text-destructive',
+                displaySummary.portfolioDepletedAge !== null && 'text-destructive',
               )}>
-                {summary.portfolioDepletedAge !== null ? `Age ${summary.portfolioDepletedAge}` : 'Never'}
+                {displaySummary.portfolioDepletedAge !== null ? `Age ${displaySummary.portfolioDepletedAge}` : 'Never'}
               </p>
             </CardContent>
           </Card>
         </div>
       )}
 
-      {summary && (() => {
-        const { fireAchievedAge, peakTotalNW, peakTotalNWAge, portfolioDepletedAge, terminalTotalNW } = summary
+      {displaySummary && (() => {
+        const { fireAchievedAge, peakTotalNW, peakTotalNWAge, portfolioDepletedAge, terminalTotalNW } = displaySummary
         const depleted = portfolioDepletedAge !== null
 
         let narrative: string
@@ -563,7 +634,7 @@ export function ProjectionPage() {
         )
       })()}
 
-      {rows && rows.length > 0 && (
+      {displayRows && displayRows.length > 0 && (
         <>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
@@ -586,6 +657,32 @@ export function ProjectionPage() {
                 }`}
               >
                 <BarChart3 className="h-3.5 w-3.5" /> Chart
+              </button>
+            </div>
+            <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+              <button
+                onClick={() => setUIField('dollarBasis', 'real')}
+                className={cn(
+                  'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+                  dollarBasis === 'real'
+                    ? 'bg-background shadow-sm text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+                title="Show values in today's purchasing power"
+              >
+                Real $
+              </button>
+              <button
+                onClick={() => setUIField('dollarBasis', 'nominal')}
+                className={cn(
+                  'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+                  dollarBasis === 'nominal'
+                    ? 'bg-background shadow-sm text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+                title="Show actual future dollar amounts"
+              >
+                Nominal $
               </button>
             </div>
             {viewMode === 'table' && (
@@ -615,7 +712,7 @@ export function ProjectionPage() {
           </div>
 
           {viewMode === 'chart' ? (
-            <NWChartView rows={rows} retirementAge={retirementAge} />
+            <NWChartView rows={displayRows} retirementAge={retirementAge} />
           ) : (
           <>
           <p className="text-xs text-muted-foreground md:hidden">Tap toggles to show more columns</p>

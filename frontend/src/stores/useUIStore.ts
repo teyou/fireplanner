@@ -4,6 +4,8 @@ import { persist } from 'zustand/middleware'
 type SectionOrder = 'goal-first' | 'story-first' | 'already-fire'
 type StatsPosition = 'bottom' | 'top'
 
+type DollarBasis = 'real' | 'nominal'
+
 interface UIState {
   sectionOrder: SectionOrder
   statsPosition: StatsPosition
@@ -14,6 +16,7 @@ interface UIState {
   sectionOverrides: Partial<Record<string, 'simple' | 'advanced'>>
   dismissedNudges: string[]
   helpPanelOpen: boolean
+  dollarBasis: DollarBasis
 }
 
 interface UIActions {
@@ -34,6 +37,7 @@ const DEFAULT_UI: UIState = {
   sectionOverrides: {},
   dismissedNudges: [],
   helpPanelOpen: true,
+  dollarBasis: 'real',
 }
 
 export const useUIStore = create<UIState & UIActions>()(
@@ -67,7 +71,7 @@ export const useUIStore = create<UIState & UIActions>()(
     }),
     {
       name: 'fireplanner-ui',
-      version: 5,
+      version: 6,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -90,6 +94,9 @@ export const useUIStore = create<UIState & UIActions>()(
         }
         if (version < 5) {
           state.helpPanelOpen = false
+        }
+        if (version < 6) {
+          state.dollarBasis = 'real'
         }
         return state
       },
