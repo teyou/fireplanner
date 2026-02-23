@@ -70,7 +70,7 @@ export function HelpPanel({ mobile = false }: { mobile?: boolean }) {
   if (mobile) {
     return (
       <div className="flex flex-col w-full">
-        <div className="flex-1 overflow-y-auto px-4 py-3">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-3">
           {faqItems.length > 0 ? (
             <Accordion type="multiple" className="w-full">
               {faqItems.map((item, i) => (
@@ -151,7 +151,7 @@ export function HelpPanel({ mobile = false }: { mobile?: boolean }) {
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-4 py-3">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-3">
           {faqItems.length > 0 ? (
             <Accordion type="multiple" className="w-full">
               {faqItems.map((item, i) => (
