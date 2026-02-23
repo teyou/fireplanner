@@ -116,6 +116,40 @@ export function calculateParentSupportAtAge(entries: ParentSupport[], age: numbe
   return total
 }
 
+/**
+ * Project year-by-year net worth from current age to life expectancy.
+ * Accumulation phase: balance grows via savings + returns.
+ * Decumulation phase: balance shrinks via expense withdrawals.
+ * Phase switches when balance >= fireNumber.
+ */
+export function projectNetWorthPath(params: {
+  currentAge: number
+  annualSavings: number
+  currentNW: number
+  realReturn: number
+  annualExpenses: number
+  fireNumber: number
+  lifeExpectancy?: number
+}): { age: number; balance: number; phase: 'accumulation' | 'decumulation' }[] {
+  const { currentAge, annualSavings, currentNW, realReturn, annualExpenses, fireNumber, lifeExpectancy = 90 } = params
+  const path: { age: number; balance: number; phase: 'accumulation' | 'decumulation' }[] = []
+  let balance = currentNW
+  let phase: 'accumulation' | 'decumulation' = currentNW >= fireNumber ? 'decumulation' : 'accumulation'
+
+  for (let age = currentAge; age <= lifeExpectancy; age++) {
+    path.push({ age, balance: Math.max(0, balance), phase })
+    if (phase === 'accumulation') {
+      balance = balance * (1 + realReturn) + annualSavings
+      if (balance >= fireNumber) phase = 'decumulation'
+    } else {
+      balance = balance * (1 + realReturn) - annualExpenses
+      if (balance <= 0) balance = 0
+    }
+  }
+
+  return path
+}
+
 /** Progress toward FIRE target: NW / fireNumber (0 to 1+) */
 export function calculateProgress(currentNW: number, fireNumber: number): number {
   if (fireNumber <= 0) return 0

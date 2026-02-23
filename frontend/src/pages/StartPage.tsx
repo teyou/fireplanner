@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useUIStore } from '@/stores/useUIStore'
-import { calculateFireNumber, calculateYearsToFire } from '@/lib/calculations/fire'
+import { calculateFireNumber, calculateYearsToFire, projectNetWorthPath } from '@/lib/calculations/fire'
 import { Target, TrendingUp, CheckCircle, Clock, CalendarClock, Landmark, ArrowRight, Building, Heart } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
+import { QuickProjectionChart } from '@/components/shared/QuickProjectionChart'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { Label } from '@/components/ui/label'
@@ -83,6 +84,16 @@ export function StartPage() {
   const draftFireAge = draftAge + Math.ceil(draftYearsToFire)
   const draftSavingsRate = draftIncome > 0 ? draftAnnualSavings / draftIncome : 0
   const draftProgress = draftFireNumber > 0 ? Math.min(1, draftNetWorth / draftFireNumber) : 0
+
+  // Year-by-year projection for the chart
+  const draftProjection = projectNetWorthPath({
+    currentAge: draftAge,
+    annualSavings: draftAnnualSavings,
+    currentNW: draftNetWorth,
+    realReturn: draftNetRealReturn,
+    annualExpenses: draftExpenses,
+    fireNumber: draftFireNumber,
+  })
 
   // Show results when inputs are filled and valid
   const showResults = draftAge >= 18 && draftIncome > 0 && draftExpenses > 0
@@ -311,7 +322,7 @@ export function StartPage() {
                 tooltip="Cash, savings, stocks, bonds, and other investments — excluding CPF and property"
               />
             </div>
-            {showResults && <QuickResults fireNumber={draftFireNumber} yearsToFire={draftYearsToFire} fireAge={draftFireAge} savingsRate={draftSavingsRate} progress={draftProgress} />}
+            {showResults && <QuickResults fireNumber={draftFireNumber} yearsToFire={draftYearsToFire} fireAge={draftFireAge} savingsRate={draftSavingsRate} progress={draftProgress} projection={draftProjection} />}
             {sectionToggles}
             <div className="flex justify-end">
               <Button
@@ -364,7 +375,7 @@ export function StartPage() {
                 tooltip="Cash, savings, stocks, bonds, and other investments — excluding CPF and property"
               />
             </div>
-            {showResults && <QuickResults fireNumber={draftFireNumber} yearsToFire={draftYearsToFire} fireAge={draftFireAge} savingsRate={draftSavingsRate} progress={draftProgress} />}
+            {showResults && <QuickResults fireNumber={draftFireNumber} yearsToFire={draftYearsToFire} fireAge={draftFireAge} savingsRate={draftSavingsRate} progress={draftProgress} projection={draftProjection} />}
             {sectionToggles}
             <div className="flex justify-end">
               <Button
@@ -484,12 +495,14 @@ function QuickResults({
   fireAge,
   savingsRate,
   progress,
+  projection,
 }: {
   fireNumber: number
   yearsToFire: number
   fireAge: number
   savingsRate: number
   progress: number
+  projection: { age: number; balance: number; phase: 'accumulation' | 'decumulation' }[]
 }) {
   const pct = (progress * 100).toFixed(1)
   return (
@@ -534,6 +547,9 @@ function QuickResults({
         </div>
         <span className="text-xs text-muted-foreground whitespace-nowrap">{pct}%</span>
       </div>
+
+      {/* Net worth projection chart */}
+      <QuickProjectionChart data={projection} fireNumber={fireNumber} fireAge={fireAge} />
 
       {/* Disclaimer as tooltip on badge */}
       <TooltipProvider delayDuration={0}>
