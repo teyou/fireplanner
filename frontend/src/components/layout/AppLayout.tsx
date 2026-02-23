@@ -78,7 +78,7 @@ export function AppLayout() {
               showStats && isBottom && 'pb-24 md:pb-10'
             )}
           >
-            <div className="container py-6 max-w-6xl">
+            <div className="@container container py-6 max-w-6xl">
               <Outlet />
             </div>
             <footer className="container max-w-6xl pb-6 px-6">
@@ -106,7 +106,7 @@ export function AppLayout() {
               <SheetHeader>
                 <SheetTitle>Help</SheetTitle>
               </SheetHeader>
-              <HelpPanel />
+              <HelpPanel mobile />
             </SheetContent>
           </Sheet>
         </div>

@@ -226,7 +226,7 @@ export function StartPage() {
       </div>
 
       {/* Pathway cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-4">
         {pathwayCards.map(({ key, label, description, icon: Icon }, index) => (
           <button
             key={key}
@@ -266,7 +266,7 @@ export function StartPage() {
             <CardTitle className="text-lg">{PATHWAY_TITLES['goal-first']}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 @md:grid-cols-2 @xl:grid-cols-3 gap-4">
               <div className="flex flex-col gap-1">
                 <Label className="text-sm">Current Age</Label>
                 <NumberInput
@@ -333,7 +333,7 @@ export function StartPage() {
             <CardTitle className="text-lg">{PATHWAY_TITLES['story-first']}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 @md:grid-cols-2 @2xl:grid-cols-4 gap-4">
               <div className="flex flex-col gap-1">
                 <Label className="text-sm">Current Age</Label>
                 <NumberInput
@@ -387,7 +387,7 @@ export function StartPage() {
               <CardTitle className="text-lg">{PATHWAY_TITLES['already-fire']}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 @md:grid-cols-2 @2xl:grid-cols-4 gap-4">
                 <div className="flex flex-col gap-1">
                   <Label className="text-sm">Current Age</Label>
                   <NumberInput
@@ -406,10 +406,10 @@ export function StartPage() {
                   tooltip="Total annual income before tax and CPF"
                 />
                 <CurrencyInput
-                  label="Annual Expenses"
+                  label="Annual Expenses (excl. healthcare & mortgage)"
                   value={draftExpenses}
                   onChange={setDraftExpenses}
-                  tooltip="Total annual spending excluding healthcare insurance and mortgage payments — those are modelled separately."
+                  tooltip="Healthcare insurance and mortgage payments are modelled separately in their own sections."
                 />
                 <CurrencyInput
                   label="Savings & Investments"
@@ -429,7 +429,7 @@ export function StartPage() {
                 This determines which CPF inputs are relevant for you.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-4">
               {PHASE_CARDS.map(({ phase, label, description, icon: Icon }, index) => (
                 <button
                   key={phase}

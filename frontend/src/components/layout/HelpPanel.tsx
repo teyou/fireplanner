@@ -12,7 +12,7 @@ const DEFAULT_WIDTH = 380
 const MIN_WIDTH = 280
 const MAX_WIDTH = 600
 
-export function HelpPanel() {
+export function HelpPanel({ mobile = false }: { mobile?: boolean }) {
   const { pathname } = useLocation()
   const { activeSection } = useActiveSection()
   const toggleHelpPanel = useUIStore((s) => s.toggleHelpPanel)
@@ -63,6 +63,56 @@ export function HelpPanel() {
       window.removeEventListener('mouseup', onMouseUp)
     }
   }, [])
+
+  if (mobile) {
+    return (
+      <div className="flex flex-col w-full">
+        <div className="flex-1 overflow-y-auto px-4 py-3">
+          {faqItems.length > 0 ? (
+            <Accordion type="multiple" className="w-full">
+              {faqItems.map((item, i) => (
+                <AccordionItem key={`${contentKey}-${i}`} value={`faq-${i}`}>
+                  <AccordionTrigger className="text-sm text-left">
+                    {item.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm text-muted-foreground leading-relaxed">
+                    {item.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          ) : (
+            <p className="text-sm text-muted-foreground">No help content for this page.</p>
+          )}
+
+          {/* Data Sources */}
+          {sources.length > 0 && (
+            <div className="mt-6 pt-4 border-t">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                Data Sources
+              </h3>
+              <ul className="space-y-1.5">
+                {sources.map((src, i) => (
+                  <li key={i} className="text-xs text-muted-foreground">
+                    <a
+                      href={src.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+                    >
+                      {src.name}
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                    <span className="ml-1 text-muted-foreground/60">({src.period})</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div
