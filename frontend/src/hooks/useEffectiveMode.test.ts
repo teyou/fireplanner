@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
-import { useEffectiveMode, type ModeSectionId } from './useEffectiveMode'
+import { useEffectiveMode } from './useEffectiveMode'
 import { useUIStore } from '@/stores/useUIStore'
 
 describe('useEffectiveMode', () => {

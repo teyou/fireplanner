@@ -18,7 +18,7 @@ import { cn, formatCurrency, formatPercent } from '@/lib/utils'
 
 export function CpfSection() {
   const {
-    currentAge, retirementAge, annualIncome, cpfOA, cpfSA, cpfMA, cpfRA,
+    currentAge, annualIncome, cpfOA, cpfSA, cpfMA, cpfRA,
     cpfLifeStartAge, cpfLifePlan, cpfRetirementSum,
     lifeStage, retirementPhase, cpfLifeActualMonthlyPayout,
     validationErrors, setField,

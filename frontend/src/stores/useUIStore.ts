@@ -38,7 +38,7 @@ const DEFAULT_UI: UIState = {
 
 export const useUIStore = create<UIState & UIActions>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       ...DEFAULT_UI,
 
       setField: (field, value) => {
