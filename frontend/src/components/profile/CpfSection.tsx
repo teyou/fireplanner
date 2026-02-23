@@ -11,7 +11,7 @@ import { useIncomeProjection } from '@/hooks/useIncomeProjection'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { calculateCpfContribution, calculateBrsFrsErs, estimateCpfLifePayout, calculateCpfLifePayoutAtAge, getRetirementSumAmount } from '@/lib/calculations/cpf'
 import type { CpfLifePlan, CpfRetirementSum } from '@/lib/types'
-import { getCpfRatesForAge, BRS_2024, FRS_2024, ERS_2024 } from '@/lib/data/cpfRates'
+import { getCpfRatesForAge, BRS_2024, FRS_2024, ERS_2024, SA_INTEREST_RATE } from '@/lib/data/cpfRates'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { CpfProjectionTable } from '@/components/cpf/CpfProjectionTable'
 import { cn, formatCurrency, formatPercent } from '@/lib/utils'
@@ -39,9 +39,7 @@ export function CpfSection() {
     (s) => s.type === 'government' && s.isActive && s.name.toLowerCase().includes('cpf life')
   )
 
-  // Projected payout
   const retirementSumAmount = getRetirementSumAmount(cpfRetirementSum, currentAge)
-  const projectedPayout = calculateCpfLifePayoutAtAge(retirementSumAmount, cpfLifePlan, cpfLifeStartAge, cpfLifeStartAge)
 
   // 3x3 payout grid: 3 plans x 3 retirement sums
   const plans: { key: CpfLifePlan; label: string; note: string }[] = [
@@ -59,6 +57,20 @@ export function CpfSection() {
 
   // Project SA at 55 to check if user can reach selected retirement sum
   const { projection } = useIncomeProjection()
+
+  // RA earns 4% interest from age 55 until CPF LIFE starts — must compound to get realistic payout
+  const raGrowthFactor = Math.pow(1 + SA_INTEREST_RATE, Math.max(0, cpfLifeStartAge - 55))
+
+  // Projected payout: prefer actual projection (accounts for interest, contributions, extra interest)
+  const projectedPayout = (() => {
+    if (projection) {
+      const row = projection.find((r) => r.age === cpfLifeStartAge)
+      if (row && row.cpfLifePayout > 0) return row.cpfLifePayout
+    }
+    // Fallback: compound retirement sum at 4% from 55 to CPF LIFE start age
+    return calculateCpfLifePayoutAtAge(retirementSumAmount * raGrowthFactor, cpfLifePlan, cpfLifeStartAge, cpfLifeStartAge)
+  })()
+
   const retirementSumShortfall = useMemo(() => {
     // Only relevant for pre-55 users
     if (currentAge >= 55) return null
@@ -331,7 +343,7 @@ export function CpfSection() {
         <div>
           <h4 className="text-sm font-medium flex items-center mb-2">
             CPF LIFE Monthly Payouts (from age {cpfLifeStartAge})
-            <InfoTooltip text="Estimated monthly payouts based on projected retirement sums at 55. Basic: higher bequest. Standard: higher payout. Escalating: starts lower, increases 2%/yr to hedge inflation." />
+            <InfoTooltip text={`Estimated monthly payouts based on retirement sums compounded at ${SA_INTEREST_RATE * 100}% RA interest from age 55 to ${cpfLifeStartAge}. Basic: higher bequest. Standard: higher payout. Escalating: starts lower, increases 2%/yr to hedge inflation.`} />
           </h4>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -347,13 +359,15 @@ export function CpfSection() {
                 </tr>
               </thead>
               <tbody>
-                {sums.map((s) => (
+                {sums.map((s) => {
+                  const compoundedSum = s.value * raGrowthFactor
+                  return (
                   <tr key={s.key} className="border-t border-border/50">
                     <td className="p-1.5 text-muted-foreground">
-                      {s.label} ({formatCurrency(s.value)})
+                      {s.label} ({formatCurrency(compoundedSum)})
                     </td>
                     {plans.map((p) => {
-                      const annual = estimateCpfLifePayout(s.value, p.key)
+                      const annual = estimateCpfLifePayout(compoundedSum, p.key)
                       const isSelected = s.key === cpfRetirementSum && p.key === cpfLifePlan
                       return (
                         <td
@@ -365,7 +379,8 @@ export function CpfSection() {
                       )
                     })}
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
