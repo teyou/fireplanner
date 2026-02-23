@@ -70,7 +70,7 @@ export function AppLayout() {
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {showStats && isTop && <FireStatsStrip position="top" />}
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-1 min-h-0 relative">
           <main
             className={cn(
               'flex-1 min-w-0 h-full overflow-auto',

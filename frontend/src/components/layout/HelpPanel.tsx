@@ -4,6 +4,8 @@ import { X, ExternalLink, GripVertical } from 'lucide-react'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/stores/useUIStore'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { cn } from '@/lib/utils'
 import { useActiveSection } from '@/hooks/useActiveSection'
 import { HELP_FAQ } from '@/lib/data/helpContent'
 import { getSourcesForRoute } from '@/lib/data/sources'
@@ -16,6 +18,7 @@ export function HelpPanel({ mobile = false }: { mobile?: boolean }) {
   const { pathname } = useLocation()
   const { activeSection } = useActiveSection()
   const toggleHelpPanel = useUIStore((s) => s.toggleHelpPanel)
+  const isOverlay = useMediaQuery('(max-width: 1100px)')
   const [width, setWidth] = useState(DEFAULT_WIDTH)
   const isDragging = useRef(false)
   const startX = useRef(0)
@@ -116,7 +119,12 @@ export function HelpPanel({ mobile = false }: { mobile?: boolean }) {
 
   return (
     <div
-      className="h-full flex shrink-0"
+      className={cn(
+        'h-full flex',
+        isOverlay
+          ? 'absolute right-0 top-0 z-20 shadow-[-4px_0_16px_rgba(0,0,0,0.1)]'
+          : 'shrink-0'
+      )}
       style={{ width }}
     >
       {/* Drag handle */}
@@ -128,7 +136,7 @@ export function HelpPanel({ mobile = false }: { mobile?: boolean }) {
       </div>
 
       {/* Panel content */}
-      <div className="flex-1 min-w-0 h-full flex flex-col bg-muted/30">
+      <div className={cn('flex-1 min-w-0 h-full flex flex-col', isOverlay ? 'bg-background' : 'bg-muted/30')}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
           <div className="min-w-0">
