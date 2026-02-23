@@ -201,26 +201,35 @@ describe('runBacktest', () => {
   // Datasets
   // ---------------------------------------------------------------------------
 
-  it('works with sg_only dataset', () => {
+  it('works with sg_only dataset and starts from 1988', () => {
     const result = runBacktest({ ...PARAMS, dataset: 'sg_only' })
     expect(result.results.length).toBeGreaterThan(0)
-    // SG data starts later so fewer periods than us_only
+    // SG equity data starts in 1988, so far fewer periods than us_only
     const usResult = runBacktest(PARAMS)
-    expect(result.results.length).toBeLessThanOrEqual(usResult.results.length)
+    expect(result.results.length).toBeLessThan(usResult.results.length)
+    // First period must start from 1988 (first year with STI data)
+    expect(result.results[0].start_year).toBe(1988)
   })
 
-  it('works with blended dataset', () => {
+  it('works with blended dataset and starts from 1988', () => {
     const result = runBacktest({ ...PARAMS, dataset: 'blended' })
     expect(result.results.length).toBeGreaterThan(0)
+    // Blended also uses SG data, so periods start from 1988
+    expect(result.results[0].start_year).toBe(1988)
   })
 
-  it('blended dataset with blendRatio=1.0 produces same results as us_only', () => {
+  it('blended dataset with blendRatio=1.0 matches us_only for overlapping periods', () => {
     const blended = runBacktest({ ...PARAMS, dataset: 'blended', blendRatio: 1.0 })
     const usOnly = runBacktest(PARAMS)
-    // Same number of periods
-    expect(blended.results.length).toBe(usOnly.results.length)
-    // Success rates should match (same effective returns)
-    expect(blended.summary.success_rate).toBeCloseTo(usOnly.summary.success_rate, 2)
+    // Blended has fewer periods (restricted to SG data availability)
+    expect(blended.results.length).toBeLessThan(usOnly.results.length)
+    // For overlapping start years, results should match (blendRatio=1.0 means 100% US returns)
+    const usOverlap = usOnly.results.filter(r => r.start_year >= 1988)
+    expect(blended.results.length).toBe(usOverlap.length)
+    for (let i = 0; i < blended.results.length; i++) {
+      expect(blended.results[i].start_year).toBe(usOverlap[i].start_year)
+      expect(blended.results[i].ending_balance).toBeCloseTo(usOverlap[i].ending_balance, 0)
+    }
   })
 
   // ---------------------------------------------------------------------------

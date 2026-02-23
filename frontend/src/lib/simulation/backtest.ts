@@ -85,7 +85,12 @@ function getPortfolioReturns(
   const inflationRates: (number | null)[] = []
   const years: number[] = []
 
+  const needsSg = dataset === 'sg_only' || dataset === 'blended'
+
   for (const row of HISTORICAL_RETURNS) {
+    // Skip years where SG equity data is missing when the dataset uses it
+    if (needsSg && row.sgEquities === null) continue
+
     // Collect the 8 raw returns (default null → 0 for computation purposes)
     const raw: number[] = ASSET_COLUMNS.map((col) => {
       const v = row[col]
