@@ -1,12 +1,15 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Toaster } from 'sonner'
+import { HelpCircle } from 'lucide-react'
 import { Sidebar } from './Sidebar'
 import { FireStatsStrip } from './FireStatsStrip'
 import { SaveIndicator } from './SaveIndicator'
 import { HelpPanel } from './HelpPanel'
 import { PlanUrlHandler } from '@/components/shared/PlanUrlHandler'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/stores/useUIStore'
 import { cn } from '@/lib/utils'
 import { tryUndo } from '@/lib/undo'
@@ -14,10 +17,24 @@ import { tryUndo } from '@/lib/undo'
 // Pages that show the stats strip (inputs and analysis pages, not start/reference)
 const STATS_ROUTES = ['/inputs', '/projection', '/stress-test', '/dashboard']
 
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : true
+  )
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 768px)')
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    mql.addEventListener('change', handler)
+    return () => mql.removeEventListener('change', handler)
+  }, [])
+  return isDesktop
+}
+
 export function AppLayout() {
   const statsPosition = useUIStore((s) => s.statsPosition)
   const helpPanelOpen = useUIStore((s) => s.helpPanelOpen)
   const location = useLocation()
+  const isDesktop = useIsDesktop()
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -77,7 +94,7 @@ export function AppLayout() {
               </footer>
             </main>
           </ResizablePanel>
-          {helpPanelOpen && (
+          {isDesktop && helpPanelOpen && (
             <>
               <ResizableHandle withHandle />
               <ResizablePanel id="help" defaultSize={30} minSize={20} maxSize={50}>
@@ -88,6 +105,25 @@ export function AppLayout() {
         </ResizablePanelGroup>
         {showStats && isBottom && <FireStatsStrip position="bottom" />}
       </div>
+
+      {/* Mobile help button + bottom sheet */}
+      {!isDesktop && (
+        <div className="fixed bottom-16 right-4 z-40 md:hidden">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button size="icon" className="rounded-full shadow-lg h-10 w-10">
+                <HelpCircle className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[70vh] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Help</SheetTitle>
+              </SheetHeader>
+              <HelpPanel />
+            </SheetContent>
+          </Sheet>
+        </div>
+      )}
     </div>
   )
 }
