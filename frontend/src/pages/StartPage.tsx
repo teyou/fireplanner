@@ -97,7 +97,7 @@ export function StartPage() {
   // Show results when inputs are filled and valid
   const showResults = draftAge >= 18 && draftIncome > 0 && draftExpenses > 0
     && draftAnnualSavings > 0 && draftFireNumber > 0
-    && isFinite(draftYearsToFire) && draftYearsToFire > 0
+    && isFinite(draftYearsToFire) && draftYearsToFire >= 0
 
   const handlePathwayClick = (pathway: ActivePathway) => {
     if (activePathway === pathway) {
@@ -509,10 +509,14 @@ function QuickResults({
       {/* Hero: FIRE Age */}
       <div className="text-center space-y-1">
         <div className="text-2xl font-bold">
-          You could retire at Age {fireAge}
+          {yearsToFire === 0
+            ? "You've already reached Financial Independence!"
+            : `You could retire at Age ${fireAge}`}
         </div>
         <div className="text-sm text-muted-foreground">
-          That's {Math.ceil(yearsToFire)} years from now
+          {yearsToFire === 0
+            ? "Your savings exceed your FIRE number — focus on making it last"
+            : `That's ${Math.ceil(yearsToFire)} years from now`}
         </div>
       </div>
 
