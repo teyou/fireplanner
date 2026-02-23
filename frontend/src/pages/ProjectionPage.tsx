@@ -19,9 +19,10 @@ import { formatCurrency, formatPercent } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { Link } from 'react-router-dom'
 import { NWChartView } from '@/components/projection/NWChartView'
-import { TableIcon, BarChart3 } from 'lucide-react'
+import { TableIcon, BarChart3, Maximize2 } from 'lucide-react'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { useUIStore } from '@/stores/useUIStore'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { StrategyParamCard } from '@/components/withdrawal/StrategyParamsSection'
 import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
 
@@ -59,6 +60,8 @@ const GROUP_COLUMNS: Record<ColumnGroup, string[]> = {
   cpfBalances: ['cpfOA', 'cpfSA', 'cpfMA'],
   portfolio: ['portfolioReturnPct', 'withdrawalAmount', 'maxPermittedWithdrawal', 'withdrawalExcess', 'cumulativeSavings'],
 }
+
+const DEFAULT_COLUMN_IDS = ['age', 'totalIncome', 'annualExpenses', 'savingsOrWithdrawal', 'portfolioReturnDollar', 'liquidNW', 'cpfTotal', 'totalNW', 'fireProgress']
 
 function currencyCell(value: number): string {
   return formatCurrency(value)
@@ -101,6 +104,7 @@ export function ProjectionPage() {
   }
 
   const isMobile = useMediaQuery('(max-width: 767px)')
+  const [expanded, setExpanded] = useState(false)
 
   const columnVisibility = useMemo((): VisibilityState => {
     const vis: VisibilityState = {}
@@ -118,6 +122,10 @@ export function ProjectionPage() {
     }
     return vis
   }, [activeGroups, isMobile])
+
+  const defaultVisibleCount = useMemo(() => {
+    return DEFAULT_COLUMN_IDS.filter(id => columnVisibility[id] !== false).length
+  }, [columnVisibility])
 
   const columns = useMemo((): ColumnDef<ProjectionRow, number | string>[] => [
     // Default columns (always visible)
@@ -297,6 +305,75 @@ export function ProjectionPage() {
 
   // Identify special rows
   const fireAchievedAge = summary?.fireAchievedAge ?? null
+
+  const renderTable = (containerClass: string) => (
+    <div className={cn('border rounded-md overflow-auto', containerClass)}>
+      <table className="w-full text-sm">
+        <thead className="sticky top-0 bg-background border-b z-10">
+          {activeGroups.size > 0 && (
+            <tr className="border-b bg-muted/30">
+              <th colSpan={defaultVisibleCount} className="border-b" />
+              {COLUMN_GROUPS.filter(g => activeGroups.has(g.key)).map(g => (
+                <th
+                  key={g.key}
+                  colSpan={GROUP_COLUMNS[g.key].length}
+                  className="px-2 py-1 text-center text-xs font-semibold text-primary/80 border-b border-l"
+                >
+                  {g.label}
+                </th>
+              ))}
+            </tr>
+          )}
+          {table.getHeaderGroups().map((headerGroup) => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <th
+                  key={header.id}
+                  className="px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap"
+                >
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(header.column.columnDef.header, header.getContext())}
+                </th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <tbody>
+          {table.getRowModel().rows.map((row) => {
+            const original = row.original
+            const isRetirementRow = original.age === retirementAge
+            const isFireRow = original.age === fireAchievedAge
+            const isDepleted = original.isRetired && original.liquidNW <= 0
+
+            return (
+              <tr
+                key={row.id}
+                className={cn(
+                  'border-b hover:bg-muted/50',
+                  original.isRetired && 'bg-muted/30',
+                  isRetirementRow && 'border-t-2 border-t-orange-400',
+                  isFireRow && 'bg-green-50 dark:bg-green-900/10',
+                )}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <td
+                    key={cell.id}
+                    className={cn(
+                      'px-2 py-1.5 whitespace-nowrap tabular-nums',
+                      isDepleted && cell.column.id !== 'age' && 'text-destructive',
+                    )}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
 
   return (
     <div className="space-y-6">
@@ -485,6 +562,15 @@ export function ProjectionPage() {
                 <BarChart3 className="h-3.5 w-3.5" /> Chart
               </button>
             </div>
+            {viewMode === 'table' && (
+              <button
+                onClick={() => setExpanded(true)}
+                className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                title="Expand table"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </button>
+            )}
             {viewMode === 'table' && COLUMN_GROUPS.map((group) => (
               <Button
                 key={group.key}
@@ -507,62 +593,32 @@ export function ProjectionPage() {
           ) : (
           <>
           <p className="text-xs text-muted-foreground md:hidden">Tap toggles to show more columns</p>
-          <div className="border rounded-md overflow-auto max-h-[70vh]">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-background border-b z-10">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        className="px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap"
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-              <tbody>
-                {table.getRowModel().rows.map((row) => {
-                  const original = row.original
-                  const isRetirementRow = original.age === retirementAge
-                  const isFireRow = original.age === fireAchievedAge
-                  const isDepleted = original.isRetired && original.liquidNW <= 0
-
-                  return (
-                    <tr
-                      key={row.id}
-                      className={cn(
-                        'border-b hover:bg-muted/50',
-                        original.isRetired && 'bg-muted/30',
-                        isRetirementRow && 'border-t-2 border-t-orange-400',
-                        isFireRow && 'bg-green-50 dark:bg-green-900/10',
-                      )}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <td
-                          key={cell.id}
-                          className={cn(
-                            'px-2 py-1.5 whitespace-nowrap tabular-nums',
-                            isDepleted && cell.column.id !== 'age' && 'text-destructive',
-                          )}
-                        >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </td>
-                      ))}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          {renderTable('max-h-[70vh]')}
           </>
           )}
         </>
       )}
+
+      <Dialog open={expanded} onOpenChange={setExpanded}>
+        <DialogContent className="max-w-[95vw] h-[95vh] max-h-[95vh] flex flex-col p-4">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="text-lg font-bold">Year-by-Year Projection</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-wrap items-center gap-2 shrink-0 pb-2">
+            {COLUMN_GROUPS.map((group) => (
+              <Button
+                key={group.key}
+                variant={activeGroups.has(group.key) ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => toggleGroup(group.key)}
+              >
+                {group.label}
+              </Button>
+            ))}
+          </div>
+          {renderTable('flex-1 min-h-0')}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
