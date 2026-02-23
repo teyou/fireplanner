@@ -8,7 +8,7 @@ import { AlertTriangle, ChevronDown, ChevronRight, CheckCircle2, Info, ShieldAle
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AnalysisModeToggle } from '@/components/shared/AnalysisModeToggle'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, cn } from '@/lib/utils'
 import type { PercentileBands } from '@/lib/types'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { useSectionNudge } from '@/hooks/useSectionNudge'
@@ -547,28 +547,38 @@ export function StressTestPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Stress Test</h1>
-        <p className="text-muted-foreground text-sm">
-          Test your retirement plan against market uncertainty using Monte Carlo simulation, historical backtesting, and crisis scenario analysis.
-        </p>
-      </div>
-
-      <div className="flex items-center justify-end">
-        {isStressAdvanced ? (
-          <button
-            onClick={() => setSectionMode('section-stress-test', 'simple')}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            &larr; Simplify
-          </button>
-        ) : (
-          <button
-            onClick={() => setSectionMode('section-stress-test', 'advanced')}
-            className="text-xs text-muted-foreground hover:text-primary transition-colors"
-          >
-            Advanced: backtests, sequence risk, drill-down tables &rarr;
-          </button>
-        )}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Stress Test</h1>
+            <p className="text-muted-foreground text-sm">
+              Test your retirement plan against market uncertainty using Monte Carlo simulation, historical backtesting, and crisis scenario analysis.
+            </p>
+          </div>
+          <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/30 shrink-0 mt-1">
+            <button
+              onClick={() => setSectionMode('section-stress-test', 'simple')}
+              className={cn(
+                'rounded-md px-3 py-1 text-xs font-medium transition-all',
+                stressMode === 'simple'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Simple
+            </button>
+            <button
+              onClick={() => setSectionMode('section-stress-test', 'advanced')}
+              className={cn(
+                'rounded-md px-3 py-1 text-xs font-medium transition-all',
+                stressMode === 'advanced'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Advanced
+            </button>
+          </div>
+        </div>
       </div>
       {stressNudge && (
         <SectionNudge
