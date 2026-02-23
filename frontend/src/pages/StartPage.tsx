@@ -556,7 +556,7 @@ function QuickResults({
 
       {/* Disclaimer */}
       <p className="text-xs text-muted-foreground">
-        Quick estimate in today's dollars (4% SWR, 7% return, 2.5% inflation).
+        Quick estimate in today's dollars (3.6% SWR, 7% return, 2.5% inflation).
         Your detailed plan will adjust for inflation, CPF, and portfolio allocation.
       </p>
     </div>
