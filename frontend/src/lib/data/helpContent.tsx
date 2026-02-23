@@ -1212,6 +1212,109 @@ export const HELP_FAQ: Record<string, HelpFaqItem[]> = {
     },
   ],
 
+  '/withdrawal': [
+    {
+      question: 'What is this page?',
+      answer: (
+        <>
+          <p>
+            This page lets you <strong>compare all withdrawal strategies</strong> side by side
+            using deterministic projections. It shows how each strategy would perform given
+            your retirement portfolio, expenses, and assumptions.
+          </p>
+          <p className={tip}>
+            The active strategy you selected on the Inputs page is used in Projection and
+            Stress Tests. Use this page to explore alternatives before changing your pick.
+          </p>
+        </>
+      ),
+    },
+    {
+      question: 'What are the strategy categories?',
+      answer: (
+        <>
+          <p>Strategies are grouped into three categories by how they adapt:</p>
+          <ul className={ul}>
+            <li>
+              <strong>Basic:</strong> simple rules that don't react to market conditions
+              — Constant Dollar (4% rule), Percent of Portfolio, 1/N
+            </li>
+            <li>
+              <strong>Adaptive:</strong> adjust withdrawals based on portfolio performance
+              — VPW, Guardrails, Vanguard Dynamic, 95% Rule
+            </li>
+            <li>
+              <strong>Smoothed:</strong> blend market signals with spending stability
+              — CAPE-Based, Floor & Ceiling, Endowment, Sensible Withdrawals, Hebeler Autopilot
+            </li>
+          </ul>
+        </>
+      ),
+    },
+    {
+      question: 'What do the comparison charts show?',
+      answer: (
+        <>
+          <p>Two charts help you visualise the trade-offs:</p>
+          <ul className={ul}>
+            <li>
+              <strong>Withdrawal Chart:</strong> year-by-year income from each strategy.
+              Volatile strategies show wider swings; smoothed ones stay flatter.
+            </li>
+            <li>
+              <strong>Portfolio Chart:</strong> how your portfolio balance evolves under each
+              strategy. Aggressive strategies deplete faster; conservative ones leave more legacy.
+            </li>
+          </ul>
+          <p className={tip}>
+            The comparison table above the charts summarises average, min, max, and standard
+            deviation for each strategy — useful for quick ranking.
+          </p>
+        </>
+      ),
+    },
+    {
+      question: 'What is "My Plan" vs "FIRE Target" mode?',
+      answer: (
+        <>
+          <p>The toggle at the top controls what starting portfolio is used:</p>
+          <ul className={ul}>
+            <li>
+              <strong>My Plan:</strong> uses your projected portfolio at retirement age,
+              based on current savings, income, and growth
+            </li>
+            <li>
+              <strong>FIRE Target:</strong> uses your FIRE number (expenses ÷ SWR) as the
+              starting portfolio — tests whether the target amount itself is sufficient
+            </li>
+          </ul>
+        </>
+      ),
+    },
+    {
+      question: 'How do I tune strategy parameters?',
+      answer: (
+        <>
+          <p>
+            Each strategy has configurable parameters (e.g., guardrail thresholds,
+            ceiling/floor limits, smoothing weights). The <strong>Strategy Parameters</strong> section
+            lets you adjust these for each strategy individually.
+          </p>
+          <ul className={ul}>
+            <li><strong>Guardrails:</strong> upper/lower rails and cut/raise percentages</li>
+            <li><strong>Vanguard Dynamic:</strong> ceiling and floor change limits</li>
+            <li><strong>CAPE-Based:</strong> base rate, weight, and min/max bounds</li>
+            <li><strong>Floor & Ceiling:</strong> absolute dollar bounds on annual withdrawals</li>
+          </ul>
+          <p className={tip}>
+            Parameters only appear for strategies that have them. Basic strategies like
+            Constant Dollar and Percent of Portfolio use the SWR from your FIRE Settings.
+          </p>
+        </>
+      ),
+    },
+  ],
+
   '/dashboard': [
     {
       question: 'How is the risk score calculated?',
