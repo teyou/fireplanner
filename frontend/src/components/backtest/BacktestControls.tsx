@@ -153,7 +153,7 @@ export function BacktestControls({ config, setConfig, isPending, canRun, validat
           <p className="text-sm text-muted-foreground">{disabledReason}</p>
         )}
 
-        <div className="border-t pt-3 space-y-3">
+        {showSwr && <div className="border-t pt-3 space-y-3">
           <div className="flex items-center justify-between">
             <Label className="text-sm font-medium">SWR x Duration Heatmap</Label>
             <Button
@@ -208,7 +208,7 @@ export function BacktestControls({ config, setConfig, isPending, canRun, validat
               step={1}
             />
           </div>
-        </div>
+        </div>}
       </CardContent>
     </Card>
   )
