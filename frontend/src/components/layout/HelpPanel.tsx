@@ -136,7 +136,7 @@ export function HelpPanel({ mobile = false }: { mobile?: boolean }) {
       </div>
 
       {/* Panel content */}
-      <div className={cn('flex-1 min-w-0 h-full flex flex-col', isOverlay ? 'bg-background' : 'bg-muted/30')}>
+      <div className={cn('flex-1 min-w-0 h-full flex flex-col', isOverlay ? 'bg-background' : 'bg-muted')}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
           <div className="min-w-0">

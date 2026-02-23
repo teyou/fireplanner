@@ -132,6 +132,22 @@ export const HELP_FAQ: Record<string, HelpFaqItem[]> = {
         </>
       ),
     },
+    {
+      question: 'What does marital status affect?',
+      answer: (
+        <>
+          <p>Marital status influences tax calculations:</p>
+          <ul className={ul}>
+            <li><strong>Married:</strong> eligible for Spouse Relief ($2,000) if spouse earns below $4,000/year</li>
+            <li>Unlocks Working Mother's Child Relief (WMCR) for qualifying mothers</li>
+          </ul>
+          <p className={tip}>
+            You can configure detailed tax reliefs in the <strong>Income</strong> section
+            (Advanced mode → Detailed tax reliefs).
+          </p>
+        </>
+      ),
+    },
   ],
 
   'section-fire-settings': [
@@ -192,6 +208,32 @@ export const HELP_FAQ: Record<string, HelpFaqItem[]> = {
           </p>
           <p className={tip}>
             This is an Advanced setting. In Simple mode, the tool defaults to Real basis.
+          </p>
+        </>
+      ),
+    },
+    {
+      question: 'What do the Assumptions fields mean?',
+      answer: (
+        <>
+          <ul className={ul}>
+            <li>
+              <strong>Expected Nominal Return:</strong> average annual portfolio growth before
+              inflation. By default, this is auto-derived from your
+              {' '}<strong>Allocation</strong> weights. You can switch to manual override.
+            </li>
+            <li>
+              <strong>Inflation Rate:</strong> expected annual price increase (default 2.5%).
+              Affects how much your expenses grow each year.
+            </li>
+            <li>
+              <strong>Expense Ratio:</strong> annual investment fees (default 0.3%). Deducted
+              from returns — lower is better.
+            </li>
+          </ul>
+          <p className="mt-2">
+            <strong>Net real return</strong> = Nominal Return − Inflation − Expense Ratio. This
+            is the actual growth in purchasing power.
           </p>
         </>
       ),
@@ -259,6 +301,32 @@ export const HELP_FAQ: Record<string, HelpFaqItem[]> = {
           <p className={tip}>
             Advanced mode also lets you configure <strong>tax reliefs</strong> and
             {' '}<strong>life events</strong> (e.g., career breaks, sabbaticals) that affect your income timeline.
+          </p>
+        </>
+      ),
+    },
+    {
+      question: 'What are tax reliefs and how do they work?',
+      answer: (
+        <>
+          <p>
+            Tax reliefs reduce your chargeable income, lowering your SG tax bill. The tool
+            offers two sub-modes:
+          </p>
+          <ul className={ul}>
+            <li><strong>Simple:</strong> enter a single total reliefs amount (default $20,000)</li>
+            <li>
+              <strong>Detailed:</strong> configure individual reliefs — Earned Income, NSman,
+              Spouse, Qualifying Child (QCR), Parent Relief, and others
+            </li>
+          </ul>
+          <p className="mt-2">
+            The tool auto-calculates <strong>CPF Relief</strong> (employee portion) and
+            {' '}<strong>SRS deductions</strong> on top of your personal reliefs.
+          </p>
+          <p className={tip}>
+            Tax reliefs are an <strong>Advanced</strong> feature. The SRS Tax Planning card
+            (also Advanced) shows how much tax you'd save by contributing to SRS.
           </p>
         </>
       ),
@@ -339,6 +407,63 @@ export const HELP_FAQ: Record<string, HelpFaqItem[]> = {
           <p className={tip}>
             Advanced mode adds 8 more strategies and comparison charts. All strategies are also
             tested in the <strong>Stress Test</strong> page.
+          </p>
+        </>
+      ),
+    },
+    {
+      question: 'What is Aging Parent Support?',
+      answer: (
+        <>
+          <p>
+            Model ongoing financial support for parents or dependants. Each entry has:
+          </p>
+          <ul className={ul}>
+            <li>A <strong>monthly amount</strong> you provide</li>
+            <li>An <strong>annual growth rate</strong> (e.g., 3% for inflation)</li>
+            <li><strong>Start and end ages</strong> — your age when support begins and ends</li>
+          </ul>
+          <p className="mt-2">
+            This is added to your expenses and reduces your savings rate. The tool shows the
+            total parent support at retirement age.
+          </p>
+        </>
+      ),
+    },
+    {
+      question: 'What is the Retirement Spending Adjustment?',
+      answer: (
+        <>
+          <p>
+            The percentage of your current expenses you expect to spend in retirement.
+          </p>
+          <ul className={ul}>
+            <li><strong>100%:</strong> same spending level as today</li>
+            <li><strong>70–80%:</strong> common rule of thumb (less commuting, work costs)</li>
+            <li><strong>120%+:</strong> if you plan to travel more or upgrade lifestyle</li>
+          </ul>
+          <p className="mt-2">
+            This directly affects your FIRE number — a lower adjustment means you need less.
+          </p>
+        </>
+      ),
+    },
+    {
+      question: 'What are one-time retirement withdrawals?',
+      answer: (
+        <>
+          <p>
+            Large planned expenses during retirement that aren't part of your regular annual spending:
+          </p>
+          <ul className={ul}>
+            <li>Home renovation or repairs</li>
+            <li>Major travel plans</li>
+            <li>Children's wedding or education support</li>
+            <li>Medical procedures not covered by insurance</li>
+          </ul>
+          <p className="mt-2">
+            Each withdrawal has a start age, duration, and optional inflation adjustment. These
+            are deducted from your portfolio in the <strong>Projection</strong>.
           </p>
         </>
       ),
@@ -439,12 +564,16 @@ export const HELP_FAQ: Record<string, HelpFaqItem[]> = {
       question: 'What is CPF LIFE and when does it start?',
       answer: (
         <>
-          <p>CPF LIFE is a national annuity providing <strong>monthly payouts from age 65 for life</strong>.</p>
+          <p>CPF LIFE is a national annuity providing <strong>monthly payouts for life</strong>. Three plan types:</p>
           <ul className={ul}>
-            <li>Your Retirement Account (RA) balance at 55 determines the payout amount</li>
             <li><strong>Basic Plan:</strong> lower monthly payouts, preserves more for beneficiaries</li>
             <li><strong>Standard Plan:</strong> higher monthly payouts, less bequest value</li>
+            <li><strong>Escalating Plan:</strong> starts lower but payouts increase 2% yearly — good hedge against inflation</li>
           </ul>
+          <p className="mt-2">
+            You can start payouts anytime from <strong>age 65 to 70</strong>. Deferring gives
+            higher monthly payouts (~6–7% more per year of deferral).
+          </p>
           <p className={tip}>
             CPF LIFE payouts reduce how much you need to withdraw from your investment
             portfolio in retirement. The tool factors this into the <strong>Projection</strong> and
@@ -543,6 +672,68 @@ export const HELP_FAQ: Record<string, HelpFaqItem[]> = {
         </>
       ),
     },
+    {
+      question: 'What ISP tier should I choose?',
+      answer: (
+        <>
+          <p>
+            Integrated Shield Plans (ISPs) extend MediShield Life coverage to private hospitals.
+            Choose based on your budget and preference:
+          </p>
+          <ul className={ul}>
+            <li><strong>None:</strong> rely on MediShield Life only — lowest premiums, public hospitals</li>
+            <li><strong>Basic:</strong> covers B1 ward in public hospitals</li>
+            <li><strong>Standard:</strong> covers restructured hospital private rooms</li>
+            <li><strong>Enhanced:</strong> covers private hospital stays — highest premiums</li>
+          </ul>
+          <p className="mt-2">
+            You can also model <strong>downgrading</strong> your ISP tier at a future age to
+            reduce premiums in later retirement.
+          </p>
+        </>
+      ),
+    },
+    {
+      question: 'What is CareShield LIFE?',
+      answer: (
+        <>
+          <p>
+            CareShield LIFE is a long-term care insurance scheme providing monthly payouts if
+            you become severely disabled.
+          </p>
+          <ul className={ul}>
+            <li>Mandatory for those born in 1980 or later</li>
+            <li>Premiums are paid from age 30 to 67 (payable by MediSave)</li>
+            <li>Payouts start at <strong>$600/month</strong> and increase 2% yearly</li>
+            <li>Covers you for life once activated</li>
+          </ul>
+          <p className="mt-2">
+            Toggle this on if applicable — the tool includes the premiums in your healthcare
+            cost projection.
+          </p>
+        </>
+      ),
+    },
+    {
+      question: 'What are the out-of-pocket (OOP) presets?',
+      answer: (
+        <>
+          <p>
+            The tool offers preset models for estimating out-of-pocket healthcare costs:
+          </p>
+          <ul className={ul}>
+            <li><strong>Bottom-Up:</strong> build your estimate from individual cost components</li>
+            <li><strong>World Bank Nominal:</strong> based on World Bank healthcare expenditure data for Singapore</li>
+            <li><strong>SingStat HES:</strong> based on Singapore Household Expenditure Survey data</li>
+            <li><strong>World Bank PPP:</strong> World Bank data adjusted for purchasing power parity</li>
+          </ul>
+          <p className="mt-2">
+            You can also choose between <strong>age-dependent</strong> (costs rise with age) or
+            {' '}<strong>fixed</strong> annual out-of-pocket amounts.
+          </p>
+        </>
+      ),
+    },
   ],
 
   'section-property': [
@@ -612,6 +803,52 @@ export const HELP_FAQ: Record<string, HelpFaqItem[]> = {
         </>
       ),
     },
+    {
+      question: 'What is the downsizing scenario?',
+      answer: (
+        <>
+          <p>Model what happens to your finances when you sell your current property:</p>
+          <ul className={ul}>
+            <li>
+              <strong>Sell & Downsize:</strong> sell current home and buy a smaller/cheaper
+              property. The net equity becomes investable assets.
+            </li>
+            <li>
+              <strong>Sell & Rent:</strong> sell and switch to renting. All sale proceeds
+              become investable, but you take on ongoing rental expenses.
+            </li>
+          </ul>
+          <p className="mt-2">
+            Set the age you plan to sell and the expected sale price. The tool calculates
+            mortgage payoff, net proceeds, and the impact on your FIRE plan.
+          </p>
+        </>
+      ),
+    },
+    {
+      question: 'What is HDB monetization?',
+      answer: (
+        <>
+          <p>
+            Two ways to unlock value from your HDB flat without selling:
+          </p>
+          <ul className={ul}>
+            <li>
+              <strong>Sublet room(s):</strong> rent out 1–3 rooms for additional monthly
+              income. The tool estimates annual rental income based on your flat type.
+            </li>
+            <li>
+              <strong>Lease Buyback Scheme (LBS):</strong> sell part of your remaining lease
+              back to HDB. You retain 20–35 years of lease to live in, and receive cash
+              proceeds plus a CPF RA top-up that boosts your CPF LIFE payouts.
+            </li>
+          </ul>
+          <p className={tip}>
+            HDB monetization options appear only when your property type is set to HDB.
+          </p>
+        </>
+      ),
+    },
   ],
 
   'section-allocation': [
@@ -619,16 +856,15 @@ export const HELP_FAQ: Record<string, HelpFaqItem[]> = {
       question: 'What allocation is right for me?',
       answer: (
         <>
-          <p>Use the templates as a starting point — match to your <strong>time horizon</strong>:</p>
+          <p>Choose from 6 templates or build a custom allocation:</p>
           <ul className={ul}>
-            <li><strong>Aggressive (80/20):</strong> 20+ years to retirement — higher growth, more volatility</li>
-            <li><strong>Balanced (60/40):</strong> 10–20 years — classic moderate allocation</li>
-            <li><strong>Conservative (30/70):</strong> near-retirees or in retirement — lower volatility, stable income</li>
+            <li><strong>Conservative (30/70):</strong> near-retirees or in retirement — stability first</li>
+            <li><strong>Balanced (60/40):</strong> 10–20 year horizon — classic moderate mix</li>
+            <li><strong>Aggressive (80/20):</strong> 20+ years — higher growth, more volatility</li>
+            <li><strong>All Weather:</strong> diversified across stocks, bonds, gold, REITs — inspired by Ray Dalio's approach</li>
+            <li><strong>Singapore Centric:</strong> heavier weighting to SG equities, REITs, and CPF</li>
+            <li><strong>Custom:</strong> set your own weights across 8 asset classes</li>
           </ul>
-          <p className="mt-2">
-            You can also build a fully custom allocation across 8 asset classes (US/SG/Intl
-            equities, bonds, REITs, gold, cash, CPF).
-          </p>
         </>
       ),
     },
@@ -676,6 +912,30 @@ export const HELP_FAQ: Record<string, HelpFaqItem[]> = {
           <p className={tip}>
             The correlation matrix is an <strong>Advanced</strong> feature, along with custom
             return overrides.
+          </p>
+        </>
+      ),
+    },
+    {
+      question: 'What is Current vs Target allocation?',
+      answer: (
+        <>
+          <ul className={ul}>
+            <li>
+              <strong>Current %:</strong> your actual portfolio allocation today. Used for
+              near-term projections and stress tests.
+            </li>
+            <li>
+              <strong>Target %:</strong> the allocation you're transitioning toward (or will
+              hold in retirement). Used for long-term projections.
+            </li>
+          </ul>
+          <p className="mt-2">
+            If you've configured a <strong>glide path</strong> (Advanced), the tool gradually
+            shifts from Current to Target over the specified age range.
+          </p>
+          <p className={tip}>
+            Use "Copy to Target" to quickly set Target equal to Current.
           </p>
         </>
       ),
@@ -1012,6 +1272,50 @@ export const HELP_FAQ: Record<string, HelpFaqItem[]> = {
           <p className={tip}>
             Coast FIRE number depends on your expected return and years to retirement. The
             Dashboard shows whether you've reached it.
+          </p>
+        </>
+      ),
+    },
+    {
+      question: 'What is the What-If panel?',
+      answer: (
+        <>
+          <p>
+            An interactive scenario explorer with 6 sliders. Adjust any variable to instantly
+            see how it affects your plan:
+          </p>
+          <ul className={ul}>
+            <li>Annual Expenses, Annual Income</li>
+            <li>SWR, Expected Return</li>
+            <li>Retirement Age, Liquid Net Worth</li>
+          </ul>
+          <p className="mt-2">
+            The delta summary shows the change in FIRE Number, Years to FIRE, FIRE Age, and
+            Portfolio at Retirement compared to your current inputs.
+          </p>
+          <p className={tip}>
+            Changes here are for exploration only — they don't modify your saved inputs.
+          </p>
+        </>
+      ),
+    },
+    {
+      question: 'What is One More Year analysis?',
+      answer: (
+        <>
+          <p>
+            Shows the financial impact of <strong>working one more year</strong> beyond your
+            planned retirement age:
+          </p>
+          <ul className={ul}>
+            <li>Extra savings from one more year of income</li>
+            <li>Additional portfolio growth (one more year compounding)</li>
+            <li>One fewer year of withdrawals needed</li>
+            <li>Net impact on portfolio at life expectancy</li>
+          </ul>
+          <p className="mt-2">
+            This helps you evaluate whether delaying retirement by a year significantly
+            improves your financial security.
           </p>
         </>
       ),
