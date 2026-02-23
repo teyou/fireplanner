@@ -1,7 +1,7 @@
 /**
  * Context-aware FAQ content for the Help Panel.
- * Keyed by route path. Each route has 3-5 FAQ items.
- * Content extracted/summarized from ReferencePage sections.
+ * Keyed by route path OR section ID (for /inputs sub-sections).
+ * Content guides first-time users through filling out each section.
  */
 
 export interface HelpFaqItem {
@@ -27,6 +27,182 @@ export const HELP_FAQ: Record<string, HelpFaqItem[]> = {
         "A guideline from William Bengen's 1994 study: if you withdraw 4% of your portfolio in year one and adjust for inflation each year, your money should last at least 30 years. This tool lets you test different withdrawal rates and strategies.",
     },
   ],
+
+  // ─── Input sections ───────────────────────────────────────
+
+  'section-personal': [
+    {
+      question: 'What retirement age should I use?',
+      answer:
+        'Use the age you plan to stop working full-time. In Singapore, the re-employment age is 68, but FIRE planners often target 40\u201355. You can always adjust this later \u2014 the projection updates instantly.',
+    },
+    {
+      question: 'How does life expectancy affect my plan?',
+      answer:
+        'Life expectancy determines how many years your portfolio must last. A longer life expectancy means you need a larger FIRE number. SG average is ~84, but planning to 90\u201395 adds a safety margin against longevity risk.',
+    },
+    {
+      question: 'What life stage should I pick?',
+      answer:
+        'Pre-FIRE (Accumulating): you\'re still saving toward your target. Post-FIRE (Decumulating): you\'ve already retired and are drawing down. This changes how projections are calculated \u2014 accumulation vs withdrawal mode.',
+    },
+  ],
+
+  'section-fire-settings': [
+    {
+      question: 'What SWR (Safe Withdrawal Rate) should I use?',
+      answer:
+        'The classic 4% rule works for a 30-year retirement. For early retirees (40+ years), consider 3\u20133.5%. A lower SWR means a larger FIRE number but higher safety. You can test different rates in the Stress Test section later.',
+    },
+    {
+      question: 'What FIRE type is right for me?',
+      answer:
+        'Regular FIRE: fully cover expenses from investments. Lean FIRE: minimal expenses, frugal lifestyle. Fat FIRE: comfortable/luxury expenses. Coast FIRE: enough invested that growth alone reaches your target by retirement \u2014 you just cover current expenses. Barista FIRE: part-time work covers the gap.',
+    },
+    {
+      question: 'Nominal vs Real (inflation-adjusted) basis?',
+      answer:
+        'Real basis shows everything in today\'s purchasing power \u2014 easier to understand. Nominal shows future dollar amounts. At 2.5% inflation, $100K in 20 years is only worth ~$61K in today\'s dollars. We recommend Real for planning.',
+    },
+  ],
+
+  'section-income': [
+    {
+      question: 'Which salary model should I pick?',
+      answer:
+        'Simple: use if you expect steady raises (e.g., 3%/year). Realistic: models career phases with promotion jumps at specific ages \u2014 good for PMETs. Data-Driven: uses MOM salary benchmarks for your education level \u2014 great if you\'re unsure about future growth.',
+    },
+    {
+      question: 'What income streams should I add?',
+      answer:
+        'Add any regular income beyond salary: rental income, dividends, freelance work, spouse\'s income, part-time work in retirement. Each stream has its own start/end age, so you can model income changes over your lifetime.',
+    },
+    {
+      question: 'How are bonuses and variable pay handled?',
+      answer:
+        'Include your expected annual bonus in the bonus months field. The tool distributes it across the year for projection purposes. If your bonus varies, use a conservative estimate \u2014 you can always adjust.',
+    },
+  ],
+
+  'section-expenses': [
+    {
+      question: 'Should I include mortgage payments?',
+      answer:
+        'Yes, if you have an active mortgage. Enter the monthly amount and the year it ends. After the mortgage is paid off, your expenses will drop \u2014 the projection captures this automatically.',
+    },
+    {
+      question: 'How do I estimate retirement expenses?',
+      answer:
+        'A common rule: 70\u201380% of pre-retirement expenses. You\'ll likely spend less on commuting and work clothes, but more on healthcare and leisure. The tool lets you set a separate retirement expense figure.',
+    },
+    {
+      question: 'What about inflation on expenses?',
+      answer:
+        'The tool applies your configured inflation rate (default 2.5%) to expenses each year. Healthcare costs often inflate faster \u2014 the Healthcare section lets you model this separately.',
+    },
+  ],
+
+  'section-net-worth': [
+    {
+      question: 'What counts as liquid net worth?',
+      answer:
+        'Cash, stocks, bonds, ETFs, unit trusts, robo-advisor portfolios \u2014 anything you can sell and access within days. Do NOT include CPF (it\'s tracked separately), your home (unless selling), or illiquid assets like private equity.',
+    },
+    {
+      question: 'Should I include CPF balances here?',
+      answer:
+        'No \u2014 enter CPF OA, SA, and MA in their dedicated fields below. CPF grows at guaranteed rates and has withdrawal restrictions, so the tool models it separately from your liquid investments.',
+    },
+    {
+      question: 'What is SRS and should I contribute?',
+      answer:
+        'SRS (Supplementary Retirement Scheme) contributions are tax-deductible up to $15,300/year. Withdrawals after age 62 are 50% tax-free. It\'s especially valuable if you\'re in a high tax bracket. Enter your current balance and annual contribution here.',
+    },
+  ],
+
+  'section-cpf': [
+    {
+      question: 'How do CPF contribution rates change with age?',
+      answer:
+        'Total rate drops at age milestones: 37% (up to 55), 29.5% (55\u201360), 20.5% (60\u201365), 16.5% (65\u201370), 12.5% (70+). The employer share reduces more than the employee share. The tool applies the correct rates at each age.',
+    },
+    {
+      question: 'What is CPF LIFE and when does it start?',
+      answer:
+        'CPF LIFE is a national annuity that provides monthly payouts from age 65 for life. Your Retirement Account balance at 55 determines the payout amount. Basic Plan gives lower payouts but preserves more for beneficiaries; Standard Plan gives higher payouts.',
+    },
+    {
+      question: 'What are BRS, FRS, and ERS?',
+      answer:
+        'At age 55, your RA is set up. BRS (Basic Retirement Sum) \u2248 $99K, FRS (Full) \u2248 $198K, ERS (Enhanced) \u2248 $298K (2024 values, grow 3.5%/year). Higher sums = higher CPF LIFE payouts. The tool projects these forward to your age 55.',
+    },
+    {
+      question: 'How does the OA housing deduction work?',
+      answer:
+        'If you used CPF OA for your mortgage, enter the monthly deduction here. This reduces OA growth during your working years but is a common and practical use of CPF for Singaporeans.',
+    },
+  ],
+
+  'section-healthcare': [
+    {
+      question: 'How should I estimate healthcare costs?',
+      answer:
+        'Healthcare costs typically rise with age. The tool lets you set a base annual cost and a healthcare-specific inflation rate (often 5\u20138%, higher than general inflation). Even with MediShield Life, out-of-pocket costs for specialist care can be significant.',
+    },
+    {
+      question: 'What does MediShield Life cover?',
+      answer:
+        'MediShield Life covers large hospital bills and selected outpatient treatments, but has deductibles and co-insurance. Private Integrated Shield Plans provide wider coverage. Model your expected out-of-pocket portion here.',
+    },
+    {
+      question: 'Why model healthcare separately?',
+      answer:
+        'Healthcare inflation (5\u20138%) far outpaces general inflation (2\u20133%). A retiree at 65 spending $5K/year on healthcare could face $15K+ by age 85. Modelling it separately gives a more realistic retirement cost picture.',
+    },
+  ],
+
+  'section-property': [
+    {
+      question: 'Should I include my home in the plan?',
+      answer:
+        'Include it if you plan to downsize, sell, or rent it out in retirement. If you plan to live in it forever, it doesn\'t contribute to your investable assets \u2014 but the tool can still model mortgage payments reducing your savings rate.',
+    },
+    {
+      question: 'How does lease decay work for HDB/leasehold?',
+      answer:
+        'Leasehold properties lose value as the lease shortens, following Bala\'s Table. A 99-year lease HDB at 60 years remaining retains ~80% of value, but drops sharply after 40 years remaining. The tool applies this decay automatically.',
+    },
+    {
+      question: 'What are BSD and ABSD?',
+      answer:
+        'BSD (Buyer\'s Stamp Duty): 1\u20136% progressive tax on all property purchases. ABSD (Additional BSD): 20% for citizens\' 2nd property, 30% for 3rd+. PRs pay 5% on 1st, 30% on 2nd+. The tool calculates both based on your residency and property count.',
+    },
+  ],
+
+  'section-allocation': [
+    {
+      question: 'What allocation is right for me?',
+      answer:
+        'Use the templates as a starting point: Aggressive (80/20 stocks/bonds) for 20+ year horizons, Balanced (60/40) for 10\u201320 years, Conservative (30/70) for near-retirees. Your risk tolerance and timeline matter most.',
+    },
+    {
+      question: 'What is a glide path?',
+      answer:
+        'A glide path gradually shifts your allocation from aggressive to conservative as you approach retirement. For example, 80% stocks at age 30 might shift to 40% stocks by age 60. This reduces sequence-of-returns risk near retirement.',
+    },
+    {
+      question: 'How do I read the correlation matrix?',
+      answer:
+        'Values range from -1 to +1. Low or negative correlation between assets means they don\'t move together \u2014 this is good for diversification. For example, bonds and stocks often have low correlation, so holding both reduces portfolio volatility.',
+    },
+    {
+      question: 'What does the expected return/volatility mean?',
+      answer:
+        'Expected return is the average annual gain based on historical data. Volatility (standard deviation) measures how much returns swing year to year. Higher volatility = more risk. The Sharpe ratio shows return per unit of risk \u2014 higher is better.',
+    },
+  ],
+
+  // ─── Non-input pages ──────────────────────────────────────
 
   '/inputs': [
     {

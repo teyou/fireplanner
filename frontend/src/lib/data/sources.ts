@@ -106,19 +106,30 @@ export const DATA_SOURCES: Record<string, DataSource[]> = {
 }
 
 /**
- * Map route paths to relevant source keys.
- * A route may reference multiple source groups.
+ * Map route paths AND section IDs to relevant source keys.
+ * Section IDs take priority over route paths for /inputs sub-sections.
  */
 export const ROUTE_SOURCES: Record<string, string[]> = {
+  // Route-level
   '/inputs': ['cpf', 'tax', 'income', 'property'],
   '/projection': ['cpf', 'tax', 'income', 'historicalReturns'],
   '/stress-test': ['historicalReturns', 'crisisScenarios'],
   '/dashboard': ['cpf', 'tax', 'historicalReturns'],
+  // Section-level (for /inputs sub-sections)
+  'section-personal': [],
+  'section-fire-settings': [],
+  'section-income': ['income', 'tax'],
+  'section-expenses': [],
+  'section-net-worth': [],
+  'section-cpf': ['cpf'],
+  'section-healthcare': [],
+  'section-property': ['property'],
+  'section-allocation': ['historicalReturns'],
 }
 
-/** Get all sources relevant to a given route. */
-export function getSourcesForRoute(route: string): DataSource[] {
-  const keys = ROUTE_SOURCES[route] ?? []
+/** Get all sources relevant to a given route or section ID. */
+export function getSourcesForRoute(routeOrSection: string): DataSource[] {
+  const keys = ROUTE_SOURCES[routeOrSection] ?? []
   const seen = new Set<string>()
   const result: DataSource[] = []
   for (const key of keys) {

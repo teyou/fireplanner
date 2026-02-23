@@ -4,6 +4,7 @@ import { X, ExternalLink, GripVertical } from 'lucide-react'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/stores/useUIStore'
+import { useActiveSection } from '@/hooks/useActiveSection'
 import { HELP_FAQ } from '@/lib/data/helpContent'
 import { getSourcesForRoute } from '@/lib/data/sources'
 
@@ -13,14 +14,23 @@ const MAX_WIDTH = 600
 
 export function HelpPanel() {
   const { pathname } = useLocation()
+  const { activeSection } = useActiveSection()
   const toggleHelpPanel = useUIStore((s) => s.toggleHelpPanel)
   const [width, setWidth] = useState(DEFAULT_WIDTH)
   const isDragging = useRef(false)
   const startX = useRef(0)
   const startWidth = useRef(0)
 
-  const faqItems = HELP_FAQ[pathname] ?? []
-  const sources = getSourcesForRoute(pathname)
+  // Use section-specific content when on /inputs with an active section,
+  // otherwise fall back to route-level content
+  const contentKey = activeSection ?? pathname
+  const faqItems = HELP_FAQ[contentKey] ?? HELP_FAQ[pathname] ?? []
+  const sources = getSourcesForRoute(contentKey)
+
+  // Friendly label for the current context
+  const sectionLabel = activeSection
+    ? activeSection.replace('section-', '').replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+    : null
 
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -34,7 +44,6 @@ export function HelpPanel() {
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return
-      // Dragging left edge: moving left = wider, moving right = narrower
       const delta = startX.current - e.clientX
       const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth.current + delta))
       setWidth(newWidth)
@@ -72,8 +81,13 @@ export function HelpPanel() {
       <div className="flex-1 min-w-0 h-full flex flex-col bg-muted/30">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
-          <h2 className="text-sm font-semibold">Help</h2>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleHelpPanel}>
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold">Help</h2>
+            {sectionLabel && (
+              <p className="text-xs text-muted-foreground truncate">{sectionLabel}</p>
+            )}
+          </div>
+          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={toggleHelpPanel}>
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -83,7 +97,7 @@ export function HelpPanel() {
           {faqItems.length > 0 ? (
             <Accordion type="multiple" className="w-full">
               {faqItems.map((item, i) => (
-                <AccordionItem key={i} value={`faq-${i}`}>
+                <AccordionItem key={`${contentKey}-${i}`} value={`faq-${i}`}>
                   <AccordionTrigger className="text-sm text-left">
                     {item.question}
                   </AccordionTrigger>
