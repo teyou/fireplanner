@@ -42,7 +42,7 @@ export interface WhatIfMetricsResult {
   hasData: boolean
 }
 
-function getBaseInputs(
+export function getBaseInputs(
   profile: ReturnType<typeof useProfileStore.getState>,
   income: ReturnType<typeof useIncomeStore.getState>,
   allocation: ReturnType<typeof useAllocationStore.getState>,
@@ -126,7 +126,9 @@ function getBaseInputs(
   }
 }
 
-function computeMetrics(inputs: ReturnType<typeof getBaseInputs>) {
+export type WhatIfBaseInputs = ReturnType<typeof getBaseInputs>
+
+export function computeMetrics(inputs: WhatIfBaseInputs) {
   const metrics = calculateAllFireMetrics(inputs)
   const netRealReturn = inputs.expectedReturn - inputs.inflation - inputs.expenseRatio
   const annualSavings = inputs.annualIncome - inputs.annualExpenses
