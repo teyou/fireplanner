@@ -384,9 +384,9 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
         )
       }
 
-      // Post-retirement income from active streams + existing property rental
+      // Post-retirement income from active streams + existing property rental + SRS drawdown
       const postRetirementIncome = incomeRow.rentalIncome + incomeRow.investmentIncome +
-        incomeRow.businessIncome + incomeRow.governmentIncome + effectiveRentalIncome
+        incomeRow.businessIncome + incomeRow.governmentIncome + incomeRow.srsWithdrawal + effectiveRentalIncome
 
       // Compute max permitted withdrawal from strategy
       let strategyWithdrawal = 0
@@ -475,6 +475,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       investmentIncome: incomeRow.investmentIncome,
       businessIncome: incomeRow.businessIncome,
       governmentIncome: incomeRow.governmentIncome,
+      srsWithdrawal: incomeRow.srsWithdrawal,
       totalGross: incomeRow.totalGross,
       sgTax: incomeRow.sgTax,
       cpfEmployee: incomeRow.cpfEmployee,

@@ -55,7 +55,7 @@ const COLUMN_GROUPS: { key: ColumnGroup; label: string }[] = [
 
 const GROUP_COLUMNS: Record<ColumnGroup, string[]> = {
   expensesBreakdown: ['baseInflatedExpenses', 'parentSupportExpense', 'healthcareCashOutlay', 'mortgageCashPayment', 'downsizingRentExpense'],
-  incomeBreakdown: ['salary', 'rentalIncome', 'investmentIncome', 'businessIncome', 'governmentIncome', 'totalGross'],
+  incomeBreakdown: ['salary', 'rentalIncome', 'investmentIncome', 'businessIncome', 'governmentIncome', 'srsWithdrawal', 'totalGross'],
   taxCpf: ['sgTax', 'cpfEmployee', 'cpfEmployer', 'totalNet'],
   cpfBalances: ['cpfOA', 'cpfSA', 'cpfMA'],
   portfolio: ['portfolioReturnPct', 'withdrawalAmount', 'maxPermittedWithdrawal', 'withdrawalExcess', 'cumulativeSavings'],
@@ -74,6 +74,9 @@ function optionalCurrencyCell(value: number): string {
 export function ProjectionPage() {
   const { rows, summary, hasErrors } = useProjection()
   const retirementAge = useProfileStore((s) => s.retirementAge)
+  const srsBalance = useProfileStore((s) => s.srsBalance)
+  const srsAnnualContribution = useProfileStore((s) => s.srsAnnualContribution)
+  const hasSrs = srsBalance > 0 || srsAnnualContribution > 0
   const activeStrategy = useSimulationStore((s) => s.selectedStrategy)
   const setSimField = useSimulationStore((s) => s.setField)
 
@@ -124,6 +127,10 @@ export function ProjectionPage() {
         vis[col] = visible
       }
     }
+    // Hide SRS column when user has no SRS balance or contributions
+    if (!hasSrs) {
+      vis['srsWithdrawal'] = false
+    }
     // Hide less-essential default columns on mobile to reduce horizontal scroll
     if (isMobile) {
       vis['portfolioReturnDollar'] = vis['portfolioReturnDollar'] || false
@@ -131,7 +138,7 @@ export function ProjectionPage() {
       vis['fireProgress'] = vis['fireProgress'] || false
     }
     return vis
-  }, [activeGroups, isMobile])
+  }, [activeGroups, isMobile, hasSrs])
 
   const defaultVisibleCount = useMemo(() => {
     return DEFAULT_COLUMN_IDS.filter(id => columnVisibility[id] !== false).length
@@ -231,6 +238,11 @@ export function ProjectionPage() {
     columnHelper.accessor('governmentIncome', {
       id: 'governmentIncome',
       header: 'Govt.',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('srsWithdrawal', {
+      id: 'srsWithdrawal',
+      header: 'SRS',
       cell: (info) => optionalCurrencyCell(info.getValue()),
     }),
     columnHelper.accessor('totalGross', {

@@ -1539,8 +1539,10 @@ describe('integration tests', () => {
     const row63 = rows.find((r) => r.age === 63)!
     expect(row63.srsWithdrawal).toBeGreaterThan(0)
     expect(row63.srsTaxableWithdrawal).toBeCloseTo(row63.srsWithdrawal * 0.5, 2)
-    // SRS withdrawal appears in governmentIncome
-    expect(row63.governmentIncome).toBeGreaterThanOrEqual(row63.srsWithdrawal)
+    // SRS withdrawal is tracked separately from governmentIncome
+    expect(row63.srsWithdrawal).toBeGreaterThan(0)
+    // totalGross includes SRS withdrawal
+    expect(row63.totalGross).toBeGreaterThanOrEqual(row63.srsWithdrawal)
 
     // Age 72: last drawdown year (63 + 10 - 1 = 72)
     const row72 = rows.find((r) => r.age === 72)!

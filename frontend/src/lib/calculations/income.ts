@@ -413,10 +413,10 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       srsBalance -= srsWithdrawal
       srsBalance = Math.max(0, srsBalance)
       srsTaxableWithdrawal = srsWithdrawal * 0.5 // 50% tax concession
-      governmentIncome += srsWithdrawal
+      // SRS withdrawal tracked separately — not folded into governmentIncome
     }
 
-    const totalGross = salary + rentalIncome + investmentIncome + businessIncome + governmentIncome
+    const totalGross = salary + rentalIncome + investmentIncome + businessIncome + governmentIncome + srsWithdrawal
 
     // CPF contributions (only if employed and not paused)
     let cpfEmployee = 0

@@ -766,6 +766,7 @@ export interface ProjectionRow {
   investmentIncome: number
   businessIncome: number
   governmentIncome: number
+  srsWithdrawal: number
   totalGross: number
   // Expanded: tax/CPF deductions
   sgTax: number
