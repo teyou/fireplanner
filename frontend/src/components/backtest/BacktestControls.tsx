@@ -4,13 +4,21 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
-import type { BacktestDataset, HeatmapConfig } from '@/lib/types'
+import type { BacktestDataset, HeatmapConfig, WithdrawalStrategyType } from '@/lib/types'
+import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
+
+const ALL_STRATEGIES: WithdrawalStrategyType[] = [
+  'constant_dollar', 'vpw', 'guardrails', 'vanguard_dynamic', 'cape_based', 'floor_ceiling',
+  'percent_of_portfolio', 'one_over_n', 'sensible_withdrawals', 'ninety_five_percent',
+  'endowment', 'hebeler_autopilot',
+]
 
 interface BacktestConfig {
   swr: number
   retirementDuration: number
   dataset: BacktestDataset
   blendRatio: number
+  withdrawalStrategy: WithdrawalStrategyType
   heatmapConfig: HeatmapConfig
 }
 
@@ -42,7 +50,27 @@ export function BacktestControls({ config, setConfig, isPending, canRun, validat
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="space-y-2 md:col-span-2 lg:col-span-2">
+            <Label>
+              Withdrawal Strategy
+              <InfoTooltip text="How money is withdrawn during retirement. Each strategy handles market volatility differently. Constant Dollar is the classic 4% rule." />
+            </Label>
+            <Select
+              value={config.withdrawalStrategy}
+              onValueChange={(v) => setConfig({ withdrawalStrategy: v as WithdrawalStrategyType })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ALL_STRATEGIES.map((s) => (
+                  <SelectItem key={s} value={s}>{getStrategyLabel(s)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-2">
             <Label>
               Dataset
@@ -83,7 +111,7 @@ export function BacktestControls({ config, setConfig, isPending, canRun, validat
           <div className="space-y-2">
             <Label>
               SWR
-              <InfoTooltip text="Safe Withdrawal Rate for the backtest. 4% is the classic starting point." />
+              <InfoTooltip text="Safe Withdrawal Rate — the percentage of your portfolio withdrawn in year 1. Used as the initial rate for all strategies. 4% is the classic starting point." />
             </Label>
             <Input
               type="number"

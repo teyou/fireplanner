@@ -12,6 +12,7 @@ export interface BacktestConfig {
   retirementDuration: number
   dataset: BacktestDataset
   blendRatio: number
+  withdrawalStrategy: WithdrawalStrategyType
   heatmapConfig: HeatmapConfig
 }
 
@@ -40,6 +41,7 @@ const DEFAULT_CONFIG: BacktestConfig = {
   retirementDuration: 30,
   dataset: 'us_only',
   blendRatio: 0.70,
+  withdrawalStrategy: 'constant_dollar',
   heatmapConfig: {
     swrMin: 0.01,
     swrMax: 0.06,
@@ -68,7 +70,7 @@ export function useBacktestQuery(): UseBacktestQueryResult {
     setConfigState((prev) => ({ ...prev, ...update }))
   }
 
-  const strategy: WithdrawalStrategyType = withdrawal.selectedStrategies[0] ?? 'constant_dollar'
+  const strategy = config.withdrawalStrategy
 
   // Split state: base results + heatmap results
   const [baseData, setBaseData] = useState<{
