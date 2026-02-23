@@ -25,10 +25,13 @@ htmlcov/
 .mcp.json
 .playwright-mcp/
 .claude/settings.json
-
-# Claude-mem session logs (keep root CLAUDE.md for contributor docs)
+CLAUDE.md
 frontend/CLAUDE.md
 frontend/**/CLAUDE.md
+
+# Internal planning docs
+FIRE_PLANNER_MASTER_PLAN_v2.md
+FIRE_WEBAPP_ARCHITECTURE.md
 
 # Dev screenshots (not for repo — curated ones live in docs/screenshots/)
 *.png
