@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, ChevronDown, ChevronRight, CheckCircle2, Info, ShieldAlert } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AnalysisModeToggle } from '@/components/shared/AnalysisModeToggle'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 import { formatCurrency } from '@/lib/utils'
@@ -129,6 +130,13 @@ function MonteCarloTab({ isAdvanced }: { isAdvanced: boolean }) {
 
       {data && (
         <>
+          <Alert className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
+            <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertDescription className="text-xs text-amber-800 dark:text-amber-200">
+              Simulations use historical data and statistical models. Past performance does not guarantee
+              future results. All projections assume the inputs and assumptions you've provided.
+            </AlertDescription>
+          </Alert>
           {mcInterpretation && (
             <InterpretationCallout level={mcInterpretation.level} message={mcInterpretation.message} />
           )}
@@ -330,6 +338,13 @@ function BacktestTab() {
 
       {baseData && (
         <>
+          <Alert className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
+            <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertDescription className="text-xs text-amber-800 dark:text-amber-200">
+              Simulations use historical data and statistical models. Past performance does not guarantee
+              future results. All projections assume the inputs and assumptions you've provided.
+            </AlertDescription>
+          </Alert>
           {btInterpretation && (
             <InterpretationCallout level={btInterpretation.level} message={btInterpretation.message} />
           )}
@@ -471,6 +486,13 @@ function SequenceRiskTab() {
 
       {data && (
         <>
+          <Alert className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
+            <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertDescription className="text-xs text-amber-800 dark:text-amber-200">
+              Simulations use historical data and statistical models. Past performance does not guarantee
+              future results. All projections assume the inputs and assumptions you've provided.
+            </AlertDescription>
+          </Alert>
           {srInterpretation && (
             <InterpretationCallout level={srInterpretation.level} message={srInterpretation.message} />
           )}
