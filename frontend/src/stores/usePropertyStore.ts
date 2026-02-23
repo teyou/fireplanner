@@ -34,6 +34,7 @@ const PROPERTY_DATA_KEYS = [
   'existingMonthlyPayment', 'existingRentalIncome',
   'existingMortgageRate', 'existingMortgageRemainingYears',
   'mortgageCpfMonthly',
+  'ownershipPercent',
   'downsizing',
   'hdbFlatType', 'hdbMonetizationStrategy', 'hdbLbsRetainedLease',
   'hdbSublettingRooms', 'hdbSublettingRate', 'hdbCpfUsedForHousing',
@@ -58,6 +59,7 @@ const DEFAULT_PROPERTY: Omit<PropertyState, 'validationErrors'> = {
   existingMortgageRate: 0.035,
   existingMortgageRemainingYears: 25,
   mortgageCpfMonthly: 0,
+  ownershipPercent: 1,
   downsizing: DEFAULT_DOWNSIZING,
   hdbFlatType: '4-room',
   hdbMonetizationStrategy: 'none',
@@ -122,6 +124,9 @@ function computeValidationErrors(
     }
     if (state.mortgageCpfMonthly > state.existingMonthlyPayment) {
       errors.mortgageCpfMonthly = 'CPF portion cannot exceed total monthly payment'
+    }
+    if (state.ownershipPercent <= 0 || state.ownershipPercent > 1) {
+      errors.ownershipPercent = 'Ownership share must be between 1% and 100%'
     }
 
     const ds = state.downsizing
@@ -195,7 +200,7 @@ export const usePropertyStore = create<PropertyState & PropertyActions>()(
     }),
     {
       name: 'fireplanner-property',
-      version: 6,
+      version: 7,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -226,6 +231,9 @@ export const usePropertyStore = create<PropertyState & PropertyActions>()(
           if (state.hdbMonetizationStrategy === 'sell-and-rent') {
             state.hdbMonetizationStrategy = 'none'
           }
+        }
+        if (version < 7) {
+          state.ownershipPercent ??= 1
         }
         return state
       },

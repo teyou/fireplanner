@@ -521,6 +521,7 @@ function PropertyContent() {
   const existingMortgageBalance = usePropertyStore((s) => s.existingMortgageBalance)
   const existingMonthlyPayment = usePropertyStore((s) => s.existingMonthlyPayment)
   const mortgageCpfMonthly = usePropertyStore((s) => s.mortgageCpfMonthly)
+  const ownershipPercent = usePropertyStore((s) => s.ownershipPercent)
   const setField = usePropertyStore((s) => s.setField)
   const validationErrors = usePropertyStore((s) => s.validationErrors)
 
@@ -596,6 +597,27 @@ function PropertyContent() {
                 </Select>
               </div>
 
+              <div className="space-y-1">
+                <label className="text-sm text-muted-foreground flex items-center gap-1">
+                  Your Ownership Share
+                  <InfoTooltip text="For co-owned property, enter your percentage share. All property values (equity, mortgage, rental) will be scaled to your portion." />
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min={1}
+                    max={100}
+                    value={Math.round((ownershipPercent ?? 1) * 100)}
+                    onChange={(e) => setField('ownershipPercent', Number(e.target.value) / 100)}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-medium w-12 text-right">{Math.round((ownershipPercent ?? 1) * 100)}%</span>
+                </div>
+                {validationErrors.ownershipPercent && (
+                  <p className="text-xs text-destructive">{validationErrors.ownershipPercent}</p>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <CurrencyInput
                   label="Current Property Value"
@@ -647,8 +669,15 @@ function PropertyContent() {
               {propertyStatus === 'with-mortgage' && (
                 <div className="p-2 bg-muted/50 rounded text-sm">
                   <span className="text-muted-foreground">Property Equity: </span>
-                  <span className="font-semibold">{formatCurrency(propertyEquity)}</span>
-                  <span className="text-muted-foreground"> (Value - Mortgage)</span>
+                  <span className="font-semibold">{formatCurrency(propertyEquity * (ownershipPercent ?? 1))}</span>
+                  {(ownershipPercent ?? 1) < 1 && (
+                    <span className="text-muted-foreground">
+                      {' '}({Math.round((ownershipPercent ?? 1) * 100)}% of {formatCurrency(propertyEquity)})
+                    </span>
+                  )}
+                  {(ownershipPercent ?? 1) >= 1 && (
+                    <span className="text-muted-foreground"> (Value - Mortgage)</span>
+                  )}
                 </div>
               )}
             </>

@@ -733,6 +733,7 @@ export interface PropertyState {
   existingMortgageRate: number
   existingMortgageRemainingYears: number
   mortgageCpfMonthly: number
+  ownershipPercent: number  // 0.01–1.0, default 1.0 (100%). Scales all property values for co-ownership.
   // Downsizing
   downsizing: DownsizingConfig
   // HDB monetization

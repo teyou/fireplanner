@@ -91,9 +91,10 @@ export function useFireCalculations(): FireCalculationsResult {
       expectedReturn = calculatePortfolioReturn(allocation.currentWeights, effectiveReturns)
     }
 
-    // Compute property equity from existing property
+    // Compute property equity from existing property (scaled by ownership %)
+    const ownershipPct = property.ownershipPercent ?? 1
     const propertyEquity = property.ownsProperty
-      ? Math.max(0, property.existingPropertyValue - property.existingMortgageBalance)
+      ? Math.max(0, property.existingPropertyValue - property.existingMortgageBalance) * ownershipPct
       : 0
 
     const metrics = calculateAllFireMetrics({
@@ -164,6 +165,7 @@ export function useFireCalculations(): FireCalculationsResult {
     property.ownsProperty,
     property.existingPropertyValue,
     property.existingMortgageBalance,
+    property.ownershipPercent,
     profile.parentSupportEnabled,
     profile.parentSupport,
     profile.healthcareConfig,

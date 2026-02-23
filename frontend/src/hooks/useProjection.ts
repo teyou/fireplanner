@@ -68,6 +68,8 @@ export function useProjection(): ProjectionResult {
         })
       : null
 
+    const ownershipPct = property.ownershipPercent ?? 1
+
     const { rows, summary } = generateProjection({
       incomeProjection,
       currentAge: profile.currentAge,
@@ -89,11 +91,11 @@ export function useProjection(): ProjectionResult {
       withdrawalStrategy: simulation.selectedStrategy,
       strategyParams: simulation.strategyParams,
       propertyEquity: property.ownsProperty
-        ? Math.max(0, property.existingPropertyValue - property.existingMortgageBalance)
+        ? Math.max(0, property.existingPropertyValue - property.existingMortgageBalance) * ownershipPct
         : 0,
       // Cash portion only — CPF portion is handled by income.ts OA deduction
       annualMortgagePayment: property.ownsProperty
-        ? (property.existingMonthlyPayment - property.mortgageCpfMonthly) * 12
+        ? (property.existingMonthlyPayment - property.mortgageCpfMonthly) * 12 * ownershipPct
         : 0,
       annualRentalIncome: property.ownsProperty
         && property.propertyType === 'hdb' && property.hdbMonetizationStrategy === 'sublet'
@@ -105,9 +107,9 @@ export function useProjection(): ProjectionResult {
       downsizing: property.ownsProperty && property.downsizing.scenario !== 'none'
         ? property.downsizing
         : null,
-      existingMortgageBalance: property.existingMortgageBalance,
+      existingMortgageBalance: property.existingMortgageBalance * ownershipPct,
       existingMortgageRate: property.existingMortgageRate,
-      existingMonthlyPayment: property.existingMonthlyPayment,
+      existingMonthlyPayment: property.existingMonthlyPayment * ownershipPct,
       existingMortgageRemainingYears: property.existingMortgageRemainingYears,
       residencyForAbsd: property.residencyForAbsd,
       parentSupport: profile.parentSupport,
@@ -147,6 +149,7 @@ export function useProjection(): ProjectionResult {
     property.existingPropertyValue,
     property.existingMortgageBalance,
     property.existingMonthlyPayment,
+    property.ownershipPercent,
     property.mortgageCpfMonthly,
     property.existingMortgageRate,
     property.existingMortgageRemainingYears,
