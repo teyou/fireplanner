@@ -79,15 +79,22 @@ export function calculateRealisticSalary(
 
 /**
  * Data-driven salary model: uses MOM salary benchmarks for age and education,
- * scaled by a user adjustment factor.
+ * scaled by a user adjustment factor and inflated to future nominal dollars.
+ *
+ * MOM benchmarks are in today's dollars. When projecting forward, we inflate
+ * by (1 + inflation)^yearsForward to convert to nominal (future) dollars,
+ * keeping the projection consistent with how expenses are inflated.
  */
 export function calculateDataDrivenSalary(
   age: number,
   education: EducationLevel,
-  adjustment: number
+  adjustment: number,
+  inflation: number = 0,
+  yearsForward: number = 0
 ): number {
   const momSalary = getMomSalary(age, education)
-  return momSalary * adjustment
+  const inflationFactor = yearsForward > 0 ? Math.pow(1 + inflation, yearsForward) : 1
+  return momSalary * adjustment * inflationFactor
 }
 
 /**
@@ -103,6 +110,7 @@ export function getSalaryAtAge(params: {
   promotionJumps: PromotionJump[]
   education: EducationLevel
   momAdjustment: number
+  inflation?: number
 }): number {
   switch (params.model) {
     case 'simple':
@@ -123,7 +131,9 @@ export function getSalaryAtAge(params: {
       return calculateDataDrivenSalary(
         params.targetAge,
         params.education,
-        params.momAdjustment
+        params.momAdjustment,
+        params.inflation ?? 0,
+        params.targetAge - params.currentAge
       )
   }
 }
@@ -320,6 +330,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
         promotionJumps: params.promotionJumps,
         education: params.momEducation,
         momAdjustment: params.momAdjustment,
+        inflation: params.inflation,
       })
       salary = applyLifeEvents(salary, age, '__salary__', params.lifeEvents, params.lifeEventsEnabled)
     }

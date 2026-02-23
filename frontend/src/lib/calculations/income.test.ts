@@ -121,6 +121,18 @@ describe('calculateDataDrivenSalary', () => {
   it('returns $57K for age 25 degree', () => {
     expect(calculateDataDrivenSalary(25, 'degree', 1.0)).toBe(57000)
   })
+
+  it('inflates MOM benchmark to future nominal dollars', () => {
+    // Age 40 degree = $97,500 in today's dollars
+    // 10 years forward at 2.5% inflation → $97,500 × 1.025^10 ≈ $124,834
+    const result = calculateDataDrivenSalary(40, 'degree', 1.0, 0.025, 10)
+    expect(result).toBeCloseTo(97500 * Math.pow(1.025, 10), 0)
+  })
+
+  it('returns today-dollar MOM value when yearsForward is 0', () => {
+    // No inflation applied at year 0 (current age)
+    expect(calculateDataDrivenSalary(30, 'degree', 1.0, 0.025, 0)).toBe(72000)
+  })
 })
 
 // ============================================================
@@ -143,7 +155,7 @@ describe('getSalaryAtAge', () => {
     expect(result).toBeCloseTo(calculateSimpleSalary(72000, 0.03, 5), 2)
   })
 
-  it('dispatches to data-driven model', () => {
+  it('dispatches to data-driven model with inflation', () => {
     const result = getSalaryAtAge({
       model: 'data-driven',
       baseSalary: 72000,
@@ -154,8 +166,10 @@ describe('getSalaryAtAge', () => {
       promotionJumps: [],
       education: 'degree',
       momAdjustment: 1.0,
+      inflation: 0.025,
     })
-    expect(result).toBe(calculateDataDrivenSalary(35, 'degree', 1.0))
+    // MOM benchmark for age 35 degree = $85,800 inflated 5 years at 2.5%
+    expect(result).toBe(calculateDataDrivenSalary(35, 'degree', 1.0, 0.025, 5))
   })
 })
 
