@@ -70,7 +70,7 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   srsInvestmentReturn: 0.04,
   srsDrawdownStartAge: 63,
   fireType: 'regular',
-  swr: 0.04,
+  swr: 0.036,
   fireNumberBasis: 'fireAge',
   retirementSpendingAdjustment: 1.0,
   expectedReturn: 0.07,

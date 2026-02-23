@@ -66,7 +66,7 @@ export function StartPage() {
   const [draftExpenses, setDraftExpenses] = useState(profileStore.annualExpenses)
 
   // Compute preliminary FIRE metrics from draft values
-  const DEFAULT_SWR = 0.04
+  const DEFAULT_SWR = 0.036
   const DEFAULT_RETURN = 0.07
   const DEFAULT_INFLATION = 0.025
   const DEFAULT_EXPENSE_RATIO = 0.003

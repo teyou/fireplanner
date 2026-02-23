@@ -75,7 +75,7 @@ export function useSectionCompletion(): UseSectionCompletionResult {
     profile.residencyStatus !== 'citizen'
 
   const fireCustomized =
-    profile.swr !== 0.04 ||
+    profile.swr !== 0.036 ||
     profile.fireType !== 'regular' ||
     profile.expectedReturn !== 0.07 ||
     profile.inflation !== 0.025
