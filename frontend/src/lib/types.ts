@@ -127,6 +127,9 @@ export interface ProfileState {
   // Retirement One-Time Withdrawals
   retirementWithdrawals: RetirementWithdrawal[]
 
+  // Financial Goals
+  financialGoals: FinancialGoal[]
+
   // Validation
   validationErrors: ValidationErrors
 }
@@ -788,6 +791,25 @@ export interface ProjectionSummary {
   terminalLiquidNW: number
   terminalTotalNW: number
   portfolioDepletedAge: number | null
+}
+
+// ============================================================
+// Financial Goals
+// ============================================================
+
+export type GoalCategory =
+  | 'wedding' | 'education' | 'housing' | 'vehicle'
+  | 'travel' | 'renovation' | 'medical' | 'family' | 'other'
+
+export interface FinancialGoal {
+  id: string
+  label: string
+  amount: number            // in today's dollars
+  targetAge: number         // when goal occurs
+  durationYears: number     // 1 = lump sum, >1 = spread equally
+  priority: 'essential' | 'important' | 'nice-to-have'
+  inflationAdjusted: boolean
+  category: GoalCategory
 }
 
 // ============================================================
