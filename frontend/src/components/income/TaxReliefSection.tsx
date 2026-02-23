@@ -123,7 +123,7 @@ export function TaxReliefSection() {
               value={income.personalReliefs}
               onChange={(v) => income.setField('personalReliefs', v)}
               error={income.validationErrors.personalReliefs}
-              tooltip="Annual personal tax reliefs (earned income, NSman, spouse, children, parents, etc.)"
+              tooltip="Annual personal tax reliefs (earned income, NSman, spouse, children, parents, etc.). Do NOT include CPF or SRS here — those are deducted automatically below."
             />
           </div>
         ) : (
@@ -299,42 +299,42 @@ export function TaxReliefSection() {
                 </p>
               )}
             </div>
-
-            {/* Auto-calculated deductions: CPF Relief + SRS */}
-            <div className="space-y-2 pt-2 border-t">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Auto-calculated deductions</p>
-
-              {/* CPF Relief (Employee) */}
-              <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-1">
-                  CPF Relief (Employee)
-                  <InfoTooltip text="Employee CPF contribution is automatically deducted from your taxable income. Computed from your salary and age, subject to the OW ceiling ($8,000/month from 2026) and annual salary ceiling ($102,000)." />
-                </span>
-                <span className="font-medium text-green-700 dark:text-green-400">{formatCurrency(cpfEmployee)}</span>
-              </div>
-
-              {/* SRS Deduction */}
-              {srsDeduction > 0 && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-1">
-                    SRS Deduction
-                    <InfoTooltip text={`SRS contributions are tax-deductible up to ${residencyStatus === 'foreigner' ? '$35,700' : '$15,300'}/year. Set your annual SRS contribution in the FIRE Profile section.`} />
-                  </span>
-                  <span className="font-medium text-green-700 dark:text-green-400">{formatCurrency(srsDeduction)}</span>
-                </div>
-              )}
-
-              {/* Grand Total */}
-              <div className="flex items-center justify-between text-sm pt-2 border-t border-dashed">
-                <span className="text-muted-foreground font-medium">
-                  Total Tax Deductions:
-                  <InfoTooltip text="Sum of personal reliefs, CPF employee contribution, and SRS deduction — all subtracted from gross income to arrive at chargeable income." />
-                </span>
-                <span className="font-bold text-base">{formatCurrency(computedTotal + cpfEmployee + srsDeduction)}</span>
-              </div>
-            </div>
           </div>
         )}
+
+        {/* Auto-calculated deductions: CPF Relief + SRS — always visible in both modes */}
+        <div className="space-y-2 pt-2 border-t">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Auto-calculated deductions</p>
+
+          {/* CPF Relief (Employee) */}
+          <div className="flex items-center justify-between text-sm">
+            <span className="flex items-center gap-1">
+              CPF Relief (Employee)
+              <InfoTooltip text="Employee CPF contribution is automatically deducted from your taxable income. Computed from your salary and age, subject to the OW ceiling ($8,000/month from 2026) and annual salary ceiling ($102,000). Do not include this in Personal Reliefs above." />
+            </span>
+            <span className="font-medium text-green-700 dark:text-green-400">{formatCurrency(cpfEmployee)}</span>
+          </div>
+
+          {/* SRS Deduction */}
+          {srsDeduction > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="flex items-center gap-1">
+                SRS Deduction
+                <InfoTooltip text={`SRS contributions are tax-deductible up to ${residencyStatus === 'foreigner' ? '$35,700' : '$15,300'}/year. Set your annual SRS contribution in the FIRE Profile section. Do not include this in Personal Reliefs above.`} />
+              </span>
+              <span className="font-medium text-green-700 dark:text-green-400">{formatCurrency(srsDeduction)}</span>
+            </div>
+          )}
+
+          {/* Grand Total */}
+          <div className="flex items-center justify-between text-sm pt-2 border-t border-dashed">
+            <span className="text-muted-foreground font-medium flex items-center gap-1">
+              Total Tax Deductions
+              <InfoTooltip text="Sum of personal reliefs, CPF employee contribution, and SRS deduction — all subtracted from gross income to arrive at chargeable income." />
+            </span>
+            <span className="font-bold text-base">{formatCurrency(computedTotal + cpfEmployee + srsDeduction)}</span>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )
