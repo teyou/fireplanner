@@ -48,6 +48,11 @@ import { DownsizingScenarioForm } from '@/components/property/DownsizingScenario
 import { DownsizingResultsPanel } from '@/components/property/DownsizingResultsPanel'
 import { HdbMonetizationSection } from '@/components/property/HdbMonetizationSection'
 
+// Goals sections
+import { GoalsSection } from '@/components/goals/GoalsSection'
+import { GoalImpactSummary } from '@/components/goals/GoalImpactSummary'
+import { GoalTimelineChart } from '@/components/goals/GoalTimelineChart'
+
 // Shared
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { PercentInput } from '@/components/shared/PercentInput'
@@ -116,6 +121,7 @@ type SectionId =
   | 'section-fire-settings'
   | 'section-income'
   | 'section-expenses'
+  | 'section-goals'
   | 'section-net-worth'
   | 'section-cpf'
   | 'section-healthcare'
@@ -136,6 +142,7 @@ const GOAL_FIRST_ORDER: SectionId[] = [
   'section-fire-settings',
   'section-income',
   'section-expenses',
+  'section-goals',
   'section-net-worth',
   'section-cpf',
   'section-healthcare',
@@ -147,6 +154,7 @@ const STORY_FIRST_ORDER: SectionId[] = [
   'section-personal',
   'section-income',
   'section-expenses',
+  'section-goals',
   'section-net-worth',
   'section-cpf',
   'section-healthcare',
@@ -160,6 +168,7 @@ const ALREADY_FIRE_ORDER: SectionId[] = [
   'section-net-worth',
   'section-property',
   'section-expenses',
+  'section-goals',
   'section-healthcare',
   'section-allocation',
   'section-fire-settings',
@@ -710,6 +719,16 @@ function AllocationContent() {
   )
 }
 
+function GoalsContent() {
+  return (
+    <>
+      <GoalsSection />
+      <GoalImpactSummary />
+      <GoalTimelineChart />
+    </>
+  )
+}
+
 function SectionModeLink({ sectionId, className }: { sectionId: SectionId; className?: string }) {
   const config = ADVANCED_LABELS[sectionId]
   const modeSectionId = config?.modeSectionId ?? 'section-fire-settings'
@@ -886,6 +905,14 @@ export function InputsPage() {
       resetLabel: 'Reset Withdrawal',
       onReset: resetWithdrawal,
       content: <ExpensesContent />,
+    },
+    'section-goals': {
+      id: 'section-goals',
+      title: 'Financial Goals',
+      description: 'Wedding, education, home downpayment, and other milestone expenses.',
+      resetLabel: 'Reset Goals',
+      onReset: () => confirmReset('Goals', () => useProfileStore.getState().clearFinancialGoals(), () => ({ ...useProfileStore.getState() }), (s) => useProfileStore.setState(s)),
+      content: <GoalsContent />,
     },
     'section-net-worth': {
       id: 'section-net-worth',

@@ -114,6 +114,7 @@ export function useProjection(): ProjectionResult {
       parentSupportEnabled: profile.parentSupportEnabled,
       healthcareConfig: profile.healthcareConfig?.enabled ? profile.healthcareConfig : null,
       retirementWithdrawals: profile.retirementWithdrawals,
+      financialGoals: profile.financialGoals,
     })
 
     return { rows, summary, hasErrors: false, errors: {} }
@@ -162,5 +163,6 @@ export function useProjection(): ProjectionResult {
     profile.parentSupport,
     profile.healthcareConfig,
     profile.retirementWithdrawals,
+    profile.financialGoals,
   ])
 }

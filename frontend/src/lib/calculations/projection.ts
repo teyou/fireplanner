@@ -15,6 +15,7 @@ import type {
   GlidePathConfig,
   ParentSupport,
   RetirementWithdrawal,
+  FinancialGoal,
   DownsizingConfig,
   HealthcareConfig,
 } from '@/lib/types'
@@ -73,6 +74,8 @@ export interface ProjectionParams {
   healthcareConfig: HealthcareConfig | null
   // One-time retirement withdrawals
   retirementWithdrawals?: RetirementWithdrawal[]
+  // Financial goals (pre- and post-retirement)
+  financialGoals?: FinancialGoal[]
 }
 
 export interface ProjectionResult {
@@ -367,7 +370,20 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       // The shortfall must still be deducted from the portfolio.
       const baseExpInflated = annualExpenses * Math.pow(1 + inflation, year)
       const incomeShortfall = Math.max(0, baseExpInflated - incomeRow.totalNet)
-      const adjustedSavings = incomeRow.annualSavings + netPropertyCashflow - extraExpenses - incomeShortfall
+
+      // Financial goals that fall in this year (pre-retirement)
+      let goalDeduction = 0
+      for (const goal of params.financialGoals ?? []) {
+        const endAge = goal.targetAge + goal.durationYears
+        if (age >= goal.targetAge && age < endAge) {
+          const yearlyAmount = goal.inflationAdjusted
+            ? (goal.amount / goal.durationYears) * Math.pow(1 + inflation, year)
+            : goal.amount / goal.durationYears
+          goalDeduction += yearlyAmount
+        }
+      }
+
+      const adjustedSavings = incomeRow.annualSavings + netPropertyCashflow - extraExpenses - incomeShortfall - goalDeduction
       portfolioReturnDollar = startLiquidNW * returnRate
       liquidNW = Math.max(0, startLiquidNW * (1 + returnRate) + adjustedSavings)
       savingsOrWithdrawal = adjustedSavings
@@ -409,6 +425,17 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
             ? rw.amount * Math.pow(1 + inflation, year)
             : rw.amount
           oneTimeWithdrawalTotal += amount
+        }
+      }
+
+      // Financial goals that fall in retirement
+      for (const goal of params.financialGoals ?? []) {
+        const endAge = goal.targetAge + goal.durationYears
+        if (age >= goal.targetAge && age < endAge) {
+          const yearlyAmount = goal.inflationAdjusted
+            ? (goal.amount / goal.durationYears) * Math.pow(1 + inflation, year)
+            : goal.amount / goal.durationYears
+          oneTimeWithdrawalTotal += yearlyAmount
         }
       }
 

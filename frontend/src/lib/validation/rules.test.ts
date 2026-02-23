@@ -29,6 +29,7 @@ describe('validateProfileConsistency edge cases', () => {
       parentSupport: [],
       healthcareConfig: defaultHealthcareConfig,
       retirementWithdrawals: [],
+      financialGoals: [],
     })
     expect(errors.cpfLifeStartAge).toBeTruthy()
   })
@@ -46,6 +47,7 @@ describe('validateProfileConsistency edge cases', () => {
       ],
       healthcareConfig: defaultHealthcareConfig,
       retirementWithdrawals: [],
+      financialGoals: [],
     })
     expect(errors['parentSupport_ps1_startAge']).toBeTruthy()
   })
@@ -63,6 +65,7 @@ describe('validateProfileConsistency edge cases', () => {
       ],
       healthcareConfig: defaultHealthcareConfig,
       retirementWithdrawals: [],
+      financialGoals: [],
     })
     expect(errors['parentSupport_ps1_endAge']).toBeTruthy()
   })
@@ -82,6 +85,7 @@ describe('validateProfileConsistency edge cases', () => {
         oopBaseAmount: 60000, // exceeds $50,000 max
       },
       retirementWithdrawals: [],
+      financialGoals: [],
     })
     expect(errors['healthcareConfig.oopBaseAmount']).toBeTruthy()
   })
@@ -101,6 +105,7 @@ describe('validateProfileConsistency edge cases', () => {
         mediSaveTopUpAnnual: 50000, // exceeds $37,740 max
       },
       retirementWithdrawals: [],
+      financialGoals: [],
     })
     expect(errors['healthcareConfig.mediSaveTopUpAnnual']).toBeTruthy()
   })
@@ -120,6 +125,7 @@ describe('validateProfileConsistency edge cases', () => {
         oopBaseAmount: 60000, // would be invalid if enabled
       },
       retirementWithdrawals: [],
+      financialGoals: [],
     })
     expect(errors['healthcareConfig.oopBaseAmount']).toBeUndefined()
   })
@@ -186,6 +192,7 @@ describe('retirement withdrawal cross-store validation', () => {
       retirementWithdrawals: [
         { id: 'rw1', label: 'Too early', amount: 50000, age: 60, durationYears: 1, inflationAdjusted: true },
       ],
+      financialGoals: [],
     })
     expect(errors['retirementWithdrawal_rw1_age']).toBeTruthy()
   })
@@ -203,6 +210,7 @@ describe('retirement withdrawal cross-store validation', () => {
       retirementWithdrawals: [
         { id: 'rw1', label: 'Eldercare', amount: 2000, age: 85, durationYears: 10, inflationAdjusted: true },
       ],
+      financialGoals: [],
     })
     expect(errors['retirementWithdrawal_rw1_durationYears']).toBeTruthy()
   })
@@ -221,6 +229,7 @@ describe('retirement withdrawal cross-store validation', () => {
         { id: 'rw1', label: 'Car', amount: 50000, age: 60, durationYears: 1, inflationAdjusted: true },
         { id: 'rw2', label: 'Eldercare', amount: 2000, age: 75, durationYears: 10, inflationAdjusted: false },
       ],
+      financialGoals: [],
     })
     expect(errors['retirementWithdrawal_rw1_age']).toBeUndefined()
     expect(errors['retirementWithdrawal_rw1_durationYears']).toBeUndefined()
@@ -242,8 +251,125 @@ describe('retirement withdrawal cross-store validation', () => {
       retirementWithdrawals: [
         { id: 'rw1', label: 'Boundary', amount: 10000, age: 80, durationYears: 10, inflationAdjusted: true },
       ],
+      financialGoals: [],
     })
     // 80 + 10 = 90 = lifeExpectancy → the condition is > lifeExpectancy, so exactly equal should pass
     expect(errors['retirementWithdrawal_rw1_durationYears']).toBeUndefined()
+  })
+})
+
+describe('financial goals validation', () => {
+  it('catches goal with amount <= 0', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [
+        { id: 'g1', label: 'Bad', amount: 0, targetAge: 40, durationYears: 1, priority: 'important', inflationAdjusted: true, category: 'other' },
+      ],
+    })
+    expect(errors['goal_g1_amount']).toBeTruthy()
+  })
+
+  it('catches goal with targetAge <= currentAge', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [
+        { id: 'g1', label: 'Past', amount: 50000, targetAge: 30, durationYears: 1, priority: 'important', inflationAdjusted: true, category: 'wedding' },
+      ],
+    })
+    expect(errors['goal_g1_age']).toBeTruthy()
+  })
+
+  it('catches goal extending past lifeExpectancy', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [
+        { id: 'g1', label: 'Long', amount: 100000, targetAge: 85, durationYears: 10, priority: 'essential', inflationAdjusted: false, category: 'education' },
+      ],
+    })
+    expect(errors['goal_g1_duration']).toBeTruthy()
+  })
+
+  it('accepts valid goals', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [
+        { id: 'g1', label: 'Wedding', amount: 50000, targetAge: 35, durationYears: 1, priority: 'important', inflationAdjusted: true, category: 'wedding' },
+        { id: 'g2', label: 'Education', amount: 200000, targetAge: 50, durationYears: 4, priority: 'essential', inflationAdjusted: true, category: 'education' },
+      ],
+    })
+    expect(errors['goal_g1_amount']).toBeUndefined()
+    expect(errors['goal_g1_age']).toBeUndefined()
+    expect(errors['goal_g1_duration']).toBeUndefined()
+    expect(errors['goal_g2_amount']).toBeUndefined()
+    expect(errors['goal_g2_age']).toBeUndefined()
+    expect(errors['goal_g2_duration']).toBeUndefined()
+  })
+
+  it('catches goal with targetAge > lifeExpectancy', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [
+        { id: 'g1', label: 'Too Late', amount: 50000, targetAge: 95, durationYears: 1, priority: 'nice-to-have', inflationAdjusted: false, category: 'travel' },
+      ],
+    })
+    expect(errors['goal_g1_age']).toBeTruthy()
+  })
+
+  it('catches goal with durationYears < 1', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [
+        { id: 'g1', label: 'Zero Dur', amount: 50000, targetAge: 40, durationYears: 0, priority: 'important', inflationAdjusted: true, category: 'other' },
+      ],
+    })
+    expect(errors['goal_g1_duration']).toBeTruthy()
   })
 })

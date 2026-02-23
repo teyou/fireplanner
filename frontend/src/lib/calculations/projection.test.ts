@@ -287,8 +287,7 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
-      // initialWithdrawal = 200K * 0.04 = $8K (portfolio-based)
-      // maxPermitted = 8K, expenseGap = 10K - 5K = 5K, actualDraw = 5K, excess = 8K - 5K = 3K
+      // maxPermitted = 8K, actualDraw = 5K, excess = 3K
       expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(8000, 2)
       expect(result.rows[0].withdrawalAmount).toBeCloseTo(5000, 2)
       expect(result.rows[0].withdrawalExcess).toBeCloseTo(3000, 2)
@@ -316,8 +315,7 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
-      // initialWithdrawal = 200K * 0.04 = $8K (portfolio-based)
-      // expenseGap = 0 (passive covers all), actualDraw = 0, surplus = $10K reinvested
+      // expenseGap = 0, actualDraw = 0, surplus = $10K reinvested
       expect(result.rows[0].withdrawalAmount).toBe(0)
       expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(8000, 2)
       expect(result.rows[0].withdrawalExcess).toBeCloseTo(8000, 2)
@@ -344,8 +342,7 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
-      // initialWithdrawal = 500K * 0.04 = $20K (portfolio-based)
-      // maxPermitted = 20K, expenseGap = 5K, actualDraw = 5K, excess = 20K - 5K = 15K
+      // maxPermitted = 20K, but only need $5K for expenses
       expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(20000, 2)
       expect(result.rows[0].withdrawalAmount).toBeCloseTo(5000, 2)
       expect(result.rows[0].withdrawalExcess).toBeCloseTo(15000, 2)
@@ -965,6 +962,236 @@ describe('generateProjection', () => {
       expect(result.rows[0].withdrawalAmount).toBeCloseTo(20000, 2)
       expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(-44000, 2) // 20K expenses + 24K mortgage
       expect(result.rows[0].liquidNW).toBeCloseTo(456000, 2) // 500K - 44K
+    })
+  })
+
+  // ============================================================
+  // Financial Goals
+  // ============================================================
+
+  describe('financial goals', () => {
+    it('pre-retirement goal deducts from savings at correct age', () => {
+      const params = makeParams({
+        currentAge: 30,
+        retirementAge: 65,
+        lifeExpectancy: 90,
+        inflation: 0,
+        financialGoals: [
+          {
+            id: 'g1', label: 'Wedding', amount: 50000, targetAge: 35,
+            durationYears: 1, priority: 'important', inflationAdjusted: false, category: 'wedding',
+          },
+        ],
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 90, annualSavings: 20000,
+      })
+
+      const result = generateProjection(params)
+      const noGoalParams = { ...params, financialGoals: [] }
+      noGoalParams.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 90, annualSavings: 20000,
+      })
+      const noGoalResult = generateProjection(noGoalParams)
+
+      // At age 35 (year 5), savings should be reduced by 50,000
+      const goalRow = result.rows[5]  // age 35
+      const noGoalRow = noGoalResult.rows[5]
+      expect(goalRow.age).toBe(35)
+      expect(goalRow.savingsOrWithdrawal).toBe(noGoalRow.savingsOrWithdrawal - 50000)
+    })
+
+    it('multi-year goal spreads amount equally across years', () => {
+      const params = makeParams({
+        currentAge: 30,
+        retirementAge: 65,
+        lifeExpectancy: 90,
+        inflation: 0,
+        financialGoals: [
+          {
+            id: 'g1', label: 'Education', amount: 200000, targetAge: 50,
+            durationYears: 4, priority: 'essential', inflationAdjusted: false, category: 'education',
+          },
+        ],
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 90, annualSavings: 60000,
+      })
+
+      const result = generateProjection(params)
+      const noGoalParams = { ...params, financialGoals: [] }
+      noGoalParams.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 90, annualSavings: 60000,
+      })
+      const noGoalResult = generateProjection(noGoalParams)
+
+      // Each of the 4 years (ages 50-53) should deduct 50000/yr (200000/4)
+      for (let i = 0; i < 4; i++) {
+        const yearIdx = 50 - 30 + i
+        const goalRow = result.rows[yearIdx]
+        const noGoalRow = noGoalResult.rows[yearIdx]
+        expect(goalRow.age).toBe(50 + i)
+        expect(goalRow.savingsOrWithdrawal).toBeCloseTo(noGoalRow.savingsOrWithdrawal - 50000, 0)
+      }
+
+      // Year after goal ends (age 54) should have normal savings
+      const afterGoalIdx = 54 - 30
+      expect(result.rows[afterGoalIdx].savingsOrWithdrawal).toBe(noGoalResult.rows[afterGoalIdx].savingsOrWithdrawal)
+    })
+
+    it('post-retirement goal adds to oneTimeWithdrawalTotal', () => {
+      const params = makeParams({
+        currentAge: 55,
+        retirementAge: 58,
+        lifeExpectancy: 70,
+        initialLiquidNW: 2000000,
+        inflation: 0,
+        financialGoals: [
+          {
+            id: 'g1', label: 'Car', amount: 100000, targetAge: 62,
+            durationYears: 1, priority: 'important', inflationAdjusted: false, category: 'vehicle',
+          },
+        ],
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 55, retirementAge: 58, lifeExpectancy: 70,
+      })
+
+      const result = generateProjection(params)
+      const noGoalParams = { ...params, financialGoals: [] }
+      noGoalParams.incomeProjection = generateMockIncomeProjection({
+        currentAge: 55, retirementAge: 58, lifeExpectancy: 70,
+      })
+      const noGoalResult = generateProjection(noGoalParams)
+
+      // At age 62 (year 7), portfolio should be lower due to the 100K withdrawal
+      const goalRow = result.rows[7]
+      const noGoalRow = noGoalResult.rows[7]
+      expect(goalRow.age).toBe(62)
+      expect(goalRow.liquidNW).toBeLessThan(noGoalRow.liquidNW)
+      // The difference should be approximately 100000 (goal amount)
+      expect(noGoalRow.liquidNW - goalRow.liquidNW).toBeCloseTo(100000, -2)
+    })
+
+    it('inflation-adjusted goal compounds correctly', () => {
+      const inflation = 0.03
+      const params = makeParams({
+        currentAge: 30,
+        retirementAge: 65,
+        lifeExpectancy: 90,
+        inflation,
+        financialGoals: [
+          {
+            id: 'g1', label: 'Reno', amount: 60000, targetAge: 40,
+            durationYears: 1, priority: 'important', inflationAdjusted: true, category: 'renovation',
+          },
+        ],
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 90, annualSavings: 20000,
+      })
+
+      const noGoalParams = { ...params, financialGoals: [] }
+      noGoalParams.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 90, annualSavings: 20000,
+      })
+
+      const result = generateProjection(params)
+      const noGoalResult = generateProjection(noGoalParams)
+
+      // At age 40 (year 10), the inflation-adjusted deduction should be 60000 * (1.03^10)
+      const expectedDeduction = 60000 * Math.pow(1 + inflation, 10)
+      const goalRow = result.rows[10]
+      const noGoalRow = noGoalResult.rows[10]
+      expect(goalRow.age).toBe(40)
+      // savingsOrWithdrawal difference should match the inflation-adjusted amount
+      expect(noGoalRow.savingsOrWithdrawal - goalRow.savingsOrWithdrawal).toBeCloseTo(expectedDeduction, 0)
+    })
+
+    it('no goals = no change to projection output', () => {
+      const params = makeParams({
+        currentAge: 30,
+        retirementAge: 40,
+        lifeExpectancy: 50,
+        financialGoals: [],
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 40, lifeExpectancy: 50,
+      })
+
+      const emptyResult = generateProjection(params)
+
+      const undefinedParams = { ...params }
+      delete (undefinedParams as Record<string, unknown>).financialGoals
+      const undefinedResult = generateProjection(undefinedParams)
+
+      // Both should produce identical results
+      expect(emptyResult.rows.length).toBe(undefinedResult.rows.length)
+      for (let i = 0; i < emptyResult.rows.length; i++) {
+        expect(emptyResult.rows[i].liquidNW).toBeCloseTo(undefinedResult.rows[i].liquidNW, 2)
+      }
+    })
+
+    it('goals do not affect wrong years', () => {
+      const params = makeParams({
+        currentAge: 30,
+        retirementAge: 65,
+        lifeExpectancy: 90,
+        inflation: 0,
+        financialGoals: [
+          {
+            id: 'g1', label: 'Wedding', amount: 50000, targetAge: 35,
+            durationYears: 2, priority: 'important', inflationAdjusted: false, category: 'wedding',
+          },
+        ],
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 90, annualSavings: 30000,
+      })
+
+      const noGoalParams = { ...params, financialGoals: [] }
+      noGoalParams.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 90, annualSavings: 30000,
+      })
+      const noGoalResult = generateProjection(noGoalParams)
+      const result = generateProjection(params)
+
+      // Before targetAge (age 34, year 4) — no deduction
+      expect(result.rows[4].savingsOrWithdrawal).toBe(noGoalResult.rows[4].savingsOrWithdrawal)
+
+      // During goal (ages 35-36, years 5-6) — deduction present
+      expect(result.rows[5].savingsOrWithdrawal).toBeLessThan(noGoalResult.rows[5].savingsOrWithdrawal)
+      expect(result.rows[6].savingsOrWithdrawal).toBeLessThan(noGoalResult.rows[6].savingsOrWithdrawal)
+
+      // After goal (age 37, year 7) — no deduction
+      expect(result.rows[7].savingsOrWithdrawal).toBe(noGoalResult.rows[7].savingsOrWithdrawal)
+    })
+
+    it('goal exceeding annual savings reduces portfolio', () => {
+      const params = makeParams({
+        currentAge: 30,
+        retirementAge: 65,
+        lifeExpectancy: 90,
+        initialLiquidNW: 200000,
+        inflation: 0,
+        financialGoals: [
+          {
+            id: 'g1', label: 'Big Goal', amount: 100000, targetAge: 31,
+            durationYears: 1, priority: 'essential', inflationAdjusted: false, category: 'other',
+          },
+        ],
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 90, annualSavings: 20000,
+      })
+
+      const result = generateProjection(params)
+
+      // At age 31, savings = 20000 - 100000 = -80000
+      // So savings + portfolio growth results in portfolio going down
+      const row31 = result.rows[1]
+      expect(row31.age).toBe(31)
+      expect(row31.savingsOrWithdrawal).toBe(20000 - 100000)
     })
   })
 })

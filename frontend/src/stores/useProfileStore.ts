@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ProfileState, ParentSupport, RetirementWithdrawal, HealthcareConfig, OopCurveVariant, ValidationErrors } from '@/lib/types'
+import type { ProfileState, ParentSupport, RetirementWithdrawal, FinancialGoal, HealthcareConfig, OopCurveVariant, ValidationErrors } from '@/lib/types'
 import { validateProfileField } from '@/lib/validation/schemas'
 import { validateProfileConsistency } from '@/lib/validation/rules'
 import { interpolateOopMultiplier } from '@/lib/data/healthcareOop'
@@ -16,6 +16,10 @@ interface ProfileActions {
   addRetirementWithdrawal: (entry: RetirementWithdrawal) => void
   removeRetirementWithdrawal: (id: string) => void
   updateRetirementWithdrawal: (id: string, updates: Partial<Omit<RetirementWithdrawal, 'id'>>) => void
+  addFinancialGoal: (goal: FinancialGoal) => void
+  removeFinancialGoal: (id: string) => void
+  updateFinancialGoal: (id: string, updates: Partial<Omit<FinancialGoal, 'id'>>) => void
+  clearFinancialGoals: () => void
   reset: () => void
 }
 
@@ -31,6 +35,7 @@ const PROFILE_DATA_KEYS = [
   'parentSupportEnabled', 'parentSupport',
   'healthcareConfig',
   'retirementWithdrawals',
+  'financialGoals',
 ] as const
 
 const DEFAULT_HEALTHCARE_CONFIG: HealthcareConfig = {
@@ -86,6 +91,7 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   parentSupport: [],
   healthcareConfig: DEFAULT_HEALTHCARE_CONFIG,
   retirementWithdrawals: [],
+  financialGoals: [],
 }
 
 function extractProfileData(state: ProfileState & ProfileActions): Omit<ProfileState, 'validationErrors'> {
@@ -207,6 +213,51 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
           }
         }),
 
+      addFinancialGoal: (goal: FinancialGoal) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = { ...stateData, financialGoals: [...stateData.financialGoals, goal] }
+          return {
+            financialGoals: updated.financialGoals,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
+      removeFinancialGoal: (id: string) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = { ...stateData, financialGoals: stateData.financialGoals.filter((g) => g.id !== id) }
+          return {
+            financialGoals: updated.financialGoals,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
+      updateFinancialGoal: (id: string, updates: Partial<Omit<FinancialGoal, 'id'>>) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = {
+            ...stateData,
+            financialGoals: stateData.financialGoals.map((g) =>
+              g.id === id ? { ...g, ...updates } : g
+            ),
+          }
+          return {
+            financialGoals: updated.financialGoals,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
+      clearFinancialGoals: () =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = { ...stateData, financialGoals: [] }
+          return {
+            financialGoals: [],
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
       reset: () =>
         set({
           ...DEFAULT_PROFILE,
@@ -215,7 +266,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 14,
+      version: 15,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -288,6 +339,9 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
             const refMultiplier = interpolateOopMultiplier(refAge, (hc.oopCurveVariant as OopCurveVariant) ?? 'study-backed')
             hc.oopBaseAmount = Math.round(((hc.oopBaseAmount as number) ?? 1200) * refMultiplier)
           }
+        }
+        if (version < 15) {
+          state.financialGoals = state.financialGoals ?? []
         }
         return state
       },

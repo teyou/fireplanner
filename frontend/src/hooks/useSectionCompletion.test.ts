@@ -14,10 +14,10 @@ beforeEach(() => {
 })
 
 describe('useSectionCompletion', () => {
-  it('returns 9 sections', () => {
+  it('returns 10 sections', () => {
     const { result } = renderHook(() => useSectionCompletion())
-    expect(result.current.totalSections).toBe(9)
-    expect(Object.keys(result.current.sections)).toHaveLength(9)
+    expect(result.current.totalSections).toBe(10)
+    expect(Object.keys(result.current.sections)).toHaveLength(10)
   })
 
   it('default state: sections at "default" status (not customized)', () => {

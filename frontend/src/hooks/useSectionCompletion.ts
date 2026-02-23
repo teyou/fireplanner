@@ -8,6 +8,7 @@ export type SectionId =
   | 'section-fire-settings'
   | 'section-income'
   | 'section-expenses'
+  | 'section-goals'
   | 'section-net-worth'
   | 'section-cpf'
   | 'section-healthcare'
@@ -90,6 +91,8 @@ export function useSectionCompletion(): UseSectionCompletionResult {
   const healthcareCustomized = profile.healthcareConfig.enabled
   const propertyCustomized = property.ownsProperty !== false
   const allocationCustomized = allocation.selectedTemplate !== 'balanced'
+  const goalsCustomized = profile.financialGoals.length > 0
+  const goalsErrorCount = Object.keys(profileErrors).filter((k) => k.startsWith('goal_')).length
 
   const sections: Record<SectionId, SectionCompletion> = {
     'section-personal': {
@@ -111,6 +114,11 @@ export function useSectionCompletion(): UseSectionCompletionResult {
       isComplete: expensesCustomized,
       status: getStatus(expensesCustomized, expensesErrors),
       errorCount: expensesErrors,
+    },
+    'section-goals': {
+      isComplete: goalsCustomized,
+      status: getStatus(goalsCustomized, goalsErrorCount),
+      errorCount: goalsErrorCount,
     },
     'section-net-worth': {
       isComplete: nwCustomized,

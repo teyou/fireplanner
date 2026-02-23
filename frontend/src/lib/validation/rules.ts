@@ -5,7 +5,7 @@ import type { ValidationErrors, ProfileState, IncomeState, AllocationState, With
  * Returns a map of field names to error messages.
  */
 export function validateProfileConsistency(
-  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'lifeStage' | 'cpfLifeStartAge' | 'parentSupportEnabled' | 'parentSupport' | 'healthcareConfig' | 'retirementWithdrawals'>
+  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'lifeStage' | 'cpfLifeStartAge' | 'parentSupportEnabled' | 'parentSupport' | 'healthcareConfig' | 'retirementWithdrawals' | 'financialGoals'>
 ): ValidationErrors {
   const errors: ValidationErrors = {}
 
@@ -55,6 +55,25 @@ export function validateProfileConsistency(
     }
     if (profile.healthcareConfig.mediSaveTopUpAnnual < 0 || profile.healthcareConfig.mediSaveTopUpAnnual > 37740) {
       errors['healthcareConfig.mediSaveTopUpAnnual'] = 'MediSave top-up must be between $0 and $37,740'
+    }
+  }
+
+  // Financial goals validation
+  for (const goal of profile.financialGoals ?? []) {
+    if (goal.amount <= 0) {
+      errors[`goal_${goal.id}_amount`] = 'Amount must be positive'
+    }
+    if (goal.targetAge <= profile.currentAge) {
+      errors[`goal_${goal.id}_age`] = 'Target age must be in the future'
+    }
+    if (goal.targetAge > profile.lifeExpectancy) {
+      errors[`goal_${goal.id}_age`] = 'Target age exceeds life expectancy'
+    }
+    if (goal.durationYears < 1) {
+      errors[`goal_${goal.id}_duration`] = 'Duration must be at least 1 year'
+    }
+    if (goal.targetAge + goal.durationYears > profile.lifeExpectancy) {
+      errors[`goal_${goal.id}_duration`] = 'Goal extends beyond life expectancy'
     }
   }
 
