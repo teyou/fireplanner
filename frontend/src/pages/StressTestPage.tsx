@@ -164,7 +164,7 @@ function MonteCarloTab({ isAdvanced }: { isAdvanced: boolean }) {
 }
 
 function WithdrawalSchedule({ bands, strategy }: { bands: PercentileBands; strategy: string }) {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(true)
   const [showAll, setShowAll] = useState(false)
   const [realDollars, setRealDollars] = useState(false)
   const currentAge = useProfileStore((s) => s.currentAge)
