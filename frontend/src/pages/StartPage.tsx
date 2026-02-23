@@ -12,7 +12,6 @@ import { QuickProjectionChart } from '@/components/shared/QuickProjectionChart'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { Label } from '@/components/ui/label'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { RetirementPhase } from '@/lib/types'
 
 type ActivePathway = 'goal-first' | 'story-first' | 'already-fire' | null
@@ -551,20 +550,11 @@ function QuickResults({
       {/* Net worth projection chart */}
       <QuickProjectionChart data={projection} fireNumber={fireNumber} fireAge={fireAge} />
 
-      {/* Disclaimer as tooltip on badge */}
-      <TooltipProvider delayDuration={0}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex items-center gap-2 text-sm text-muted-foreground cursor-help">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
-              Preliminary estimate
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            Quick estimate in today's dollars. Uses 4% SWR, ~7% return, 2.5% inflation. Your detailed plan may differ — continue to refine.
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      {/* Disclaimer */}
+      <p className="text-xs text-muted-foreground">
+        Quick estimate in today's dollars (4% SWR, 7% return, 2.5% inflation).
+        Your detailed plan will adjust for inflation, CPF, and portfolio allocation.
+      </p>
     </div>
   )
 }
