@@ -337,28 +337,45 @@ export function HealthcareSection() {
                       <th className="text-right py-1.5 px-2 text-muted-foreground font-medium">Premiums</th>
                       <th className="text-right py-1.5 px-2 text-muted-foreground font-medium">OOP</th>
                       <th className="text-right py-1.5 px-2 text-muted-foreground font-medium">Total</th>
-                      <th className="text-right py-1.5 pl-2 text-muted-foreground font-medium">Cash Outlay</th>
+                      <th className="text-right py-1.5 px-2 text-muted-foreground font-medium">Cash Outlay</th>
+                      {config.oopInflationRate > 0 && (
+                        <th className="text-right py-1.5 pl-2 text-muted-foreground font-medium">
+                          Today's $
+                          <InfoTooltip text="Cash outlay with medical inflation removed from OOP, showing costs in today's purchasing power. Premiums are already in 2025 dollars." />
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
-                    {previewRows.map((row) => (
-                      <tr key={row.age} className="border-b border-muted/50">
-                        <td className="py-1.5 pr-2 font-medium">{row.age}</td>
-                        <td className="text-right py-1.5 px-2">
-                          {formatCurrency(row.mediShieldLifePremium + row.ispAdditionalPremium + row.careShieldLifePremium)}
-                        </td>
-                        <td className="text-right py-1.5 px-2">{formatCurrency(row.oopExpense)}</td>
-                        <td className="text-right py-1.5 px-2">{formatCurrency(row.totalCost)}</td>
-                        <td className="text-right py-1.5 pl-2 font-semibold text-primary">
-                          {formatCurrency(row.cashOutlay)}
-                        </td>
-                      </tr>
-                    ))}
+                    {previewRows.map((row) => {
+                      const inflationYears = Math.max(0, row.age - currentAge)
+                      const deflator = Math.pow(1 + config.oopInflationRate, inflationYears)
+                      const todaysCashOutlay = (row.cashOutlay - row.oopExpense) + row.oopExpense / deflator
+                      return (
+                        <tr key={row.age} className="border-b border-muted/50">
+                          <td className="py-1.5 pr-2 font-medium">{row.age}</td>
+                          <td className="text-right py-1.5 px-2">
+                            {formatCurrency(row.mediShieldLifePremium + row.ispAdditionalPremium + row.careShieldLifePremium)}
+                          </td>
+                          <td className="text-right py-1.5 px-2">{formatCurrency(row.oopExpense)}</td>
+                          <td className="text-right py-1.5 px-2">{formatCurrency(row.totalCost)}</td>
+                          <td className="text-right py-1.5 px-2 font-semibold text-primary">
+                            {formatCurrency(row.cashOutlay)}
+                          </td>
+                          {config.oopInflationRate > 0 && (
+                            <td className="text-right py-1.5 pl-2 text-muted-foreground">
+                              {formatCurrency(todaysCashOutlay)}
+                            </td>
+                          )}
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
               <p className="text-xs text-muted-foreground">
                 Cash outlay = total cost minus MediSave-deductible portion. Premiums are from CPF Board / MOH data (2025).
+                {config.oopInflationRate > 0 && ` Today's $ removes ${(config.oopInflationRate * 100).toFixed(1)}% medical inflation from OOP to show costs in current purchasing power.`}
               </p>
             </div>
           )}
