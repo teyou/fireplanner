@@ -13,7 +13,6 @@ import { useProfileStore } from '@/stores/useProfileStore'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { useUIStore } from '@/stores/useUIStore'
 import { cn } from '@/lib/utils'
-import { HelpCircle } from 'lucide-react'
 import type { WithdrawalStrategyType } from '@/lib/types'
 
 export function WithdrawalPage() {
@@ -76,15 +75,7 @@ export function WithdrawalPage() {
       <div className="space-y-6">
         <AnalysisModeToggle portfolioLabel={portfolioLabel} />
 
-        <StrategyParamsSection />
-
-        <button
-          onClick={() => setGuideOpen(true)}
-          className="flex items-center gap-1.5 text-sm text-primary hover:underline"
-        >
-          <HelpCircle className="h-4 w-4" />
-          Need help understanding the strategies? View guide
-        </button>
+        <StrategyParamsSection onGuideOpen={() => setGuideOpen(true)} />
 
         {hasErrors && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">

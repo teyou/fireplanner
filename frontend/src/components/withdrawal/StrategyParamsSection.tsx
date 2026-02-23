@@ -8,6 +8,7 @@ import { useSimulationStore } from '@/stores/useSimulationStore'
 import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { useEffectiveMode, SIMPLE_STRATEGIES } from '@/hooks/useEffectiveMode'
+import { HelpCircle } from 'lucide-react'
 import type { WithdrawalStrategyType } from '@/lib/types'
 
 const STRATEGY_GROUPS: { label: string; strategies: WithdrawalStrategyType[] }[] = [
@@ -40,7 +41,11 @@ export const STRATEGY_DESCRIPTIONS: Record<WithdrawalStrategyType, string> = {
   hebeler_autopilot: '75% inflation-adjusted prior + 25% PMT-based annuity factor.',
 }
 
-export function StrategyParamsSection() {
+interface StrategyParamsSectionProps {
+  onGuideOpen?: () => void
+}
+
+export function StrategyParamsSection({ onGuideOpen }: StrategyParamsSectionProps = {}) {
   const withdrawal = useWithdrawalStore()
   const mode = useEffectiveMode('section-withdrawal')
 
@@ -113,6 +118,15 @@ export function StrategyParamsSection() {
           </div>
           {withdrawal.validationErrors.selectedStrategies && (
             <p className="text-sm text-destructive mt-1">{withdrawal.validationErrors.selectedStrategies}</p>
+          )}
+          {onGuideOpen && (
+            <button
+              onClick={onGuideOpen}
+              className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              <HelpCircle className="h-3.5 w-3.5" />
+              Need help choosing? View strategy guide
+            </button>
           )}
         </div>
 
