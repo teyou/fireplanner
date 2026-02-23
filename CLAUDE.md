@@ -263,8 +263,8 @@ Simulation engine tests (`lib/simulation/` and `lib/math/`):
 1. **Fresh Graduate** (age 25, $48K income, $30K expenses, $50K NW, Aggressive 80/20, SWR 3.5%)
    - FIRE Number: $30,000 / 0.035 = **$857,143**
    - Savings Rate: $18,000 / $48,000 = **37.5%**
-   - Years to FIRE (NPER at ~4.4% real net return): **~16 years (age 41)**
-   - Coast FIRE Number: $857,143 / (1.044)^16 = **~$432,000** → not yet reached at $50K NW
+   - Years to FIRE (NPER at ~4.4% real net return): **~24 years (age 49)**
+   - Coast FIRE Number: $857,143 / (1.044)^24 = **~$305,000** → not yet reached at $50K NW
    - Barista FIRE Income: max(0, $30,000 - $50,000 * 0.035) = **$28,250/yr**
 
 2. **Mid-Career Professional** (age 35, $180K income, $96K expenses, $800K liquid + $200K CPF OA + $100K CPF SA, Balanced 60/40, SWR 4%)
@@ -272,9 +272,9 @@ Simulation engine tests (`lib/simulation/` and `lib/math/`):
    - Current NW: $800K + $300K CPF = $1,100,000
    - Progress: $1,100,000 / $2,400,000 = **45.8%**
    - Annual Savings: $180,000 - $96,000 = **$84,000**
-   - Years to FIRE (NPER at ~3.9% real net return): **~12 years (age 47)**
-   - Coast FIRE Number: $2,400,000 / (1.039)^12 = **~$1,524,000** → not yet reached
-   - SG Tax (approx, $180K income - $37K CPF employee - $15.3K SRS - $20K reliefs = ~$107.7K chargeable): **~$12,300**
+   - Years to FIRE (NPER at ~3.9% real net return): **~9 years (age 44)**
+   - Coast FIRE Number: $2,400,000 / (1.039)^9 = **~$1,701,000** → not yet reached
+   - SG Tax (approx, $180K income - $16.3K CPF employee (OW ceiling $81.6K × 20%) - $15.3K SRS - $20K reliefs = ~$128.4K chargeable): **~$9,207**
 
 3. **Pre-Retiree** (age 55, $2M portfolio, $80K expenses, retirement at 58, Conservative 30/70, SWR 4%)
    - FIRE Number: $80,000 / 0.04 = **$2,000,000** → already at FIRE
