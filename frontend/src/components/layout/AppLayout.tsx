@@ -75,7 +75,7 @@ export function AppLayout() {
           orientation="horizontal"
           className="flex-1 min-h-0"
         >
-          <ResizablePanel id="main" defaultSize={100} minSize={50}>
+          <ResizablePanel id="main" defaultSize={100} minSize={40}>
             <main
               className={cn(
                 'h-full overflow-auto',
@@ -97,7 +97,7 @@ export function AppLayout() {
           {isDesktop && helpPanelOpen && (
             <>
               <ResizableHandle withHandle />
-              <ResizablePanel id="help" defaultSize={30} minSize={20} maxSize={50}>
+              <ResizablePanel id="help" defaultSize={35} minSize={25} maxSize={60}>
                 <HelpPanel />
               </ResizablePanel>
             </>

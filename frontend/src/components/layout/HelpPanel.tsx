@@ -14,7 +14,7 @@ export function HelpPanel() {
   const sources = getSourcesForRoute(pathname)
 
   return (
-    <div className="h-full flex flex-col bg-muted/30 border-l">
+    <div className="h-full flex flex-col bg-muted/30 border-l min-w-[320px]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
         <h2 className="text-sm font-semibold">Help</h2>

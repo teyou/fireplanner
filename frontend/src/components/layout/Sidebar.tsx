@@ -362,15 +362,15 @@ function HelpButton() {
     <button
       onClick={toggleHelpPanel}
       className={cn(
-        'flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs transition-colors',
+        'flex items-center gap-2 w-full px-2 py-2 rounded-md text-sm font-medium transition-colors',
         helpPanelOpen
-          ? 'text-foreground bg-accent'
-          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+          ? 'bg-primary text-primary-foreground'
+          : 'bg-accent/60 text-foreground hover:bg-accent'
       )}
-      title="Toggle help panel (Shift+?)"
     >
-      <HelpCircle className="h-3.5 w-3.5" />
-      Help
+      <HelpCircle className="h-4 w-4" />
+      {helpPanelOpen ? 'Close Help' : 'Help & FAQ'}
+      <kbd className="ml-auto text-[10px] opacity-60 font-mono">?</kbd>
     </button>
   )
 }
@@ -432,10 +432,8 @@ export function Sidebar() {
         <div className="mt-auto border-t pt-3 space-y-2">
           <ScenarioManager />
           <DataActions />
-          <div className="flex items-center gap-1">
-            <HelpButton />
-            <ThemeToggle />
-          </div>
+          <HelpButton />
+          <ThemeToggle />
         </div>
       </aside>
 
@@ -473,10 +471,8 @@ export function Sidebar() {
             <div className="mt-6 border-t pt-3 space-y-2">
               <ScenarioManager />
               <DataActions />
-              <div className="flex items-center gap-1">
-                <HelpButton />
-                <ThemeToggle />
-              </div>
+              <HelpButton />
+              <ThemeToggle />
             </div>
           </aside>
         </>
