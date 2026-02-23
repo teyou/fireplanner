@@ -337,18 +337,11 @@ export const HELP_FAQ: Record<string, HelpFaqItem[]> = {
     {
       question: 'Should I include mortgage payments?',
       answer: (
-        <>
-          <p>
-            You can enter mortgage payments here as part of your monthly expenses. The tool
-            will account for expenses dropping once the mortgage ends.
-          </p>
-          <p className={tip}>
-            For detailed mortgage modelling — including loan amortization, CPF usage for
-            repayment, stamp duties, and property equity — use the <strong>Property</strong> section
-            (further down in the sidebar). If you enable Property, you can model your mortgage
-            there instead for a more complete picture.
-          </p>
-        </>
+        <p>
+          For mortgage modelling, use the <strong>Property</strong> section (further down in the
+          sidebar). It handles loan amortization, CPF usage for repayment, stamp duties, and
+          property equity — giving you a more complete picture.
+        </p>
       ),
     },
     {

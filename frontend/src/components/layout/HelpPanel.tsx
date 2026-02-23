@@ -18,7 +18,12 @@ export function HelpPanel({ mobile = false }: { mobile?: boolean }) {
   const { pathname } = useLocation()
   const { activeSection } = useActiveSection()
   const toggleHelpPanel = useUIStore((s) => s.toggleHelpPanel)
+  const statsPosition = useUIStore((s) => s.statsPosition)
   const isOverlay = useMediaQuery('(max-width: 1100px)')
+
+  // When stats strip is fixed at the bottom on stats routes, add padding so content isn't hidden
+  const STATS_ROUTES = ['/inputs', '/projection', '/stress-test', '/dashboard']
+  const needsBottomPad = statsPosition === 'bottom' && STATS_ROUTES.includes(pathname)
   const [width, setWidth] = useState(DEFAULT_WIDTH)
   const isDragging = useRef(false)
   const startX = useRef(0)
@@ -151,7 +156,7 @@ export function HelpPanel({ mobile = false }: { mobile?: boolean }) {
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-3">
+        <div className={cn('flex-1 overflow-y-auto overflow-x-hidden px-4 py-3', needsBottomPad && 'pb-12')}>
           {faqItems.length > 0 ? (
             <Accordion type="multiple" className="w-full">
               {faqItems.map((item, i) => (
