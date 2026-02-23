@@ -268,21 +268,13 @@ function DataActions() {
   }
 
   const handleExcelExport = async () => {
-    const readStore = (key: string) => {
-      try {
-        const raw = localStorage.getItem(key)
-        return raw ? JSON.parse(raw) : {}
-      } catch { return {} }
+    try {
+      const { exportToExcel } = await import('@/lib/exportExcel')
+      await exportToExcel()
+      toast.success('Excel exported')
+    } catch {
+      toast.error('Excel export failed')
     }
-    const { exportToExcel } = await import('@/lib/exportExcel')
-    await exportToExcel({
-      profile: readStore('fireplanner-profile'),
-      income: readStore('fireplanner-income'),
-      allocation: readStore('fireplanner-allocation'),
-      withdrawal: readStore('fireplanner-withdrawal'),
-      propertyData: readStore('fireplanner-property'),
-    })
-    toast.success('Excel exported')
   }
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
