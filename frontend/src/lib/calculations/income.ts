@@ -311,9 +311,11 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
 
     // CPF OA Housing deduction (before contributions and interest)
     let cpfOaHousingDeduction = 0
+    let cpfOaShortfall = 0
     if (cpfHousingMode !== 'none' && cpfHousingMonthly > 0 && age < cpfHousingEndAge) {
       const annualDeduction = cpfHousingMonthly * 12
       cpfOaHousingDeduction = Math.min(annualDeduction, cpfOA)
+      cpfOaShortfall = Math.max(0, annualDeduction - cpfOA)
       cpfOA = Math.max(0, cpfOA - cpfOaHousingDeduction)
     }
 
@@ -530,6 +532,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       activeLifeEvents,
       cpfLifePayout,
       cpfOaHousingDeduction,
+      cpfOaShortfall,
       cpfLifeAnnuityPremium,
       srsBalance,
       srsContribution,

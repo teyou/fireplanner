@@ -219,6 +219,7 @@ export interface IncomeProjectionRow {
   activeLifeEvents: string[]
   cpfLifePayout: number
   cpfOaHousingDeduction: number
+  cpfOaShortfall: number  // Amount by which OA cannot cover mortgage deduction (0 when OA is sufficient)
   cpfLifeAnnuityPremium: number
   // SRS lifecycle
   srsBalance: number

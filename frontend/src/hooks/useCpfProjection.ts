@@ -14,6 +14,7 @@ export interface CpfProjectionRow {
   annualInterest: number
   cpfLifePayout: number
   oaHousingDeduction: number
+  oaShortfall: number
   bequest: number
   milestone: 'brs' | 'frs' | 'ers' | 'cpfLifeStart' | 'raCreated' | null
 }
@@ -121,6 +122,7 @@ export function useCpfProjection(): {
         annualInterest: Math.max(0, annualInterest),
         cpfLifePayout: row.cpfLifePayout,
         oaHousingDeduction: row.cpfOaHousingDeduction,
+        oaShortfall: row.cpfOaShortfall,
         bequest,
         milestone,
       }

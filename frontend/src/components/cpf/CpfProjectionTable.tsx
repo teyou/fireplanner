@@ -28,6 +28,10 @@ export function CpfProjectionTable() {
   const hasHousingDeduction = rows?.some((r) => r.oaHousingDeduction > 0) ?? false
   const hasRA = rows?.some((r) => r.raBalance > 0) ?? false
   const hasBequest = rows?.some((r) => r.bequest > 0) ?? false
+  const depletionRow = rows?.find((r) => r.oaShortfall > 0) ?? null
+  const mortgageEndAge = rows && depletionRow
+    ? ([...rows].reverse().find((r: CpfProjectionRow) => r.oaHousingDeduction > 0 || r.oaShortfall > 0)?.age ?? 0)
+    : 0
 
   const columns = useMemo((): ColumnDef<CpfProjectionRow, number>[] => {
     const cols: ColumnDef<CpfProjectionRow, number>[] = [
@@ -116,6 +120,18 @@ export function CpfProjectionTable() {
   }
 
   return (
+    <>
+    {depletionRow && (
+      <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md text-sm">
+        <p className="font-medium text-amber-800 dark:text-amber-200">
+          CPF OA projected to be depleted at age {depletionRow.age}
+        </p>
+        <p className="text-amber-700 dark:text-amber-300 mt-1">
+          From age {depletionRow.age} to {mortgageEndAge}, the remaining mortgage payments
+          of {formatCurrency(depletionRow.oaShortfall)}/yr must come from your liquid portfolio.
+        </p>
+      </div>
+    )}
     <div className="border rounded-md overflow-auto max-h-[400px]">
       <table className="w-full text-sm">
         <thead className="sticky top-0 bg-background border-b z-10">
@@ -146,6 +162,7 @@ export function CpfProjectionTable() {
                 className={cn(
                   'border-b hover:bg-muted/50',
                   isRetirementRow && 'border-t-2 border-t-orange-400',
+                  original.oaShortfall > 0 && 'bg-amber-50 dark:bg-amber-900/10',
                   original.milestone === 'frs' && 'bg-green-50 dark:bg-green-900/10',
                   original.milestone === 'brs' && 'bg-green-50/50 dark:bg-green-900/5',
                   original.milestone === 'ers' && 'bg-green-100 dark:bg-green-900/20',
@@ -176,5 +193,6 @@ export function CpfProjectionTable() {
         </tbody>
       </table>
     </div>
+    </>
   )
 }
