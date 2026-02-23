@@ -13,6 +13,7 @@ interface UIState {
   mode: 'simple' | 'advanced'
   sectionOverrides: Partial<Record<string, 'simple' | 'advanced'>>
   dismissedNudges: string[]
+  helpPanelOpen: boolean
 }
 
 interface UIActions {
@@ -20,6 +21,7 @@ interface UIActions {
   setSectionMode: (section: string, mode: 'simple' | 'advanced') => void
   clearSectionOverrides: () => void
   dismissNudge: (nudgeId: string) => void
+  toggleHelpPanel: () => void
 }
 
 const DEFAULT_UI: UIState = {
@@ -31,6 +33,7 @@ const DEFAULT_UI: UIState = {
   mode: 'simple',
   sectionOverrides: {},
   dismissedNudges: [],
+  helpPanelOpen: false,
 }
 
 export const useUIStore = create<UIState & UIActions>()(
@@ -59,10 +62,12 @@ export const useUIStore = create<UIState & UIActions>()(
             ? state.dismissedNudges
             : [...state.dismissedNudges, nudgeId],
         })),
+
+      toggleHelpPanel: () => set((state) => ({ helpPanelOpen: !state.helpPanelOpen })),
     }),
     {
       name: 'fireplanner-ui',
-      version: 4,
+      version: 5,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -82,6 +87,9 @@ export const useUIStore = create<UIState & UIActions>()(
         if (version < 4) {
           state.sectionOverrides = {}
           state.dismissedNudges = []
+        }
+        if (version < 5) {
+          state.helpPanelOpen = false
         }
         return state
       },
