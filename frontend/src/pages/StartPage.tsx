@@ -72,9 +72,25 @@ export function StartPage() {
   const DEFAULT_INFLATION = 0.025
   const DEFAULT_EXPENSE_RATIO = 0.003
 
-  const draftFireNumber = calculateFireNumber(draftExpenses, DEFAULT_SWR)
   const draftNetRealReturn = DEFAULT_RETURN - DEFAULT_INFLATION - DEFAULT_EXPENSE_RATIO
   const draftAnnualSavings = draftIncome - draftExpenses
+
+  // Iterative fireAge-basis convergence: inflate expenses to FIRE age, matching
+  // the full calculation in calculateAllFireMetrics (fireNumberBasis: 'fireAge').
+  // Without this, the preview would show a different FIRE age than the inputs page.
+  let draftInflationFactor = 1
+  if (DEFAULT_INFLATION > 0 && draftAnnualSavings > 0) {
+    let prevYears = 0
+    for (let i = 0; i < 10; i++) {
+      const fn = calculateFireNumber(draftExpenses * draftInflationFactor, DEFAULT_SWR)
+      const yrs = calculateYearsToFire(draftNetRealReturn, draftAnnualSavings, draftNetWorth, fn)
+      const y = isFinite(yrs) ? Math.max(0, yrs) : 0
+      draftInflationFactor = Math.pow(1 + DEFAULT_INFLATION, y)
+      if (Math.abs(yrs - prevYears) < 0.01) break
+      prevYears = yrs
+    }
+  }
+  const draftFireNumber = calculateFireNumber(draftExpenses * draftInflationFactor, DEFAULT_SWR)
   const draftYearsToFire = calculateYearsToFire(
     draftNetRealReturn,
     draftAnnualSavings,
