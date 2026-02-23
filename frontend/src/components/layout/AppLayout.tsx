@@ -7,7 +7,6 @@ import { FireStatsStrip } from './FireStatsStrip'
 import { SaveIndicator } from './SaveIndicator'
 import { HelpPanel } from './HelpPanel'
 import { PlanUrlHandler } from '@/components/shared/PlanUrlHandler'
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/stores/useUIStore'
@@ -71,39 +70,26 @@ export function AppLayout() {
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {showStats && isTop && <FireStatsStrip position="top" />}
-        <ResizablePanelGroup
-          key={isDesktop && helpPanelOpen ? 'with-help' : 'without-help'}
-          orientation="horizontal"
-          className="flex-1 min-h-0"
-        >
-          <ResizablePanel id="main" defaultSize={isDesktop && helpPanelOpen ? 65 : 100} minSize={40}>
-            <main
-              className={cn(
-                'h-full overflow-auto',
-                'pb-14 md:pb-0',
-                showStats && isBottom && 'pb-24 md:pb-10'
-              )}
-            >
-              <div className="container py-6 max-w-6xl">
-                <Outlet />
-              </div>
-              <footer className="container max-w-6xl pb-6 px-6">
-                <p className="text-xs text-muted-foreground text-center">
-                  This tool is for educational and planning purposes only. It does not constitute financial advice.
-                  Results are estimates based on historical data and assumptions that may not reflect future outcomes.
-                </p>
-              </footer>
-            </main>
-          </ResizablePanel>
-          {isDesktop && helpPanelOpen && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel id="help" defaultSize={35} minSize={25} maxSize={60}>
-                <HelpPanel />
-              </ResizablePanel>
-            </>
-          )}
-        </ResizablePanelGroup>
+        <div className="flex flex-1 min-h-0">
+          <main
+            className={cn(
+              'flex-1 min-w-0 h-full overflow-auto',
+              'pb-14 md:pb-0',
+              showStats && isBottom && 'pb-24 md:pb-10'
+            )}
+          >
+            <div className="container py-6 max-w-6xl">
+              <Outlet />
+            </div>
+            <footer className="container max-w-6xl pb-6 px-6">
+              <p className="text-xs text-muted-foreground text-center">
+                This tool is for educational and planning purposes only. It does not constitute financial advice.
+                Results are estimates based on historical data and assumptions that may not reflect future outcomes.
+              </p>
+            </footer>
+          </main>
+          {isDesktop && helpPanelOpen && <HelpPanel />}
+        </div>
         {showStats && isBottom && <FireStatsStrip position="bottom" />}
       </div>
 
