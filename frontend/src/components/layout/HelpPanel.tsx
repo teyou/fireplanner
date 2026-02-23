@@ -35,10 +35,19 @@ export function HelpPanel({ mobile = false }: { mobile?: boolean }) {
   const faqItems = HELP_FAQ[contentKey] ?? HELP_FAQ[pathname] ?? []
   const sources = getSourcesForRoute(contentKey)
 
-  // Friendly label for the current context
-  const sectionLabel = activeSection
-    ? activeSection.replace('section-', '').replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-    : null
+  // Friendly label matching sidebar capitalisation (FIRE, CPF are acronyms)
+  const SECTION_LABELS: Record<string, string> = {
+    'section-personal': 'Personal',
+    'section-fire-settings': 'FIRE Settings',
+    'section-income': 'Income',
+    'section-expenses': 'Expenses',
+    'section-net-worth': 'Net Worth',
+    'section-cpf': 'CPF',
+    'section-healthcare': 'Healthcare',
+    'section-property': 'Property',
+    'section-allocation': 'Allocation',
+  }
+  const sectionLabel = activeSection ? (SECTION_LABELS[activeSection] ?? null) : null
 
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
