@@ -784,10 +784,12 @@ export interface ProjectionRow {
   // Property
   propertyEquity: number
   totalNWIncProperty: number
-  // Expanded: parent support
+  // Expanded: expenses breakdown
+  baseInflatedExpenses: number    // base living expenses * inflation^year (with retirement spending adjustment)
   parentSupportExpense: number
-  // Expanded: healthcare
   healthcareCashOutlay: number
+  mortgageCashPayment: number     // cash portion of mortgage (excl. CPF OA portion), 0 when paid off
+  downsizingRentExpense: number   // rent if sell-and-rent scenario, 0 otherwise
   // Expanded: other
   cumulativeSavings: number
   activeLifeEvents: string[]

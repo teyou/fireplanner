@@ -42,9 +42,10 @@ const STRATEGY_SHORT_LABELS: Record<WithdrawalStrategyType, string> = {
 
 const columnHelper = createColumnHelper<ProjectionRow>()
 
-type ColumnGroup = 'incomeBreakdown' | 'taxCpf' | 'cpfBalances' | 'portfolio'
+type ColumnGroup = 'expensesBreakdown' | 'incomeBreakdown' | 'taxCpf' | 'cpfBalances' | 'portfolio'
 
 const COLUMN_GROUPS: { key: ColumnGroup; label: string }[] = [
+  { key: 'expensesBreakdown', label: 'Expenses Breakdown' },
   { key: 'incomeBreakdown', label: 'Income Breakdown' },
   { key: 'taxCpf', label: 'Tax & CPF' },
   { key: 'cpfBalances', label: 'CPF Balances' },
@@ -52,6 +53,7 @@ const COLUMN_GROUPS: { key: ColumnGroup; label: string }[] = [
 ]
 
 const GROUP_COLUMNS: Record<ColumnGroup, string[]> = {
+  expensesBreakdown: ['baseInflatedExpenses', 'parentSupportExpense', 'healthcareCashOutlay', 'mortgageCashPayment', 'downsizingRentExpense'],
   incomeBreakdown: ['salary', 'rentalIncome', 'investmentIncome', 'businessIncome', 'governmentIncome', 'totalGross'],
   taxCpf: ['sgTax', 'cpfEmployee', 'cpfEmployer', 'totalNet'],
   cpfBalances: ['cpfOA', 'cpfSA', 'cpfMA'],
@@ -80,7 +82,7 @@ export function ProjectionPage() {
 
   useEffect(() => {
     if (mode === 'advanced') {
-      setActiveGroups(new Set(['incomeBreakdown', 'taxCpf', 'cpfBalances', 'portfolio']))
+      setActiveGroups(new Set(['expensesBreakdown', 'incomeBreakdown', 'taxCpf', 'cpfBalances', 'portfolio']))
     } else {
       setActiveGroups(new Set())
     }
@@ -158,6 +160,33 @@ export function ProjectionPage() {
     columnHelper.accessor('fireProgress', {
       header: 'FIRE %',
       cell: (info) => formatPercent(info.getValue(), 1),
+    }),
+
+    // Expanded: Expenses Breakdown
+    columnHelper.accessor('baseInflatedExpenses', {
+      id: 'baseInflatedExpenses',
+      header: 'Base Living',
+      cell: (info) => currencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('parentSupportExpense', {
+      id: 'parentSupportExpense',
+      header: 'Parent Supp.',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('healthcareCashOutlay', {
+      id: 'healthcareCashOutlay',
+      header: 'Healthcare',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('mortgageCashPayment', {
+      id: 'mortgageCashPayment',
+      header: 'Mortgage',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('downsizingRentExpense', {
+      id: 'downsizingRentExpense',
+      header: 'Rent (DS)',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
     }),
 
     // Expanded: Income Breakdown

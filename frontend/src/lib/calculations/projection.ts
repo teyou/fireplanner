@@ -495,8 +495,11 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       withdrawalAmount,
       maxPermittedWithdrawal,
       withdrawalExcess,
+      baseInflatedExpenses: baseExpenses * Math.pow(1 + inflation, year),
       parentSupportExpense,
       healthcareCashOutlay,
+      mortgageCashPayment: effectiveMortgagePayment,
+      downsizingRentExpense,
       cumulativeSavings: incomeRow.cumulativeSavings,
       activeLifeEvents: incomeRow.activeLifeEvents,
     })
