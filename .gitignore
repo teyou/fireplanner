@@ -24,6 +24,11 @@ htmlcov/
 # Claude / MCP tooling
 .mcp.json
 .playwright-mcp/
+.claude/settings.json
+
+# Claude-mem session logs (keep root CLAUDE.md for contributor docs)
+frontend/CLAUDE.md
+frontend/**/CLAUDE.md
 
 # Dev screenshots (not for repo — curated ones live in docs/screenshots/)
 *.png
