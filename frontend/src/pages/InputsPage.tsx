@@ -31,10 +31,6 @@ import { PortfolioStatsPanel } from '@/components/allocation/PortfolioStatsPanel
 import { AdvancedOverrides } from '@/components/allocation/AdvancedOverrides'
 import { GlidePathSection } from '@/components/allocation/GlidePathSection'
 // Withdrawal sections
-import { StrategyParamsSection } from '@/components/withdrawal/StrategyParamsSection'
-import { ComparisonTable } from '@/components/withdrawal/ComparisonTable'
-import { WithdrawalChart } from '@/components/withdrawal/WithdrawalChart'
-import { PortfolioComparisonChart } from '@/components/withdrawal/PortfolioComparisonChart'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { WITHDRAWAL_STRATEGY_METADATA } from '@/lib/data/withdrawalMetadata'
@@ -56,7 +52,6 @@ import { HdbMonetizationSection } from '@/components/property/HdbMonetizationSec
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { PercentInput } from '@/components/shared/PercentInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
-import { AnalysisModeToggle } from '@/components/shared/AnalysisModeToggle'
 
 // Stores
 import { useProfileStore } from '@/stores/useProfileStore'
@@ -72,7 +67,6 @@ import { useSectionCompletion } from '@/hooks/useSectionCompletion'
 import { useIncomeProjection } from '@/hooks/useIncomeProjection'
 import { useWithdrawalComparison } from '@/hooks/useWithdrawalComparison'
 import { useProjection } from '@/hooks/useProjection'
-import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { useFireCalculations } from '@/hooks/useFireCalculations'
 import { useSectionNudge } from '@/hooks/useSectionNudge'
@@ -278,12 +272,10 @@ function ExpensesContent() {
   const retirementRow = projectionRows?.find(r => r.age === retirementAge)
   const projectedPortfolio = retirementRow?.liquidNW
 
-  const { results, hasErrors, errors } = useWithdrawalComparison({
+  const { results } = useWithdrawalComparison({
     initialPortfolioOverride: projectedPortfolio,
   })
-  const { portfolioLabel } = useAnalysisPortfolio()
 
-  const [strategyExpanded, setStrategyExpanded] = useState(false)
   const [strategyGuideOpen, setStrategyGuideOpen] = useState(false)
 
   const handleActiveStrategyChange = (value: string) => {
@@ -473,48 +465,6 @@ function ExpensesContent() {
       )}
 
       <RetirementWithdrawalsPanel />
-
-      {mode === 'advanced' && <AnalysisModeToggle portfolioLabel={portfolioLabel} />}
-
-      {mode === 'advanced' && hasErrors && (
-        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
-          <p className="text-sm text-destructive font-medium">
-            Fix validation errors before comparison results can be computed.
-          </p>
-          <ul className="text-xs text-destructive mt-1 list-disc list-inside">
-            {Object.entries(errors).map(([key, msg]) => (
-              <li key={key}>{msg}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {mode === 'advanced' && (
-        <Card className="cursor-pointer" onClick={() => setStrategyExpanded(!strategyExpanded)}>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center justify-between">
-              Strategy Selection & Comparison
-              <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', strategyExpanded && 'rotate-180')} />
-            </CardTitle>
-          </CardHeader>
-        </Card>
-      )}
-
-      {mode === 'advanced' && strategyExpanded && (
-        <>
-          <StrategyParamsSection />
-
-          {results && (
-            <>
-              <ComparisonTable results={results} />
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <WithdrawalChart results={results} />
-                <PortfolioComparisonChart results={results} />
-              </div>
-            </>
-          )}
-        </>
-      )}
     </>
   )
 }

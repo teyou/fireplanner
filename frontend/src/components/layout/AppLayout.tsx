@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
 import { tryUndo } from '@/lib/undo'
 
 // Pages that show the stats strip (inputs and analysis pages, not start/reference)
-const STATS_ROUTES = ['/inputs', '/projection', '/stress-test', '/dashboard']
+const STATS_ROUTES = ['/inputs', '/projection', '/withdrawal', '/stress-test', '/dashboard']
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(() =>

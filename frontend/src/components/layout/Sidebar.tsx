@@ -31,6 +31,7 @@ import {
   CheckSquare,
   HeartPulse,
   HelpCircle,
+  Banknote,
 } from 'lucide-react'
 
 interface NavItem {
@@ -100,6 +101,7 @@ const AFTER_INPUTS_GROUPS: { title: string; items: NavItem[] }[] = [
   {
     title: 'ANALYSIS',
     items: [
+      { label: 'Withdrawal', path: '/withdrawal', icon: <Banknote className="h-4 w-4" /> },
       { label: 'Stress Test', path: '/stress-test', icon: <ShieldAlert className="h-4 w-4" /> },
     ],
   },

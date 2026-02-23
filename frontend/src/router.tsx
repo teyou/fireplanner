@@ -3,6 +3,7 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { StartPage } from '@/pages/StartPage'
 import { InputsPage } from '@/pages/InputsPage'
 import { ProjectionPage } from '@/pages/ProjectionPage'
+import { WithdrawalPage } from '@/pages/WithdrawalPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { ReferencePage } from '@/pages/ReferencePage'
 import { StressTestPage } from '@/pages/StressTestPage'
@@ -15,6 +16,7 @@ export const router = createBrowserRouter([
       { path: '/', element: <StartPage /> },
       { path: '/inputs', element: <InputsPage /> },
       { path: '/projection', element: <ProjectionPage /> },
+      { path: '/withdrawal', element: <WithdrawalPage /> },
       { path: '/stress-test', element: <StressTestPage /> },
       { path: '/dashboard', element: <DashboardPage /> },
       { path: '/reference', element: <ReferencePage /> },
@@ -26,7 +28,6 @@ export const router = createBrowserRouter([
       { path: '/property', element: <Navigate to="/inputs#section-property" replace /> },
       { path: '/allocation', element: <Navigate to="/inputs#section-allocation" replace /> },
       { path: '/spending', element: <Navigate to="/inputs#section-expenses" replace /> },
-      { path: '/withdrawal', element: <Navigate to="/inputs#section-expenses" replace /> },
       // Redirects for old bookmarked URLs
       { path: '/monte-carlo', element: <Navigate to="/stress-test" replace /> },
       { path: '/backtest', element: <Navigate to="/stress-test" replace /> },
