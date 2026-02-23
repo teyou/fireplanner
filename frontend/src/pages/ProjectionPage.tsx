@@ -25,6 +25,7 @@ import { useUIStore } from '@/stores/useUIStore'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { StrategyParamCard } from '@/components/withdrawal/StrategyParamsSection'
 import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
+import { InfoTooltip } from '@/components/shared/InfoTooltip'
 
 const STRATEGY_SHORT_LABELS: Record<WithdrawalStrategyType, string> = {
   constant_dollar: '4% Rule',
@@ -222,7 +223,12 @@ export function ProjectionPage() {
       cell: (info) => currencyCell(info.getValue()),
     }),
     columnHelper.accessor('annualExpenses', {
-      header: 'Expenses',
+      header: () => (
+        <span className="inline-flex items-center">
+          Expenses
+          <InfoTooltip text="In today's dollars, expenses appear flat because inflation is factored out. Switch to Nominal to see future values growing at your inflation rate." />
+        </span>
+      ),
       cell: (info) => currencyCell(info.getValue()),
     }),
     columnHelper.accessor('savingsOrWithdrawal', {
