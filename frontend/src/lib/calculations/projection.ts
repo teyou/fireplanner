@@ -116,19 +116,12 @@ function computeInitialWithdrawal(
   strategy: WithdrawalStrategyType,
   strategyParams: StrategyParamsMap,
   defaultSwr: number,
-  retirementExpenses?: number,
+  _retirementExpenses?: number,
 ): number {
-  // Expense-based strategies: initial withdrawal = what you need to spend
-  if (retirementExpenses !== undefined && retirementExpenses > 0) {
-    switch (strategy) {
-      case 'constant_dollar':
-      case 'guardrails':
-      case 'vanguard_dynamic':
-        return retirementExpenses
-    }
-  }
-
-  // Portfolio-based strategies: initial withdrawal = portfolio * rate
+  // Always use each strategy's own rate parameter so that tuning
+  // the SWR / initial-rate input is reflected in Max Withdrawal.
+  // The projection already caps actualDraw = min(expenseGap, strategyWithdrawal),
+  // so the user only withdraws what they need regardless.
   switch (strategy) {
     case 'constant_dollar':
       return portfolio * strategyParams.constant_dollar.swr
@@ -419,9 +412,10 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
         }
       }
 
-      // Actual draw = min(expense gap after passive income, strategy max) + one-time withdrawals
+      // Actual draw = expense gap after passive income (always fund expenses from portfolio).
+      // maxPermittedWithdrawal (strategy-based) is advisory — shown alongside for comparison.
       const expenseGap = Math.max(0, inflationAdjustedExpenses - postRetirementIncome)
-      const actualDraw = Math.min(expenseGap, strategyWithdrawal)
+      const actualDraw = Math.min(expenseGap, startLiquidNW)
       const surplusIncome = Math.max(0, postRetirementIncome - inflationAdjustedExpenses)
 
       // Portfolio: loses actual draw + one-time withdrawals + mortgage, gains surplus passive income.

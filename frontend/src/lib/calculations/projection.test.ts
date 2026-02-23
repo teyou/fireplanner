@@ -287,11 +287,11 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
-      // initialWithdrawal = retirementExpenses = $10K (expense-based for constant_dollar)
-      // maxPermitted = 10K, actualDraw = 5K, excess = 5K
-      expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(10000, 2)
+      // initialWithdrawal = 200K * 0.04 = $8K (portfolio-based)
+      // maxPermitted = 8K, expenseGap = 10K - 5K = 5K, actualDraw = 5K, excess = 8K - 5K = 3K
+      expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(8000, 2)
       expect(result.rows[0].withdrawalAmount).toBeCloseTo(5000, 2)
-      expect(result.rows[0].withdrawalExcess).toBeCloseTo(5000, 2)
+      expect(result.rows[0].withdrawalExcess).toBeCloseTo(3000, 2)
       expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(-5000, 2)
       expect(result.rows[0].liquidNW).toBeCloseTo(195000, 2) // 200K - 5K
     })
@@ -316,11 +316,11 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
-      // initialWithdrawal = retirementExpenses = $10K (expense-based)
-      // expenseGap = 0, actualDraw = 0, surplus = $10K reinvested
+      // initialWithdrawal = 200K * 0.04 = $8K (portfolio-based)
+      // expenseGap = 0 (passive covers all), actualDraw = 0, surplus = $10K reinvested
       expect(result.rows[0].withdrawalAmount).toBe(0)
-      expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(10000, 2)
-      expect(result.rows[0].withdrawalExcess).toBeCloseTo(10000, 2)
+      expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(8000, 2)
+      expect(result.rows[0].withdrawalExcess).toBeCloseTo(8000, 2)
       expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(10000, 2) // positive = surplus reinvested
       expect(result.rows[0].liquidNW).toBeCloseTo(210000, 2) // 200K + 10K surplus
     })
@@ -344,11 +344,11 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
-      // initialWithdrawal = retirementExpenses = $5K (expense-based, not 500K * 0.04 = 20K)
-      // maxPermitted = 5K = expenses, actualDraw = 5K, excess = 0
-      expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(5000, 2)
+      // initialWithdrawal = 500K * 0.04 = $20K (portfolio-based)
+      // maxPermitted = 20K, expenseGap = 5K, actualDraw = 5K, excess = 20K - 5K = 15K
+      expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(20000, 2)
       expect(result.rows[0].withdrawalAmount).toBeCloseTo(5000, 2)
-      expect(result.rows[0].withdrawalExcess).toBeCloseTo(0, 2)
+      expect(result.rows[0].withdrawalExcess).toBeCloseTo(15000, 2)
       expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(-5000, 2)
       expect(result.rows[0].liquidNW).toBeCloseTo(495000, 2) // 500K - 5K
     })
@@ -373,9 +373,9 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
-      // initialWithdrawal = retirementExpenses = $50K (expense-based)
-      // strategyWithdrawal = min($50K, $10K portfolio) = $10K
-      // Year 0: actualDraw = $10K, liquidNW = 0 (depleted immediately)
+      // initialWithdrawal = 10K * 0.50 = $5K (portfolio-based)
+      // But actualDraw = min(expenseGap $50K, portfolio $10K) = $10K (capped at portfolio)
+      // Year 0: liquidNW = 0 (depleted immediately — expenses exceed portfolio)
       expect(result.rows[0].liquidNW).toBeCloseTo(0, 2)
       // Year 1+: liquidNW stays at 0, withdrawal = 0
       expect(result.rows[1].liquidNW).toBe(0)
@@ -402,7 +402,7 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
-      // Portfolio depletes at year 0 (age 60) — expense-based withdrawal exceeds small portfolio
+      // Portfolio depletes at year 0 (age 60) — expenses ($50K) exceed portfolio ($10K)
       expect(result.summary.portfolioDepletedAge).toBe(60)
     })
   })
@@ -461,7 +461,7 @@ describe('generateProjection', () => {
       expect(result.rows[0].isRetired).toBe(true)
       // First row has withdrawal
       expect(result.rows[0].withdrawalAmount).toBeGreaterThan(0)
-      // initialWithdrawal = retirementExpenses = $50K (expense-based for constant_dollar)
+      // actualDraw = expenseGap = $50K (expenses fully funded from portfolio)
       expect(result.rows[0].withdrawalAmount).toBeCloseTo(50000, 2)
       // liquidNW = 500K - 50K = 450K
       expect(result.rows[0].liquidNW).toBeCloseTo(450000, 2)
@@ -527,7 +527,8 @@ describe('generateProjection', () => {
       const result = generateProjection(params)
 
       // Pre-ret: 100K→120K→140K→160K→180K (age 33 is last working year)
-      // Retirement (age 34): initialWithdrawal = retirementExpenses = $50K (expense-based)
+      // Retirement (age 34): initialWithdrawal = 180K * 0.10 = $18K (portfolio-based)
+      // But actualDraw = expenseGap = $50K (full expenses)
       // Year 4: liquidNW = 180K - 50K = 130K
       // Year 5: withdrawal = 50K, liquidNW = 130K - 50K = 80K
 
@@ -938,7 +939,7 @@ describe('generateProjection', () => {
 
       // Total expenses = $20K base + $12K parent support = $32K
       expect(result.rows[0].annualExpenses).toBeCloseTo(32000, 0)
-      // initialWithdrawal = $32K (full expenses), strategy covers everything
+      // actualDraw = expenseGap = $32K (full expenses funded from portfolio)
       expect(result.rows[0].withdrawalAmount).toBeCloseTo(32000, 2)
       expect(result.rows[0].liquidNW).toBeCloseTo(468000, 2) // 500K - 32K
     })
