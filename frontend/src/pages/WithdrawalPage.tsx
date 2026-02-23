@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { StrategyParamsSection } from '@/components/withdrawal/StrategyParamsSection'
 import { ComparisonTable } from '@/components/withdrawal/ComparisonTable'
 import { WithdrawalChart } from '@/components/withdrawal/WithdrawalChart'
@@ -8,16 +7,16 @@ import { useWithdrawalComparison } from '@/hooks/useWithdrawalComparison'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 import { useProjection } from '@/hooks/useProjection'
 import { useProfileStore } from '@/stores/useProfileStore'
-import { useEffectiveMode, SIMPLE_STRATEGIES } from '@/hooks/useEffectiveMode'
+import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { useUIStore } from '@/stores/useUIStore'
 import { cn } from '@/lib/utils'
+
 export function WithdrawalPage() {
   const retirementAge = useProfileStore((s) => s.retirementAge)
   const { portfolioLabel } = useAnalysisPortfolio()
 
   const mode = useEffectiveMode('section-withdrawal')
   const setSectionMode = useUIStore((s) => s.setSectionMode)
-  const isAdvanced = mode === 'advanced'
 
   // Use the full projection engine to get the retirement-age portfolio value
   const { rows: projectionRows } = useProjection()
@@ -27,22 +26,6 @@ export function WithdrawalPage() {
   const { results, hasErrors, errors } = useWithdrawalComparison({
     initialPortfolioOverride: projectedPortfolio,
   })
-
-  // In simple mode, filter results to only show the 4 core strategies
-  const filteredResults = useMemo(() => {
-    if (!results) return null
-    if (isAdvanced) return results
-    const simpleSet = new Set<string>(SIMPLE_STRATEGIES)
-    const yearResults: typeof results.yearResults = {}
-    const summaries: typeof results.summaries = {}
-    for (const key of Object.keys(results.summaries)) {
-      if (simpleSet.has(key)) {
-        summaries[key] = results.summaries[key]
-        yearResults[key] = results.yearResults[key]
-      }
-    }
-    return { yearResults, summaries }
-  }, [results, isAdvanced])
 
   return (
     <>
@@ -97,12 +80,12 @@ export function WithdrawalPage() {
           </div>
         )}
 
-        {filteredResults && (
+        {results && (
           <>
-            <ComparisonTable results={filteredResults} />
+            <ComparisonTable results={results} />
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <WithdrawalChart results={filteredResults} />
-              <PortfolioComparisonChart results={filteredResults} />
+              <WithdrawalChart results={results} />
+              <PortfolioComparisonChart results={results} />
             </div>
           </>
         )}

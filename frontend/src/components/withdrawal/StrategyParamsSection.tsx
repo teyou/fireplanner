@@ -42,7 +42,7 @@ export const STRATEGY_DESCRIPTIONS: Record<WithdrawalStrategyType, string> = {
 
 export function StrategyParamsSection() {
   const withdrawal = useWithdrawalStore()
-  const mode = useEffectiveMode('section-expenses')
+  const mode = useEffectiveMode('section-withdrawal')
 
   const simpleStrategySet = new Set<string>(SIMPLE_STRATEGIES)
 
