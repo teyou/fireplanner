@@ -52,7 +52,21 @@ export function useActiveSection() {
 
     elements.forEach((el) => observer.observe(el))
 
-    return () => observer.disconnect()
+    // Also listen for focus/click events — when a user clicks into an input
+    // within a section, immediately switch to that section's help content
+    const onFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement | null
+      const section = target?.closest('[id^="section-"]')
+      if (section && sectionIds.includes(section.id)) {
+        setActiveSection(section.id)
+      }
+    }
+    document.addEventListener('focusin', onFocusIn)
+
+    return () => {
+      observer.disconnect()
+      document.removeEventListener('focusin', onFocusIn)
+    }
   }, [isInputsPage, cpfEnabled, healthcareEnabled, propertyEnabled])
 
   // When not on inputs page, don't report any active section
