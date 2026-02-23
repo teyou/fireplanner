@@ -4,7 +4,7 @@ import { StatusPanel } from '@/components/dashboard/StatusPanel'
 import { WhatIfPanel } from '@/components/dashboard/WhatIfPanel'
 import { TimeCostPanel } from '@/components/dashboard/TimeCostPanel'
 import { OneMoreYearPanel } from '@/components/dashboard/OneMoreYearPanel'
-import { AccumulationChart } from '@/components/dashboard/AccumulationChart'
+import { CashFlowPanel } from '@/components/dashboard/CashFlowPanel'
 import { RiskDashboard } from '@/components/dashboard/RiskDashboard'
 import { EmptyDashboardState } from '@/components/dashboard/EmptyDashboardState'
 import { StrategyCard } from '@/components/dashboard/StrategyCard'
@@ -78,7 +78,7 @@ export function DashboardPage() {
             <PassiveIncomePanel />
           </div>
           <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '320ms' }}>
-            <AccumulationChart />
+            <CashFlowPanel />
           </div>
           <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
             <RiskDashboard />
