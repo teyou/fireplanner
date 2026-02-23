@@ -33,7 +33,7 @@ const DEFAULT_UI: UIState = {
   mode: 'simple',
   sectionOverrides: {},
   dismissedNudges: [],
-  helpPanelOpen: false,
+  helpPanelOpen: true,
 }
 
 export const useUIStore = create<UIState & UIActions>()(
