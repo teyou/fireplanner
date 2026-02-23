@@ -287,10 +287,11 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
-      // maxPermitted = 8K, actualDraw = 5K, excess = 3K
-      expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(8000, 2)
+      // initialWithdrawal = retirementExpenses = $10K (expense-based for constant_dollar)
+      // maxPermitted = 10K, actualDraw = 5K, excess = 5K
+      expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(10000, 2)
       expect(result.rows[0].withdrawalAmount).toBeCloseTo(5000, 2)
-      expect(result.rows[0].withdrawalExcess).toBeCloseTo(3000, 2)
+      expect(result.rows[0].withdrawalExcess).toBeCloseTo(5000, 2)
       expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(-5000, 2)
       expect(result.rows[0].liquidNW).toBeCloseTo(195000, 2) // 200K - 5K
     })
@@ -315,10 +316,11 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
+      // initialWithdrawal = retirementExpenses = $10K (expense-based)
       // expenseGap = 0, actualDraw = 0, surplus = $10K reinvested
       expect(result.rows[0].withdrawalAmount).toBe(0)
-      expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(8000, 2)
-      expect(result.rows[0].withdrawalExcess).toBeCloseTo(8000, 2)
+      expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(10000, 2)
+      expect(result.rows[0].withdrawalExcess).toBeCloseTo(10000, 2)
       expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(10000, 2) // positive = surplus reinvested
       expect(result.rows[0].liquidNW).toBeCloseTo(210000, 2) // 200K + 10K surplus
     })
@@ -342,10 +344,11 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
-      // maxPermitted = 20K, but only need $5K for expenses
-      expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(20000, 2)
+      // initialWithdrawal = retirementExpenses = $5K (expense-based, not 500K * 0.04 = 20K)
+      // maxPermitted = 5K = expenses, actualDraw = 5K, excess = 0
+      expect(result.rows[0].maxPermittedWithdrawal).toBeCloseTo(5000, 2)
       expect(result.rows[0].withdrawalAmount).toBeCloseTo(5000, 2)
-      expect(result.rows[0].withdrawalExcess).toBeCloseTo(15000, 2)
+      expect(result.rows[0].withdrawalExcess).toBeCloseTo(0, 2)
       expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(-5000, 2)
       expect(result.rows[0].liquidNW).toBeCloseTo(495000, 2) // 500K - 5K
     })
@@ -370,11 +373,12 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
-      // Year 0: withdrawal = 10K * 0.5 = 5K, liquidNW = 5K
-      expect(result.rows[0].liquidNW).toBeCloseTo(5000, 2)
-      // Year 1: withdrawal = 5K (capped at portfolio), liquidNW = 0
-      expect(result.rows[1].liquidNW).toBeCloseTo(0, 2)
-      // Year 2+: liquidNW stays at 0, withdrawal = 0
+      // initialWithdrawal = retirementExpenses = $50K (expense-based)
+      // strategyWithdrawal = min($50K, $10K portfolio) = $10K
+      // Year 0: actualDraw = $10K, liquidNW = 0 (depleted immediately)
+      expect(result.rows[0].liquidNW).toBeCloseTo(0, 2)
+      // Year 1+: liquidNW stays at 0, withdrawal = 0
+      expect(result.rows[1].liquidNW).toBe(0)
       expect(result.rows[2].liquidNW).toBe(0)
       expect(result.rows[2].withdrawalAmount).toBe(0)
       expect(result.rows[3].liquidNW).toBe(0)
@@ -398,8 +402,8 @@ describe('generateProjection', () => {
 
       const result = generateProjection(params)
 
-      // Portfolio depletes at end of year 1 (age 61)
-      expect(result.summary.portfolioDepletedAge).toBe(61)
+      // Portfolio depletes at year 0 (age 60) — expense-based withdrawal exceeds small portfolio
+      expect(result.summary.portfolioDepletedAge).toBe(60)
     })
   })
 
@@ -457,10 +461,10 @@ describe('generateProjection', () => {
       expect(result.rows[0].isRetired).toBe(true)
       // First row has withdrawal
       expect(result.rows[0].withdrawalAmount).toBeGreaterThan(0)
-      // initialWithdrawal = 500K * 0.04 = 20K
-      expect(result.rows[0].withdrawalAmount).toBeCloseTo(20000, 2)
-      // liquidNW = 500K - 20K = 480K
-      expect(result.rows[0].liquidNW).toBeCloseTo(480000, 2)
+      // initialWithdrawal = retirementExpenses = $50K (expense-based for constant_dollar)
+      expect(result.rows[0].withdrawalAmount).toBeCloseTo(50000, 2)
+      // liquidNW = 500K - 50K = 450K
+      expect(result.rows[0].liquidNW).toBeCloseTo(450000, 2)
     })
   })
 
@@ -523,16 +527,16 @@ describe('generateProjection', () => {
       const result = generateProjection(params)
 
       // Pre-ret: 100K→120K→140K→160K→180K (age 33 is last working year)
-      // Retirement (age 34): initial withdrawal = 180K * 0.10 = 18K
-      // Year 4: liquidNW = 180K - 18K = 162K
-      // Year 5: withdrawal = 18K, liquidNW = 162K - 18K = 144K
+      // Retirement (age 34): initialWithdrawal = retirementExpenses = $50K (expense-based)
+      // Year 4: liquidNW = 180K - 50K = 130K
+      // Year 5: withdrawal = 50K, liquidNW = 130K - 50K = 80K
 
       // Peak is at retirement transition
       expect(result.summary.peakTotalNW).toBeCloseTo(180000, 0)
       expect(result.summary.peakTotalNWAge).toBe(33)
 
       // Terminal (age 35)
-      expect(result.summary.terminalLiquidNW).toBeCloseTo(144000, 0)
+      expect(result.summary.terminalLiquidNW).toBeCloseTo(80000, 0)
     })
 
     it('reports fireAchievedAge as null when never reached', () => {
@@ -826,6 +830,140 @@ describe('generateProjection', () => {
 
       // Healthcare cost should be > 0 for all ages
       expect(result.rows[0].healthcareCashOutlay).toBeGreaterThan(0)
+    })
+  })
+
+  describe('pre-retirement expense shortfall deducted from portfolio', () => {
+    it('deducts full expenses when income is $0 (income shortfall)', () => {
+      // Bug: when income < expenses, annualSavings is clamped to max(0, ...),
+      // so the shortfall was silently dropped and portfolio not debited.
+      const params = makeParams({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 31,
+        expectedReturn: 0, initialLiquidNW: 500000,
+        annualExpenses: 20000, inflation: 0,
+      })
+      // $0 income, annualSavings clamped to 0 by income projection
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 31,
+        annualSavings: 0, salary: 0,
+      })
+      // Override totalNet to 0 (matching $0 income)
+      params.incomeProjection[0].totalNet = 0
+
+      const result = generateProjection(params)
+
+      // Should deduct $20K expenses from portfolio: 500K - 20K = 480K
+      expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(-20000, 2)
+      expect(result.rows[0].liquidNW).toBeCloseTo(480000, 2)
+    })
+
+    it('deducts parent support from portfolio during pre-retirement', () => {
+      // Bug: parent support was shown in Expenses column but NOT deducted from portfolio.
+      const params = makeParams({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 31,
+        expectedReturn: 0, initialLiquidNW: 500000,
+        annualExpenses: 20000, inflation: 0,
+        parentSupportEnabled: true,
+        parentSupport: [
+          { id: 'p1', label: 'Mom', monthlyAmount: 1000, startAge: 30, endAge: 70, growthRate: 0 },
+        ],
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 31,
+        annualSavings: 0, salary: 0,
+      })
+      params.incomeProjection[0].totalNet = 0
+
+      const result = generateProjection(params)
+
+      // Base expenses $20K + parent support $12K = $32K total
+      expect(result.rows[0].annualExpenses).toBeCloseTo(32000, 0)
+      // Portfolio should lose the full $32K: 500K - 32K = 468K
+      expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(-32000, 2)
+      expect(result.rows[0].liquidNW).toBeCloseTo(468000, 2)
+    })
+
+    it('deducts healthcare from portfolio during pre-retirement', () => {
+      const params = makeParams({
+        currentAge: 55, retirementAge: 65, lifeExpectancy: 56,
+        expectedReturn: 0, initialLiquidNW: 500000,
+        annualExpenses: 20000, inflation: 0,
+        healthcareConfig: {
+          enabled: true,
+          mediShieldLifeEnabled: false,
+          ispTier: 'none',
+          careShieldLifeEnabled: false,
+          oopBaseAmount: 10000,
+          oopModel: 'fixed',
+          oopInflationRate: 0,
+          oopReferenceAge: 55,
+          mediSaveTopUpAnnual: 0,
+        },
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 55, retirementAge: 65, lifeExpectancy: 56,
+        annualSavings: 0, salary: 0,
+      })
+      params.incomeProjection[0].totalNet = 0
+
+      const result = generateProjection(params)
+
+      // Expenses include base $20K + healthcare OOP $10K = $30K
+      expect(result.rows[0].annualExpenses).toBeCloseTo(30000, 0)
+      // Portfolio debited by full $30K
+      expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(-30000, 2)
+      expect(result.rows[0].liquidNW).toBeCloseTo(470000, 2)
+    })
+  })
+
+  describe('post-retirement strategy covers full expenses including extras', () => {
+    it('constant dollar withdrawal matches expenses with parent support', () => {
+      // Bug: initialWithdrawal was set to base expenses only, ignoring parent support.
+      // The strategy withdrawal capped at base expenses, leaving parent support unfunded.
+      const params = makeParams({
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 61,
+        expectedReturn: 0, initialLiquidNW: 500000,
+        annualExpenses: 20000, inflation: 0,
+        parentSupportEnabled: true,
+        parentSupport: [
+          { id: 'p1', label: 'Mom', monthlyAmount: 1000, startAge: 55, endAge: 80, growthRate: 0 },
+        ],
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 61,
+        annualSavings: 0,
+      })
+
+      const result = generateProjection(params)
+
+      // Total expenses = $20K base + $12K parent support = $32K
+      expect(result.rows[0].annualExpenses).toBeCloseTo(32000, 0)
+      // initialWithdrawal = $32K (full expenses), strategy covers everything
+      expect(result.rows[0].withdrawalAmount).toBeCloseTo(32000, 2)
+      expect(result.rows[0].liquidNW).toBeCloseTo(468000, 2) // 500K - 32K
+    })
+  })
+
+  describe('post-retirement mortgage deducted from portfolio', () => {
+    it('mortgage payment reduces portfolio during post-retirement', () => {
+      // Bug: mortgage was only deducted in pre-retirement, not post-retirement.
+      const params = makeParams({
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 61,
+        expectedReturn: 0, initialLiquidNW: 500000,
+        annualExpenses: 20000, inflation: 0,
+        annualMortgagePayment: 24000, // $2K/month
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 60, retirementAge: 59, lifeExpectancy: 61,
+        annualSavings: 0,
+      })
+
+      const result = generateProjection(params)
+
+      // Expense draw $20K + mortgage $24K = $44K total deducted from portfolio
+      expect(result.rows[0].withdrawalAmount).toBeCloseTo(20000, 2)
+      expect(result.rows[0].savingsOrWithdrawal).toBeCloseTo(-44000, 2) // 20K expenses + 24K mortgage
+      expect(result.rows[0].liquidNW).toBeCloseTo(456000, 2) // 500K - 44K
     })
   })
 })

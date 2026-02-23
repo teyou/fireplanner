@@ -366,21 +366,28 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
 
     if (!isRetired) {
       // Pre-retirement: accumulation
-      // Deduct annual mortgage payment from savings, add rental income
       const netPropertyCashflow = effectiveRentalIncome - effectiveMortgagePayment
-      const adjustedSavings = incomeRow.annualSavings + netPropertyCashflow
+      // Extra expenses (parent support, healthcare, downsizing rent) are computed by the
+      // projection but NOT included in income projection's annualSavings — deduct them here.
+      const extraExpenses = parentSupportExpense + healthcareCashOutlay + downsizingRentExpense
+      // When income < base expenses, income projection clamps annualSavings to max(0, ...).
+      // The shortfall must still be deducted from the portfolio.
+      const baseExpInflated = annualExpenses * Math.pow(1 + inflation, year)
+      const incomeShortfall = Math.max(0, baseExpInflated - incomeRow.totalNet)
+      const adjustedSavings = incomeRow.annualSavings + netPropertyCashflow - extraExpenses - incomeShortfall
       portfolioReturnDollar = startLiquidNW * returnRate
-      liquidNW = startLiquidNW * (1 + returnRate) + adjustedSavings
+      liquidNW = Math.max(0, startLiquidNW * (1 + returnRate) + adjustedSavings)
       savingsOrWithdrawal = adjustedSavings
       totalIncome = incomeRow.totalNet + effectiveRentalIncome
     } else {
       // Post-retirement: decumulation
 
-      // Compute initial withdrawal at the start of retirement
+      // Compute initial withdrawal at the start of retirement.
+      // Use full inflation-adjusted expenses (including parent support, healthcare,
+      // downsizing rent) so the strategy covers actual spending needs.
       if (retirementYear === 0) {
-        const retirementExpenses = annualExpenses * retirementSpendingAdjustment
         initialWithdrawal = computeInitialWithdrawal(
-          startLiquidNW, withdrawalStrategy, strategyParams, swr, retirementExpenses,
+          startLiquidNW, withdrawalStrategy, strategyParams, swr, inflationAdjustedExpenses,
         )
       }
 
@@ -417,8 +424,9 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       const actualDraw = Math.min(expenseGap, strategyWithdrawal)
       const surplusIncome = Math.max(0, postRetirementIncome - inflationAdjustedExpenses)
 
-      // Portfolio: loses actual draw + one-time withdrawals, gains surplus passive income
-      const netPortfolioDraw = actualDraw + oneTimeWithdrawalTotal - surplusIncome
+      // Portfolio: loses actual draw + one-time withdrawals + mortgage, gains surplus passive income.
+      // Mortgage is deducted here (property rental already reduces expenseGap via postRetirementIncome).
+      const netPortfolioDraw = actualDraw + oneTimeWithdrawalTotal + effectiveMortgagePayment - surplusIncome
       const afterDraw = startLiquidNW - netPortfolioDraw
       portfolioReturnDollar = afterDraw * returnRate
       liquidNW = Math.max(0, afterDraw * (1 + returnRate))
