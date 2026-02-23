@@ -103,6 +103,16 @@ export function ProjectionPage() {
     })
   }
 
+  // Set of first-column IDs for each active group — used to draw vertical dividers
+  const groupStartColumns = useMemo(() => {
+    const s = new Set<string>()
+    for (const g of activeGroups) {
+      const cols = GROUP_COLUMNS[g]
+      if (cols.length > 0) s.add(cols[0])
+    }
+    return s
+  }, [activeGroups])
+
   const isMobile = useMediaQuery('(max-width: 767px)')
   const [expanded, setExpanded] = useState(false)
 
@@ -317,7 +327,7 @@ export function ProjectionPage() {
                 <th
                   key={g.key}
                   colSpan={GROUP_COLUMNS[g.key].length}
-                  className="px-2 py-1 text-center text-xs font-semibold text-primary/80 border-b border-l"
+                  className="px-2 py-1 text-center text-xs font-semibold text-primary/80 border-b border-l-2 border-l-border"
                 >
                   {g.label}
                 </th>
@@ -329,7 +339,10 @@ export function ProjectionPage() {
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  className="px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap"
+                  className={cn(
+                    'px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap',
+                    groupStartColumns.has(header.id) && 'border-l-2 border-l-border',
+                  )}
                 >
                   {header.isPlaceholder
                     ? null
@@ -362,6 +375,7 @@ export function ProjectionPage() {
                     className={cn(
                       'px-2 py-1.5 whitespace-nowrap tabular-nums',
                       isDepleted && cell.column.id !== 'age' && 'text-destructive',
+                      groupStartColumns.has(cell.column.id) && 'border-l-2 border-l-border',
                     )}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
