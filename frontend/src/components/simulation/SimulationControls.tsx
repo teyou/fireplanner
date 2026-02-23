@@ -7,6 +7,8 @@ import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import type { MonteCarloMethod, WithdrawalStrategyType } from '@/lib/types'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
+import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 
 const MC_METHODS: { value: MonteCarloMethod; label: string }[] = [
   { value: 'parametric', label: 'Parametric (Cholesky)' },
@@ -14,13 +16,14 @@ const MC_METHODS: { value: MonteCarloMethod; label: string }[] = [
   { value: 'fat_tail', label: 'Fat-Tail (Student-t df=5)' },
 ]
 
-const STRATEGIES: { value: WithdrawalStrategyType; label: string }[] = [
-  { value: 'constant_dollar', label: 'Constant Dollar (4% Rule)' },
-  { value: 'vpw', label: 'Variable Percentage (VPW)' },
-  { value: 'guardrails', label: 'Guardrails (Guyton-Klinger)' },
-  { value: 'vanguard_dynamic', label: 'Vanguard Dynamic' },
-  { value: 'cape_based', label: 'CAPE-Based' },
-  { value: 'floor_ceiling', label: 'Floor & Ceiling' },
+const SIMPLE_STRATEGIES: WithdrawalStrategyType[] = [
+  'constant_dollar', 'vpw', 'guardrails', 'vanguard_dynamic', 'cape_based', 'floor_ceiling',
+]
+
+const ALL_STRATEGIES: WithdrawalStrategyType[] = [
+  'constant_dollar', 'vpw', 'guardrails', 'vanguard_dynamic', 'cape_based', 'floor_ceiling',
+  'percent_of_portfolio', 'one_over_n', 'sensible_withdrawals', 'ninety_five_percent',
+  'endowment', 'hebeler_autopilot',
 ]
 
 interface SimulationControlsProps {
@@ -32,6 +35,8 @@ interface SimulationControlsProps {
 
 export function SimulationControls({ onRun, isPending, canRun, validationErrors }: SimulationControlsProps) {
   const simulation = useSimulationStore()
+  const mode = useEffectiveMode('section-stress-test')
+  const strategies = mode === 'advanced' ? ALL_STRATEGIES : SIMPLE_STRATEGIES
 
   const errorMessages = Object.values(validationErrors)
   const disabledReason = !canRun
@@ -78,8 +83,8 @@ export function SimulationControls({ onRun, isPending, canRun, validationErrors 
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {STRATEGIES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                {strategies.map((s) => (
+                  <SelectItem key={s} value={s}>{getStrategyLabel(s)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -179,6 +184,27 @@ function StrategyParams() {
           <ParamInput label="Ceiling" value={(params as { ceiling: number }).ceiling} onChange={(v) => setParam('ceiling', v)} prefix="$" step={1000} />
           <ParamInput label="Target Rate" value={(params as { targetRate: number }).targetRate * 100} onChange={(v) => setParam('targetRate', v / 100)} suffix="%" step={0.1} />
         </>
+      )}
+      {strategy === 'percent_of_portfolio' && (
+        <ParamInput label="Withdrawal Rate" value={(params as { rate: number }).rate * 100} onChange={(v) => setParam('rate', v / 100)} suffix="%" step={0.1} />
+      )}
+      {strategy === 'sensible_withdrawals' && (
+        <>
+          <ParamInput label="Base Rate" value={(params as { baseRate: number }).baseRate * 100} onChange={(v) => setParam('baseRate', v / 100)} suffix="%" step={0.1} />
+          <ParamInput label="Extras Rate" value={(params as { extrasRate: number }).extrasRate * 100} onChange={(v) => setParam('extrasRate', v / 100)} suffix="%" step={1} tooltip="Percentage of prior-year gains added as a bonus withdrawal." />
+        </>
+      )}
+      {strategy === 'ninety_five_percent' && (
+        <ParamInput label="Target Rate" value={(params as { swr: number }).swr * 100} onChange={(v) => setParam('swr', v / 100)} suffix="%" step={0.1} />
+      )}
+      {strategy === 'endowment' && (
+        <>
+          <ParamInput label="Target Rate" value={(params as { swr: number }).swr * 100} onChange={(v) => setParam('swr', v / 100)} suffix="%" step={0.1} />
+          <ParamInput label="Smoothing Weight" value={(params as { smoothingWeight: number }).smoothingWeight * 100} onChange={(v) => setParam('smoothingWeight', v / 100)} suffix="%" step={5} tooltip="Weight given to prior-year withdrawal vs current portfolio-based amount." />
+        </>
+      )}
+      {strategy === 'hebeler_autopilot' && (
+        <ParamInput label="Expected Real Return" value={(params as { expectedRealReturn: number }).expectedRealReturn * 100} onChange={(v) => setParam('expectedRealReturn', v / 100)} suffix="%" step={0.1} />
       )}
     </div>
   )
