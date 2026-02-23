@@ -7,10 +7,17 @@ import { useWithdrawalComparison } from '@/hooks/useWithdrawalComparison'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 import { useProjection } from '@/hooks/useProjection'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { useEffectiveMode } from '@/hooks/useEffectiveMode'
+import { useUIStore } from '@/stores/useUIStore'
+import { cn } from '@/lib/utils'
 
 export function WithdrawalPage() {
   const retirementAge = useProfileStore((s) => s.retirementAge)
   const { portfolioLabel } = useAnalysisPortfolio()
+
+  const mode = useEffectiveMode('section-withdrawal')
+  const setSectionMode = useUIStore((s) => s.setSectionMode)
+  const isAdvanced = mode === 'advanced'
 
   // Use the full projection engine to get the retirement-age portfolio value
   const { rows: projectionRows } = useProjection()
@@ -23,15 +30,43 @@ export function WithdrawalPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold mb-1">Withdrawal Strategies</h1>
-      <p className="text-sm text-muted-foreground mb-6">
-        Compare how different withdrawal strategies affect your retirement income and portfolio longevity.
-      </p>
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">Withdrawal Strategies</h1>
+          <p className="text-sm text-muted-foreground">
+            Compare how different withdrawal strategies affect your retirement income and portfolio longevity.
+          </p>
+        </div>
+        <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/30 shrink-0 mt-1">
+          <button
+            onClick={() => setSectionMode('section-withdrawal', 'simple')}
+            className={cn(
+              'rounded-md px-3 py-1 text-xs font-medium transition-all',
+              mode === 'simple'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Simple
+          </button>
+          <button
+            onClick={() => setSectionMode('section-withdrawal', 'advanced')}
+            className={cn(
+              'rounded-md px-3 py-1 text-xs font-medium transition-all',
+              mode === 'advanced'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Advanced
+          </button>
+        </div>
+      </div>
 
       <div className="space-y-6">
         <AnalysisModeToggle portfolioLabel={portfolioLabel} />
 
-        <StrategyParamsSection />
+        {isAdvanced && <StrategyParamsSection />}
 
         {hasErrors && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
@@ -49,10 +84,12 @@ export function WithdrawalPage() {
         {results && (
           <>
             <ComparisonTable results={results} />
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <WithdrawalChart results={results} />
-              <PortfolioComparisonChart results={results} />
-            </div>
+            {isAdvanced && (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <WithdrawalChart results={results} />
+                <PortfolioComparisonChart results={results} />
+              </div>
+            )}
           </>
         )}
       </div>

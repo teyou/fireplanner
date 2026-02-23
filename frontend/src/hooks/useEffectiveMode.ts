@@ -13,6 +13,7 @@ export type ModeSectionId =
   | 'section-property'
   | 'section-allocation'
   | 'section-projection'
+  | 'section-withdrawal'
   | 'section-stress-test'
 
 /**
