@@ -29,6 +29,7 @@ import {
   Upload,
   CheckSquare,
   HeartPulse,
+  HelpCircle,
 } from 'lucide-react'
 
 interface NavItem {
@@ -353,6 +354,27 @@ function DataActions() {
   )
 }
 
+function HelpButton() {
+  const helpPanelOpen = useUIStore((s) => s.helpPanelOpen)
+  const toggleHelpPanel = useUIStore((s) => s.toggleHelpPanel)
+
+  return (
+    <button
+      onClick={toggleHelpPanel}
+      className={cn(
+        'flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs transition-colors',
+        helpPanelOpen
+          ? 'text-foreground bg-accent'
+          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+      )}
+      title="Toggle help panel (Shift+?)"
+    >
+      <HelpCircle className="h-3.5 w-3.5" />
+      Help
+    </button>
+  )
+}
+
 function ModeToggle() {
   const mode = useUIStore((s) => s.mode)
   const setField = useUIStore((s) => s.setField)
@@ -410,7 +432,10 @@ export function Sidebar() {
         <div className="mt-auto border-t pt-3 space-y-2">
           <ScenarioManager />
           <DataActions />
-          <ThemeToggle />
+          <div className="flex items-center gap-1">
+            <HelpButton />
+            <ThemeToggle />
+          </div>
         </div>
       </aside>
 
@@ -448,7 +473,10 @@ export function Sidebar() {
             <div className="mt-6 border-t pt-3 space-y-2">
               <ScenarioManager />
               <DataActions />
-              <ThemeToggle />
+              <div className="flex items-center gap-1">
+                <HelpButton />
+                <ThemeToggle />
+              </div>
             </div>
           </aside>
         </>

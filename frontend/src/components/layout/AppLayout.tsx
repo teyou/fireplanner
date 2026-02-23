@@ -19,16 +19,23 @@ export function AppLayout() {
   const helpPanelOpen = useUIStore((s) => s.helpPanelOpen)
   const location = useLocation()
 
-  // Global Ctrl+Z / Cmd+Z undo shortcut
+  // Global keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Ctrl+Z / Cmd+Z undo
       if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
-        // Only intercept if not focused on an input/textarea (those have native undo)
         const tag = (e.target as HTMLElement)?.tagName
         if (tag === 'INPUT' || tag === 'TEXTAREA') return
         if (tryUndo()) {
           e.preventDefault()
         }
+      }
+      // Shift+? toggle help panel
+      if (e.key === '?' && e.shiftKey) {
+        const tag = (e.target as HTMLElement)?.tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return
+        e.preventDefault()
+        useUIStore.getState().toggleHelpPanel()
       }
     }
     window.addEventListener('keydown', handler)
