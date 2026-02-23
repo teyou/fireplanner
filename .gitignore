@@ -19,3 +19,19 @@ htmlcov/
 
 # Worktrees
 .worktrees/
+.claude/worktrees/
+
+# Claude / MCP tooling
+.mcp.json
+.playwright-mcp/
+
+# Dev screenshots (not for repo — curated ones live in docs/screenshots/)
+*.png
+!docs/screenshots/*.png
+
+# Draft docs and internal planning
+reddit-post.md
+docs/reddit-launch-post.*
+docs/plans/
+docs/testplandraft.md
+docs/todoplan.md

@@ -2,7 +2,9 @@
 
 A comprehensive FIRE (Financial Independence, Retire Early) planning tool built for Singapore residents. Runs entirely in your browser — no server, no accounts, no data leaves your device.
 
-**[Live Demo &rarr;](#)** <!-- TODO: add deployed URL -->
+**[Try it live at sgfireplanner.com &rarr;](https://sgfireplanner.com)**
+
+![Start page](docs/screenshots/home.png)
 
 ## Why fireplanner?
 
@@ -16,27 +18,50 @@ Most retirement calculators are too simple (multiply expenses by 25) or US-centr
 ## Features
 
 ### Inputs
+
+Enter your financial situation across guided sections — income, expenses, net worth, CPF, asset allocation, financial goals, healthcare, and property.
+
+![Inputs page](docs/screenshots/inputs.png)
+
 - **Guided onboarding** — answer a few questions and get a pre-configured plan, or build from scratch
 - **Income engine** — 3 salary models (simple growth, career phases, MOM benchmarks), multiple income streams, life events with disruption templates
 - **Financial goals** — plan for wedding, education, housing, car, and other milestones with FIRE impact analysis
 - **Asset allocation** — 8 asset classes with pre-built templates, Markowitz portfolio stats, correlation heatmap, glide path configuration
 - **Healthcare planning** — MediShield Life, ISP, CareShield Life, out-of-pocket projections with age-curve modeling
 
-### Analysis
-- **Year-by-year projection** — see your net worth trajectory in real or nominal dollars with full income/expense breakdown
+### Year-by-Year Projection
+
+See your full financial trajectory from now until end of life, in real or nominal dollars.
+
+![Projection page](docs/screenshots/projection.png)
+
 - **6 withdrawal strategies** — Constant Dollar (4% rule), VPW, Guardrails, Vanguard Dynamic, CAPE-Based, Floor-and-Ceiling with side-by-side comparison
+- **Income breakdown** — salary, tax, CPF, savings, investment returns, all in one table
+- **Chart and table views** — toggle between visual chart and detailed data table
+
+### Stress Testing
+
+Run 10,000 Monte Carlo simulations, historical backtests, and crisis scenario replays.
+
+![Monte Carlo simulation](docs/screenshots/monte-carlo.png)
+
 - **Monte Carlo simulation** — 10,000 runs with parametric, historical bootstrap, or fat-tail (Student-t) methods via Web Worker
 - **Historical backtesting** — Bengen-style rolling window analysis across US, Singapore, and blended datasets with SWR heatmap
 - **Sequence risk stress testing** — replay historical crises (GFC, Asian Financial Crisis, dot-com, etc.) with mitigation strategies
-- **Cash flow waterfall** — stacked area chart showing income sources vs expenses across your entire lifecycle
 
 ### Dashboard
+
+Your FIRE plan at a glance — key metrics, risk assessment, passive income coverage, and what-if scenarios.
+
+![Dashboard](docs/screenshots/dashboard.png)
+
 - **FIRE dashboard** — headline metrics, risk assessment across 6 dimensions, passive income breakdown, one-more-year analysis
+- **Cash flow waterfall** — stacked area chart showing income sources vs expenses across your entire lifecycle
 - **What-If explorer** — adjust income, expenses, returns, and SWR with instant delta feedback; disruption tab to stress-test job loss, disability, and recession scenarios
 - **Scenario comparison** — save up to 5 named scenarios and compare side-by-side
-- **FIRE checklist** — actionable steps to track your progress
 
-### Data
+### Your Data Stays Yours
+
 - **100% client-side** — all computation runs in your browser, heavy simulations in a Web Worker
 - **LocalStorage persistence** — your data auto-saves and survives page refreshes
 - **JSON export/import** — download your full plan as a file and restore it on any device
@@ -63,7 +88,7 @@ Most retirement calculators are too simple (multiply expenses by 25) or US-centr
 
 ```bash
 # Clone the repo
-git clone https://github.com/<your-username>/fireplanner.git
+git clone https://github.com/RemarkRemedy/fireplanner.git
 cd fireplanner/frontend
 
 # Install dependencies
