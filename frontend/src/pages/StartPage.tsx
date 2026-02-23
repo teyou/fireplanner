@@ -231,7 +231,7 @@ export function StartPage() {
           <button
             key={key}
             onClick={() => handlePathwayClick(key as ActivePathway)}
-            className="text-left opacity-0 animate-fade-in-up"
+            className="text-left h-full opacity-0 animate-fade-in-up"
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <Card className={`h-full transition-all duration-200 cursor-pointer ${
@@ -267,7 +267,7 @@ export function StartPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="space-y-1">
+              <div className="flex flex-col gap-1">
                 <Label className="text-sm">Current Age</Label>
                 <NumberInput
                   integer
@@ -275,10 +275,10 @@ export function StartPage() {
                   max={100}
                   value={draftAge}
                   onChange={setDraftAge}
-                  className="border-blue-300"
+                  className="mt-auto border-blue-300"
                 />
               </div>
-              <div className="space-y-1">
+              <div className="flex flex-col gap-1">
                 <Label className="text-sm">Desired Retirement Age</Label>
                 <NumberInput
                   integer
@@ -286,7 +286,7 @@ export function StartPage() {
                   max={100}
                   value={draftRetirementAge}
                   onChange={setDraftRetirementAge}
-                  className="border-blue-300"
+                  className="mt-auto border-blue-300"
                 />
                 {draftRetirementAge <= draftAge && (
                   <p className="text-xs text-destructive">Must be after current age</p>
@@ -334,7 +334,7 @@ export function StartPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="space-y-1">
+              <div className="flex flex-col gap-1">
                 <Label className="text-sm">Current Age</Label>
                 <NumberInput
                   integer
@@ -342,7 +342,7 @@ export function StartPage() {
                   max={100}
                   value={draftAge}
                   onChange={setDraftAge}
-                  className="border-blue-300"
+                  className="mt-auto border-blue-300"
                 />
               </div>
               <CurrencyInput
@@ -388,7 +388,7 @@ export function StartPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="space-y-1">
+                <div className="flex flex-col gap-1">
                   <Label className="text-sm">Current Age</Label>
                   <NumberInput
                     integer
@@ -396,7 +396,7 @@ export function StartPage() {
                     max={100}
                     value={draftAge}
                     onChange={setDraftAge}
-                    className="border-blue-300"
+                    className="mt-auto border-blue-300"
                   />
                 </div>
                 <CurrencyInput
@@ -435,7 +435,7 @@ export function StartPage() {
                   key={phase}
                   onClick={() => handleAlreadyFirePhase(phase)}
                   disabled={!alreadyFireValid}
-                  className="text-left disabled:opacity-50 disabled:cursor-not-allowed opacity-0 animate-fade-in-up"
+                  className="text-left h-full disabled:opacity-50 disabled:cursor-not-allowed opacity-0 animate-fade-in-up"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <Card className="h-full hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">

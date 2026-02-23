@@ -124,12 +124,12 @@ export function NumberInput({
   if (!label) return input
 
   return (
-    <div className="space-y-1">
+    <div className="flex flex-col gap-1">
       <Label htmlFor={inputId} className="text-sm flex items-center gap-1">
         {label}
         {tooltip && <InfoTooltip text={tooltip} />}
       </Label>
-      {input}
+      <div className="mt-auto">{input}</div>
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   )

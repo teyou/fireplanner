@@ -82,14 +82,14 @@ export function PercentInput({
   )
 
   return (
-    <div className={cn('space-y-1', className)}>
+    <div className={cn('flex flex-col gap-1', className)}>
       {label && (
         <Label htmlFor={inputId} className="text-sm flex items-center gap-1">
           {label}
           {tooltip && <InfoTooltip text={tooltip} />}
         </Label>
       )}
-      <div className="relative">
+      <div className="relative mt-auto">
         <Input
           id={inputId}
           type="number"

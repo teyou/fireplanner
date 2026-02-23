@@ -25,12 +25,12 @@ export function CurrencyInput({
 }: CurrencyInputProps) {
   const inputId = useId()
   return (
-    <div className={cn('space-y-1', className)}>
+    <div className={cn('flex flex-col gap-1', className)}>
       <Label htmlFor={inputId} className="text-sm flex items-center gap-1">
         {label}
         {tooltip && <InfoTooltip text={tooltip} />}
       </Label>
-      <div className="relative">
+      <div className="relative mt-auto">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
           $
         </span>
