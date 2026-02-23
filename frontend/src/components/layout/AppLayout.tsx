@@ -72,10 +72,11 @@ export function AppLayout() {
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {showStats && isTop && <FireStatsStrip position="top" />}
         <ResizablePanelGroup
+          key={isDesktop && helpPanelOpen ? 'with-help' : 'without-help'}
           orientation="horizontal"
           className="flex-1 min-h-0"
         >
-          <ResizablePanel id="main" defaultSize={100} minSize={40}>
+          <ResizablePanel id="main" defaultSize={isDesktop && helpPanelOpen ? 65 : 100} minSize={40}>
             <main
               className={cn(
                 'h-full overflow-auto',
