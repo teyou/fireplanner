@@ -96,15 +96,12 @@ export function useProjection(): ProjectionResult {
         ? (property.existingMonthlyPayment - property.mortgageCpfMonthly) * 12
         : 0,
       annualRentalIncome: property.ownsProperty
-        ? property.existingRentalIncome * 12 + (
-            property.propertyType === 'hdb' && property.hdbMonetizationStrategy === 'sublet'
-              ? computeHdbSublettingIncome({
-                  rooms: property.hdbSublettingRooms,
-                  monthlyRate: property.hdbSublettingRate,
-                }).annualGross
-              : 0
-          )
-        : 0,
+        && property.propertyType === 'hdb' && property.hdbMonetizationStrategy === 'sublet'
+          ? computeHdbSublettingIncome({
+              rooms: property.hdbSublettingRooms,
+              monthlyRate: property.hdbSublettingRate,
+            }).annualGross
+          : 0,
       downsizing: property.ownsProperty && property.downsizing.scenario !== 'none'
         ? property.downsizing
         : null,

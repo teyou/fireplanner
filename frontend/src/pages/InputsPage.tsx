@@ -511,7 +511,6 @@ function PropertyContent() {
   const existingPropertyValue = usePropertyStore((s) => s.existingPropertyValue)
   const existingMortgageBalance = usePropertyStore((s) => s.existingMortgageBalance)
   const existingMonthlyPayment = usePropertyStore((s) => s.existingMonthlyPayment)
-  const existingRentalIncome = usePropertyStore((s) => s.existingRentalIncome)
   const mortgageCpfMonthly = usePropertyStore((s) => s.mortgageCpfMonthly)
   const setField = usePropertyStore((s) => s.setField)
   const validationErrors = usePropertyStore((s) => s.validationErrors)
@@ -632,13 +631,9 @@ function PropertyContent() {
                     </div>
                   </>
                 )}
-                <CurrencyInput
-                  label="Monthly Rental Income"
-                  value={existingRentalIncome}
-                  onChange={(v) => setField('existingRentalIncome', v)}
-                  error={validationErrors.existingRentalIncome}
-                  tooltip="Monthly rental income if this is an investment property (0 if owner-occupied)"
-                />
+                <div className="md:col-span-2 p-2 bg-muted/50 rounded text-sm text-muted-foreground">
+                  Earning rental income from this property? Add it as a <Link to="/income" className="text-primary underline underline-offset-2 hover:text-primary/80">Rental income stream</Link> in the Income section.
+                </div>
               </div>
               {propertyStatus === 'with-mortgage' && (
                 <div className="p-2 bg-muted/50 rounded text-sm">
