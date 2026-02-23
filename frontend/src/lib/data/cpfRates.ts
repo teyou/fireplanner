@@ -63,9 +63,10 @@ export const CPF_RATES: CpfRateEntry[] = [
   },
 ]
 
-// Ordinary Wage (OW) ceiling: $6,800/month
-export const OW_CEILING_MONTHLY = 6800
-export const OW_CEILING_ANNUAL = OW_CEILING_MONTHLY * 12 // $81,600
+// Ordinary Wage (OW) ceiling: $8,000/month (from 1 Jan 2026)
+// Source: https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/tax-reliefs-rebates-and-deductions/tax-reliefs/central-provident-fund(cpf)-relief-for-employees
+export const OW_CEILING_MONTHLY = 8000
+export const OW_CEILING_ANNUAL = OW_CEILING_MONTHLY * 12 // $96,000
 
 // Additional Wage (AW) ceiling: $102,000 - total OW subject to CPF for the year
 export const AW_CEILING_TOTAL = 102000

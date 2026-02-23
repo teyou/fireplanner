@@ -633,14 +633,14 @@ describe('integration tests', () => {
       initialCpfMA: 0,
     })
 
-    // At $180K salary, OW ceiling applies ($81,600/yr)
-    // CPF employee contribution: $81,600 * 0.20 = $16,320
-    expect(rows[0].cpfEmployee).toBeCloseTo(81600 * 0.20, 0)
+    // At $180K salary, OW ceiling applies ($96,000/yr from 2026)
+    // CPF employee contribution: $96,000 * 0.20 = $19,200
+    expect(rows[0].cpfEmployee).toBeCloseTo(96000 * 0.20, 0)
 
-    // Tax calculation: $180K - $16,320 CPF - $15,300 SRS - $20,000 reliefs = $128,380 chargeable
-    // Tax on $128,380: cumulative at $120K = $7,950 + ($128,380 - $120,000) * 0.15 = $7,950 + $1,257 = $9,207
-    expect(rows[0].sgTax).toBeGreaterThan(8000)
-    expect(rows[0].sgTax).toBeLessThan(15000)
+    // Tax calculation: $180K - $19,200 CPF - $15,300 SRS - $20,000 reliefs = $125,500 chargeable
+    // Tax on $125,500: cumulative at $120K = $7,950 + ($125,500 - $120,000) * 0.15 = $7,950 + $825 = $8,775
+    expect(rows[0].sgTax).toBeGreaterThan(7000)
+    expect(rows[0].sgTax).toBeLessThan(12000)
 
     // Salary should be $180K
     expect(rows[0].salary).toBe(180000)

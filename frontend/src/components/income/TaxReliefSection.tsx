@@ -16,6 +16,8 @@ import {
   type NsmanStatus,
   type ParentReliefType,
 } from '@/lib/data/taxBrackets'
+import { calculateCpfContribution } from '@/lib/calculations/cpf'
+import { calculateSrsDeduction } from '@/lib/calculations/tax'
 
 const NSMAN_OPTIONS: { value: NsmanStatus; label: string; amount: string }[] = [
   { value: 'none', label: 'Not applicable', amount: '$0' },
@@ -32,8 +34,22 @@ const PARENT_OPTIONS: { value: ParentReliefType; label: string; amount: string }
 export function TaxReliefSection() {
   const income = useIncomeStore()
   const currentAge = useProfileStore((s) => s.currentAge)
+  const residencyStatus = useProfileStore((s) => s.residencyStatus)
+  const srsAnnualContribution = useProfileStore((s) => s.srsAnnualContribution)
   const breakdown = income.reliefBreakdown
   const isDetailed = breakdown !== null
+
+  // Auto-compute CPF employee contribution from current salary + age
+  const cpfEmployee = useMemo(() => {
+    const cpf = calculateCpfContribution(income.annualSalary, currentAge)
+    return cpf.employee
+  }, [income.annualSalary, currentAge])
+
+  // Auto-compute SRS deduction (capped per residency)
+  const srsDeduction = useMemo(
+    () => calculateSrsDeduction(srsAnnualContribution, residencyStatus),
+    [srsAnnualContribution, residencyStatus]
+  )
 
   const toggleMode = useCallback((detailed: boolean) => {
     if (detailed) {
@@ -271,7 +287,7 @@ export function TaxReliefSection() {
               />
             </div>
 
-            {/* Computed Total */}
+            {/* Computed Total — Personal Reliefs */}
             <div className={`p-3 rounded-md text-sm ${isOverCap ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-muted/50'}`}>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Total Personal Reliefs:</span>
@@ -282,6 +298,40 @@ export function TaxReliefSection() {
                   Capped at {formatCurrency(RELIEF_AMOUNTS.reliefCap)} (IRAS personal relief cap)
                 </p>
               )}
+            </div>
+
+            {/* Auto-calculated deductions: CPF Relief + SRS */}
+            <div className="space-y-2 pt-2 border-t">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Auto-calculated deductions</p>
+
+              {/* CPF Relief (Employee) */}
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-1">
+                  CPF Relief (Employee)
+                  <InfoTooltip text="Employee CPF contribution is automatically deducted from your taxable income. Computed from your salary and age, subject to the OW ceiling ($8,000/month from 2026) and annual salary ceiling ($102,000)." />
+                </span>
+                <span className="font-medium text-green-700 dark:text-green-400">{formatCurrency(cpfEmployee)}</span>
+              </div>
+
+              {/* SRS Deduction */}
+              {srsDeduction > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-1">
+                    SRS Deduction
+                    <InfoTooltip text={`SRS contributions are tax-deductible up to ${residencyStatus === 'foreigner' ? '$35,700' : '$15,300'}/year. Set your annual SRS contribution in the FIRE Profile section.`} />
+                  </span>
+                  <span className="font-medium text-green-700 dark:text-green-400">{formatCurrency(srsDeduction)}</span>
+                </div>
+              )}
+
+              {/* Grand Total */}
+              <div className="flex items-center justify-between text-sm pt-2 border-t border-dashed">
+                <span className="text-muted-foreground font-medium">
+                  Total Tax Deductions:
+                  <InfoTooltip text="Sum of personal reliefs, CPF employee contribution, and SRS deduction — all subtracted from gross income to arrive at chargeable income." />
+                </span>
+                <span className="font-bold text-base">{formatCurrency(computedTotal + cpfEmployee + srsDeduction)}</span>
+              </div>
             </div>
           </div>
         )}

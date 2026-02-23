@@ -36,16 +36,16 @@ describe('calculateCpfContribution', () => {
     expect(result.employer).toBeCloseTo(72000 * 0.145, 0)
   })
 
-  it('OW ceiling: salary above $81,600 is capped', () => {
+  it('OW ceiling: salary above $96,000 is capped', () => {
     const result = calculateCpfContribution(120000, 30)
-    // Only $81,600 subject to CPF (no bonus)
-    expect(result.total).toBeCloseTo(81600 * 0.37, 0)
+    // Only $96,000 subject to CPF (OW ceiling $8,000/month from 2026, no bonus)
+    expect(result.total).toBeCloseTo(96000 * 0.37, 0)
   })
 
   it('AW ceiling: bonus capped at $102K - OW', () => {
-    const result = calculateCpfContribution(81600, 30, 30000)
-    // OW: $81,600 (at ceiling), AW ceiling: $102,000 - $81,600 = $20,400
-    // Total subject: $81,600 + $20,400 = $102,000
+    const result = calculateCpfContribution(96000, 30, 30000)
+    // OW: $96,000 (at ceiling), AW ceiling: $102,000 - $96,000 = $6,000
+    // Total subject: $96,000 + $6,000 = $102,000
     expect(result.total).toBeCloseTo(102000 * 0.37, 0)
   })
 

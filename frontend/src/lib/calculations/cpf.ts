@@ -39,7 +39,7 @@ export function calculateCpfContribution(
 
   const rates = getCpfRatesForAge(age)
 
-  // OW (Ordinary Wages) — capped at $6,800/month ($81,600/year)
+  // OW (Ordinary Wages) — capped at OW_CEILING_ANNUAL (currently $96,000/year)
   const owSubjectToCpf = Math.min(annualSalary, OW_CEILING_ANNUAL)
 
   // AW (Additional Wages, e.g. bonus) — capped at $102,000 - total OW subject to CPF
