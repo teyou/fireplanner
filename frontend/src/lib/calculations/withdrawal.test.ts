@@ -233,6 +233,32 @@ describe('runDeterministicComparison', () => {
     }
   })
 
+  it('computes totalWithdrawn for each strategy', () => {
+    const result = runDeterministicComparison({
+      initialPortfolio: 2_000_000,
+      annualExpenses: 80_000,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      expectedReturn: 0.072,
+      inflation: 0.025,
+      expenseRatio: 0.003,
+      swr: 0.04,
+      strategies: ['constant_dollar', 'vpw'],
+      strategyParams: {
+        constant_dollar: { swr: 0.04 },
+        vpw: { expectedRealReturn: 0.03, targetEndValue: 0 },
+      },
+    })
+
+    for (const strategy of ['constant_dollar', 'vpw']) {
+      const summary = result.summaries[strategy]
+      const yearlySum = result.yearResults[strategy]
+        .reduce((sum, yr) => sum + yr.withdrawal, 0)
+      expect(summary.totalWithdrawn).toBeCloseTo(yearlySum, 0)
+      expect(summary.totalWithdrawn).toBeGreaterThan(0)
+    }
+  })
+
   it('property: withdrawal >= 0 for all years', () => {
     const result = runDeterministicComparison({
       initialPortfolio: PORTFOLIO,

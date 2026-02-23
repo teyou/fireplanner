@@ -373,6 +373,7 @@ export interface WithdrawalSummary {
   maxWithdrawal: number
   stdDevWithdrawal: number
   terminalPortfolio: number
+  totalWithdrawn: number
   survived: boolean
 }
 
@@ -464,6 +465,7 @@ export function runDeterministicComparison(params: {
     yearResults[strategy] = years
 
     const withdrawals = years.map((r) => r.withdrawal).filter((w) => w > 0)
+    const totalWithdrawn = years.reduce((sum, r) => sum + r.withdrawal, 0)
     const avg = withdrawals.length > 0 ? withdrawals.reduce((a, b) => a + b, 0) / withdrawals.length : 0
     const variance = withdrawals.length > 0
       ? withdrawals.reduce((a, w) => a + (w - avg) ** 2, 0) / withdrawals.length
@@ -476,6 +478,7 @@ export function runDeterministicComparison(params: {
       maxWithdrawal: withdrawals.length > 0 ? Math.max(...withdrawals) : 0,
       stdDevWithdrawal: Math.sqrt(variance),
       terminalPortfolio: Math.max(0, portfolio),
+      totalWithdrawn,
       survived,
     }
   }

@@ -28,6 +28,7 @@ export function ComparisonTable({ results }: ComparisonTableProps) {
                 <th className="text-right py-2 px-2 font-medium">Min</th>
                 <th className="text-right py-2 px-2 font-medium">Max</th>
                 <th className="text-right py-2 px-2 font-medium">Std Dev</th>
+                <th className="text-right py-2 px-2 font-medium">Total Withdrawn</th>
                 <th className="text-right py-2 px-2 font-medium">Terminal Portfolio</th>
                 <th className="text-right py-2 pl-2 font-medium">Survived</th>
               </tr>
@@ -42,6 +43,7 @@ export function ComparisonTable({ results }: ComparisonTableProps) {
                     <td className="text-right py-2 px-2">{formatCurrency(s.minWithdrawal)}</td>
                     <td className="text-right py-2 px-2">{formatCurrency(s.maxWithdrawal)}</td>
                     <td className="text-right py-2 px-2">{formatCurrency(s.stdDevWithdrawal)}</td>
+                    <td className="text-right py-2 px-2">{formatCurrency(s.totalWithdrawn)}</td>
                     <td className="text-right py-2 px-2">{formatCurrency(s.terminalPortfolio)}</td>
                     <td className="text-right py-2 pl-2">
                       <span className={s.survived ? 'text-green-600' : 'text-destructive'}>
