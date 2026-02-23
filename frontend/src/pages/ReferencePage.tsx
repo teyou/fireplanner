@@ -6,6 +6,8 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import Markdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { ExternalLink } from 'lucide-react'
+import { DATA_SOURCES } from '@/lib/data/sources'
 
 // ── ELI5 glossary ──────────────────────────────────────────────────────
 const GLOSSARY: Record<string, string> = {
@@ -490,6 +492,42 @@ export function ReferencePage() {
               </AccordionContent>
             </AccordionItem>
           ))}
+
+          <AccordionItem value="data-sources">
+            <AccordionTrigger>Data Sources & Methodology</AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  All data used in this tool comes from publicly available sources.
+                  Data is refreshed annually in January.
+                </p>
+                {Object.entries(DATA_SOURCES).map(([category, sources]) => (
+                  <div key={category}>
+                    <h4 className="text-sm font-medium capitalize mb-1">
+                      {category.replace(/([A-Z])/g, ' $1').trim()}
+                    </h4>
+                    <ul className="space-y-1">
+                      {sources.map((src, i) => (
+                        <li key={i} className="text-sm text-muted-foreground">
+                          <a
+                            href={src.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+                          >
+                            {src.name}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                          <span className="ml-1">{'\u2014'} {src.period}</span>
+                          <span className="ml-1 text-muted-foreground/60">({src.license})</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
         </Accordion>
       </div>
     </TooltipProvider>
