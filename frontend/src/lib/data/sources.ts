@@ -1,0 +1,133 @@
+/**
+ * Structured data source attributions.
+ * Extracted from header comments in lib/data/ files.
+ * Surfaced in the Help Panel and Reference Guide.
+ */
+
+export interface DataSource {
+  name: string
+  url: string
+  period: string
+  license: string
+}
+
+/** Sources grouped by the page/topic they're relevant to. */
+export const DATA_SOURCES: Record<string, DataSource[]> = {
+  cpf: [
+    {
+      name: 'CPF Contribution Rates',
+      url: 'https://www.cpf.gov.sg/employer/employer-obligations/how-much-cpf-contributions-to-pay',
+      period: '2024',
+      license: 'Public data',
+    },
+  ],
+  tax: [
+    {
+      name: 'SG Progressive Income Tax',
+      url: 'https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/tax-residency-and-tax-rates/individual-income-tax-rates',
+      period: 'YA 2024+',
+      license: 'Public data',
+    },
+  ],
+  income: [
+    {
+      name: 'MOM Salary Benchmarks',
+      url: 'https://stats.mom.gov.sg',
+      period: '2024',
+      license: 'SG Open Data License',
+    },
+  ],
+  historicalReturns: [
+    {
+      name: 'US Equities (S&P 500)',
+      url: 'https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histretSP.html',
+      period: '1928-2024',
+      license: 'Academic/free',
+    },
+    {
+      name: 'SG Equities (STI)',
+      url: 'https://www.sgx.com',
+      period: '1987-2024',
+      license: 'SG Open Data License',
+    },
+    {
+      name: 'Intl Equities (MSCI World)',
+      url: 'https://www.msci.com',
+      period: '1970-2024',
+      license: 'Free for personal use, attribute MSCI',
+    },
+    {
+      name: 'Bonds (10-yr Treasury)',
+      url: 'https://fred.stlouisfed.org',
+      period: '1928-2024',
+      license: 'Public domain',
+    },
+    {
+      name: 'REITs (FTSE NAREIT)',
+      url: 'https://www.reit.com/data-research',
+      period: '1972-2024',
+      license: 'Free with attribution',
+    },
+    {
+      name: 'Gold (LBMA)',
+      url: 'https://www.gold.org',
+      period: '1968-2024',
+      license: 'Free non-commercial',
+    },
+    {
+      name: 'Cash (3-month T-Bill)',
+      url: 'https://fred.stlouisfed.org',
+      period: '1928-2024',
+      license: 'Public domain',
+    },
+    {
+      name: 'CPF Interest Rates',
+      url: 'https://www.cpf.gov.sg/member/cpf-overview',
+      period: 'Published rates',
+      license: 'Public',
+    },
+  ],
+  property: [
+    {
+      name: "Bala's Table (SLA)",
+      url: 'https://www.sla.gov.sg',
+      period: '2024',
+      license: 'Public data',
+    },
+  ],
+  crisisScenarios: [
+    {
+      name: 'Crisis Scenarios',
+      url: 'https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histretSP.html',
+      period: '1928-2024',
+      license: 'Academic/free (Damodaran), Public domain (FRED)',
+    },
+  ],
+}
+
+/**
+ * Map route paths to relevant source keys.
+ * A route may reference multiple source groups.
+ */
+export const ROUTE_SOURCES: Record<string, string[]> = {
+  '/inputs': ['cpf', 'tax', 'income', 'property'],
+  '/projection': ['cpf', 'tax', 'income', 'historicalReturns'],
+  '/stress-test': ['historicalReturns', 'crisisScenarios'],
+  '/dashboard': ['cpf', 'tax', 'historicalReturns'],
+}
+
+/** Get all sources relevant to a given route. */
+export function getSourcesForRoute(route: string): DataSource[] {
+  const keys = ROUTE_SOURCES[route] ?? []
+  const seen = new Set<string>()
+  const result: DataSource[] = []
+  for (const key of keys) {
+    for (const src of DATA_SOURCES[key] ?? []) {
+      if (!seen.has(src.url)) {
+        seen.add(src.url)
+        result.push(src)
+      }
+    }
+  }
+  return result
+}
