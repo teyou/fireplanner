@@ -9,19 +9,19 @@
 //   Cash (3-month T-Bill): FRED, 1928-2024 (Public domain)
 //   CPF (OA+SA blend): CPF Board published rates (Public)
 // Downloaded: 2024-12-01
-// Note: Default expected returns and standard deviations from master plan Section 5.
-//   Full time series data stays backend-only. Frontend uses summary stats only.
+// Note: Default expected returns are forward-looking estimates (not full historical averages).
+//   Standard deviations from historical data. Full time series stays in historicalReturnsFull.ts.
 
 import type { AssetClass, AssetClassData, AllocationTemplate } from '@/lib/types'
 
 export const ASSET_CLASSES: AssetClassData[] = [
-  { key: 'usEquities',   label: 'US Equities (S&P 500)',     expectedReturn: 0.102, stdDev: 0.155 },
-  { key: 'sgEquities',   label: 'SG Equities (STI)',         expectedReturn: 0.085, stdDev: 0.180 },
-  { key: 'intlEquities', label: 'Intl Equities (MSCI World)', expectedReturn: 0.080, stdDev: 0.160 },
-  { key: 'bonds',        label: 'Bonds (10-yr Treasury)',     expectedReturn: 0.045, stdDev: 0.055 },
-  { key: 'reits',        label: 'REITs',                      expectedReturn: 0.080, stdDev: 0.185 },
-  { key: 'gold',         label: 'Gold',                       expectedReturn: 0.065, stdDev: 0.150 },
-  { key: 'cash',         label: 'Cash (T-Bills)',             expectedReturn: 0.020, stdDev: 0.010 },
+  { key: 'usEquities',   label: 'US Equities (S&P 500)',     expectedReturn: 0.070, stdDev: 0.155 },
+  { key: 'sgEquities',   label: 'SG Equities (STI)',         expectedReturn: 0.070, stdDev: 0.180 },
+  { key: 'intlEquities', label: 'Intl Equities (MSCI World)', expectedReturn: 0.071, stdDev: 0.160 },
+  { key: 'bonds',        label: 'Bonds (10-yr Treasury)',     expectedReturn: 0.030, stdDev: 0.055 },
+  { key: 'reits',        label: 'REITs',                      expectedReturn: 0.050, stdDev: 0.185 },
+  { key: 'gold',         label: 'Gold',                       expectedReturn: 0.030, stdDev: 0.150 },
+  { key: 'cash',         label: 'Cash (T-Bills)',             expectedReturn: 0.014, stdDev: 0.010 },
   { key: 'cpf',          label: 'CPF (OA+SA Blend)',          expectedReturn: 0.030, stdDev: 0.000 },
 ]
 
@@ -58,7 +58,7 @@ export const ALLOCATION_TEMPLATES: Record<Exclude<AllocationTemplate, 'custom'>,
 }
 
 /** Risk-free rate proxy (Cash return) used for Sharpe ratio calculation */
-export const RISK_FREE_RATE = 0.02
+export const RISK_FREE_RATE = 0.014
 
 /** Get asset class data by key */
 export function getAssetClass(key: AssetClass): AssetClassData {
