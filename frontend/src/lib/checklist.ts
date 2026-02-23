@@ -162,7 +162,11 @@ function readChecked(): Record<string, boolean> {
 }
 
 function writeChecked(checked: Record<string, boolean>): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(checked))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(checked))
+  } catch {
+    // Storage unavailable (private browsing / quota exceeded)
+  }
 }
 
 /** Get the current checked state of all items. */

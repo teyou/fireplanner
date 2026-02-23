@@ -26,6 +26,7 @@ const STRATEGY_GROUPS: { label: string; strategies: WithdrawalStrategyType[] }[]
   },
 ]
 
+// eslint-disable-next-line react-refresh/only-export-components -- Shared constant co-located with component
 export const STRATEGY_DESCRIPTIONS: Record<WithdrawalStrategyType, string> = {
   constant_dollar: 'Withdraw a fixed inflation-adjusted amount each year (the classic 4% rule).',
   vpw: 'Withdraw a variable percentage based on remaining years and portfolio size.',

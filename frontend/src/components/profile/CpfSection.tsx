@@ -77,6 +77,7 @@ export function CpfSection() {
       projectedOaSa: availableForRA,
       requiredAmount: retirementSumAmount,
     }
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization -- retirementSumAmount is a derived primitive, not mutable
   }, [projection, currentAge, retirementSumAmount])
 
   // 65+ phase: single card with monthly payout input

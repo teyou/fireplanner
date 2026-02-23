@@ -160,6 +160,7 @@ export function useWhatIfMetrics(overrides: WhatIfOverrides): WhatIfMetricsResul
   const allocation = useAllocationStore()
   const property = usePropertyStore()
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- Granular deps intentional for perf
   return useMemo(() => {
     const profileErrors = profile.validationErrors
     if (Object.keys(profileErrors).length > 0) {

@@ -428,9 +428,8 @@ export interface PercentOfPortfolioParams {
   rate: number
 }
 
-export interface OneOverNParams {
-  // No configurable params — withdrawal = portfolio / remainingYears
-}
+// No configurable params — withdrawal = portfolio / remainingYears
+export type OneOverNParams = Record<string, never>
 
 export interface SensibleWithdrawalsParams {
   baseRate: number

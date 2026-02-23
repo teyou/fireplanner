@@ -13,6 +13,16 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          recharts: ['recharts'],
+          d3: ['d3'],
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

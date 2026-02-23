@@ -1,6 +1,13 @@
 import '@testing-library/jest-dom/vitest'
 import { vi } from 'vitest'
 
+// Mock ResizeObserver for jsdom (used by Recharts ResponsiveContainer)
+globalThis.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver
+
 // Mock localStorage for jsdom (opaque origins throw SecurityError)
 const storage = new Map<string, string>()
 const localStorageMock = {

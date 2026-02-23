@@ -1,5 +1,3 @@
-import ExcelJS from 'exceljs'
-
 interface ExportData {
   profile: Record<string, unknown>
   income?: Record<string, unknown>
@@ -9,6 +7,7 @@ interface ExportData {
 }
 
 export async function exportToExcel(data: ExportData): Promise<void> {
+  const { default: ExcelJS } = await import('exceljs')
   const wb = new ExcelJS.Workbook()
 
   function addSheet(name: string, obj: Record<string, unknown>) {

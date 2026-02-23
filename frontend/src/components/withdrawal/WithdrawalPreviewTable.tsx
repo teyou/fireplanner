@@ -23,11 +23,10 @@ export function WithdrawalPreviewTable({
   const [expanded, setExpanded] = useState(false)
 
   const yearData = results.yearResults[activeStrategy]
-  if (!yearData || yearData.length === 0) return null
-
   const baseExpenses = annualExpenses * retirementSpendingAdjustment
 
   const rows = useMemo(() => {
+    if (!yearData || yearData.length === 0) return []
     return yearData.map((yr) => ({
       age: yr.age,
       expenses: baseExpenses * (1 + inflation) ** (yr.age - currentAge),
@@ -36,6 +35,8 @@ export function WithdrawalPreviewTable({
       depleted: yr.portfolio <= 0 && yr.year > 0,
     }))
   }, [yearData, baseExpenses, inflation, currentAge])
+
+  if (rows.length === 0) return null
 
   const displayRows = expanded ? rows : rows.slice(0, 5)
   const firstDepletedIndex = rows.findIndex((r) => r.depleted)

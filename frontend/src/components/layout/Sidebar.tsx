@@ -32,6 +32,7 @@ import {
   HeartPulse,
   HelpCircle,
   Banknote,
+  FileSpreadsheet,
 } from 'lucide-react'
 
 interface NavItem {
@@ -51,6 +52,7 @@ const GOAL_FIRST_SECTIONS: InputSectionItem[] = [
   { label: 'FIRE Settings', sectionId: 'section-fire-settings', icon: <Target className="h-4 w-4" /> },
   { label: 'Income', sectionId: 'section-income', icon: <DollarSign className="h-4 w-4" /> },
   { label: 'Expenses', sectionId: 'section-expenses', icon: <TrendingDown className="h-4 w-4" /> },
+  { label: 'Goals', sectionId: 'section-goals', icon: <Banknote className="h-4 w-4" /> },
   { label: 'Net Worth', sectionId: 'section-net-worth', icon: <Wallet className="h-4 w-4" /> },
   { label: 'CPF', sectionId: 'section-cpf', icon: <Landmark className="h-4 w-4" /> },
   { label: 'Healthcare', sectionId: 'section-healthcare', icon: <HeartPulse className="h-4 w-4" /> },
@@ -62,6 +64,7 @@ const STORY_FIRST_SECTIONS: InputSectionItem[] = [
   { label: 'Personal', sectionId: 'section-personal', icon: <User className="h-4 w-4" /> },
   { label: 'Income', sectionId: 'section-income', icon: <DollarSign className="h-4 w-4" /> },
   { label: 'Expenses', sectionId: 'section-expenses', icon: <TrendingDown className="h-4 w-4" /> },
+  { label: 'Goals', sectionId: 'section-goals', icon: <Banknote className="h-4 w-4" /> },
   { label: 'Net Worth', sectionId: 'section-net-worth', icon: <Wallet className="h-4 w-4" /> },
   { label: 'CPF', sectionId: 'section-cpf', icon: <Landmark className="h-4 w-4" /> },
   { label: 'Healthcare', sectionId: 'section-healthcare', icon: <HeartPulse className="h-4 w-4" /> },
@@ -75,6 +78,7 @@ const ALREADY_FIRE_SECTIONS: InputSectionItem[] = [
   { label: 'Net Worth', sectionId: 'section-net-worth', icon: <Wallet className="h-4 w-4" /> },
   { label: 'Property', sectionId: 'section-property', icon: <Building className="h-4 w-4" /> },
   { label: 'Expenses', sectionId: 'section-expenses', icon: <TrendingDown className="h-4 w-4" /> },
+  { label: 'Goals', sectionId: 'section-goals', icon: <Banknote className="h-4 w-4" /> },
   { label: 'Healthcare', sectionId: 'section-healthcare', icon: <HeartPulse className="h-4 w-4" /> },
   { label: 'Allocation', sectionId: 'section-allocation', icon: <PieChart className="h-4 w-4" /> },
   { label: 'FIRE Settings', sectionId: 'section-fire-settings', icon: <Target className="h-4 w-4" /> },
@@ -263,6 +267,24 @@ function DataActions() {
     toast.success('Data exported')
   }
 
+  const handleExcelExport = async () => {
+    const readStore = (key: string) => {
+      try {
+        const raw = localStorage.getItem(key)
+        return raw ? JSON.parse(raw) : {}
+      } catch { return {} }
+    }
+    const { exportToExcel } = await import('@/lib/exportExcel')
+    await exportToExcel({
+      profile: readStore('fireplanner-profile'),
+      income: readStore('fireplanner-income'),
+      allocation: readStore('fireplanner-allocation'),
+      withdrawal: readStore('fireplanner-withdrawal'),
+      propertyData: readStore('fireplanner-property'),
+    })
+    toast.success('Excel exported')
+  }
+
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -275,7 +297,7 @@ function DataActions() {
   }
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1 flex-wrap">
       <button
         onClick={handleExport}
         className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
@@ -283,6 +305,14 @@ function DataActions() {
       >
         <Download className="h-3.5 w-3.5" />
         Export
+      </button>
+      <button
+        onClick={handleExcelExport}
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        title="Export data as Excel spreadsheet"
+      >
+        <FileSpreadsheet className="h-3.5 w-3.5" />
+        Excel
       </button>
       <button
         onClick={() => fileInputRef.current?.click()}

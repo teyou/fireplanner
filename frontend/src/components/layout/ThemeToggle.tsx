@@ -44,7 +44,7 @@ export function ThemeToggle() {
 
   useEffect(() => {
     applyTheme(theme)
-    localStorage.setItem(STORAGE_KEY, theme)
+    try { localStorage.setItem(STORAGE_KEY, theme) } catch { /* storage unavailable */ }
   }, [theme])
 
   // Listen for OS theme changes when in system mode

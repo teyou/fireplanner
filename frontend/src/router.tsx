@@ -1,26 +1,55 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+/* eslint-disable react-refresh/only-export-components -- Router config, not a component file */
+import { lazy, Suspense } from 'react'
+import { createBrowserRouter, Navigate, Link } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { StartPage } from '@/pages/StartPage'
-import { InputsPage } from '@/pages/InputsPage'
-import { ProjectionPage } from '@/pages/ProjectionPage'
-import { WithdrawalPage } from '@/pages/WithdrawalPage'
-import { DashboardPage } from '@/pages/DashboardPage'
-import { ReferencePage } from '@/pages/ReferencePage'
-import { StressTestPage } from '@/pages/StressTestPage'
-import { ChecklistPage } from '@/pages/ChecklistPage'
+
+const StartPage = lazy(() => import('@/pages/StartPage').then(m => ({ default: m.StartPage })))
+const InputsPage = lazy(() => import('@/pages/InputsPage').then(m => ({ default: m.InputsPage })))
+const ProjectionPage = lazy(() => import('@/pages/ProjectionPage').then(m => ({ default: m.ProjectionPage })))
+const WithdrawalPage = lazy(() => import('@/pages/WithdrawalPage').then(m => ({ default: m.WithdrawalPage })))
+const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
+const ReferencePage = lazy(() => import('@/pages/ReferencePage').then(m => ({ default: m.ReferencePage })))
+const StressTestPage = lazy(() => import('@/pages/StressTestPage').then(m => ({ default: m.StressTestPage })))
+const ChecklistPage = lazy(() => import('@/pages/ChecklistPage').then(m => ({ default: m.ChecklistPage })))
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    </div>
+  )
+}
+
+function page(Component: React.LazyExoticComponent<React.ComponentType>) {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <Component />
+    </Suspense>
+  )
+}
+
+function NotFound() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 text-center">
+      <h1 className="text-4xl font-bold">404</h1>
+      <p className="text-muted-foreground">Page not found</p>
+      <Link to="/" className="text-primary hover:underline">Go to Start</Link>
+    </div>
+  )
+}
 
 export const router = createBrowserRouter([
   {
     element: <AppLayout />,
     children: [
-      { path: '/', element: <StartPage /> },
-      { path: '/inputs', element: <InputsPage /> },
-      { path: '/projection', element: <ProjectionPage /> },
-      { path: '/withdrawal', element: <WithdrawalPage /> },
-      { path: '/stress-test', element: <StressTestPage /> },
-      { path: '/dashboard', element: <DashboardPage /> },
-      { path: '/reference', element: <ReferencePage /> },
-      { path: '/checklist', element: <ChecklistPage /> },
+      { path: '/', element: page(StartPage) },
+      { path: '/inputs', element: page(InputsPage) },
+      { path: '/projection', element: page(ProjectionPage) },
+      { path: '/withdrawal', element: page(WithdrawalPage) },
+      { path: '/stress-test', element: page(StressTestPage) },
+      { path: '/dashboard', element: page(DashboardPage) },
+      { path: '/reference', element: page(ReferencePage) },
+      { path: '/checklist', element: page(ChecklistPage) },
       // Redirects: old input pages → /inputs with section anchors
       { path: '/profile', element: <Navigate to="/inputs#section-personal" replace /> },
       { path: '/income', element: <Navigate to="/inputs#section-income" replace /> },
@@ -32,6 +61,8 @@ export const router = createBrowserRouter([
       { path: '/monte-carlo', element: <Navigate to="/stress-test" replace /> },
       { path: '/backtest', element: <Navigate to="/stress-test" replace /> },
       { path: '/sequence-risk', element: <Navigate to="/stress-test" replace /> },
+      // Catch-all 404
+      { path: '*', element: <NotFound /> },
     ],
   },
 ])

@@ -58,7 +58,7 @@ export function generateShareUrl(): { url: string; tooLong: boolean } {
 export function applyStoreData(stores: Record<string, unknown>): void {
   for (const [key, value] of Object.entries(stores)) {
     if (!STORE_KEYS.includes(key)) continue
-    localStorage.setItem(key, JSON.stringify(value))
+    try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* storage unavailable */ }
   }
 }
 

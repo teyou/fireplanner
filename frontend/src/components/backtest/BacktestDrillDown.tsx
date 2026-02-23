@@ -81,6 +81,7 @@ export function BacktestDrillDown({
   useEffect(() => {
     if (!open) return
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Batched state reset for async loading
     setIsPending(true)
     setTrajectories([])
     setSelectedRow(null)

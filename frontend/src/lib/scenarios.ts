@@ -33,7 +33,11 @@ function readAll(): ScenarioSnapshot[] {
 }
 
 function writeAll(scenarios: ScenarioSnapshot[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(scenarios))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(scenarios))
+  } catch {
+    // Storage unavailable (private browsing / quota exceeded)
+  }
 }
 
 /** List all saved scenarios (metadata only). */
@@ -94,7 +98,7 @@ export function loadScenario(id: string, rehydrate?: () => void): boolean {
 
   // Write each store back to localStorage
   for (const [key, value] of Object.entries(scenario.stores)) {
-    localStorage.setItem(key, JSON.stringify(value))
+    try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* storage unavailable */ }
   }
 
   // Rehydrate stores if callback provided, otherwise fall back to reload

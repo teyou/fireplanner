@@ -54,9 +54,9 @@ export function StartPage() {
   const [activePathway, setActivePathway] = useState<ActivePathway>(null)
 
   // Check if returning user (has saved profile in localStorage)
-  const [isReturningUser] = useState(
-    () => localStorage.getItem('fireplanner-profile') !== null
-  )
+  const [isReturningUser] = useState(() => {
+    try { return localStorage.getItem('fireplanner-profile') !== null } catch { return false }
+  })
 
   // Local draft state for inline forms
   const [draftAge, setDraftAge] = useState(profileStore.currentAge)
