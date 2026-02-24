@@ -1,4 +1,4 @@
-import type { FireMetrics, FireType, FireNumberBasis, ParentSupport, HealthcareConfig } from '@/lib/types'
+import type { FireMetrics, FireType, FireNumberBasis, ParentSupport, HealthcareConfig, LockedAsset } from '@/lib/types'
 import { calculateHealthcareLAE } from './healthcare'
 
 /** Expense multiplier for each FIRE type */
@@ -252,6 +252,7 @@ export function calculateAllFireMetrics(params: {
   parentSupportEnabled?: boolean
   healthcareConfig?: HealthcareConfig | null
   cashReserveOffset?: number
+  lockedAssets?: LockedAsset[]
 }): FireMetrics {
   const {
     currentAge,
@@ -279,6 +280,12 @@ export function calculateAllFireMetrics(params: {
   const investableLiquid = liquidNetWorth - cashReserveOffset
   const totalNetWorth = investableLiquid + cpfTotal
   const totalNWIncProperty = totalNetWorth + propertyEquity
+
+  // Locked assets: sum current amounts, compute accessible vs total-with-locked
+  const lockedAssetsArr = params.lockedAssets ?? []
+  const lockedAssetsTotal = lockedAssetsArr.reduce((sum, a) => sum + a.amount, 0)
+  const accessibleNetWorth = investableLiquid
+  const totalNetWorthWithLocked = totalNetWorth + lockedAssetsTotal
   const annualSavings = annualIncome - annualExpenses
   const savingsRate = annualIncome > 0 ? annualSavings / annualIncome : 0
 
@@ -404,9 +411,9 @@ export function calculateAllFireMetrics(params: {
     cpfDependency,
     liquidBridgeGapYears,
     liquidDepletionAge,
-    lockedAssetsTotal: 0,
-    accessibleNetWorth: investableLiquid,
-    totalNetWorthWithLocked: totalNetWorth,
+    lockedAssetsTotal,
+    accessibleNetWorth,
+    totalNetWorthWithLocked,
     expensesBreakdown: {
       baseExpenses,
       parentSupportAnnual,

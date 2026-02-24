@@ -13,7 +13,7 @@ import {
   calculateLiquidBridgeGap,
   calculateParentSupportAtAge,
 } from './fire'
-import type { ParentSupport } from '@/lib/types'
+import type { ParentSupport, LockedAsset } from '@/lib/types'
 
 describe('calculateFireNumber', () => {
   it('computes basic FIRE number: expenses / SWR', () => {
@@ -580,6 +580,60 @@ describe('calculateParentSupportAtAge', () => {
   it('no entries active at given age', () => {
     // At age 80: both entries have ended
     expect(calculateParentSupportAtAge([mother, father], 80)).toBe(0)
+  })
+})
+
+describe('locked assets in FIRE metrics', () => {
+  const baseParams = {
+    currentAge: 30,
+    retirementAge: 60,
+    annualIncome: 100000,
+    annualExpenses: 48000,
+    liquidNetWorth: 500000,
+    cpfTotal: 200000,
+    swr: 0.04,
+    expectedReturn: 0.07,
+    inflation: 0.025,
+    expenseRatio: 0.003,
+  }
+
+  it('includes locked assets in total net worth with locked', () => {
+    const metrics = calculateAllFireMetrics({
+      ...baseParams,
+      lockedAssets: [
+        { id: '1', name: 'RSUs', amount: 100000, unlockAge: 40, growthRate: 0 },
+      ],
+    })
+    expect(metrics.totalNetWorthWithLocked).toBe(500000 + 200000 + 100000)
+    expect(metrics.lockedAssetsTotal).toBe(100000)
+  })
+
+  it('excludes locked assets from accessible net worth', () => {
+    const metrics = calculateAllFireMetrics({
+      ...baseParams,
+      lockedAssets: [
+        { id: '1', name: 'RSUs', amount: 100000, unlockAge: 40, growthRate: 0 },
+      ],
+    })
+    expect(metrics.accessibleNetWorth).toBe(500000)
+  })
+
+  it('returns zero lockedAssetsTotal when no locked assets', () => {
+    const metrics = calculateAllFireMetrics({ ...baseParams })
+    expect(metrics.lockedAssetsTotal).toBe(0)
+    expect(metrics.totalNetWorthWithLocked).toBe(metrics.totalNetWorth)
+  })
+
+  it('sums multiple locked assets', () => {
+    const metrics = calculateAllFireMetrics({
+      ...baseParams,
+      lockedAssets: [
+        { id: '1', name: 'RSUs', amount: 100000, unlockAge: 40, growthRate: 0 },
+        { id: '2', name: 'FD', amount: 50000, unlockAge: 45, growthRate: 0.03 },
+      ],
+    })
+    expect(metrics.lockedAssetsTotal).toBe(150000)
+    expect(metrics.totalNetWorthWithLocked).toBe(500000 + 200000 + 150000)
   })
 })
 
