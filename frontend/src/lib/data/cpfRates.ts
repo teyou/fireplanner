@@ -98,6 +98,11 @@ export const FRS_BASE = 220400
 export const ERS_BASE = 440800
 export const BRS_GROWTH_RATE = 0.035 // 3.5% p.a.
 
+// CPF Annual Limit — total mandatory + voluntary contributions cap per calendar year
+// Source: https://www.cpf.gov.sg/member/growing-your-savings/saving-more-with-cpf/top-up-ordinary-special-and-medisave-savings
+// As of: 2026
+export const CPF_ANNUAL_LIMIT = 37740
+
 // CPFIS (CPF Investment Scheme) retention limits
 // Members must retain these minimum balances before investing the remainder
 // Source: https://www.cpf.gov.sg/member/growing-your-savings/earning-higher-returns/investing-your-cpf-savings

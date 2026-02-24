@@ -106,7 +106,7 @@ describe('validateProfileConsistency edge cases', () => {
       healthcareConfig: {
         ...defaultHealthcareConfig,
         enabled: true,
-        mediSaveTopUpAnnual: 50000, // exceeds $37,740 max
+        mediSaveTopUpAnnual: 80000, // exceeds $79,000 BHS
       },
       retirementWithdrawals: [],
       financialGoals: [],

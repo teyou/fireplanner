@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
 
 // ============================================================
 // Field-level schemas (for per-field validation in stores)
@@ -197,7 +198,7 @@ export function validateProfileField(
     cpfisSaReturn: z.number().min(0).max(0.20),
     // Healthcare config sub-fields validated here for field-level checks
     'healthcareConfig.oopBaseAmount': z.number().min(0).max(50000),
-    'healthcareConfig.mediSaveTopUpAnnual': z.number().min(0).max(37740),
+    'healthcareConfig.mediSaveTopUpAnnual': z.number().min(0).max(MEDISAVE_BHS),
     cashReserveFixedAmount: z.number().min(0).max(10_000_000),
     cashReserveMonths: z.number().int().min(1).max(60),
     cashReserveReturn: z.number().min(0).max(0.10),
