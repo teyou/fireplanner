@@ -60,7 +60,7 @@ const GROUP_COLUMNS: Record<ColumnGroup, string[]> = {
   taxCpf: ['sgTax', 'cpfEmployee', 'cpfEmployer', 'totalNet'],
   cpfBalances: ['cpfOA', 'cpfSA', 'cpfMA', 'cpfRA', 'cpfInterest', 'cpfOaHousingDeduction', 'cpfOaShortfall', 'cpfLifePayout', 'cpfBequest', 'cpfMilestone'],
   portfolio: ['portfolioReturnPct', 'withdrawalAmount', 'maxPermittedWithdrawal', 'withdrawalExcess', 'cumulativeSavings'],
-  property: ['propertyEquity', 'totalNWIncProperty', 'activeLifeEvents'],
+  property: ['mortgageCashPayment', 'propertyEquity', 'totalNWIncProperty', 'activeLifeEvents'],
 }
 
 const DEFAULT_COLUMN_IDS = ['age', 'totalIncome', 'annualExpenses', 'savingsOrWithdrawal', 'portfolioReturnDollar', 'liquidNW', 'cpfTotal', 'totalNW', 'fireProgress']
@@ -209,7 +209,8 @@ export function ProjectionPage() {
     for (const [group, cols] of Object.entries(GROUP_COLUMNS)) {
       const visible = activeGroups.has(group as ColumnGroup)
       for (const col of cols) {
-        vis[col] = visible
+        // OR semantics: show column if ANY containing group is active
+        vis[col] = vis[col] || visible
       }
     }
     // Hide SRS column when user has no SRS balance or contributions
