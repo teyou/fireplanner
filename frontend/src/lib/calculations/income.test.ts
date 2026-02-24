@@ -446,9 +446,9 @@ describe('calculateIncomeSummary', () => {
 
   it('computes correct peak earning for simple projection', () => {
     const rows: IncomeProjectionRow[] = [
-      { year: 0, age: 30, salary: 72000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 72000, sgTax: 2000, cpfEmployee: 14400, cpfEmployer: 12240, totalNet: 55600, annualSavings: 7600, cumulativeSavings: 7600, cpfOA: 16560, cpfSA: 4320, cpfMA: 5760, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
-      { year: 1, age: 31, salary: 80000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 80000, sgTax: 3000, cpfEmployee: 16000, cpfEmployer: 13600, totalNet: 61000, annualSavings: 13000, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
-      { year: 2, age: 32, salary: 0, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0, cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: true, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
+      { year: 0, age: 30, salary: 72000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 72000, sgTax: 2000, cpfEmployee: 14400, cpfEmployer: 12240, totalNet: 55600, annualSavings: 7600, cumulativeSavings: 7600, cpfOA: 16560, cpfSA: 4320, cpfMA: 5760, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0, lockedAssetUnlock: 0 },
+      { year: 1, age: 31, salary: 80000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 80000, sgTax: 3000, cpfEmployee: 16000, cpfEmployer: 13600, totalNet: 61000, annualSavings: 13000, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0, lockedAssetUnlock: 0 },
+      { year: 2, age: 32, salary: 0, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0, cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: true, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0, lockedAssetUnlock: 0 },
     ]
 
     const summary = calculateIncomeSummary(rows, 48000)
@@ -2308,5 +2308,73 @@ describe('voluntary CPF top-ups in projection', () => {
       const raDiff = retiredRow.cpfRA - preRetiredRow.cpfRA
       expect(Math.abs(raDiff)).toBeLessThan(8000)
     }
+  })
+})
+
+// ============================================================
+// Locked asset unlock in projection
+// ============================================================
+
+describe('locked asset unlock in projection', () => {
+  const lockedAssetBaseParams = {
+    currentAge: 30,
+    retirementAge: 65,
+    lifeExpectancy: 90,
+    salaryModel: 'simple' as const,
+    annualSalary: 72000,
+    salaryGrowthRate: 0.03,
+    realisticPhases: DEFAULT_CAREER_PHASES,
+    promotionJumps: [],
+    momEducation: 'degree' as const,
+    momAdjustment: 1.0,
+    employerCpfEnabled: true,
+    incomeStreams: [],
+    lifeEvents: [],
+    lifeEventsEnabled: false,
+    annualExpenses: 30000,
+    inflation: 0.025,
+    personalReliefs: 20000,
+    srsAnnualContribution: 0,
+    initialCpfOA: 0,
+    initialCpfSA: 0,
+    initialCpfMA: 0,
+  }
+
+  it('adds unlocked asset value at unlock age', () => {
+    const params = {
+      ...lockedAssetBaseParams,
+      lockedAssets: [
+        { id: '1', name: 'RSUs', amount: 50000, unlockAge: 35, growthRate: 0.05 },
+      ],
+    }
+    const rows = generateIncomeProjection(params)
+    const unlockRow = rows.find(r => r.age === 35)
+    // At age 35 (5 years growth at 5%): 50000 * 1.05^5 ≈ 63814
+    expect(unlockRow?.lockedAssetUnlock).toBeCloseTo(50000 * Math.pow(1.05, 5), 0)
+  })
+
+  it('returns 0 for lockedAssetUnlock in non-unlock years', () => {
+    const params = {
+      ...lockedAssetBaseParams,
+      lockedAssets: [
+        { id: '1', name: 'RSUs', amount: 50000, unlockAge: 35, growthRate: 0 },
+      ],
+    }
+    const rows = generateIncomeProjection(params)
+    const nonUnlockRow = rows.find(r => r.age === 32)
+    expect(nonUnlockRow?.lockedAssetUnlock).toBe(0)
+  })
+
+  it('handles multiple locked assets unlocking at same age', () => {
+    const params = {
+      ...lockedAssetBaseParams,
+      lockedAssets: [
+        { id: '1', name: 'RSUs', amount: 50000, unlockAge: 35, growthRate: 0 },
+        { id: '2', name: 'FD', amount: 30000, unlockAge: 35, growthRate: 0 },
+      ],
+    }
+    const rows = generateIncomeProjection(params)
+    const unlockRow = rows.find(r => r.age === 35)
+    expect(unlockRow?.lockedAssetUnlock).toBe(80000)
   })
 })

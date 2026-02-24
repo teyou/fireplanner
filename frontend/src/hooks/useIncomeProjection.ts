@@ -75,6 +75,7 @@ export function buildProjectionParams(
     cpfTopUpOA: profile.cpfTopUpOA,
     cpfTopUpSA: profile.cpfTopUpSA,
     cpfTopUpMA: profile.cpfTopUpMA,
+    lockedAssets: profile.lockedAssets,
   }
 }
 
@@ -159,6 +160,7 @@ export function useIncomeProjection(): IncomeProjectionResult {
       cpfTopUpOA: profile.cpfTopUpOA,
       cpfTopUpSA: profile.cpfTopUpSA,
       cpfTopUpMA: profile.cpfTopUpMA,
+      lockedAssets: profile.lockedAssets,
     })
 
     const summary = calculateIncomeSummary(projection, profile.annualExpenses)
@@ -193,6 +195,7 @@ export function useIncomeProjection(): IncomeProjectionResult {
     profile.cpfTopUpOA,
     profile.cpfTopUpSA,
     profile.cpfTopUpMA,
+    profile.lockedAssets,
     profile.validationErrors,
     income.salaryModel,
     income.annualSalary,

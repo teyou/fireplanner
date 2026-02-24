@@ -315,6 +315,9 @@ export interface IncomeProjectionRow {
   srsWithdrawal: number
   srsTaxableWithdrawal: number
 
+  // Locked asset unlocks (value of locked assets that become accessible at this age)
+  lockedAssetUnlock: number
+
   // Cash reserve (populated by hook post-processing, not income engine)
   cashReserveTarget: number
   cashReserveBalance: number

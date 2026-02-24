@@ -11,6 +11,7 @@ import type {
   CpfRetirementSum,
   CpfHousingMode,
   CpfOaWithdrawal,
+  LockedAsset,
 } from '@/lib/types'
 import { getMomSalary } from '@/lib/data/momSalary'
 import { calculateCpfContribution, calculateCpfExtraInterestWithAge, calculateCpfLifePayoutAtAge, getRetirementSumAmount, performAge55Transfer, allocatePostAge55Contribution, calculateCpfisInterest } from './cpf'
@@ -269,6 +270,8 @@ export interface IncomeProjectionParams {
   cpfTopUpOA?: number
   cpfTopUpSA?: number
   cpfTopUpMA?: number
+  // Age-gated locked assets
+  lockedAssets?: LockedAsset[]
 }
 
 /**
@@ -600,6 +603,15 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
 
     const activeLifeEvents = getActiveLifeEventNames(age, params.lifeEvents, params.lifeEventsEnabled)
 
+    // Locked asset unlocks
+    let lockedAssetUnlock = 0
+    for (const asset of (params.lockedAssets ?? [])) {
+      if (age === asset.unlockAge) {
+        const yearsGrown = asset.unlockAge - params.currentAge
+        lockedAssetUnlock += asset.amount * Math.pow(1 + asset.growthRate, yearsGrown)
+      }
+    }
+
     // Record annuity premium on the LIFE start row
     let cpfLifeAnnuityPremium = 0
     if (age === cpfLifeStartAge && raBalanceAtLifeStart > 0) {
@@ -644,6 +656,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       srsContribution,
       srsWithdrawal,
       srsTaxableWithdrawal,
+      lockedAssetUnlock,
       // Cash reserve defaults (populated by hook post-processing)
       cashReserveTarget: 0,
       cashReserveBalance: 0,
