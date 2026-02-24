@@ -12,32 +12,40 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-24',
     category: 'data-update',
-    title: 'CPF rates updated to 2026',
+    title: 'CPF retirement sums updated to 2026',
     description:
-      'Retirement sums (BRS/FRS/ERS) updated to 2026 published values. OW ceiling unchanged at $6,800/month.',
+      'BRS/FRS/ERS base values updated to 2026 published figures. Year-offset projection bug fixed.',
     affectedSections: ['section-cpf'],
   },
   {
     date: '2026-02-24',
     category: 'data-update',
-    title: 'Default SWR changed from 4.0% to 3.6%',
+    title: 'Default SWR lowered from 4.0% to 3.6%',
     description:
-      'Safe withdrawal rate default lowered to 3.6% based on forward-looking return estimates. Your existing SWR setting is preserved.',
+      'Safe withdrawal rate default lowered to 3.6% using forward-looking return estimates instead of full historical averages. Your existing SWR setting is preserved.',
     affectedSections: ['section-fire-settings'],
   },
   {
     date: '2026-02-24',
-    category: 'feature',
-    title: 'Source citations added to tooltips',
+    category: 'data-update',
+    title: 'Forward-looking return estimates',
     description:
-      'Regulatory value tooltips now cite the official source (IRAS, CPF Board, MOM) with clickable links.',
+      'Asset class expected returns now use forward-looking estimates rather than full historical averages, reflecting current market conditions.',
+    affectedSections: ['section-allocation'],
+  },
+  {
+    date: '2026-02-24',
+    category: 'feature',
+    title: 'Source citations in tooltips',
+    description:
+      'Regulatory value tooltips now cite the official source (IRAS, CPF Board, MOM) with clickable links to the relevant government pages.',
   },
   {
     date: '2026-02-24',
     category: 'feature',
     title: 'Property co-ownership support',
     description:
-      'Set your ownership percentage to see scaled property values and mortgage deductions.',
+      'Set your ownership percentage to see proportionally scaled property values, mortgage deductions, and CPF OA housing usage.',
     affectedSections: ['section-property'],
   },
   {
@@ -45,8 +53,36 @@ export const CHANGELOG: ChangelogEntry[] = [
     category: 'feature',
     title: 'Financial goals tracking',
     description:
-      'Add one-off financial goals (wedding, renovation, education) with target dates and amounts.',
+      'Add one-off financial goals (wedding, renovation, education) with target dates and amounts. Goals appear as expense spikes in your projection.',
     affectedSections: ['section-fire-settings'],
+  },
+  {
+    date: '2026-02-24',
+    category: 'feature',
+    title: 'CPF projection detail columns',
+    description:
+      'Projection table now shows OA/SA balances, contributions, and OA shortfall columns. CPF assumptions panel shows exact rates used.',
+  },
+  {
+    date: '2026-02-24',
+    category: 'feature',
+    title: 'Robust JSON import with validation',
+    description:
+      'Import now validates data against schemas and runs store migrations automatically. Structured error reporting shows exactly what was imported or skipped.',
+  },
+  {
+    date: '2026-02-24',
+    category: 'feature',
+    title: 'Portfolio depletion warning',
+    description:
+      'Start page and Dashboard now warn when your portfolio is projected to run out before life expectancy.',
+  },
+  {
+    date: '2026-02-24',
+    category: 'fix',
+    title: 'Number input clamping',
+    description:
+      'Keyboard input and blur now correctly clamp values to min/max ranges instead of allowing out-of-bounds entries.',
   },
 ]
 

@@ -454,12 +454,6 @@ function CategoryIcon({ category }: { category: string }) {
 }
 
 function ChangelogList() {
-  const markChangelogSeen = useUIStore((s) => s.markChangelogSeen)
-
-  useEffect(() => {
-    markChangelogSeen()
-  }, [markChangelogSeen])
-
   // Group by date
   const grouped = useMemo(() => {
     const map = new Map<string, typeof CHANGELOG>()
