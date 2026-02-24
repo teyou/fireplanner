@@ -48,7 +48,7 @@ export function GoalImpactSummary() {
     const lbsResult = isLbs
       ? computeLbsProceeds({
           flatValue: property.existingPropertyValue,
-          remainingLease: property.leaseYears,
+          remainingLease: property.existingLeaseYears,
           retainedLease: property.hdbLbsRetainedLease,
           cpfRaBalance: profile.cpfRA,
           retirementSum: 213000,
@@ -89,6 +89,12 @@ export function GoalImpactSummary() {
               : 0
           )
         : 0,
+      existingPropertyValue: property.ownsProperty
+        ? property.existingPropertyValue
+        : 0,
+      propertyAppreciationRate: property.existingAppreciationRate,
+      propertyLeaseYears: property.existingLeaseYears,
+      applyBalaDecay: property.existingApplyBalaDecay,
       downsizing: property.ownsProperty && property.downsizing.scenario !== 'none'
         ? property.downsizing
         : null,
@@ -123,7 +129,8 @@ export function GoalImpactSummary() {
     property.existingMortgageRate, property.existingMortgageRemainingYears,
     property.downsizing, property.residencyForAbsd, property.propertyType,
     property.hdbMonetizationStrategy, property.hdbSublettingRooms, property.hdbSublettingRate,
-    property.hdbLbsRetainedLease, property.leaseYears,
+    property.hdbLbsRetainedLease, property.existingLeaseYears,
+    property.existingAppreciationRate, property.existingApplyBalaDecay,
   ])
 
   // Don't show if there are no goals or no data

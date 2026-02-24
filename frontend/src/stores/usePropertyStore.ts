@@ -35,6 +35,7 @@ const PROPERTY_DATA_KEYS = [
   'existingMortgageRate', 'existingMortgageRemainingYears',
   'mortgageCpfMonthly',
   'ownershipPercent',
+  'existingAppreciationRate', 'existingLeaseYears', 'existingApplyBalaDecay',
   'downsizing',
   'hdbFlatType', 'hdbMonetizationStrategy', 'hdbLbsRetainedLease',
   'hdbSublettingRooms', 'hdbSublettingRate', 'hdbCpfUsedForHousing',
@@ -60,6 +61,9 @@ const DEFAULT_PROPERTY: Omit<PropertyState, 'validationErrors'> = {
   existingMortgageRemainingYears: 25,
   mortgageCpfMonthly: 0,
   ownershipPercent: 1,
+  existingAppreciationRate: 0.03,
+  existingLeaseYears: 99,
+  existingApplyBalaDecay: true,
   downsizing: DEFAULT_DOWNSIZING,
   hdbFlatType: '4-room',
   hdbMonetizationStrategy: 'none',
@@ -127,6 +131,12 @@ function computeValidationErrors(
     }
     if (state.ownershipPercent <= 0 || state.ownershipPercent > 1) {
       errors.ownershipPercent = 'Ownership share must be between 1% and 100%'
+    }
+    if (state.existingAppreciationRate < -0.1 || state.existingAppreciationRate > 0.2) {
+      errors.existingAppreciationRate = 'Appreciation rate must be between -10% and 20%'
+    }
+    if (state.existingLeaseYears < 1 || state.existingLeaseYears > 999) {
+      errors.existingLeaseYears = 'Lease must be between 1 and 999 years'
     }
 
     const ds = state.downsizing
@@ -200,7 +210,7 @@ export const usePropertyStore = create<PropertyState & PropertyActions>()(
     }),
     {
       name: 'fireplanner-property',
-      version: 7,
+      version: 9,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -234,6 +244,14 @@ export const usePropertyStore = create<PropertyState & PropertyActions>()(
         }
         if (version < 7) {
           state.ownershipPercent ??= 1
+        }
+        if (version < 8) {
+          state.applyBalaDecay ??= true
+        }
+        if (version < 9) {
+          state.existingAppreciationRate ??= 0.03
+          state.existingLeaseYears ??= 99
+          state.existingApplyBalaDecay ??= true
         }
         return state
       },

@@ -149,6 +149,10 @@ function makeParams(overrides: Partial<ProjectionParams> = {}): ProjectionParams
     withdrawalStrategy: 'constant_dollar',
     strategyParams: DEFAULT_STRATEGY_PARAMS,
     propertyEquity: 0,
+    existingPropertyValue: 0,
+    propertyAppreciationRate: 0.03,
+    propertyLeaseYears: 99,
+    applyBalaDecay: true,
     annualMortgagePayment: 0,
     annualRentalIncome: 0,
     downsizing: null,
@@ -1506,6 +1510,120 @@ describe('generateProjection', () => {
 
       // LiquidNW should be $30K higher in the withdrawal scenario
       expect(projRow55.liquidNW).toBeCloseTo(projRow55NoW.liquidNW + 30000, 0)
+    })
+  })
+
+  describe('property projection', () => {
+    it('freehold appreciation: value grows at appreciation rate', () => {
+      const params = makeParams({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 34,
+        existingPropertyValue: 1000000,
+        propertyAppreciationRate: 0.03,
+        propertyLeaseYears: 999,
+        applyBalaDecay: false,
+        propertyEquity: 1000000,
+      })
+      const result = generateProjection(params)
+      // Year 0 (age 30): value = 1M
+      expect(result.rows[0].propertyValue).toBeCloseTo(1000000, 0)
+      // Year 1 (age 31): value = 1M * 1.03
+      expect(result.rows[1].propertyValue).toBeCloseTo(1030000, 0)
+      // Year 4 (age 34): value = 1M * 1.03^4
+      expect(result.rows[4].propertyValue).toBeCloseTo(1000000 * Math.pow(1.03, 4), 0)
+    })
+
+    it('leasehold with Bala decay: value decays via Bala ratio', () => {
+      const params = makeParams({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 34,
+        existingPropertyValue: 500000,
+        propertyAppreciationRate: 0.03,
+        propertyLeaseYears: 60,
+        applyBalaDecay: true,
+        propertyEquity: 500000,
+      })
+      const result = generateProjection(params)
+      // With Bala decay, value at year 0 should be the base value
+      expect(result.rows[0].propertyValue).toBeCloseTo(500000, 0)
+      // At year 4, the appreciated value is reduced by Bala ratio
+      const appreciated = 500000 * Math.pow(1.03, 4)
+      // Value with Bala decay should be less than pure appreciation
+      expect(result.rows[4].propertyValue).toBeLessThan(appreciated)
+      expect(result.rows[4].propertyValue).toBeGreaterThan(0)
+    })
+
+    it('leasehold without Bala decay: pure appreciation rate', () => {
+      const params = makeParams({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 34,
+        existingPropertyValue: 500000,
+        propertyAppreciationRate: 0.03,
+        propertyLeaseYears: 60,
+        applyBalaDecay: false,
+        propertyEquity: 500000,
+      })
+      const result = generateProjection(params)
+      // Without Bala decay, value grows at pure appreciation
+      expect(result.rows[4].propertyValue).toBeCloseTo(500000 * Math.pow(1.03, 4), 0)
+    })
+
+    it('mortgage balance decreases year-over-year', () => {
+      const params = makeParams({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 34,
+        existingPropertyValue: 1000000,
+        propertyAppreciationRate: 0.03,
+        propertyLeaseYears: 999,
+        applyBalaDecay: false,
+        propertyEquity: 700000,
+        existingMortgageBalance: 300000,
+        existingMortgageRate: 0.035,
+        existingMonthlyPayment: 1500,
+        existingMortgageRemainingYears: 25,
+        annualMortgagePayment: 18000,
+      })
+      const result = generateProjection(params)
+      // Mortgage balance should decrease each year
+      expect(result.rows[0].mortgageBalance).toBeGreaterThan(0)
+      expect(result.rows[1].mortgageBalance).toBeLessThan(result.rows[0].mortgageBalance)
+      expect(result.rows[2].mortgageBalance).toBeLessThan(result.rows[1].mortgageBalance)
+    })
+
+    it('sell-and-rent: property value zeroes out after sale', () => {
+      const params = makeParams({
+        currentAge: 55, retirementAge: 54, lifeExpectancy: 60,
+        existingPropertyValue: 1000000,
+        propertyAppreciationRate: 0.03,
+        propertyLeaseYears: 999,
+        applyBalaDecay: false,
+        propertyEquity: 1000000,
+        downsizing: {
+          scenario: 'sell-and-rent',
+          sellAge: 57,
+          expectedSalePrice: 1200000,
+          newPropertyCost: 0,
+          newMortgageRate: 0,
+          newMortgageTerm: 0,
+          newLtv: 0,
+          monthlyRent: 2500,
+          rentGrowthRate: 0.03,
+        },
+      })
+      const result = generateProjection(params)
+      const preSaleRow = result.rows.find(r => r.age === 56)!
+      const postSaleRow = result.rows.find(r => r.age === 58)!
+      expect(preSaleRow.propertyValue).toBeGreaterThan(0)
+      expect(postSaleRow.propertyValue).toBe(0)
+      expect(postSaleRow.mortgageBalance).toBe(0)
+    })
+
+    it('no property: propertyValue and mortgageBalance are 0', () => {
+      const params = makeParams({
+        existingPropertyValue: 0,
+        propertyEquity: 0,
+      })
+      const result = generateProjection(params)
+      for (const row of result.rows) {
+        expect(row.propertyValue).toBe(0)
+        expect(row.mortgageBalance).toBe(0)
+      }
     })
   })
 })

@@ -60,7 +60,7 @@ const GROUP_COLUMNS: Record<ColumnGroup, string[]> = {
   taxCpf: ['sgTax', 'cpfEmployee', 'cpfEmployer', 'totalNet'],
   cpfBalances: ['cpfOA', 'cpfSA', 'cpfMA', 'cpfRA', 'cpfInterest', 'cpfOaHousingDeduction', 'cpfOaShortfall', 'cpfLifePayout', 'cpfBequest', 'cpfMilestone'],
   portfolio: ['portfolioReturnPct', 'withdrawalAmount', 'maxPermittedWithdrawal', 'withdrawalExcess', 'cumulativeSavings'],
-  property: ['mortgageCashPayment', 'propertyEquity', 'totalNWIncProperty', 'activeLifeEvents'],
+  property: ['propertyValue', 'mortgageBalance', 'mortgageCashPayment', 'propertyEquity', 'totalNWIncProperty', 'activeLifeEvents'],
 }
 
 const DEFAULT_COLUMN_IDS = ['age', 'totalIncome', 'annualExpenses', 'savingsOrWithdrawal', 'portfolioReturnDollar', 'liquidNW', 'cpfTotal', 'totalNW', 'fireProgress']
@@ -94,6 +94,8 @@ export function ProjectionPage() {
   const hasBequest = rows?.some((r) => r.cpfBequest > 0) ?? false
   const hasCpfLife = rows?.some((r) => r.cpfLifePayout > 0) ?? false
   const hasMilestone = rows?.some((r) => r.cpfMilestone !== null) ?? false
+  const hasPropertyValue = rows?.some((r) => r.propertyValue > 0) ?? false
+  const hasMortgageBalance = rows?.some((r) => r.mortgageBalance > 0) ?? false
   const hasPropertyEquity = rows?.some((r) => r.propertyEquity > 0) ?? false
   const hasLifeEvents = rows?.some((r) => r.activeLifeEvents.length > 0) ?? false
 
@@ -147,6 +149,8 @@ export function ProjectionPage() {
         withdrawalAmount: d(row.withdrawalAmount),
         maxPermittedWithdrawal: d(row.maxPermittedWithdrawal),
         withdrawalExcess: d(row.withdrawalExcess),
+        propertyValue: d(row.propertyValue),
+        mortgageBalance: d(row.mortgageBalance),
         propertyEquity: d(row.propertyEquity),
         totalNWIncProperty: d(row.totalNWIncProperty),
         baseInflatedExpenses: d(row.baseInflatedExpenses),
@@ -225,8 +229,10 @@ export function ProjectionPage() {
     if (!hasCpfLife) vis['cpfLifePayout'] = false
     if (!hasMilestone) vis['cpfMilestone'] = false
     // Hide property columns when no property data exists
-    if (!hasPropertyEquity) vis['propertyEquity'] = false
-    if (!hasPropertyEquity) vis['totalNWIncProperty'] = false
+    if (!hasPropertyValue) vis['propertyValue'] = false
+    if (!hasMortgageBalance) vis['mortgageBalance'] = false
+    if (!hasPropertyEquity && !hasPropertyValue) vis['propertyEquity'] = false
+    if (!hasPropertyEquity && !hasPropertyValue) vis['totalNWIncProperty'] = false
     if (!hasLifeEvents) vis['activeLifeEvents'] = false
     // Hide less-essential default columns on mobile to reduce horizontal scroll
     if (isMobile) {
@@ -257,11 +263,11 @@ export function ProjectionPage() {
       cell: (info) => info.getValue(),
     }),
     columnHelper.accessor('totalIncome', {
-      header: 'Income',
+      header: 'Net Income',
       cell: (info) => currencyCell(info.getValue()),
     }),
     columnHelper.accessor('annualExpenses', {
-      header: 'Expenses',
+      header: 'Regular Expenses',
       cell: (info) => currencyCell(info.getValue()),
     }),
     columnHelper.accessor('savingsOrWithdrawal', {
@@ -480,6 +486,16 @@ export function ProjectionPage() {
     }),
 
     // Property & Events
+    columnHelper.accessor('propertyValue', {
+      id: 'propertyValue',
+      header: 'Property Value',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('mortgageBalance', {
+      id: 'mortgageBalance',
+      header: 'Mortgage Bal.',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
     columnHelper.accessor('propertyEquity', {
       id: 'propertyEquity',
       header: 'Property Equity',

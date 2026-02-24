@@ -61,7 +61,7 @@ export function useProjection(): ProjectionResult {
     const lbsResult = isLbs
       ? computeLbsProceeds({
           flatValue: property.existingPropertyValue,
-          remainingLease: property.leaseYears,
+          remainingLease: property.existingLeaseYears,
           retainedLease: property.hdbLbsRetainedLease,
           cpfRaBalance: profile.cpfRA,
           retirementSum: 213000,
@@ -104,6 +104,12 @@ export function useProjection(): ProjectionResult {
               monthlyRate: property.hdbSublettingRate,
             }).annualGross
           : 0,
+      existingPropertyValue: property.ownsProperty
+        ? property.existingPropertyValue * ownershipPct
+        : 0,
+      propertyAppreciationRate: property.existingAppreciationRate,
+      propertyLeaseYears: property.existingLeaseYears,
+      applyBalaDecay: property.existingApplyBalaDecay,
       downsizing: property.ownsProperty && property.downsizing.scenario !== 'none'
         ? property.downsizing
         : null,
@@ -162,7 +168,9 @@ export function useProjection(): ProjectionResult {
     property.hdbSublettingRooms,
     property.hdbSublettingRate,
     property.hdbLbsRetainedLease,
-    property.leaseYears,
+    property.existingLeaseYears,
+    property.existingAppreciationRate,
+    property.existingApplyBalaDecay,
     profile.cpfRA,
     profile.parentSupportEnabled,
     profile.parentSupport,

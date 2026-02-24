@@ -12,6 +12,14 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-24',
     category: 'feature',
+    title: 'Dynamic property value in projection',
+    description:
+      'Property value now appreciates year-over-year at your configured rate. Leasehold properties optionally depreciate via Bala\'s Table curve as the remaining lease shortens (toggle on/off). Mortgage balance amortizes realistically. New Property column group in the projection table shows value, mortgage balance, equity, and total NW including property.',
+    affectedSections: ['section-property'],
+  },
+  {
+    date: '2026-02-24',
+    category: 'feature',
     title: 'CPF OA Withdrawal modelling',
     description:
       'Model lump-sum withdrawals from CPF OA after age 55. Withdrawn amounts transfer into your liquid portfolio, improving post-retirement cashflow.',

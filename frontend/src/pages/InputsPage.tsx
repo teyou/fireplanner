@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import { Link, useLocation } from 'react-router-dom'
 import { ChevronDown, ChevronUp, CheckCircle2, Circle, ArrowRight, HelpCircle, RefreshCw, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -578,6 +579,9 @@ function PropertyContent() {
   const existingMortgageRemainingYears = usePropertyStore((s) => s.existingMortgageRemainingYears)
   const mortgageCpfMonthly = usePropertyStore((s) => s.mortgageCpfMonthly)
   const ownershipPercent = usePropertyStore((s) => s.ownershipPercent)
+  const existingAppreciationRate = usePropertyStore((s) => s.existingAppreciationRate)
+  const existingLeaseYears = usePropertyStore((s) => s.existingLeaseYears)
+  const existingApplyBalaDecay = usePropertyStore((s) => s.existingApplyBalaDecay)
   const setField = usePropertyStore((s) => s.setField)
   const validationErrors = usePropertyStore((s) => s.validationErrors)
 
@@ -811,6 +815,47 @@ function PropertyContent() {
                   )}
                 </div>
               )}
+
+              <Separator />
+              <p className="text-sm font-medium text-muted-foreground">Projection Settings</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <PercentInput
+                  label="Appreciation Rate"
+                  value={existingAppreciationRate}
+                  onChange={(v) => setField('existingAppreciationRate', v)}
+                  error={validationErrors.existingAppreciationRate}
+                  tooltip="Expected annual appreciation rate for your existing property. Used in the year-by-year projection to model property value growth."
+                />
+                <div className="space-y-1">
+                  <Label className="text-sm flex items-center gap-1">
+                    Remaining Lease
+                    <InfoTooltip text="Remaining lease years on your existing property. Used for Bala's Table leasehold depreciation in the projection. Enter 999 for freehold." source="SLA" sourceUrl="https://isomer-user-content.by.gov.sg/50/ade6cd16-890b-4a1b-9d1d-d0e189daba03/balas-table.pdf" />
+                  </Label>
+                  <NumberInput
+                    value={existingLeaseYears}
+                    onChange={(v) => setField('existingLeaseYears', v)}
+                    integer
+                    min={1}
+                    max={999}
+                  />
+                  {validationErrors.existingLeaseYears && (
+                    <p className="text-xs text-destructive">{validationErrors.existingLeaseYears}</p>
+                  )}
+                </div>
+                {existingLeaseYears < 800 && (
+                  <div className="flex items-center gap-2 self-end pb-1">
+                    <Switch
+                      id="existing-bala-decay"
+                      checked={existingApplyBalaDecay}
+                      onCheckedChange={(checked) => setField('existingApplyBalaDecay', checked)}
+                    />
+                    <Label htmlFor="existing-bala-decay" className="cursor-pointer text-sm">
+                      Bala's Table decay
+                      <InfoTooltip text="Apply Bala's Table leasehold depreciation to your property value in the projection. Leasehold properties lose value as the remaining lease shortens. Disable to model appreciation only." />
+                    </Label>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </CardContent>
