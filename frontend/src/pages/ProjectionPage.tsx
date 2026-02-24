@@ -43,7 +43,7 @@ const STRATEGY_SHORT_LABELS: Record<WithdrawalStrategyType, string> = {
 
 const columnHelper = createColumnHelper<ProjectionRow>()
 
-type ColumnGroup = 'expensesBreakdown' | 'incomeBreakdown' | 'taxCpf' | 'cpfBalances' | 'portfolio'
+type ColumnGroup = 'expensesBreakdown' | 'incomeBreakdown' | 'taxCpf' | 'cpfBalances' | 'portfolio' | 'property'
 
 const COLUMN_GROUPS: { key: ColumnGroup; label: string }[] = [
   { key: 'expensesBreakdown', label: 'Expenses Breakdown' },
@@ -51,6 +51,7 @@ const COLUMN_GROUPS: { key: ColumnGroup; label: string }[] = [
   { key: 'taxCpf', label: 'Tax & CPF' },
   { key: 'cpfBalances', label: 'CPF Balances' },
   { key: 'portfolio', label: 'Portfolio' },
+  { key: 'property', label: 'Property & Events' },
 ]
 
 const GROUP_COLUMNS: Record<ColumnGroup, string[]> = {
@@ -59,6 +60,7 @@ const GROUP_COLUMNS: Record<ColumnGroup, string[]> = {
   taxCpf: ['sgTax', 'cpfEmployee', 'cpfEmployer', 'totalNet'],
   cpfBalances: ['cpfOA', 'cpfSA', 'cpfMA', 'cpfRA', 'cpfInterest', 'cpfOaHousingDeduction', 'cpfOaShortfall', 'cpfLifePayout', 'cpfBequest', 'cpfMilestone'],
   portfolio: ['portfolioReturnPct', 'withdrawalAmount', 'maxPermittedWithdrawal', 'withdrawalExcess', 'cumulativeSavings'],
+  property: ['propertyEquity', 'totalNWIncProperty', 'activeLifeEvents'],
 }
 
 const DEFAULT_COLUMN_IDS = ['age', 'totalIncome', 'annualExpenses', 'savingsOrWithdrawal', 'portfolioReturnDollar', 'liquidNW', 'cpfTotal', 'totalNW', 'fireProgress']
@@ -92,6 +94,8 @@ export function ProjectionPage() {
   const hasBequest = rows?.some((r) => r.cpfBequest > 0) ?? false
   const hasCpfLife = rows?.some((r) => r.cpfLifePayout > 0) ?? false
   const hasMilestone = rows?.some((r) => r.cpfMilestone !== null) ?? false
+  const hasPropertyEquity = rows?.some((r) => r.propertyEquity > 0) ?? false
+  const hasLifeEvents = rows?.some((r) => r.activeLifeEvents.length > 0) ?? false
 
   const [viewMode, setViewMode] = useState<'table' | 'chart'>('table')
   const [activeGroups, setActiveGroups] = useState<Set<ColumnGroup>>(new Set())
@@ -169,7 +173,7 @@ export function ProjectionPage() {
 
   useEffect(() => {
     if (mode === 'advanced') {
-      setActiveGroups(new Set(['expensesBreakdown', 'incomeBreakdown', 'taxCpf', 'cpfBalances', 'portfolio']))
+      setActiveGroups(new Set(['expensesBreakdown', 'incomeBreakdown', 'taxCpf', 'cpfBalances', 'portfolio', 'property']))
     } else {
       setActiveGroups(new Set())
     }
@@ -219,6 +223,10 @@ export function ProjectionPage() {
     if (!hasBequest) vis['cpfBequest'] = false
     if (!hasCpfLife) vis['cpfLifePayout'] = false
     if (!hasMilestone) vis['cpfMilestone'] = false
+    // Hide property columns when no property data exists
+    if (!hasPropertyEquity) vis['propertyEquity'] = false
+    if (!hasPropertyEquity) vis['totalNWIncProperty'] = false
+    if (!hasLifeEvents) vis['activeLifeEvents'] = false
     // Hide less-essential default columns on mobile to reduce horizontal scroll
     if (isMobile) {
       vis['portfolioReturnDollar'] = vis['portfolioReturnDollar'] || false
@@ -226,7 +234,7 @@ export function ProjectionPage() {
       vis['fireProgress'] = vis['fireProgress'] || false
     }
     return vis
-  }, [activeGroups, isMobile, hasSrs, hasRa, hasOaHousing, hasOaShortfall, hasBequest, hasCpfLife, hasMilestone])
+  }, [activeGroups, isMobile, hasSrs, hasRa, hasOaHousing, hasOaShortfall, hasBequest, hasCpfLife, hasMilestone, hasPropertyEquity, hasLifeEvents])
 
   const defaultVisibleCount = useMemo(() => {
     return DEFAULT_COLUMN_IDS.filter(id => columnVisibility[id] !== false).length
@@ -469,6 +477,27 @@ export function ProjectionPage() {
       header: 'Cumul. Savings',
       cell: (info) => currencyCell(info.getValue()),
     }),
+
+    // Property & Events
+    columnHelper.accessor('propertyEquity', {
+      id: 'propertyEquity',
+      header: 'Property Equity',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('totalNWIncProperty', {
+      id: 'totalNWIncProperty',
+      header: 'NW inc. Property',
+      cell: (info) => currencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('activeLifeEvents', {
+      id: 'activeLifeEvents',
+      header: 'Life Events',
+      cell: (info) => {
+        const v = info.getValue() as string[]
+        if (!v || v.length === 0) return '-'
+        return v.join(', ')
+      },
+    }) as ColumnDef<ProjectionRow, number | string>,
   ] as ColumnDef<ProjectionRow, number | string>[], [])
 
   const table = useReactTable({
