@@ -20,7 +20,7 @@ import {
   type HistoricalReturnRow,
 } from '@/lib/data/historicalReturnsFull.ts'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns.ts'
-import type { MonteCarloResult, PercentileBands, TerminalStats, FailureDistribution, SpendingMetrics, HistogramBucket, HistogramSnapshot } from '@/lib/types.ts'
+import type { MonteCarloResult, PercentileBands, TerminalStats, FailureDistribution, SpendingMetrics, HistogramBucket, HistogramSnapshot, RetirementMitigationConfig } from '@/lib/types.ts'
 
 // ============================================================
 // Types
@@ -45,6 +45,8 @@ export interface MonteCarloEngineParams {
   expenseRatio: number
   inflation: number
   portfolioAdjustments?: { year: number; amount: number }[]  // sparse one-time equity injections
+  retirementMitigation?: RetirementMitigationConfig
+  annualExpensesAtRetirement?: number  // needed to compute bucket target
 }
 
 export type MonteCarloEngineResult = Omit<
