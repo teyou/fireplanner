@@ -56,7 +56,9 @@ import { GoalTimelineChart } from '@/components/goals/GoalTimelineChart'
 // Shared
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { PercentInput } from '@/components/shared/PercentInput'
+import { NumberInput } from '@/components/shared/NumberInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { Label } from '@/components/ui/label'
 
 // Stores
 import { useProfileStore } from '@/stores/useProfileStore'
@@ -514,12 +516,62 @@ function derivePropertyStatus(
   return (mortgageBalance === 0 && monthlyPayment === 0) ? 'fully-paid' : 'with-mortgage'
 }
 
+function MortgageCrossCheck({
+  balance,
+  monthlyPayment,
+  annualRate,
+  remainingYears,
+}: {
+  balance: number
+  monthlyPayment: number
+  annualRate: number
+  remainingYears: number
+}) {
+  // Only show when all 4 fields have values
+  if (balance <= 0 || monthlyPayment <= 0 || annualRate <= 0 || remainingYears <= 0) return null
+
+  const monthlyRate = annualRate / 12
+  const months = remainingYears * 12
+  // Standard amortization: P * r(1+r)^n / ((1+r)^n - 1)
+  const factor = Math.pow(1 + monthlyRate, months)
+  const expectedPayment = balance * (monthlyRate * factor) / (factor - 1)
+  const monthlyInterest = balance * monthlyRate
+
+  if (monthlyPayment < monthlyInterest * 0.95) {
+    return (
+      <div className="md:col-span-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-sm text-red-700 dark:text-red-300">
+        Payment ({formatCurrency(monthlyPayment)}/mo) doesn't cover monthly interest ({formatCurrency(monthlyInterest)}/mo) — check your inputs.
+      </div>
+    )
+  }
+
+  const diff = Math.abs(monthlyPayment - expectedPayment)
+  const tolerance = expectedPayment * 0.05
+
+  if (diff <= tolerance) {
+    return (
+      <div className="md:col-span-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded text-sm text-green-700 dark:text-green-300">
+        Mortgage inputs are consistent (expected ~{formatCurrency(expectedPayment)}/mo).
+      </div>
+    )
+  }
+
+  return (
+    <div className="md:col-span-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded text-sm text-amber-700 dark:text-amber-300">
+      Expected payment is ~{formatCurrency(expectedPayment)}/mo based on balance, rate, and remaining years.
+      Your entered payment is {formatCurrency(monthlyPayment)}/mo — this is fine if your mortgage has fees or special terms.
+    </div>
+  )
+}
+
 function PropertyContent() {
   const ownsProperty = usePropertyStore((s) => s.ownsProperty)
   const propertyType = usePropertyStore((s) => s.propertyType)
   const existingPropertyValue = usePropertyStore((s) => s.existingPropertyValue)
   const existingMortgageBalance = usePropertyStore((s) => s.existingMortgageBalance)
   const existingMonthlyPayment = usePropertyStore((s) => s.existingMonthlyPayment)
+  const existingMortgageRate = usePropertyStore((s) => s.existingMortgageRate)
+  const existingMortgageRemainingYears = usePropertyStore((s) => s.existingMortgageRemainingYears)
   const mortgageCpfMonthly = usePropertyStore((s) => s.mortgageCpfMonthly)
   const ownershipPercent = usePropertyStore((s) => s.ownershipPercent)
   const setField = usePropertyStore((s) => s.setField)
@@ -660,6 +712,33 @@ function PropertyContent() {
                       <span className="font-semibold">{formatCurrency(Math.max(0, existingMonthlyPayment - mortgageCpfMonthly))}/mo</span>
                       <span className="text-muted-foreground"> (deducted from savings)</span>
                     </div>
+                    <PercentInput
+                      label="Mortgage Interest Rate"
+                      value={existingMortgageRate}
+                      onChange={(v) => setField('existingMortgageRate', v)}
+                      error={validationErrors.existingMortgageRate}
+                      tooltip="Annual interest rate on your existing mortgage. Used for amortization and downsizing projections."
+                    />
+                    <div className="space-y-1">
+                      <Label className="text-sm flex items-center gap-1">
+                        Remaining Years
+                        <InfoTooltip text="Number of years left on your existing mortgage" />
+                      </Label>
+                      <NumberInput
+                        value={existingMortgageRemainingYears}
+                        onChange={(v) => setField('existingMortgageRemainingYears', v)}
+                        integer
+                      />
+                      {validationErrors.existingMortgageRemainingYears && (
+                        <p className="text-xs text-destructive">{validationErrors.existingMortgageRemainingYears}</p>
+                      )}
+                    </div>
+                    <MortgageCrossCheck
+                      balance={existingMortgageBalance}
+                      monthlyPayment={existingMonthlyPayment}
+                      annualRate={existingMortgageRate}
+                      remainingYears={existingMortgageRemainingYears}
+                    />
                   </>
                 )}
                 {(ownershipPercent ?? 1) < 1 && (

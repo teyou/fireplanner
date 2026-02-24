@@ -7,6 +7,9 @@ import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { usePropertyStore } from '@/stores/usePropertyStore'
 import type { DownsizingScenario } from '@/lib/types'
 
+// Note: Mortgage Rate and Remaining Years inputs are now in the main Property section (InputsPage.tsx).
+// Downsizing uses the same store fields — no duplication needed.
+
 const SCENARIO_OPTIONS: { value: DownsizingScenario; label: string; description: string }[] = [
   { value: 'none', label: 'None', description: 'Keep current property' },
   { value: 'sell-and-downsize', label: 'Sell & Downsize', description: 'Sell and buy a smaller property' },
@@ -15,13 +18,8 @@ const SCENARIO_OPTIONS: { value: DownsizingScenario; label: string; description:
 
 export function DownsizingScenarioForm() {
   const downsizing = usePropertyStore((s) => s.downsizing)
-  const existingMortgageBalance = usePropertyStore((s) => s.existingMortgageBalance)
-  const existingMortgageRate = usePropertyStore((s) => s.existingMortgageRate)
-  const existingMortgageRemainingYears = usePropertyStore((s) => s.existingMortgageRemainingYears)
-  const setField = usePropertyStore((s) => s.setField)
   const setDownsizingField = usePropertyStore((s) => s.setDownsizingField)
   const validationErrors = usePropertyStore((s) => s.validationErrors)
-  const hasMortgage = existingMortgageBalance > 0
 
   return (
     <Card>
@@ -32,33 +30,6 @@ export function DownsizingScenarioForm() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Existing mortgage details needed for outstanding balance projection */}
-        {hasMortgage && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <PercentInput
-              label="Mortgage Rate"
-              value={existingMortgageRate}
-              onChange={(v) => setField('existingMortgageRate', v)}
-              error={validationErrors.existingMortgageRate}
-              tooltip="Annual interest rate on your existing mortgage"
-            />
-            <div className="space-y-1">
-              <Label className="text-sm flex items-center gap-1">
-                Remaining Years
-                <InfoTooltip text="Number of years left on your existing mortgage" />
-              </Label>
-              <NumberInput
-                value={existingMortgageRemainingYears}
-                onChange={(v) => setField('existingMortgageRemainingYears', v)}
-                integer
-              />
-              {validationErrors.existingMortgageRemainingYears && (
-                <p className="text-xs text-destructive">{validationErrors.existingMortgageRemainingYears}</p>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Scenario selector */}
         <div className="flex items-center gap-1 p-1 bg-muted rounded-lg w-fit">
           {SCENARIO_OPTIONS.map((opt) => (
