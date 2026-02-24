@@ -16,7 +16,7 @@ import {
 import {
   computeWithdrawal,
 } from '@/lib/calculations/withdrawal.ts'
-import type { PerYearResult, BacktestSummary, HeatmapData } from '@/lib/types.ts'
+import type { PerYearResult, BacktestSummary, HeatmapData, RetirementMitigationConfig } from '@/lib/types.ts'
 
 // ============================================================
 // Types
@@ -34,6 +34,8 @@ export interface BacktestEngineParams {
   strategyParams: Record<string, number>
   inflation: number
   oneTimeWithdrawals?: { year: number; amount: number }[]  // year-offset → amount
+  retirementMitigation?: RetirementMitigationConfig
+  annualExpensesAtRetirement?: number
 }
 
 export interface BacktestEngineResult {
