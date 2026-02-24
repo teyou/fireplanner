@@ -6,7 +6,7 @@ import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
  * Returns a map of field names to error messages.
  */
 export function validateProfileConsistency(
-  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'lifeStage' | 'cpfLifeStartAge' | 'parentSupportEnabled' | 'parentSupport' | 'healthcareConfig' | 'retirementWithdrawals' | 'financialGoals'>
+  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'lifeStage' | 'cpfLifeStartAge' | 'parentSupportEnabled' | 'parentSupport' | 'healthcareConfig' | 'retirementWithdrawals' | 'financialGoals' | 'cpfOaWithdrawals'>
 ): ValidationErrors {
   const errors: ValidationErrors = {}
 
@@ -75,6 +75,19 @@ export function validateProfileConsistency(
     }
     if (goal.targetAge + goal.durationYears > profile.lifeExpectancy) {
       errors[`goal_${goal.id}_duration`] = 'Goal extends beyond life expectancy'
+    }
+  }
+
+  // CPF OA withdrawal validation
+  for (const w of profile.cpfOaWithdrawals ?? []) {
+    if (w.age < 55) {
+      errors[`cpfOaWithdrawal_${w.id}_age`] = 'CPF OA withdrawal age must be >= 55'
+    }
+    if (w.age > profile.lifeExpectancy) {
+      errors[`cpfOaWithdrawal_${w.id}_age`] = `Withdrawal age (${w.age}) exceeds life expectancy (${profile.lifeExpectancy})`
+    }
+    if (w.amount <= 0) {
+      errors[`cpfOaWithdrawal_${w.id}_amount`] = 'Amount must be positive'
     }
   }
 

@@ -30,6 +30,7 @@ describe('validateProfileConsistency edge cases', () => {
       healthcareConfig: defaultHealthcareConfig,
       retirementWithdrawals: [],
       financialGoals: [],
+      cpfOaWithdrawals: [],
     })
     expect(errors.cpfLifeStartAge).toBeTruthy()
   })
@@ -48,6 +49,7 @@ describe('validateProfileConsistency edge cases', () => {
       healthcareConfig: defaultHealthcareConfig,
       retirementWithdrawals: [],
       financialGoals: [],
+      cpfOaWithdrawals: [],
     })
     expect(errors['parentSupport_ps1_startAge']).toBeTruthy()
   })
@@ -66,6 +68,7 @@ describe('validateProfileConsistency edge cases', () => {
       healthcareConfig: defaultHealthcareConfig,
       retirementWithdrawals: [],
       financialGoals: [],
+      cpfOaWithdrawals: [],
     })
     expect(errors['parentSupport_ps1_endAge']).toBeTruthy()
   })
@@ -86,6 +89,7 @@ describe('validateProfileConsistency edge cases', () => {
       },
       retirementWithdrawals: [],
       financialGoals: [],
+      cpfOaWithdrawals: [],
     })
     expect(errors['healthcareConfig.oopBaseAmount']).toBeTruthy()
   })
@@ -106,6 +110,7 @@ describe('validateProfileConsistency edge cases', () => {
       },
       retirementWithdrawals: [],
       financialGoals: [],
+      cpfOaWithdrawals: [],
     })
     expect(errors['healthcareConfig.mediSaveTopUpAnnual']).toBeTruthy()
   })
@@ -126,6 +131,7 @@ describe('validateProfileConsistency edge cases', () => {
       },
       retirementWithdrawals: [],
       financialGoals: [],
+      cpfOaWithdrawals: [],
     })
     expect(errors['healthcareConfig.oopBaseAmount']).toBeUndefined()
   })
@@ -193,6 +199,7 @@ describe('retirement withdrawal cross-store validation', () => {
         { id: 'rw1', label: 'Too early', amount: 50000, age: 60, durationYears: 1, inflationAdjusted: true },
       ],
       financialGoals: [],
+      cpfOaWithdrawals: [],
     })
     expect(errors['retirementWithdrawal_rw1_age']).toBeTruthy()
   })
@@ -211,6 +218,7 @@ describe('retirement withdrawal cross-store validation', () => {
         { id: 'rw1', label: 'Eldercare', amount: 2000, age: 85, durationYears: 10, inflationAdjusted: true },
       ],
       financialGoals: [],
+      cpfOaWithdrawals: [],
     })
     expect(errors['retirementWithdrawal_rw1_durationYears']).toBeTruthy()
   })
@@ -230,6 +238,7 @@ describe('retirement withdrawal cross-store validation', () => {
         { id: 'rw2', label: 'Eldercare', amount: 2000, age: 75, durationYears: 10, inflationAdjusted: false },
       ],
       financialGoals: [],
+      cpfOaWithdrawals: [],
     })
     expect(errors['retirementWithdrawal_rw1_age']).toBeUndefined()
     expect(errors['retirementWithdrawal_rw1_durationYears']).toBeUndefined()
@@ -252,6 +261,7 @@ describe('retirement withdrawal cross-store validation', () => {
         { id: 'rw1', label: 'Boundary', amount: 10000, age: 80, durationYears: 10, inflationAdjusted: true },
       ],
       financialGoals: [],
+      cpfOaWithdrawals: [],
     })
     // 80 + 10 = 90 = lifeExpectancy → the condition is > lifeExpectancy, so exactly equal should pass
     expect(errors['retirementWithdrawal_rw1_durationYears']).toBeUndefined()
@@ -273,6 +283,7 @@ describe('financial goals validation', () => {
       financialGoals: [
         { id: 'g1', label: 'Bad', amount: 0, targetAge: 40, durationYears: 1, priority: 'important', inflationAdjusted: true, category: 'other' },
       ],
+      cpfOaWithdrawals: [],
     })
     expect(errors['goal_g1_amount']).toBeTruthy()
   })
@@ -291,6 +302,7 @@ describe('financial goals validation', () => {
       financialGoals: [
         { id: 'g1', label: 'Past', amount: 50000, targetAge: 30, durationYears: 1, priority: 'important', inflationAdjusted: true, category: 'wedding' },
       ],
+      cpfOaWithdrawals: [],
     })
     expect(errors['goal_g1_age']).toBeTruthy()
   })
@@ -309,6 +321,7 @@ describe('financial goals validation', () => {
       financialGoals: [
         { id: 'g1', label: 'Long', amount: 100000, targetAge: 85, durationYears: 10, priority: 'essential', inflationAdjusted: false, category: 'education' },
       ],
+      cpfOaWithdrawals: [],
     })
     expect(errors['goal_g1_duration']).toBeTruthy()
   })
@@ -328,6 +341,7 @@ describe('financial goals validation', () => {
         { id: 'g1', label: 'Wedding', amount: 50000, targetAge: 35, durationYears: 1, priority: 'important', inflationAdjusted: true, category: 'wedding' },
         { id: 'g2', label: 'Education', amount: 200000, targetAge: 50, durationYears: 4, priority: 'essential', inflationAdjusted: true, category: 'education' },
       ],
+      cpfOaWithdrawals: [],
     })
     expect(errors['goal_g1_amount']).toBeUndefined()
     expect(errors['goal_g1_age']).toBeUndefined()
@@ -351,6 +365,7 @@ describe('financial goals validation', () => {
       financialGoals: [
         { id: 'g1', label: 'Too Late', amount: 50000, targetAge: 95, durationYears: 1, priority: 'nice-to-have', inflationAdjusted: false, category: 'travel' },
       ],
+      cpfOaWithdrawals: [],
     })
     expect(errors['goal_g1_age']).toBeTruthy()
   })
@@ -369,7 +384,90 @@ describe('financial goals validation', () => {
       financialGoals: [
         { id: 'g1', label: 'Zero Dur', amount: 50000, targetAge: 40, durationYears: 0, priority: 'important', inflationAdjusted: true, category: 'other' },
       ],
+      cpfOaWithdrawals: [],
     })
     expect(errors['goal_g1_duration']).toBeTruthy()
+  })
+})
+
+describe('CPF OA withdrawal validation', () => {
+  it('catches withdrawal age < 55', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [],
+      cpfOaWithdrawals: [
+        { id: 'ow1', label: 'Too early', amount: 50000, age: 50 },
+      ],
+    })
+    expect(errors['cpfOaWithdrawal_ow1_age']).toBe('CPF OA withdrawal age must be >= 55')
+  })
+
+  it('catches withdrawal age > life expectancy', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [],
+      cpfOaWithdrawals: [
+        { id: 'ow1', label: 'Too late', amount: 50000, age: 95 },
+      ],
+    })
+    expect(errors['cpfOaWithdrawal_ow1_age']).toContain('exceeds life expectancy')
+  })
+
+  it('catches withdrawal amount <= 0', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [],
+      cpfOaWithdrawals: [
+        { id: 'ow1', label: 'Zero', amount: 0, age: 55 },
+      ],
+    })
+    expect(errors['cpfOaWithdrawal_ow1_amount']).toBe('Amount must be positive')
+  })
+
+  it('accepts valid CPF OA withdrawal', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [],
+      cpfOaWithdrawals: [
+        { id: 'ow1', label: 'OA at 55', amount: 50000, age: 55 },
+        { id: 'ow2', label: 'OA at 60', amount: 30000, age: 60 },
+      ],
+    })
+    expect(errors['cpfOaWithdrawal_ow1_age']).toBeUndefined()
+    expect(errors['cpfOaWithdrawal_ow1_amount']).toBeUndefined()
+    expect(errors['cpfOaWithdrawal_ow2_age']).toBeUndefined()
+    expect(errors['cpfOaWithdrawal_ow2_amount']).toBeUndefined()
   })
 })

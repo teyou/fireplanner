@@ -318,5 +318,125 @@ describe('useProfileStore', () => {
       const rws = migrated.retirementWithdrawals as Array<Record<string, unknown>>
       expect(rws[0].durationYears).toBe(1)
     })
+
+    it('v16→v17: adds CPFIS and OA withdrawal fields', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = { currentAge: 30 }
+      const migrated = migrate!(oldState, 16) as Record<string, unknown>
+      expect(migrated.cpfOaWithdrawals).toEqual([])
+      expect(migrated.cpfisEnabled).toBe(false)
+      expect(migrated.cpfisOaReturn).toBe(0.04)
+      expect(migrated.cpfisSaReturn).toBe(0.05)
+    })
+
+    it('v16→v17: preserves existing CPFIS fields if present', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = {
+        cpfisEnabled: true,
+        cpfisOaReturn: 0.06,
+        cpfisSaReturn: 0.08,
+        cpfOaWithdrawals: [{ id: 'ow1', label: 'Test', amount: 50000, age: 55 }],
+      }
+      const migrated = migrate!(oldState, 16) as Record<string, unknown>
+      expect(migrated.cpfisEnabled).toBe(true)
+      expect(migrated.cpfisOaReturn).toBe(0.06)
+      expect(migrated.cpfisSaReturn).toBe(0.08)
+      expect(migrated.cpfOaWithdrawals).toHaveLength(1)
+    })
+
+    it('full migration v0→v17 applies all steps including CPFIS', () => {
+      const { migrate } = useProfileStore.persist.getOptions()
+      const oldState: Record<string, unknown> = { currentAge: 25 }
+      const migrated = migrate!(oldState, 0) as Record<string, unknown>
+      // Earlier migrations
+      expect(migrated.cpfLifeStartAge).toBe(65)
+      expect(migrated.cpfRA).toBe(0)
+      // v16→v17: CPFIS fields
+      expect(migrated.cpfOaWithdrawals).toEqual([])
+      expect(migrated.cpfisEnabled).toBe(false)
+      expect(migrated.cpfisOaReturn).toBe(0.04)
+      expect(migrated.cpfisSaReturn).toBe(0.05)
+    })
+  })
+
+  describe('CPF OA withdrawal CRUD', () => {
+    it('adds a CPF OA withdrawal entry', () => {
+      useProfileStore.getState().addCpfOaWithdrawal({
+        id: 'ow1',
+        label: 'OA at 55',
+        amount: 50000,
+        age: 55,
+      })
+      const state = useProfileStore.getState()
+      expect(state.cpfOaWithdrawals).toHaveLength(1)
+      expect(state.cpfOaWithdrawals[0].label).toBe('OA at 55')
+      expect(state.cpfOaWithdrawals[0].amount).toBe(50000)
+      expect(state.cpfOaWithdrawals[0].age).toBe(55)
+    })
+
+    it('removes a CPF OA withdrawal entry by ID', () => {
+      useProfileStore.getState().addCpfOaWithdrawal({
+        id: 'ow1', label: 'OA at 55', amount: 50000, age: 55,
+      })
+      useProfileStore.getState().addCpfOaWithdrawal({
+        id: 'ow2', label: 'OA at 60', amount: 30000, age: 60,
+      })
+      useProfileStore.getState().removeCpfOaWithdrawal('ow1')
+      const state = useProfileStore.getState()
+      expect(state.cpfOaWithdrawals).toHaveLength(1)
+      expect(state.cpfOaWithdrawals[0].id).toBe('ow2')
+    })
+
+    it('updates a CPF OA withdrawal entry', () => {
+      useProfileStore.getState().addCpfOaWithdrawal({
+        id: 'ow1', label: 'OA at 55', amount: 50000, age: 55,
+      })
+      useProfileStore.getState().updateCpfOaWithdrawal('ow1', { amount: 80000 })
+      expect(useProfileStore.getState().cpfOaWithdrawals[0].amount).toBe(80000)
+    })
+
+    it('updates age of a CPF OA withdrawal entry', () => {
+      useProfileStore.getState().addCpfOaWithdrawal({
+        id: 'ow1', label: 'OA withdrawal', amount: 50000, age: 55,
+      })
+      useProfileStore.getState().updateCpfOaWithdrawal('ow1', { age: 60 })
+      expect(useProfileStore.getState().cpfOaWithdrawals[0].age).toBe(60)
+    })
+
+    it('does not affect other entries when updating', () => {
+      useProfileStore.getState().addCpfOaWithdrawal({
+        id: 'ow1', label: 'First', amount: 50000, age: 55,
+      })
+      useProfileStore.getState().addCpfOaWithdrawal({
+        id: 'ow2', label: 'Second', amount: 30000, age: 60,
+      })
+      useProfileStore.getState().updateCpfOaWithdrawal('ow1', { amount: 80000 })
+      expect(useProfileStore.getState().cpfOaWithdrawals[1].amount).toBe(30000)
+    })
+  })
+
+  describe('CPFIS default values', () => {
+    it('has correct CPFIS defaults', () => {
+      const state = useProfileStore.getState()
+      expect(state.cpfisEnabled).toBe(false)
+      expect(state.cpfisOaReturn).toBe(0.04)
+      expect(state.cpfisSaReturn).toBe(0.05)
+      expect(state.cpfOaWithdrawals).toEqual([])
+    })
+
+    it('updates cpfisEnabled via setField', () => {
+      useProfileStore.getState().setField('cpfisEnabled', true)
+      expect(useProfileStore.getState().cpfisEnabled).toBe(true)
+    })
+
+    it('updates cpfisOaReturn via setField', () => {
+      useProfileStore.getState().setField('cpfisOaReturn', 0.06)
+      expect(useProfileStore.getState().cpfisOaReturn).toBe(0.06)
+    })
+
+    it('updates cpfisSaReturn via setField', () => {
+      useProfileStore.getState().setField('cpfisSaReturn', 0.08)
+      expect(useProfileStore.getState().cpfisSaReturn).toBe(0.08)
+    })
   })
 })

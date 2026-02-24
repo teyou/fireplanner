@@ -3,15 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { Button } from '@/components/ui/button'
+import { Plus, Trash2 } from 'lucide-react'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
+import { PercentInput } from '@/components/shared/PercentInput'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useIncomeProjection } from '@/hooks/useIncomeProjection'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { calculateCpfContribution, calculateBrsFrsErs, estimateCpfLifePayout, calculateCpfLifePayoutAtAge, getRetirementSumAmount } from '@/lib/calculations/cpf'
 import type { CpfLifePlan, CpfRetirementSum } from '@/lib/types'
-import { getCpfRatesForAge, RETIREMENT_SUM_BASE_YEAR, BRS_BASE, FRS_BASE, ERS_BASE, SA_INTEREST_RATE } from '@/lib/data/cpfRates'
+import { getCpfRatesForAge, RETIREMENT_SUM_BASE_YEAR, BRS_BASE, FRS_BASE, ERS_BASE, SA_INTEREST_RATE, CPFIS_OA_RETENTION, CPFIS_SA_RETENTION } from '@/lib/data/cpfRates'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { CpfProjectionTable } from '@/components/cpf/CpfProjectionTable'
 import { CpfAssumptionsPanel } from '@/components/cpf/CpfAssumptionsPanel'
@@ -22,6 +26,9 @@ export function CpfSection() {
     currentAge, annualIncome, cpfOA, cpfSA, cpfMA, cpfRA,
     cpfLifeStartAge, cpfLifePlan, cpfRetirementSum,
     lifeStage, retirementPhase, cpfLifeActualMonthlyPayout,
+    cpfisEnabled, cpfisOaReturn, cpfisSaReturn,
+    cpfOaWithdrawals,
+    addCpfOaWithdrawal, removeCpfOaWithdrawal, updateCpfOaWithdrawal,
     validationErrors, setField,
   } = useProfileStore()
   const incomeStreams = useIncomeStore((s) => s.incomeStreams)
@@ -476,6 +483,127 @@ export function CpfSection() {
             </div>
           )}
         </div>
+
+        {/* CPFIS — Advanced only */}
+        {mode === 'advanced' && (
+          <>
+            <Separator />
+            <div>
+              <h4 className="text-sm font-medium flex items-center mb-2">
+                CPFIS (CPF Investment Scheme)
+                <InfoTooltip text={`Invest CPF OA/SA funds above retention limits ($${CPFIS_OA_RETENTION.toLocaleString()} OA, $${CPFIS_SA_RETENTION.toLocaleString()} SA) for potentially higher returns. Balances below retention limits earn standard CPF rates. CPFIS investments revert to standard rates at age 55 when SA closes.`} />
+              </h4>
+              <div className="flex items-center gap-3 mb-3">
+                <Switch
+                  checked={cpfisEnabled}
+                  onCheckedChange={(v) => setField('cpfisEnabled', v)}
+                />
+                <Label className="text-sm">Enable CPFIS</Label>
+              </div>
+              {cpfisEnabled && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <PercentInput
+                    label="OA Investment Return"
+                    value={cpfisOaReturn}
+                    onChange={(v) => setField('cpfisOaReturn', v)}
+                    error={validationErrors.cpfisOaReturn}
+                    tooltip={`Expected annual return on OA funds invested above $${CPFIS_OA_RETENTION.toLocaleString()} retention limit. Standard OA rate is 2.5%.`}
+                  />
+                  <PercentInput
+                    label="SA Investment Return"
+                    value={cpfisSaReturn}
+                    onChange={(v) => setField('cpfisSaReturn', v)}
+                    error={validationErrors.cpfisSaReturn}
+                    tooltip={`Expected annual return on SA funds invested above $${CPFIS_SA_RETENTION.toLocaleString()} retention limit. Standard SA rate is 4%.`}
+                  />
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* CPF OA Withdrawals — Advanced only */}
+        {mode === 'advanced' && (
+          <>
+            <Separator />
+            <div>
+              <h4 className="text-sm font-medium flex items-center mb-2">
+                CPF OA Withdrawals
+                <InfoTooltip text="After age 55, you can withdraw from your CPF OA into your liquid portfolio. Each withdrawal transfers a lump sum from OA to your investment portfolio at the specified age." />
+              </h4>
+              {cpfOaWithdrawals.map((w) => (
+                <div key={w.id} className="flex items-end gap-2 mb-2">
+                  <div className="flex-1">
+                    <Label className="text-xs">Label</Label>
+                    <input
+                      type="text"
+                      value={w.label}
+                      onChange={(e) => updateCpfOaWithdrawal(w.id, { label: e.target.value })}
+                      className="h-8 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      placeholder="e.g. OA withdrawal at 55"
+                    />
+                  </div>
+                  <div className="w-36">
+                    <CurrencyInput
+                      label="Amount"
+                      value={w.amount}
+                      onChange={(v) => updateCpfOaWithdrawal(w.id, { amount: v })}
+                      error={validationErrors[`cpfOaWithdrawal_${w.id}_amount`]}
+                    />
+                  </div>
+                  <div className="w-20">
+                    <NumberInput
+                      integer
+                      min={55}
+                      max={120}
+                      value={w.age}
+                      onChange={(v) => updateCpfOaWithdrawal(w.id, { age: v })}
+                      className="h-8"
+                    />
+                    {validationErrors[`cpfOaWithdrawal_${w.id}_age`] && (
+                      <p className="text-xs text-destructive">{validationErrors[`cpfOaWithdrawal_${w.id}_age`]}</p>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive"
+                    onClick={() => removeCpfOaWithdrawal(w.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-1"
+                onClick={() => addCpfOaWithdrawal({
+                  id: crypto.randomUUID(),
+                  label: 'OA withdrawal at 55',
+                  amount: 50000,
+                  age: 55,
+                })}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add OA Withdrawal
+              </Button>
+              {cpfOaWithdrawals.length > 0 && projection && (
+                <div className="mt-2 p-2 bg-muted/50 rounded text-xs text-muted-foreground">
+                  {(() => {
+                    const ages = cpfOaWithdrawals.map(w => w.age).sort((a, b) => a - b)
+                    const firstAge = ages[0]
+                    const row = projection.find(r => r.age === firstAge)
+                    if (row) {
+                      return `Projected OA balance at age ${firstAge}: ${formatCurrency(row.cpfOA)}`
+                    }
+                    return null
+                  })()}
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         {mode === 'advanced' && (
           <>

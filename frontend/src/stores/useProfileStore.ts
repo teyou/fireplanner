@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ProfileState, ParentSupport, RetirementWithdrawal, FinancialGoal, HealthcareConfig, OopCurveVariant, ValidationErrors } from '@/lib/types'
+import type { ProfileState, ParentSupport, RetirementWithdrawal, CpfOaWithdrawal, FinancialGoal, HealthcareConfig, OopCurveVariant, ValidationErrors } from '@/lib/types'
 import { validateProfileField } from '@/lib/validation/schemas'
 import { validateProfileConsistency } from '@/lib/validation/rules'
 import { interpolateOopMultiplier } from '@/lib/data/healthcareOop'
@@ -16,6 +16,9 @@ interface ProfileActions {
   addRetirementWithdrawal: (entry: RetirementWithdrawal) => void
   removeRetirementWithdrawal: (id: string) => void
   updateRetirementWithdrawal: (id: string, updates: Partial<Omit<RetirementWithdrawal, 'id'>>) => void
+  addCpfOaWithdrawal: (entry: CpfOaWithdrawal) => void
+  removeCpfOaWithdrawal: (id: string) => void
+  updateCpfOaWithdrawal: (id: string, updates: Partial<Omit<CpfOaWithdrawal, 'id'>>) => void
   addFinancialGoal: (goal: FinancialGoal) => void
   removeFinancialGoal: (id: string) => void
   updateFinancialGoal: (id: string, updates: Partial<Omit<FinancialGoal, 'id'>>) => void
@@ -226,6 +229,41 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
           }
         }),
 
+      addCpfOaWithdrawal: (entry: CpfOaWithdrawal) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = { ...stateData, cpfOaWithdrawals: [...stateData.cpfOaWithdrawals, entry] }
+          return {
+            cpfOaWithdrawals: updated.cpfOaWithdrawals,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
+      removeCpfOaWithdrawal: (id: string) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = { ...stateData, cpfOaWithdrawals: stateData.cpfOaWithdrawals.filter((e) => e.id !== id) }
+          return {
+            cpfOaWithdrawals: updated.cpfOaWithdrawals,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
+      updateCpfOaWithdrawal: (id: string, updates: Partial<Omit<CpfOaWithdrawal, 'id'>>) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = {
+            ...stateData,
+            cpfOaWithdrawals: stateData.cpfOaWithdrawals.map((e) =>
+              e.id === id ? { ...e, ...updates } : e
+            ),
+          }
+          return {
+            cpfOaWithdrawals: updated.cpfOaWithdrawals,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
       addFinancialGoal: (goal: FinancialGoal) =>
         set((state) => {
           const stateData = extractProfileData(state)
@@ -279,7 +317,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 16,
+      version: 17,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -363,6 +401,12 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
           state.cashReserveMonths = state.cashReserveMonths ?? 6
           state.cashReserveReturn = state.cashReserveReturn ?? 0.02
           state.retirementMitigation = state.retirementMitigation ?? { type: 'none' }
+        }
+        if (version < 17) {
+          state.cpfOaWithdrawals = state.cpfOaWithdrawals ?? []
+          state.cpfisEnabled = state.cpfisEnabled ?? false
+          state.cpfisOaReturn = state.cpfisOaReturn ?? 0.04
+          state.cpfisSaReturn = state.cpfisSaReturn ?? 0.05
         }
         return state
       },

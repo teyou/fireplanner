@@ -20,6 +20,7 @@ import {
   validateAllocationField,
   validateSimulationField,
   retirementWithdrawalSchema,
+  cpfOaWithdrawalSchema,
   validateStoreData,
 } from './schemas'
 import {
@@ -301,6 +302,7 @@ describe('validateProfileConsistency', () => {
       healthcareConfig: defaultHealthcareConfig,
       retirementWithdrawals: [],
       financialGoals: [],
+      cpfOaWithdrawals: [],
     })
     expect(Object.keys(errors)).toHaveLength(0)
   })
@@ -317,6 +319,7 @@ describe('validateProfileConsistency', () => {
       healthcareConfig: defaultHealthcareConfig,
       retirementWithdrawals: [],
       financialGoals: [],
+      cpfOaWithdrawals: [],
     })
     expect(errors.retirementAge).toBeTruthy()
   })
@@ -333,6 +336,7 @@ describe('validateProfileConsistency', () => {
       healthcareConfig: defaultHealthcareConfig,
       retirementWithdrawals: [],
       financialGoals: [],
+      cpfOaWithdrawals: [],
     })
     expect(errors.lifeExpectancy).toBeTruthy()
   })
@@ -349,6 +353,7 @@ describe('validateProfileConsistency', () => {
       healthcareConfig: defaultHealthcareConfig,
       retirementWithdrawals: [],
       financialGoals: [],
+      cpfOaWithdrawals: [],
     })
     expect(Object.keys(errors).length).toBeGreaterThanOrEqual(2)
   })
@@ -365,6 +370,7 @@ describe('validateProfileConsistency', () => {
       healthcareConfig: defaultHealthcareConfig,
       retirementWithdrawals: [],
       financialGoals: [],
+      cpfOaWithdrawals: [],
     })
     expect(errors.retirementAge).toBeUndefined()
   })
@@ -823,5 +829,77 @@ describe('validateStoreData', () => {
     const data = { currentWeights: [1, 0, 0, 0, 0, 0, 0, 0.5], targetWeights: [1, 0, 0, 0, 0, 0, 0, 0] }
     const result = validateStoreData('fireplanner-allocation', data)
     expect(result.valid).toBe(false)
+  })
+})
+
+describe('cpfOaWithdrawalSchema', () => {
+  const validEntry = {
+    id: 'ow1',
+    label: 'OA withdrawal at 55',
+    amount: 50000,
+    age: 55,
+  }
+
+  it('accepts valid CPF OA withdrawal', () => {
+    expect(cpfOaWithdrawalSchema.safeParse(validEntry).success).toBe(true)
+  })
+
+  it('accepts age 55 (minimum)', () => {
+    expect(cpfOaWithdrawalSchema.safeParse({ ...validEntry, age: 55 }).success).toBe(true)
+  })
+
+  it('accepts age 120 (maximum)', () => {
+    expect(cpfOaWithdrawalSchema.safeParse({ ...validEntry, age: 120 }).success).toBe(true)
+  })
+
+  it('rejects age below 55', () => {
+    expect(cpfOaWithdrawalSchema.safeParse({ ...validEntry, age: 50 }).success).toBe(false)
+    expect(cpfOaWithdrawalSchema.safeParse({ ...validEntry, age: 54 }).success).toBe(false)
+  })
+
+  it('rejects age above 120', () => {
+    expect(cpfOaWithdrawalSchema.safeParse({ ...validEntry, age: 121 }).success).toBe(false)
+  })
+
+  it('rejects zero amount', () => {
+    expect(cpfOaWithdrawalSchema.safeParse({ ...validEntry, amount: 0 }).success).toBe(false)
+  })
+
+  it('rejects negative amount', () => {
+    expect(cpfOaWithdrawalSchema.safeParse({ ...validEntry, amount: -1000 }).success).toBe(false)
+  })
+
+  it('rejects empty label', () => {
+    expect(cpfOaWithdrawalSchema.safeParse({ ...validEntry, label: '' }).success).toBe(false)
+  })
+
+  it('rejects non-integer age', () => {
+    expect(cpfOaWithdrawalSchema.safeParse({ ...validEntry, age: 55.5 }).success).toBe(false)
+  })
+})
+
+describe('validateProfileField CPFIS returns', () => {
+  it('accepts valid cpfisOaReturn', () => {
+    expect(validateProfileField('cpfisOaReturn', 0.04)).toBeNull()
+    expect(validateProfileField('cpfisOaReturn', 0)).toBeNull()
+    expect(validateProfileField('cpfisOaReturn', 0.20)).toBeNull()
+  })
+
+  it('rejects cpfisOaReturn above 20%', () => {
+    expect(validateProfileField('cpfisOaReturn', 0.21)).toBeTruthy()
+  })
+
+  it('rejects negative cpfisOaReturn', () => {
+    expect(validateProfileField('cpfisOaReturn', -0.01)).toBeTruthy()
+  })
+
+  it('accepts valid cpfisSaReturn', () => {
+    expect(validateProfileField('cpfisSaReturn', 0.05)).toBeNull()
+    expect(validateProfileField('cpfisSaReturn', 0)).toBeNull()
+    expect(validateProfileField('cpfisSaReturn', 0.20)).toBeNull()
+  })
+
+  it('rejects cpfisSaReturn above 20%', () => {
+    expect(validateProfileField('cpfisSaReturn', 0.21)).toBeTruthy()
   })
 })

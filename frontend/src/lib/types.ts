@@ -79,6 +79,17 @@ export interface ParentSupport {
 }
 
 // ============================================================
+// CPF OA Withdrawals (post-55)
+// ============================================================
+
+export interface CpfOaWithdrawal {
+  id: string
+  label: string
+  amount: number     // lump sum to transfer from OA to liquid portfolio
+  age: number        // must be >= 55
+}
+
+// ============================================================
 // Retirement One-Time Withdrawals
 // ============================================================
 
@@ -844,10 +855,10 @@ export interface ProjectionRow {
   cpfInterest: number
   cpfOaHousingDeduction: number
   cpfOaShortfall: number
+  cpfOaWithdrawal: number
   cpfLifePayout: number
   cpfBequest: number
   cpfMilestone: 'brs' | 'frs' | 'ers' | 'cpfLifeStart' | 'raCreated' | null
-  cpfOaWithdrawal: number
   // Expanded: withdrawal detail
   withdrawalAmount: number
   maxPermittedWithdrawal: number

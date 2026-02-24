@@ -192,6 +192,9 @@ export function validateProfileField(
     cpfHousingMonthly: nonNegativeSchema,
     cpfMortgageYearsLeft: z.number().int().min(0).max(40),
     mortgageCpfMonthly: nonNegativeSchema,
+    // CPFIS return fields
+    cpfisOaReturn: z.number().min(0).max(0.20),
+    cpfisSaReturn: z.number().min(0).max(0.20),
     // Healthcare config sub-fields validated here for field-level checks
     'healthcareConfig.oopBaseAmount': z.number().min(0).max(50000),
     'healthcareConfig.mediSaveTopUpAnnual': z.number().min(0).max(37740),
@@ -257,6 +260,17 @@ export const sensibleWithdrawalsParamsSchema = z.object({ baseRate: swrSchema, e
 export const ninetyFivePercentParamsSchema = z.object({ swr: swrSchema })
 export const endowmentParamsSchema = z.object({ swr: swrSchema, smoothingWeight: z.number().min(0).max(1) })
 export const hebelerAutopilotParamsSchema = z.object({ expectedRealReturn: z.number().min(-0.05).max(0.15) })
+
+// ============================================================
+// CpfOaWithdrawal Schema
+// ============================================================
+
+export const cpfOaWithdrawalSchema = z.object({
+  id: z.string(),
+  label: z.string().min(1),
+  amount: z.number().positive(),
+  age: z.number().int().min(55).max(120),
+})
 
 // ============================================================
 // RetirementWithdrawal Schema
