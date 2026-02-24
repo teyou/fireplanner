@@ -1,6 +1,6 @@
-// CPF Contribution Rates — 2024
+// CPF Contribution & Retirement Sum Rates — 2026
 // Source: CPF Board (https://www.cpf.gov.sg/employer/employer-obligations/how-much-cpf-contributions-to-pay)
-// Downloaded: 2024-12-01
+// Downloaded: 2026-02-24
 // License: Public data
 
 import type { CpfRateEntry } from '@/lib/types'
@@ -86,10 +86,14 @@ export const RA_INTEREST_RATE = 0.04 // 4.0%, same as SA
 export const EXTRA_INTEREST_OA_CAP_55_PLUS = 30000 // raised from $20K post-55
 export const EXTRA_INTEREST_RA_ADDITIONAL = 0.01 // extra 1% on first $30K of RA (total 2% extra)
 
-// BRS/FRS/ERS (2024 values)
-export const BRS_2024 = 106500
-export const FRS_2024 = 213000
-export const ERS_2024 = 426000
+// BRS/FRS/ERS — base year values for cohort turning 55 in RETIREMENT_SUM_BASE_YEAR
+// Source: https://www.cpf.gov.sg/service/article/what-are-the-retirement-sums-basic-retirement-sum-brs-full-retirement-sum-frs-and-enhanced-retirement-sum-ers
+// Downloaded: 2026-02-24
+// Note: ERS changed from 3x to 4x BRS starting 2025
+export const RETIREMENT_SUM_BASE_YEAR = 2026
+export const BRS_BASE = 110200
+export const FRS_BASE = 220400
+export const ERS_BASE = 440800
 export const BRS_GROWTH_RATE = 0.035 // 3.5% p.a.
 
 // CPF LIFE payout rates (annual rate applied to retirement sum at 55)

@@ -11,9 +11,10 @@ import {
   EXTRA_INTEREST_OA_CAP,
   EXTRA_INTEREST_OA_CAP_55_PLUS,
   EXTRA_INTEREST_RA_ADDITIONAL,
-  BRS_2024,
-  FRS_2024,
-  ERS_2024,
+  RETIREMENT_SUM_BASE_YEAR,
+  BRS_BASE,
+  FRS_BASE,
+  ERS_BASE,
   BRS_GROWTH_RATE,
   CPF_LIFE_BASIC_RATE,
   CPF_LIFE_STANDARD_RATE,
@@ -229,22 +230,26 @@ export function projectCpfBalances(
 
 /**
  * Calculate projected BRS/FRS/ERS at age 55, given 3.5% annual growth.
+ *
+ * Accounts for calendar time elapsed since the base data year so projections
+ * stay accurate as years pass without a data update.
+ *
+ * @param currentAge - user's current age
+ * @param currentYear - the calendar year (injectable for testing; defaults to now)
  */
 export function calculateBrsFrsErs(
   currentAge: number,
-  referenceYear: number = 2024
+  currentYear: number = new Date().getFullYear()
 ): { brs: number; frs: number; ers: number } {
   const yearsUntil55 = Math.max(0, 55 - currentAge)
-  // BRS/FRS/ERS grow at 3.5% p.a. from the reference year values
-  const currentYearOffset = 0 // Assume reference year is current
-  const totalGrowthYears = yearsUntil55 + currentYearOffset
-  void referenceYear // used for documentation clarity
+  const yearsSinceBase = Math.max(0, currentYear - RETIREMENT_SUM_BASE_YEAR)
+  const totalGrowthYears = yearsUntil55 + yearsSinceBase
 
   const growthFactor = Math.pow(1 + BRS_GROWTH_RATE, totalGrowthYears)
   return {
-    brs: BRS_2024 * growthFactor,
-    frs: FRS_2024 * growthFactor,
-    ers: ERS_2024 * growthFactor,
+    brs: BRS_BASE * growthFactor,
+    frs: FRS_BASE * growthFactor,
+    ers: ERS_BASE * growthFactor,
   }
 }
 

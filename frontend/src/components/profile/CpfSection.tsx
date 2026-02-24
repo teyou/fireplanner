@@ -11,7 +11,7 @@ import { useIncomeProjection } from '@/hooks/useIncomeProjection'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { calculateCpfContribution, calculateBrsFrsErs, estimateCpfLifePayout, calculateCpfLifePayoutAtAge, getRetirementSumAmount } from '@/lib/calculations/cpf'
 import type { CpfLifePlan, CpfRetirementSum } from '@/lib/types'
-import { getCpfRatesForAge, BRS_2024, FRS_2024, ERS_2024, SA_INTEREST_RATE } from '@/lib/data/cpfRates'
+import { getCpfRatesForAge, RETIREMENT_SUM_BASE_YEAR, BRS_BASE, FRS_BASE, ERS_BASE, SA_INTEREST_RATE } from '@/lib/data/cpfRates'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { CpfProjectionTable } from '@/components/cpf/CpfProjectionTable'
 import { cn, formatCurrency, formatPercent } from '@/lib/utils'
@@ -48,9 +48,9 @@ export function CpfSection() {
     { key: 'escalating', label: 'Escalating', note: '~4.8%, +2%/yr' },
   ]
   const sums: { key: 'brs' | 'frs' | 'ers'; label: string; value: number; baseline: number }[] = [
-    { key: 'brs', label: 'BRS', value: brsFrsErs.brs, baseline: BRS_2024 },
-    { key: 'frs', label: 'FRS', value: brsFrsErs.frs, baseline: FRS_2024 },
-    { key: 'ers', label: 'ERS', value: brsFrsErs.ers, baseline: ERS_2024 },
+    { key: 'brs', label: 'BRS', value: brsFrsErs.brs, baseline: BRS_BASE },
+    { key: 'frs', label: 'FRS', value: brsFrsErs.frs, baseline: FRS_BASE },
+    { key: 'ers', label: 'ERS', value: brsFrsErs.ers, baseline: ERS_BASE },
   ]
 
   const totalCpf = cpfOA + cpfSA + cpfMA + cpfRA
@@ -324,7 +324,7 @@ export function CpfSection() {
         <div>
           <h4 className="text-sm font-medium flex items-center mb-2">
             Projected BRS/FRS/ERS at Age 55
-            <InfoTooltip text="Based on 2024 values growing at 3.5% p.a. These are the amounts needed in your Retirement Account at 55." />
+            <InfoTooltip text={`Based on ${RETIREMENT_SUM_BASE_YEAR} CPF Board published values growing at 3.5% p.a. These are the amounts needed in your Retirement Account at 55.`} />
           </h4>
           <div className="grid grid-cols-3 gap-2 text-sm">
             {sums.map((s) => (
@@ -332,7 +332,7 @@ export function CpfSection() {
                 <div className="text-xs text-muted-foreground">{s.label}</div>
                 <div className="font-semibold">{formatCurrency(s.value)}</div>
                 <div className="text-xs text-muted-foreground">
-                  2024: {formatCurrency(s.baseline)}
+                  {RETIREMENT_SUM_BASE_YEAR}: {formatCurrency(s.baseline)}
                 </div>
               </div>
             ))}
