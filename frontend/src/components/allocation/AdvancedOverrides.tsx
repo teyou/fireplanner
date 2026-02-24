@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import {
   Accordion,
   AccordionContent,
@@ -41,11 +41,12 @@ function OverrideCell({
   const [isFocused, setIsFocused] = useState(false)
 
   // Sync from store when override changes externally (e.g. reset button)
-  useEffect(() => {
-    if (!isFocused) {
-      setLocalValue(override !== null ? toDisplay(override) : '')
-    }
-  }, [override, isFocused])
+  // Uses "adjust state during render" pattern instead of useEffect
+  const [prevOverride, setPrevOverride] = useState(override)
+  if (!isFocused && override !== prevOverride) {
+    setPrevOverride(override)
+    setLocalValue(override !== null ? toDisplay(override) : '')
+  }
 
   const handleFocus = useCallback(() => {
     setIsFocused(true)

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { goToStart, selectPathway, clickContinue } from './helpers'
+import { goToStart, selectPathway } from './helpers'
 
 test.describe('US-11: CPF Section Toggles', () => {
   test('CPF section visibility toggles with cpfEnabled switch on start page', async ({ page }) => {

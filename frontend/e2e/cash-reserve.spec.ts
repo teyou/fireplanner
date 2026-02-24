@@ -20,7 +20,7 @@ async function goToNetWorth(page: import('@playwright/test').Page) {
 /**
  * Locate the cash reserve switch (the one next to "Cash Reserve / Emergency Fund" text).
  */
-function getCashReserveSwitch(page: import('@playwright/test').Page) {
+function _getCashReserveSwitch(page: import('@playwright/test').Page) {
   // The switch is a sibling of the text "Cash Reserve / Emergency Fund"
   // In the accessibility tree it's: text "Cash Reserve / Emergency Fund" > button "i" > switch
   return page.locator('switch').first()
@@ -39,9 +39,9 @@ test.describe('Cash Reserve / Emergency Fund', () => {
 
     // WHEN: User toggles cash reserve on
     // The switch is right after the "Cash Reserve / Emergency Fund" text
-    const cashSwitch = page.getByRole('switch').filter({ hasNot: page.locator('[data-state="checked"]') }).first()
+    const _cashSwitch = page.getByRole('switch').filter({ hasNot: page.locator('[data-state="checked"]') }).first()
     // Find the specific switch for cash reserve — it's in the Net Worth section
-    const netWorthSection = page.locator('#section-net-worth')
+    const _netWorthSection = page.locator('#section-net-worth')
     // The cash reserve switch is the first unchecked switch in the net worth section
     // Use a more targeted approach: find the switch that's a sibling of the cash reserve title
     const cashReserveHeading = page.getByText('Cash Reserve / Emergency Fund')
