@@ -211,6 +211,15 @@ export function ProjectionPage() {
     return DEFAULT_COLUMN_IDS.filter(id => columnVisibility[id] !== false).length
   }, [columnVisibility])
 
+  // Visible column count per group — accounts for individually hidden columns (e.g. SRS)
+  const groupVisibleCount = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const [group, cols] of Object.entries(GROUP_COLUMNS)) {
+      counts[group] = cols.filter((col) => columnVisibility[col] !== false).length
+    }
+    return counts
+  }, [columnVisibility])
+
   const columns = useMemo((): ColumnDef<ProjectionRow, number | string>[] => [
     // Default columns (always visible)
     columnHelper.accessor('age', {
@@ -405,7 +414,7 @@ export function ProjectionPage() {
               {COLUMN_GROUPS.filter(g => activeGroups.has(g.key)).map(g => (
                 <th
                   key={g.key}
-                  colSpan={GROUP_COLUMNS[g.key].length}
+                  colSpan={groupVisibleCount[g.key]}
                   className="px-2 py-1 text-center text-xs font-semibold text-primary/80 border-b border-l-2 border-l-border"
                 >
                   {g.label}
