@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { Link } from 'react-router-dom'
-import { ChevronDown, ChevronUp, CheckCircle2, Circle, ArrowRight, HelpCircle } from 'lucide-react'
+import { ChevronDown, ChevronUp, CheckCircle2, Circle, ArrowRight, HelpCircle, RefreshCw, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // Profile sections
@@ -68,6 +68,7 @@ import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import { usePropertyStore } from '@/stores/usePropertyStore'
 import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useUIStore } from '@/stores/useUIStore'
+import { useUpdateNudges } from '@/hooks/useUpdateNudges'
 
 // Hooks
 import { useSectionCompletion } from '@/hooks/useSectionCompletion'
@@ -348,6 +349,7 @@ function ExpensesContent() {
         <SectionModeLink sectionId="section-expenses" className="ml-0" />
       </div>
 
+      <UpdateNudges sectionId="section-expenses" />
       <SectionNudgeWrapper sectionId="section-expenses" />
 
       <Card>
@@ -956,6 +958,27 @@ function FireSettingsNudge() {
   )
 }
 
+function UpdateNudges({ sectionId }: { sectionId: string }) {
+  const nudges = useUpdateNudges(sectionId)
+  const dismissNudge = useUIStore((s) => s.dismissNudge)
+
+  if (nudges.length === 0) return null
+
+  return (
+    <>
+      {nudges.map((nudge) => (
+        <div key={nudge.id} className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/50 p-3 text-sm">
+          <RefreshCw className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <span className="flex-1 text-foreground">{nudge.message}</span>
+          <button onClick={() => dismissNudge(nudge.id)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Dismiss">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ))}
+    </>
+  )
+}
+
 function SectionNudgeWrapper({ sectionId }: { sectionId: SectionId }) {
   const config = ADVANCED_LABELS[sectionId]
   const modeSectionId = config?.modeSectionId ?? 'section-fire-settings'
@@ -1224,6 +1247,7 @@ export function InputsPage() {
                 )}
               </div>
               {!isCollapsed && sectionId !== 'section-expenses' && <SectionModeLink sectionId={sectionId} />}
+              {!isCollapsed && sectionId !== 'section-expenses' && <UpdateNudges sectionId={sectionId} />}
               {!isCollapsed && sectionId !== 'section-expenses' && <SectionNudgeWrapper sectionId={sectionId} />}
             </div>
             {!isCollapsed && (
