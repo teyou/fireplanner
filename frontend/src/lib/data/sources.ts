@@ -90,7 +90,7 @@ export const DATA_SOURCES: Record<string, DataSource[]> = {
   property: [
     {
       name: "Bala's Table (SLA)",
-      url: 'https://www.sla.gov.sg/properties/land-sales-and-lease-management/lease-management/',
+      url: 'https://isomer-user-content.by.gov.sg/50/ade6cd16-890b-4a1b-9d1d-d0e189daba03/balas-table.pdf',
       period: '2024',
       license: 'Public data',
     },
