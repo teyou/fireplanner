@@ -30,6 +30,7 @@ const PROFILE_DATA_KEYS = [
   'currentAge', 'retirementAge', 'lifeExpectancy', 'lifeStage', 'maritalStatus',
   'residencyStatus', 'annualIncome', 'annualExpenses', 'liquidNetWorth',
   'cpfOA', 'cpfSA', 'cpfMA', 'cpfRA', 'srsBalance', 'srsAnnualContribution', 'srsInvestmentReturn', 'srsDrawdownStartAge',
+  'cpfTopUpOA', 'cpfTopUpSA', 'cpfTopUpMA',
   'fireType', 'swr', 'fireNumberBasis', 'retirementSpendingAdjustment',
   'expectedReturn', 'usePortfolioReturn', 'inflation', 'expenseRatio', 'rebalanceFrequency',
   'retirementPhase', 'cpfLifeActualMonthlyPayout',
@@ -71,6 +72,9 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   cpfSA: 0,
   cpfMA: 0,
   cpfRA: 0,
+  cpfTopUpOA: 0,
+  cpfTopUpSA: 0,
+  cpfTopUpMA: 0,
   srsBalance: 0,
   srsAnnualContribution: 0,
   srsInvestmentReturn: 0.04,
@@ -317,7 +321,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 17,
+      version: 18,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -407,6 +411,11 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
           state.cpfisEnabled = state.cpfisEnabled ?? false
           state.cpfisOaReturn = state.cpfisOaReturn ?? 0.04
           state.cpfisSaReturn = state.cpfisSaReturn ?? 0.05
+        }
+        if (version < 18) {
+          state.cpfTopUpOA = state.cpfTopUpOA ?? 0
+          state.cpfTopUpSA = state.cpfTopUpSA ?? 0
+          state.cpfTopUpMA = state.cpfTopUpMA ?? 0
         }
         return state
       },

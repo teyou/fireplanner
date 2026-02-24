@@ -134,6 +134,12 @@ export interface ProfileState {
   cpfSA: number
   cpfMA: number
   cpfRA: number
+
+  // Voluntary CPF Top-Ups (annual cash top-ups from take-home pay, pre-retirement only)
+  cpfTopUpOA: number
+  cpfTopUpSA: number   // RSTU: up to $8,000/yr tax relief
+  cpfTopUpMA: number   // Capped at BHS minus current MA balance
+
   srsBalance: number
   srsAnnualContribution: number
   srsInvestmentReturn: number
