@@ -471,8 +471,8 @@ function ChangelogList() {
         <div key={date}>
           <h4 className="text-sm font-medium text-foreground mb-2">{date}</h4>
           <div className="space-y-2">
-            {entries.map((entry, i) => (
-              <div key={i} className="flex gap-2">
+            {entries.map((entry) => (
+              <div key={`${entry.date}-${entry.title}`} className="flex gap-2">
                 <CategoryIcon category={entry.category} />
                 <div>
                   <span className="text-sm font-medium text-foreground">{entry.title}</span>

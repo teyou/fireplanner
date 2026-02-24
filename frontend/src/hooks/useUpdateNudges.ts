@@ -38,7 +38,7 @@ export function useUpdateNudges(sectionId: string): UpdateNudge[] {
         (e) =>
           e.affectedSections?.includes(sectionId) &&
           e.category === 'data-update' &&
-          (!lastSeenDate || e.date > lastSeenDate)
+          (!lastSeenDate || e.date >= lastSeenDate)
       )
       for (const entry of unseenForSection) {
         const nudgeId = `changelog-${entry.date}-${sectionId}`

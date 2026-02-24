@@ -1055,6 +1055,7 @@ export function InputsPage() {
     })
     // Retry scroll until element is visible (handles lazy rendering)
     let attempts = 0
+    let timerId: ReturnType<typeof setTimeout> | undefined
     const tryScroll = () => {
       const el = document.getElementById(hashId)
       if (el) {
@@ -1062,10 +1063,11 @@ export function InputsPage() {
         return
       }
       if (attempts++ < 10) {
-        setTimeout(tryScroll, 100)
+        timerId = setTimeout(tryScroll, 100)
       }
     }
     requestAnimationFrame(tryScroll)
+    return () => { if (timerId) clearTimeout(timerId) }
   }, [location.hash])
 
   const toggleSection = (id: SectionId) => {

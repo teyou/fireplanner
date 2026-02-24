@@ -76,9 +76,17 @@ export const useUIStore = create<UIState & UIActions>()(
       toggleHelpPanel: () => set((state) => ({ helpPanelOpen: !state.helpPanelOpen })),
 
       markChangelogSeen: () =>
-        set({
-          lastSeenChangelogDate: CHANGELOG[0]?.date ?? null,
-          lastSeenDataVintage: DATA_VINTAGE,
+        set((state) => {
+          const latestDate = CHANGELOG[0]?.date ?? null
+          // Prune dismissed nudges for changelog entries now marked as seen
+          const prunedNudges = state.dismissedNudges.filter(
+            (id) => !id.startsWith('changelog-')
+          )
+          return {
+            lastSeenChangelogDate: latestDate,
+            lastSeenDataVintage: DATA_VINTAGE,
+            dismissedNudges: prunedNudges,
+          }
         }),
     }),
     {

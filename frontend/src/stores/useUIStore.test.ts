@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useUIStore } from './useUIStore'
+import { CHANGELOG, DATA_VINTAGE } from '@/lib/data/changelog'
 
 beforeEach(() => {
-  // Reset to defaults
+  // Reset to defaults (including v8 changelog fields)
   useUIStore.setState({
     sectionOrder: 'goal-first',
     statsPosition: 'bottom',
@@ -12,6 +13,10 @@ beforeEach(() => {
     mode: 'simple',
     sectionOverrides: {},
     dismissedNudges: [],
+    helpPanelOpen: true,
+    dollarBasis: 'nominal',
+    lastSeenChangelogDate: null,
+    lastSeenDataVintage: null,
   })
 })
 
@@ -126,6 +131,30 @@ describe('useUIStore', () => {
       expect(migrated.sectionOverrides).toEqual({ 'section-income': 'simple' })
       expect(migrated.dismissedNudges).toEqual(['some-nudge'])
     })
+
+    it('v7→v8: adds changelog tracking fields', () => {
+      const { migrate } = useUIStore.persist.getOptions()
+      const state: Record<string, unknown> = {
+        mode: 'simple',
+        dismissedNudges: [],
+      }
+      const migrated = migrate!(state, 7) as Record<string, unknown>
+      expect(migrated.lastSeenChangelogDate).toBeNull()
+      expect(migrated.lastSeenDataVintage).toBeNull()
+    })
+
+    it('v7→v8: preserves existing changelog fields if present', () => {
+      const { migrate } = useUIStore.persist.getOptions()
+      const state: Record<string, unknown> = {
+        mode: 'simple',
+        dismissedNudges: [],
+        lastSeenChangelogDate: '2026-01-01',
+        lastSeenDataVintage: '2026-01-01',
+      }
+      const migrated = migrate!(state, 7) as Record<string, unknown>
+      expect(migrated.lastSeenChangelogDate).toBe('2026-01-01')
+      expect(migrated.lastSeenDataVintage).toBe('2026-01-01')
+    })
   })
 
   describe('section overrides (v4)', () => {
@@ -177,6 +206,45 @@ describe('useUIStore', () => {
       useUIStore.getState().setSectionMode('section-income', 'advanced')
       useUIStore.getState().setField('cpfEnabled', false)
       expect(useUIStore.getState().sectionOverrides).toEqual({ 'section-income': 'advanced' })
+    })
+  })
+
+  describe('changelog tracking (v8)', () => {
+    it('defaults lastSeenChangelogDate and lastSeenDataVintage to null', () => {
+      const state = useUIStore.getState()
+      expect(state.lastSeenChangelogDate).toBeNull()
+      expect(state.lastSeenDataVintage).toBeNull()
+    })
+
+    it('markChangelogSeen sets lastSeenChangelogDate and lastSeenDataVintage', () => {
+      useUIStore.getState().markChangelogSeen()
+      const state = useUIStore.getState()
+      expect(state.lastSeenChangelogDate).toBe(CHANGELOG[0]?.date ?? null)
+      expect(state.lastSeenDataVintage).toBe(DATA_VINTAGE)
+    })
+
+    it('markChangelogSeen prunes changelog-prefixed dismissed nudges', () => {
+      useUIStore.setState({
+        dismissedNudges: [
+          'changelog-2026-02-24-section-cpf',
+          'changelog-2026-02-24-section-allocation',
+          'migration-fireplanner-profile-v5',
+        ],
+      })
+      useUIStore.getState().markChangelogSeen()
+      const nudges = useUIStore.getState().dismissedNudges
+      expect(nudges).not.toContain('changelog-2026-02-24-section-cpf')
+      expect(nudges).not.toContain('changelog-2026-02-24-section-allocation')
+      expect(nudges).toContain('migration-fireplanner-profile-v5')
+    })
+
+    it('markChangelogSeen preserves non-changelog dismissed nudges', () => {
+      useUIStore.setState({
+        dismissedNudges: ['migration-fireplanner-income-v3', 'custom-nudge'],
+      })
+      useUIStore.getState().markChangelogSeen()
+      const nudges = useUIStore.getState().dismissedNudges
+      expect(nudges).toEqual(['migration-fireplanner-income-v3', 'custom-nudge'])
     })
   })
 })

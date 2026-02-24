@@ -8,10 +8,12 @@ export function DataUpdateBanner() {
   const lastSeenDate = useUIStore((s) => s.lastSeenChangelogDate)
   const markChangelogSeen = useUIStore((s) => s.markChangelogSeen)
 
+  // First-time users have never seen the app — don't show update banner
+  if (lastSeenDataVintage === null && lastSeenDate === null) return null
   if (lastSeenDataVintage === DATA_VINTAGE) return null
 
   const unseenEntries = CHANGELOG.filter(
-    (e) => !lastSeenDate || e.date > lastSeenDate
+    (e) => !lastSeenDate || e.date >= lastSeenDate
   )
   if (unseenEntries.length === 0) return null
 
