@@ -2220,3 +2220,92 @@ describe('integration tests', () => {
     }
   })
 })
+
+// ============================================================
+// Voluntary CPF top-ups in projection
+// ============================================================
+
+describe('voluntary CPF top-ups in projection', () => {
+  const topUpBaseParams = {
+    currentAge: 30,
+    retirementAge: 55,
+    lifeExpectancy: 70,
+    salaryModel: 'simple' as const,
+    annualSalary: 100000,
+    salaryGrowthRate: 0,
+    realisticPhases: DEFAULT_CAREER_PHASES,
+    promotionJumps: [],
+    momEducation: 'degree' as const,
+    momAdjustment: 1.0,
+    employerCpfEnabled: true,
+    incomeStreams: [],
+    lifeEvents: [],
+    lifeEventsEnabled: false,
+    annualExpenses: 48000,
+    inflation: 0,
+    personalReliefs: 20000,
+    srsAnnualContribution: 0,
+    initialCpfOA: 50000,
+    initialCpfSA: 50000,
+    initialCpfMA: 30000,
+  }
+
+  it('SA top-up increases SA balance each pre-retirement year', () => {
+    const params = {
+      ...topUpBaseParams,
+      cpfTopUpSA: 8000,
+      initialCpfSA: 50000,
+    }
+    const withTopUp = generateIncomeProjection(params)
+    const paramsNoTopUp = { ...params, cpfTopUpSA: 0 }
+    const withoutTopUp = generateIncomeProjection(paramsNoTopUp)
+
+    // At year 1 (second row), SA should be higher with top-up
+    expect(withTopUp[1].cpfSA).toBeGreaterThan(withoutTopUp[1].cpfSA)
+    // Difference should be approximately $8,000 + interest on the extra amount
+    const diff = withTopUp[1].cpfSA - withoutTopUp[1].cpfSA
+    expect(diff).toBeGreaterThanOrEqual(8000)
+  })
+
+  it('top-ups reduce annual savings (liquid portfolio contribution)', () => {
+    const params = { ...topUpBaseParams, cpfTopUpSA: 8000, cpfTopUpOA: 2000 }
+    const withTopUp = generateIncomeProjection(params)
+    const paramsNoTopUp = { ...params, cpfTopUpSA: 0, cpfTopUpOA: 0 }
+    const withoutTopUp = generateIncomeProjection(paramsNoTopUp)
+
+    // Savings should be lower with top-ups
+    expect(withTopUp[0].annualSavings).toBeLessThan(withoutTopUp[0].annualSavings)
+  })
+
+  it('MA top-up is capped at BHS minus current MA', () => {
+    const params = {
+      ...topUpBaseParams,
+      cpfTopUpMA: 50000,
+      initialCpfMA: 60000,  // close to BHS ($79,000)
+    }
+    const rows = generateIncomeProjection(params)
+    // MA should not wildly exceed BHS
+    expect(rows[0].cpfMA).toBeLessThanOrEqual(85000)
+  })
+
+  it('no top-ups applied after retirement', () => {
+    const params = {
+      ...topUpBaseParams,
+      currentAge: 60,
+      retirementAge: 62,
+      lifeExpectancy: 70,
+      cpfTopUpSA: 8000,
+      initialCpfSA: 0,
+    }
+    const rows = generateIncomeProjection(params)
+    const retiredRow = rows.find(r => r.isRetired)
+    const preRetiredRow = rows.findLast(r => !r.isRetired)
+    if (retiredRow && preRetiredRow) {
+      // Post-55 with saClosed, SA top-up goes to RA or OA.
+      // The retired row should NOT have additional top-up applied.
+      // Compare RA delta: should be only interest, not interest + topUp
+      const raDiff = retiredRow.cpfRA - preRetiredRow.cpfRA
+      expect(Math.abs(raDiff)).toBeLessThan(8000)
+    }
+  })
+})

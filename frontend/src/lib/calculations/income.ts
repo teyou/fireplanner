@@ -15,6 +15,7 @@ import type {
 import { getMomSalary } from '@/lib/data/momSalary'
 import { calculateCpfContribution, calculateCpfExtraInterestWithAge, calculateCpfLifePayoutAtAge, getRetirementSumAmount, performAge55Transfer, allocatePostAge55Contribution, calculateCpfisInterest } from './cpf'
 import { calculateChargeableIncome, calculateProgressiveTax } from './tax'
+import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
 import {
   OA_INTEREST_RATE,
   SA_INTEREST_RATE,
@@ -264,6 +265,10 @@ export interface IncomeProjectionParams {
   cpfisEnabled?: boolean
   cpfisOaReturn?: number
   cpfisSaReturn?: number
+  // Voluntary CPF top-ups (pre-retirement only)
+  cpfTopUpOA?: number
+  cpfTopUpSA?: number
+  cpfTopUpMA?: number
 }
 
 /**
@@ -471,10 +476,44 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       }
     }
 
+    // Voluntary CPF top-ups (pre-retirement only)
+    let topUpOAActual = 0
+    let topUpSAActual = 0
+    let topUpMAActual = 0
+    let topUpRAActual = 0
+    if (!isRetired) {
+      const topUpOA = params.cpfTopUpOA ?? 0
+      const topUpSA = params.cpfTopUpSA ?? 0
+      const topUpMA = params.cpfTopUpMA ?? 0
+
+      topUpOAActual = topUpOA
+      cpfOA += topUpOAActual
+
+      if (saClosed) {
+        // Post-55: SA top-up goes to RA (up to retirement sum target), overflow to OA
+        const raRoom = Math.max(0, retirementSumTarget - cpfRA)
+        const toRA = Math.min(topUpSA, raRoom)
+        topUpRAActual += toRA
+        cpfRA += toRA
+        const overflow = topUpSA - toRA
+        topUpOAActual += overflow
+        cpfOA += overflow
+      } else {
+        topUpSAActual = topUpSA
+        cpfSA += topUpSAActual
+      }
+
+      // MA top-up capped at BHS minus current MA
+      const maRoom = Math.max(0, MEDISAVE_BHS - cpfMA)
+      topUpMAActual = Math.min(topUpMA, maRoom)
+      cpfMA += topUpMAActual
+    }
+
     // Mid-year effective balances for interest calculation.
     // CPF contributions arrive monthly; on average they earn ~half a year of interest.
     // Housing deductions also occur monthly. Using the mid-year approximation:
     //   midBalance = endBalance - (contributions - deductions) / 2
+    // Voluntary top-ups are assumed to be a lump sum at start of year, so they earn full year interest.
     const midOA = cpfOA - (oaContrib - cpfOaHousingDeduction) / 2
     const midSA = cpfSA - saContrib / 2
     const midMA = cpfMA - maContrib / 2
@@ -541,7 +580,8 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       cpfEmployee,
       srsContribution,
       params.personalReliefs,
-      params.residencyStatus
+      params.residencyStatus,
+      (!isRetired ? (params.cpfTopUpSA ?? 0) : 0)
     )
     const taxResult = calculateProgressiveTax(chargeableIncome)
     const sgTax = taxResult.taxPayable
@@ -552,7 +592,10 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     // Savings
     const inflationAdjustedExpenses = params.annualExpenses * Math.pow(1 + params.inflation, year)
     const savingsPaused = isSavingsPaused(age, params.lifeEvents, params.lifeEventsEnabled)
-    const annualSavings = savingsPaused ? 0 : Math.max(0, totalNet - inflationAdjustedExpenses)
+    const voluntaryTopUps = !isRetired
+      ? (params.cpfTopUpOA ?? 0) + (params.cpfTopUpSA ?? 0) + (params.cpfTopUpMA ?? 0)
+      : 0
+    const annualSavings = savingsPaused ? 0 : Math.max(0, totalNet - inflationAdjustedExpenses - voluntaryTopUps)
     cumulativeSavings += annualSavings
 
     const activeLifeEvents = getActiveLifeEventNames(age, params.lifeEvents, params.lifeEventsEnabled)
