@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/stores/useUIStore'
 import { cn } from '@/lib/utils'
 import { tryUndo } from '@/lib/undo'
+import { DataUpdateBanner } from '@/components/shared/DataUpdateBanner'
 
 // Pages that show the stats strip (inputs and analysis pages, not start/reference)
 const STATS_ROUTES = ['/inputs', '/projection', '/withdrawal', '/stress-test', '/dashboard']
@@ -79,6 +80,7 @@ export function AppLayout() {
             )}
           >
             <div className="@container container py-6 max-w-6xl">
+              <DataUpdateBanner />
               <Outlet />
             </div>
             <footer className="container max-w-6xl pb-6 px-6">

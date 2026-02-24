@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { CHANGELOG, DATA_VINTAGE } from '@/lib/data/changelog'
 
 type SectionOrder = 'goal-first' | 'story-first' | 'already-fire'
 type StatsPosition = 'bottom' | 'top'
@@ -17,6 +18,8 @@ interface UIState {
   dismissedNudges: string[]
   helpPanelOpen: boolean
   dollarBasis: DollarBasis
+  lastSeenChangelogDate: string | null
+  lastSeenDataVintage: string | null
 }
 
 interface UIActions {
@@ -25,6 +28,7 @@ interface UIActions {
   clearSectionOverrides: () => void
   dismissNudge: (nudgeId: string) => void
   toggleHelpPanel: () => void
+  markChangelogSeen: () => void
 }
 
 const DEFAULT_UI: UIState = {
@@ -38,6 +42,8 @@ const DEFAULT_UI: UIState = {
   dismissedNudges: [],
   helpPanelOpen: true,
   dollarBasis: 'nominal',
+  lastSeenChangelogDate: null,
+  lastSeenDataVintage: null,
 }
 
 export const useUIStore = create<UIState & UIActions>()(
@@ -68,10 +74,16 @@ export const useUIStore = create<UIState & UIActions>()(
         })),
 
       toggleHelpPanel: () => set((state) => ({ helpPanelOpen: !state.helpPanelOpen })),
+
+      markChangelogSeen: () =>
+        set({
+          lastSeenChangelogDate: CHANGELOG[0]?.date ?? null,
+          lastSeenDataVintage: DATA_VINTAGE,
+        }),
     }),
     {
       name: 'fireplanner-ui',
-      version: 7,
+      version: 8,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -100,6 +112,10 @@ export const useUIStore = create<UIState & UIActions>()(
         }
         if (version < 7) {
           state.dollarBasis = 'nominal'
+        }
+        if (version < 8) {
+          state.lastSeenChangelogDate = state.lastSeenChangelogDate ?? null
+          state.lastSeenDataVintage = state.lastSeenDataVintage ?? null
         }
         return state
       },
