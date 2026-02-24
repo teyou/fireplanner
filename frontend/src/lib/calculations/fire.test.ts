@@ -13,7 +13,7 @@ import {
   calculateLiquidBridgeGap,
   calculateParentSupportAtAge,
 } from './fire'
-import type { ParentSupport, LockedAsset } from '@/lib/types'
+import type { ParentSupport } from '@/lib/types'
 
 describe('calculateFireNumber', () => {
   it('computes basic FIRE number: expenses / SWR', () => {

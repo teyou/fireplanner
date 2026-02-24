@@ -131,6 +131,7 @@ export function useFireCalculations(): FireCalculationsResult {
       parentSupportEnabled: profile.parentSupportEnabled,
       healthcareConfig: profile.healthcareConfig?.enabled ? profile.healthcareConfig : null,
       cashReserveOffset,
+      lockedAssets: profile.lockedAssets,
     })
 
     return { metrics, hasErrors: false, errors: {} }
@@ -191,5 +192,6 @@ export function useFireCalculations(): FireCalculationsResult {
     profile.cashReserveFixedAmount,
     profile.cashReserveMonths,
     profile.cashReserveReturn,
+    profile.lockedAssets,
   ])
 }
