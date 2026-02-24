@@ -207,6 +207,11 @@ export function validateProfileField(
     cashReserveFixedAmount: z.number().min(0).max(10_000_000),
     cashReserveMonths: z.number().int().min(1).max(60),
     cashReserveReturn: z.number().min(0).max(0.10),
+    // Locked asset sub-fields
+    'lockedAsset.name': z.string().min(1).max(50),
+    'lockedAsset.amount': z.number().gt(0).max(100_000_000),
+    'lockedAsset.unlockAge': z.number().int().min(18).max(120),
+    'lockedAsset.growthRate': z.number().min(0).max(0.20),
   }
 
   const schema = fieldSchemas[field]

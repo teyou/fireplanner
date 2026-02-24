@@ -390,6 +390,44 @@ describe('financial goals validation', () => {
   })
 })
 
+describe('locked assets cross-store rules', () => {
+  it('catches locked asset with unlockAge <= currentAge', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 35,
+      retirementAge: 65,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [],
+      cpfOaWithdrawals: [],
+      lockedAssets: [{ id: '1', name: 'Test', amount: 10000, unlockAge: 30, growthRate: 0 }],
+    })
+    expect(errors['lockedAssets.0.unlockAge']).toBeTruthy()
+  })
+
+  it('accepts locked asset with unlockAge > currentAge', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 35,
+      retirementAge: 65,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [],
+      cpfOaWithdrawals: [],
+      lockedAssets: [{ id: '1', name: 'Test', amount: 10000, unlockAge: 55, growthRate: 0 }],
+    })
+    expect(errors['lockedAssets.0.unlockAge']).toBeUndefined()
+  })
+})
+
 describe('CPF OA withdrawal validation', () => {
   it('catches withdrawal age < 55', () => {
     const errors = validateProfileConsistency({

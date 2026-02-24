@@ -904,6 +904,21 @@ describe('validateProfileField CPFIS returns', () => {
   })
 })
 
+describe('lockedAsset validation', () => {
+  it('accepts valid locked asset fields', () => {
+    expect(validateProfileField('lockedAsset.amount', 50000)).toBeNull()
+    expect(validateProfileField('lockedAsset.unlockAge', 55)).toBeNull()
+    expect(validateProfileField('lockedAsset.growthRate', 0.05)).toBeNull()
+  })
+
+  it('rejects invalid locked asset fields', () => {
+    expect(validateProfileField('lockedAsset.amount', -100)).toBeTruthy()
+    expect(validateProfileField('lockedAsset.amount', 0)).toBeTruthy()
+    expect(validateProfileField('lockedAsset.unlockAge', 15)).toBeTruthy()
+    expect(validateProfileField('lockedAsset.growthRate', 0.25)).toBeTruthy()
+  })
+})
+
 describe('cpfTopUp validation', () => {
   it('accepts valid SA top-up within RSTU cap', () => {
     expect(validateProfileField('cpfTopUpSA', 8000)).toBeNull()
