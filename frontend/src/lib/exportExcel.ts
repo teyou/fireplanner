@@ -130,7 +130,7 @@ export async function exportToExcel(): Promise<void> {
       ['Monthly Payment', formatCurrency(property.existingMonthlyPayment)],
       ['CPF Monthly', formatCurrency(property.mortgageCpfMonthly)],
       ['Mortgage Rate', formatPercent(property.existingMortgageRate)],
-      ['Remaining Years', property.existingMortgageRemainingYears],
+      ['Remaining Tenure', `${Math.floor(property.existingMortgageRemainingYears)}y ${Math.round((property.existingMortgageRemainingYears % 1) * 12)}m`],
       ['Equity', formatCurrency(Math.max(0, property.existingPropertyValue - property.existingMortgageBalance))],
     ]
     if (property.propertyType === 'hdb') {

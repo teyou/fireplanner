@@ -721,14 +721,33 @@ function PropertyContent() {
                     />
                     <div className="space-y-1">
                       <Label className="text-sm flex items-center gap-1">
-                        Remaining Years
-                        <InfoTooltip text="Number of years left on your existing mortgage" />
+                        Remaining Tenure
+                        <InfoTooltip text="Time left on your existing mortgage" />
                       </Label>
-                      <NumberInput
-                        value={existingMortgageRemainingYears}
-                        onChange={(v) => setField('existingMortgageRemainingYears', v)}
-                        integer
-                      />
+                      <div className="flex gap-2 items-center">
+                        <div className="flex-1">
+                          <NumberInput
+                            value={Math.floor(existingMortgageRemainingYears)}
+                            onChange={(yrs) => {
+                              const months = Math.round((existingMortgageRemainingYears % 1) * 12)
+                              setField('existingMortgageRemainingYears', yrs + months / 12)
+                            }}
+                            integer
+                          />
+                        </div>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">yr</span>
+                        <div className="flex-1">
+                          <NumberInput
+                            value={Math.round((existingMortgageRemainingYears % 1) * 12)}
+                            onChange={(mos) => {
+                              const yrs = Math.floor(existingMortgageRemainingYears)
+                              setField('existingMortgageRemainingYears', yrs + Math.min(mos, 11) / 12)
+                            }}
+                            integer
+                          />
+                        </div>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">mo</span>
+                      </div>
                       {validationErrors.existingMortgageRemainingYears && (
                         <p className="text-xs text-destructive">{validationErrors.existingMortgageRemainingYears}</p>
                       )}
