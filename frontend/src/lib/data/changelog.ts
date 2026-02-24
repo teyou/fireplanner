@@ -14,7 +14,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     category: 'feature',
     title: 'Dynamic property value in projection',
     description:
-      'Property value now appreciates year-over-year at your configured rate. Leasehold properties optionally depreciate via Bala\'s Table curve as the remaining lease shortens (toggle on/off). Mortgage balance amortizes realistically. New Property column group in the projection table shows value, mortgage balance, equity, and total NW including property.',
+      'Property value now appreciates year-over-year at your configured rate. Leasehold properties optionally depreciate via Bala\'s Table curve as the remaining lease shortens (toggle on/off). Mortgage balance amortizes realistically. Mortgage cash payment appears as a default projection column, and a new Property column group shows property value, outstanding mortgage, equity, and total NW including property.',
     affectedSections: ['section-property'],
   },
   {
