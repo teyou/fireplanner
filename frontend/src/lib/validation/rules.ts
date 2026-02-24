@@ -1,4 +1,5 @@
 import type { ValidationErrors, ProfileState, IncomeState, AllocationState, WithdrawalState } from '@/lib/types'
+import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
 
 /**
  * Cross-field validation rules within the profile store.
@@ -53,8 +54,8 @@ export function validateProfileConsistency(
     if (profile.healthcareConfig.oopBaseAmount < 0 || profile.healthcareConfig.oopBaseAmount > 50000) {
       errors['healthcareConfig.oopBaseAmount'] = 'OOP base amount must be between $0 and $50,000'
     }
-    if (profile.healthcareConfig.mediSaveTopUpAnnual < 0 || profile.healthcareConfig.mediSaveTopUpAnnual > 37740) {
-      errors['healthcareConfig.mediSaveTopUpAnnual'] = 'MediSave top-up must be between $0 and $37,740'
+    if (profile.healthcareConfig.mediSaveTopUpAnnual < 0 || profile.healthcareConfig.mediSaveTopUpAnnual > MEDISAVE_BHS) {
+      errors['healthcareConfig.mediSaveTopUpAnnual'] = `MediSave top-up must be between $0 and $${MEDISAVE_BHS.toLocaleString()}`
     }
   }
 

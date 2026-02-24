@@ -21,6 +21,13 @@
 //   License: Public data
 
 /**
+ * MediSave Basic Healthcare Sum (BHS) — annual contribution limit.
+ * Source: CPF Board (https://www.cpf.gov.sg/member/healthcare-financing/medisave)
+ * As of: 2025
+ */
+export const MEDISAVE_BHS = 37740
+
+/**
  * MediShield Life annual premiums by age bracket.
  * These are the base premiums before any subsidies.
  * Premiums are fully payable from MediSave.
