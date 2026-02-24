@@ -306,7 +306,7 @@ function ParamInput({ label, value, onChange, prefix, suffix, step, tooltip }: {
         <Input
           type="number"
           className="h-8 text-sm"
-          value={value}
+          value={parseFloat(value.toPrecision(12))}
           step={step}
           onChange={(e) => onChange(Number(e.target.value))}
         />
@@ -330,7 +330,7 @@ function HeatmapField({ label, value, onChange, suffix, step }: {
         <Input
           type="number"
           className="h-7 text-xs"
-          value={value}
+          value={parseFloat(value.toPrecision(12))}
           step={step}
           onChange={(e) => onChange(Number(e.target.value))}
         />
