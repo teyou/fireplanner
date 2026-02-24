@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { ChevronDown, ChevronUp, CheckCircle2, Circle, ArrowRight, HelpCircle, RefreshCw, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -1033,12 +1033,40 @@ export function InputsPage() {
   const resetWithdrawal = () => confirmReset('Withdrawal', resetWithdrawalRaw, () => ({ ...useWithdrawalStore.getState() }), (s) => useWithdrawalStore.setState(s))
   const resetProperty = () => confirmReset('Property', resetPropertyRaw, () => ({ ...usePropertyStore.getState() }), (s) => usePropertyStore.setState(s))
 
+  const location = useLocation()
+
   const [collapsedSections, setCollapsedSections] = useState<Set<SectionId>>(() => {
     if (sectionOrder === 'already-fire') {
       return new Set(['section-fire-settings'])
     }
     return new Set()
   })
+
+  // Scroll to hash target (e.g., /inputs#section-cpf) and expand if collapsed
+  useEffect(() => {
+    const hashId = location.hash.slice(1)
+    if (!hashId) return
+    // Expand the section if collapsed
+    setCollapsedSections((prev) => {
+      if (!prev.has(hashId as SectionId)) return prev
+      const next = new Set(prev)
+      next.delete(hashId as SectionId)
+      return next
+    })
+    // Retry scroll until element is visible (handles lazy rendering)
+    let attempts = 0
+    const tryScroll = () => {
+      const el = document.getElementById(hashId)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' })
+        return
+      }
+      if (attempts++ < 10) {
+        setTimeout(tryScroll, 100)
+      }
+    }
+    requestAnimationFrame(tryScroll)
+  }, [location.hash])
 
   const toggleSection = (id: SectionId) => {
     setCollapsedSections((prev) => {
