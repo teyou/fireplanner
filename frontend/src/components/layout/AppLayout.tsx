@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/stores/useUIStore'
 import { cn } from '@/lib/utils'
 import { tryUndo } from '@/lib/undo'
+import { BetaBanner } from '@/components/shared/BetaBanner'
 import { DataUpdateBanner } from '@/components/shared/DataUpdateBanner'
 
 // Pages that show the stats strip (inputs and analysis pages, not start/reference)
@@ -80,6 +81,7 @@ export function AppLayout() {
             )}
           >
             <div className="@container container py-6 max-w-6xl">
+              <BetaBanner />
               <DataUpdateBanner />
               <Outlet />
             </div>
