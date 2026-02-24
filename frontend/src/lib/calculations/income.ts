@@ -430,8 +430,13 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     const totalGross = salary + rentalIncome + investmentIncome + businessIncome + governmentIncome + srsWithdrawal
 
     // CPF contributions (only if employed and not paused)
+    // Track per-account contributions for mid-year interest approximation
     let cpfEmployee = 0
     let cpfEmployer = 0
+    let oaContrib = 0
+    let saContrib = 0
+    let maContrib = 0
+    let raContrib = 0
     const cpfPaused = isCpfPaused(age, params.lifeEvents, params.lifeEventsEnabled)
 
     if (!isRetired && params.employerCpfEnabled && salary > 0 && !cpfPaused) {
@@ -442,43 +447,60 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       if (saClosed) {
         if (age >= cpfLifeStartAge) {
           // Post-LIFE: no more RA accumulation, SA portion → OA
-          cpfOA += cpf.oaAllocation + cpf.saAllocation
-          cpfMA += cpf.maAllocation
+          oaContrib = cpf.oaAllocation + cpf.saAllocation
+          maContrib = cpf.maAllocation
+          cpfOA += oaContrib
+          cpfMA += maContrib
         } else {
           // Post-55, pre-LIFE: SA allocation goes to RA (if room) or overflows to OA
           const alloc = allocatePostAge55Contribution(cpf, cpfRA, retirementSumTarget)
-          cpfOA += alloc.oaAllocation
-          cpfRA += alloc.raAllocation
-          cpfMA += alloc.maAllocation
+          oaContrib = alloc.oaAllocation
+          raContrib = alloc.raAllocation
+          maContrib = alloc.maAllocation
+          cpfOA += oaContrib
+          cpfRA += raContrib
+          cpfMA += maContrib
         }
       } else {
-        cpfOA += cpf.oaAllocation
-        cpfSA += cpf.saAllocation
-        cpfMA += cpf.maAllocation
+        oaContrib = cpf.oaAllocation
+        saContrib = cpf.saAllocation
+        maContrib = cpf.maAllocation
+        cpfOA += oaContrib
+        cpfSA += saContrib
+        cpfMA += maContrib
       }
     }
 
-    // CPF interest (CPFIS applies only pre-55 when SA is open)
+    // Mid-year effective balances for interest calculation.
+    // CPF contributions arrive monthly; on average they earn ~half a year of interest.
+    // Housing deductions also occur monthly. Using the mid-year approximation:
+    //   midBalance = endBalance - (contributions - deductions) / 2
+    const midOA = cpfOA - (oaContrib - cpfOaHousingDeduction) / 2
+    const midSA = cpfSA - saContrib / 2
+    const midMA = cpfMA - maContrib / 2
+    const midRA = cpfRA - raContrib / 2
+
+    // CPF interest on mid-year balances (CPFIS applies only pre-55 when SA is open)
     const cpfisActive = (params.cpfisEnabled ?? false) && !saClosed
     let oaInterest: number
     let saInterest: number
     if (cpfisActive) {
       const cpfisResult = calculateCpfisInterest(
-        cpfOA, cpfSA,
+        midOA, midSA,
         params.cpfisOaReturn ?? 0.04,
         params.cpfisSaReturn ?? 0.05
       )
       oaInterest = cpfisResult.oaInterest
       saInterest = cpfisResult.saInterest
     } else {
-      oaInterest = cpfOA * OA_INTEREST_RATE
-      saInterest = saClosed ? 0 : cpfSA * SA_INTEREST_RATE
+      oaInterest = midOA * OA_INTEREST_RATE
+      saInterest = saClosed ? 0 : midSA * SA_INTEREST_RATE
     }
-    const maInterest = cpfMA * MA_INTEREST_RATE
-    const raInterest = cpfRA * RA_INTEREST_RATE
+    const maInterest = midMA * MA_INTEREST_RATE
+    const raInterest = midRA * RA_INTEREST_RATE
     // Extra interest: when CPFIS active, only retained portions qualify
     // (simplification: full balances qualify since CPFIS funds are still "in CPF")
-    const extraInterest = calculateCpfExtraInterestWithAge(cpfOA, cpfSA, cpfMA, cpfRA, age)
+    const extraInterest = calculateCpfExtraInterestWithAge(midOA, midSA, midMA, midRA, age)
 
     cpfOA += oaInterest
     if (saClosed) {

@@ -901,6 +901,116 @@ describe('integration tests', () => {
     expect(row56.cpfOaHousingDeduction).toBe(0)
   })
 
+  it('CPF interest uses mid-year approximation (contributions earn half-year interest)', () => {
+    // Setup: zero initial balances, known salary, zero inflation
+    // Age 30: oaRate=0.23, saRate=0.06, maRate=0.08 on $72K salary
+    // oaContrib = 72000 * 0.23 = 16560
+    // saContrib = 72000 * 0.06 = 4320
+    // maContrib = 72000 * 0.08 = 5760
+    //
+    // Mid-year effective balances (starting from 0):
+    //   midOA = 16560 - 16560/2 = 8280
+    //   midSA = 4320  - 4320/2  = 2160
+    //   midMA = 5760  - 5760/2  = 2880
+    //
+    // Interest at mid-year balances:
+    //   oaInterest = 8280 * 0.025 = 207.00
+    //   saInterest = 2160 * 0.04  = 86.40
+    //   maInterest = 2880 * 0.04  = 115.20
+    //   extraInterest on first $60K combined (max $20K from OA):
+    //     OA qualifying = min(8280, 20000) = 8280
+    //     remaining cap = 60000 - 8280 = 51720
+    //     SA+MA = 2160 + 2880 = 5040 < 51720
+    //     extra = (8280 + 5040) * 0.01 = 133.20
+    //     extra goes to SA (pre-55)
+    //
+    // Final balances:
+    //   cpfOA = 16560 + 207.00 = 16767.00
+    //   cpfSA = 4320  + 86.40 + 133.20 = 4539.60
+    //   cpfMA = 5760  + 115.20 = 5875.20
+    const rows = generateIncomeProjection({
+      currentAge: 30,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 30000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 0,
+      initialCpfSA: 0,
+      initialCpfMA: 0,
+    })
+
+    const row30 = rows.find((r) => r.age === 30)!
+
+    // With mid-year approximation, first-year interest is exactly half
+    // of what full-year-on-contributions would yield
+    expect(row30.cpfOA).toBeCloseTo(16767.00, 2)
+    expect(row30.cpfSA).toBeCloseTo(4539.60, 2)
+    expect(row30.cpfMA).toBeCloseTo(5875.20, 2)
+
+    // Verify: WITHOUT mid-year approx, OA would have been 16560 + 16560*0.025 = 16974
+    // The difference is exactly half the contribution interest: (16560*0.025)/2 = 207
+    expect(row30.cpfOA).toBeLessThan(16974)
+    expect(16974 - row30.cpfOA).toBeCloseTo(207, 2)
+  })
+
+  it('mid-year approximation accounts for housing deductions correctly', () => {
+    // With housing deduction, the deduction reduces mid-year balance less
+    // than full-year would, since deductions are also spread monthly.
+    // Setup: $50K initial OA, $1000/mo housing, $72K salary at age 30
+    //   oaContrib = 72000 * 0.23 = 16560
+    //   housingDeduction = 1000 * 12 = 12000
+    //   OA after deduction: 50000 - 12000 = 38000
+    //   OA after contrib: 38000 + 16560 = 54560
+    //   midOA = 54560 - (16560 - 12000)/2 = 54560 - 2280 = 52280
+    //   oaInterest = 52280 * 0.025 = 1307.00
+    //   final OA = 54560 + 1307 = 55867 (plus extra interest allocated to SA)
+    const rows = generateIncomeProjection({
+      currentAge: 30,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 30000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 50000,
+      initialCpfSA: 0,
+      initialCpfMA: 0,
+      cpfHousingMode: 'simple',
+      cpfHousingMonthly: 1000,
+      cpfMortgageYearsLeft: 25,
+    })
+
+    const row30 = rows.find((r) => r.age === 30)!
+
+    // OA interest uses mid-year balance of 52280
+    // oaInterest = 52280 * 0.025 = 1307.00
+    expect(row30.cpfOA).toBeCloseTo(54560 + 1307, 0)
+  })
+
   it('manual CPF LIFE stream takes precedence over automated', () => {
     const rows = generateIncomeProjection({
       currentAge: 60,

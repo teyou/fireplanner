@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-24',
+    category: 'fix',
+    title: 'CPF interest uses mid-year approximation',
+    description:
+      'CPF interest is now computed on mid-year effective balances. Contributions and housing withdrawals are treated as spread evenly through the year, matching real-world monthly CPF mechanics more closely.',
+    affectedSections: ['section-cpf'],
+  },
+  {
+    date: '2026-02-24',
     category: 'feature',
     title: 'Dynamic property value in projection',
     description:
