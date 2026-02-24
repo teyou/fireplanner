@@ -1,5 +1,6 @@
 import type { TaxResult } from '@/lib/types'
 import { TAX_BRACKETS, SRS_ANNUAL_CAP, SRS_ANNUAL_CAP_FOREIGNER } from '@/lib/data/taxBrackets'
+import { RSTU_TAX_RELIEF_CAP } from '@/lib/data/cpfRates'
 
 /**
  * Calculate Singapore progressive income tax for a given chargeable income.
@@ -43,17 +44,20 @@ export function calculateProgressiveTax(chargeableIncome: number): TaxResult {
 
 /**
  * Calculate chargeable income after deductions.
- * Chargeable Income = Total Income - CPF Employee - SRS Contribution - Personal Reliefs
+ * Chargeable Income = Total Income - CPF Employee - SRS Contribution - RSTU Relief - Personal Reliefs
+ * RSTU (Retirement Sum Top-Up) cash top-up to SA/RA grants tax relief up to $8,000/yr.
  */
 export function calculateChargeableIncome(
   totalIncome: number,
   cpfEmployee: number,
   srsContribution: number,
   personalReliefs: number,
-  residencyStatus: 'citizen' | 'pr' | 'foreigner' = 'citizen'
+  residencyStatus: 'citizen' | 'pr' | 'foreigner' = 'citizen',
+  cpfCashTopUpSA: number = 0
 ): number {
   const srsDeduction = calculateSrsDeduction(srsContribution, residencyStatus)
-  return Math.max(0, totalIncome - cpfEmployee - srsDeduction - personalReliefs)
+  const rstuDeduction = Math.min(cpfCashTopUpSA, RSTU_TAX_RELIEF_CAP)
+  return Math.max(0, totalIncome - cpfEmployee - srsDeduction - rstuDeduction - personalReliefs)
 }
 
 /**
