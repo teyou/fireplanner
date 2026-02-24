@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { FireMetrics, CpfHousingMode } from '@/lib/types'
 import { calculateAllFireMetrics } from '@/lib/calculations/fire'
+import { computeCashReserveOffset } from '@/lib/calculations/cashReserve'
 import { calculatePortfolioReturn } from '@/lib/calculations/portfolio'
 import { generateIncomeProjection } from '@/lib/calculations/income'
 import { useProfileStore } from '@/stores/useProfileStore'
@@ -97,6 +98,15 @@ export function useFireCalculations(): FireCalculationsResult {
       ? Math.max(0, property.existingPropertyValue - property.existingMortgageBalance) * ownershipPct
       : 0
 
+    const cashReserveOffset = computeCashReserveOffset(
+      profile.liquidNetWorth,
+      profile.cashReserveEnabled,
+      profile.cashReserveMode,
+      profile.cashReserveFixedAmount,
+      profile.cashReserveMonths,
+      profile.annualExpenses,
+    )
+
     const metrics = calculateAllFireMetrics({
       currentAge: profile.currentAge,
       retirementAge: profile.retirementAge,
@@ -117,6 +127,7 @@ export function useFireCalculations(): FireCalculationsResult {
       parentSupport: profile.parentSupport,
       parentSupportEnabled: profile.parentSupportEnabled,
       healthcareConfig: profile.healthcareConfig?.enabled ? profile.healthcareConfig : null,
+      cashReserveOffset,
     })
 
     return { metrics, hasErrors: false, errors: {} }
@@ -169,5 +180,10 @@ export function useFireCalculations(): FireCalculationsResult {
     profile.parentSupportEnabled,
     profile.parentSupport,
     profile.healthcareConfig,
+    profile.cashReserveEnabled,
+    profile.cashReserveMode,
+    profile.cashReserveFixedAmount,
+    profile.cashReserveMonths,
+    profile.cashReserveReturn,
   ])
 }

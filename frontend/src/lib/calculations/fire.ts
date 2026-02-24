@@ -251,6 +251,7 @@ export function calculateAllFireMetrics(params: {
   parentSupport?: ParentSupport[]
   parentSupportEnabled?: boolean
   healthcareConfig?: HealthcareConfig | null
+  cashReserveOffset?: number
 }): FireMetrics {
   const {
     currentAge,
@@ -274,7 +275,9 @@ export function calculateAllFireMetrics(params: {
     healthcareConfig = null,
   } = params
 
-  const totalNetWorth = liquidNetWorth + cpfTotal
+  const cashReserveOffset = params.cashReserveOffset ?? 0
+  const investableLiquid = liquidNetWorth - cashReserveOffset
+  const totalNetWorth = investableLiquid + cpfTotal
   const totalNWIncProperty = totalNetWorth + propertyEquity
   const annualSavings = annualIncome - annualExpenses
   const savingsRate = annualIncome > 0 ? annualSavings / annualIncome : 0
