@@ -11,6 +11,13 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-24',
+    category: 'feature',
+    title: 'Update notifications',
+    description:
+      'You\'ll now see a banner when regulatory data or app features change. Section-level nudges highlight exactly which inputs to review. See the full changelog under Reference Guide > What\'s New.',
+  },
+  {
+    date: '2026-02-24',
     category: 'data-update',
     title: 'CPF retirement sums updated to 2026',
     description:
