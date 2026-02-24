@@ -24,6 +24,7 @@ function useStatsData(): StatChip[] {
   const { metrics } = useFireCalculations()
   const { summary } = useProjection()
   const currentAge = useProfileStore((s) => s.currentAge)
+  const lifeExpectancy = useProfileStore((s) => s.lifeExpectancy)
   const lastMCSuccessRate = useSimulationStore((s) => s.lastMCSuccessRate)
   const lastBacktestSuccessRate = useSimulationStore((s) => s.lastBacktestSuccessRate)
 
@@ -46,16 +47,23 @@ function useStatsData(): StatChip[] {
       ? Math.ceil(metrics.yearsToFire)
       : null
 
+  // FIRE is unreachable when the calculated age exceeds life expectancy
+  const unreachable = fireAge === null || fireAge > lifeExpectancy
+
   return [
     {
       label: 'FIRE Age',
-      value: fireAge !== null ? `${fireAge}` : '—',
+      value: unreachable
+        ? 'Not reachable'
+        : `${fireAge}`,
     },
     {
       label: 'Years to FIRE',
-      value: yearsToFire !== null
-        ? yearsToFire === 0 ? 'Achieved!' : `${yearsToFire} yrs`
-        : '—',
+      value: unreachable
+        ? '—'
+        : yearsToFire !== null
+          ? yearsToFire === 0 ? 'Achieved!' : `${yearsToFire} yrs`
+          : '—',
     },
     {
       label: 'FIRE Number',
