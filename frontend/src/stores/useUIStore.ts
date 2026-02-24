@@ -37,7 +37,7 @@ const DEFAULT_UI: UIState = {
   sectionOverrides: {},
   dismissedNudges: [],
   helpPanelOpen: true,
-  dollarBasis: 'real',
+  dollarBasis: 'nominal',
 }
 
 export const useUIStore = create<UIState & UIActions>()(
@@ -71,7 +71,7 @@ export const useUIStore = create<UIState & UIActions>()(
     }),
     {
       name: 'fireplanner-ui',
-      version: 6,
+      version: 7,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -97,6 +97,9 @@ export const useUIStore = create<UIState & UIActions>()(
         }
         if (version < 6) {
           state.dollarBasis = 'real'
+        }
+        if (version < 7) {
+          state.dollarBasis = 'nominal'
         }
         return state
       },
