@@ -287,6 +287,7 @@ export interface IncomeProjectionRow {
   // CPFIS invested amounts (portion above retention limits; 0 when CPFIS disabled or post-55)
   cpfisOA: number
   cpfisSA: number
+  cpfisReturn: number  // extra interest earned vs standard CPF rates
   // SRS lifecycle
   srsBalance: number
   srsContribution: number
@@ -864,6 +865,7 @@ export interface ProjectionRow {
   cpfOaWithdrawal: number
   cpfisOA: number
   cpfisSA: number
+  cpfisReturn: number
   cpfLifePayout: number
   cpfBequest: number
   cpfMilestone: 'brs' | 'frs' | 'ers' | 'cpfLifeStart' | 'raCreated' | null

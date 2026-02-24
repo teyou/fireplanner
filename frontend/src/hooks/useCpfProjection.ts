@@ -19,6 +19,7 @@ export interface CpfProjectionRow {
   oaShortfall: number
   cpfisOA: number
   cpfisSA: number
+  cpfisReturn: number
   bequest: number
   milestone: 'brs' | 'frs' | 'ers' | 'cpfLifeStart' | 'raCreated' | null
   milestoneFormula: string | null
@@ -148,6 +149,7 @@ export function useCpfProjection(): {
         oaShortfall: row.cpfOaShortfall,
         cpfisOA: row.cpfisOA,
         cpfisSA: row.cpfisSA,
+        cpfisReturn: row.cpfisReturn,
         bequest,
         milestone,
         milestoneFormula,

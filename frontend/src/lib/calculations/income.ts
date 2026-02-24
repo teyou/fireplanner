@@ -571,6 +571,10 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       cpfOaWithdrawal: cpfOaWithdrawalAmount,
       cpfisOA: cpfisActive ? Math.max(0, cpfOA - CPFIS_OA_RETENTION) : 0,
       cpfisSA: cpfisActive ? Math.max(0, cpfSA - CPFIS_SA_RETENTION) : 0,
+      cpfisReturn: cpfisActive
+        ? ((params.cpfisOaReturn ?? 0.04) - OA_INTEREST_RATE) * Math.max(0, cpfOA - CPFIS_OA_RETENTION)
+          + ((params.cpfisSaReturn ?? 0.05) - SA_INTEREST_RATE) * Math.max(0, cpfSA - CPFIS_SA_RETENTION)
+        : 0,
       srsBalance,
       srsContribution,
       srsWithdrawal,

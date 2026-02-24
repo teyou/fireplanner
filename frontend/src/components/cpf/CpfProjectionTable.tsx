@@ -61,6 +61,10 @@ export function CpfProjectionTable() {
           header: 'CPFIS-SA',
           cell: (info) => optionalCurrencyCell(info.getValue()),
         }),
+        columnHelper.accessor('cpfisReturn', {
+          header: 'CPFIS Return',
+          cell: (info) => optionalCurrencyCell(info.getValue()),
+        }),
       )
     }
 

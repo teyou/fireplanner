@@ -446,9 +446,9 @@ describe('calculateIncomeSummary', () => {
 
   it('computes correct peak earning for simple projection', () => {
     const rows: IncomeProjectionRow[] = [
-      { year: 0, age: 30, salary: 72000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 72000, sgTax: 2000, cpfEmployee: 14400, cpfEmployer: 12240, totalNet: 55600, annualSavings: 7600, cumulativeSavings: 7600, cpfOA: 16560, cpfSA: 4320, cpfMA: 5760, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
-      { year: 1, age: 31, salary: 80000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 80000, sgTax: 3000, cpfEmployee: 16000, cpfEmployer: 13600, totalNet: 61000, annualSavings: 13000, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
-      { year: 2, age: 32, salary: 0, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0, cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: true, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
+      { year: 0, age: 30, salary: 72000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 72000, sgTax: 2000, cpfEmployee: 14400, cpfEmployer: 12240, totalNet: 55600, annualSavings: 7600, cumulativeSavings: 7600, cpfOA: 16560, cpfSA: 4320, cpfMA: 5760, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
+      { year: 1, age: 31, salary: 80000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 80000, sgTax: 3000, cpfEmployee: 16000, cpfEmployer: 13600, totalNet: 61000, annualSavings: 13000, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
+      { year: 2, age: 32, salary: 0, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0, cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: true, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
     ]
 
     const summary = calculateIncomeSummary(rows, 48000)
@@ -1825,6 +1825,12 @@ describe('integration tests', () => {
     const row50 = rows.find((r) => r.age === 50)!
     expect(row50.cpfisOA).toBe(row50.cpfOA - 20000)
     expect(row50.cpfisSA).toBe(row50.cpfSA - 40000)
+
+    // cpfisReturn = extra interest earned vs standard rates
+    // OA extra = (0.08 - 0.025) * cpfisOA, SA extra = (0.07 - 0.04) * cpfisSA
+    const expectedReturn30 = (0.08 - 0.025) * row30.cpfisOA + (0.07 - 0.04) * row30.cpfisSA
+    expect(row30.cpfisReturn).toBeCloseTo(expectedReturn30, 0)
+    expect(row50.cpfisReturn).toBeGreaterThan(0)
   })
 
   it('CPFIS disabled: cpfisOA and cpfisSA are zero', () => {
@@ -1856,6 +1862,7 @@ describe('integration tests', () => {
     const row30 = rows.find((r) => r.age === 30)!
     expect(row30.cpfisOA).toBe(0)
     expect(row30.cpfisSA).toBe(0)
+    expect(row30.cpfisReturn).toBe(0)
   })
 
   it('CPFIS: cpfisOA and cpfisSA are zero when balances below retention', () => {

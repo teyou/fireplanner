@@ -642,6 +642,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       cpfOaWithdrawal: incomeRow.cpfOaWithdrawal,
       cpfisOA: incomeRow.cpfisOA,
       cpfisSA: incomeRow.cpfisSA,
+      cpfisReturn: incomeRow.cpfisReturn,
       propertyValue: effectivePropertyValue,
       mortgageBalance: effectiveMortgageBalance,
       propertyEquity: effectivePropertyEquity,
