@@ -6,8 +6,10 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import Markdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, RefreshCw, Sparkles, Bug } from 'lucide-react'
 import { DATA_SOURCES } from '@/lib/data/sources'
+import { CHANGELOG, DATA_VINTAGE } from '@/lib/data/changelog'
+import { useUIStore } from '@/stores/useUIStore'
 
 // ── ELI5 glossary ──────────────────────────────────────────────────────
 const GLOSSARY: Record<string, string> = {
@@ -442,16 +444,70 @@ If you die without a will (non-Muslim):
   },
 ]
 
+function CategoryIcon({ category }: { category: string }) {
+  switch (category) {
+    case 'data-update': return <RefreshCw className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+    case 'feature': return <Sparkles className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+    case 'fix': return <Bug className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+    default: return null
+  }
+}
+
+function ChangelogList() {
+  const markChangelogSeen = useUIStore((s) => s.markChangelogSeen)
+
+  useEffect(() => {
+    markChangelogSeen()
+  }, [markChangelogSeen])
+
+  // Group by date
+  const grouped = useMemo(() => {
+    const map = new Map<string, typeof CHANGELOG>()
+    for (const entry of CHANGELOG) {
+      const existing = map.get(entry.date) ?? []
+      existing.push(entry)
+      map.set(entry.date, existing)
+    }
+    return Array.from(map.entries())
+  }, [])
+
+  return (
+    <div className="space-y-6">
+      {grouped.map(([date, entries]) => (
+        <div key={date}>
+          <h4 className="text-sm font-medium text-foreground mb-2">{date}</h4>
+          <div className="space-y-2">
+            {entries.map((entry, i) => (
+              <div key={i} className="flex gap-2">
+                <CategoryIcon category={entry.category} />
+                <div>
+                  <span className="text-sm font-medium text-foreground">{entry.title}</span>
+                  <p className="text-sm text-muted-foreground">{entry.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function ReferencePage() {
   const location = useLocation()
   const hashId = location.hash.slice(1)
-  const validHash = SECTIONS.some((s) => s.id === hashId) ? hashId : null
+  const allIds = [...SECTIONS.map(s => s.id), 'changelog', 'data-sources']
+  const validHash = allIds.includes(hashId) ? hashId : null
   const [tooltipsEnabled, setTooltipsEnabled] = useState(true)
+  const lastSeenDataVintage = useUIStore((s) => s.lastSeenDataVintage)
+  const hasUnseenEntries = lastSeenDataVintage !== DATA_VINTAGE
 
   const mdComponents = useMemo(() => buildMarkdownComponents(tooltipsEnabled), [tooltipsEnabled])
 
   // Include hash target in initial open set; also open on hash changes via key reset
-  const openDefault = validHash ? ['fire', validHash] : ['fire']
+  const openDefault = validHash
+    ? [validHash, ...(validHash !== 'fire' ? ['fire'] : [])]
+    : ['fire']
 
   // Scroll to hash target after mount/hash change
   useEffect(() => {
@@ -480,6 +536,20 @@ export function ReferencePage() {
         </div>
 
         <Accordion type="multiple" key={validHash ?? 'default'} defaultValue={openDefault}>
+          <AccordionItem value="changelog" id="ref-changelog">
+            <AccordionTrigger className="text-left font-medium">
+              <span className="flex items-center gap-2">
+                What's New
+                {hasUnseenEntries && (
+                  <span className="inline-flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                )}
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <ChangelogList />
+            </AccordionContent>
+          </AccordionItem>
+
           {SECTIONS.map((section) => (
             <AccordionItem key={section.id} value={section.id} id={`ref-${section.id}`}>
               <AccordionTrigger className="text-left font-medium">
