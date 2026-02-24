@@ -538,6 +538,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       srsContribution,
       srsWithdrawal,
       srsTaxableWithdrawal,
+      cpfOaWithdrawal: 0,
       // Cash reserve defaults (populated by hook post-processing)
       cashReserveTarget: 0,
       cashReserveBalance: 0,

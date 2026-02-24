@@ -98,6 +98,12 @@ export const FRS_BASE = 220400
 export const ERS_BASE = 440800
 export const BRS_GROWTH_RATE = 0.035 // 3.5% p.a.
 
+// CPFIS (CPF Investment Scheme) retention limits
+// Members must retain these minimum balances before investing the remainder
+// Source: https://www.cpf.gov.sg/member/growing-your-savings/earning-higher-returns/investing-your-cpf-savings
+export const CPFIS_OA_RETENTION = 20000
+export const CPFIS_SA_RETENTION = 40000
+
 // CPF LIFE payout rates (annual rate applied to retirement sum at 55)
 export const CPF_LIFE_BASIC_RATE = 0.054 // ~5.4%
 export const CPF_LIFE_STANDARD_RATE = 0.063 // ~6.3%

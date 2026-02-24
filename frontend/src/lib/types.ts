@@ -92,6 +92,17 @@ export interface RetirementWithdrawal {
 }
 
 // ============================================================
+// CPF OA Withdrawal (lump-sum transfer to liquid portfolio)
+// ============================================================
+
+export interface CpfOaWithdrawal {
+  id: string
+  label: string
+  amount: number
+  age: number  // must be >= 55
+}
+
+// ============================================================
 // Profile Store
 // ============================================================
 
@@ -158,6 +169,14 @@ export interface ProfileState {
 
   // Healthcare & Insurance
   healthcareConfig: HealthcareConfig
+
+  // CPF OA Withdrawals (lump-sum transfers to liquid portfolio at age >= 55)
+  cpfOaWithdrawals: CpfOaWithdrawal[]
+
+  // CPFIS (CPF Investment Scheme)
+  cpfisEnabled: boolean
+  cpfisOaReturn: number   // expected return on invested OA portion (above retention)
+  cpfisSaReturn: number   // expected return on invested SA portion (above retention)
 
   // Retirement One-Time Withdrawals
   retirementWithdrawals: RetirementWithdrawal[]
@@ -257,6 +276,9 @@ export interface IncomeProjectionRow {
   srsContribution: number
   srsWithdrawal: number
   srsTaxableWithdrawal: number
+
+  // CPF OA withdrawal transferred to liquid portfolio
+  cpfOaWithdrawal: number
 
   // Cash reserve (populated by hook post-processing, not income engine)
   cashReserveTarget: number
@@ -826,6 +848,7 @@ export interface ProjectionRow {
   cpfLifePayout: number
   cpfBequest: number
   cpfMilestone: 'brs' | 'frs' | 'ers' | 'cpfLifeStart' | 'raCreated' | null
+  cpfOaWithdrawal: number
   // Expanded: withdrawal detail
   withdrawalAmount: number
   maxPermittedWithdrawal: number

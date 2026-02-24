@@ -34,6 +34,7 @@ const PROFILE_DATA_KEYS = [
   // cpfHousingMode, cpfHousingMonthly, cpfMortgageYearsLeft — DEPRECATED: now derived from property store
   'parentSupportEnabled', 'parentSupport',
   'healthcareConfig',
+  'cpfOaWithdrawals', 'cpfisEnabled', 'cpfisOaReturn', 'cpfisSaReturn',
   'retirementWithdrawals',
   'financialGoals',
   'cashReserveEnabled', 'cashReserveMode', 'cashReserveFixedAmount',
@@ -92,6 +93,10 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   parentSupportEnabled: false,
   parentSupport: [],
   healthcareConfig: DEFAULT_HEALTHCARE_CONFIG,
+  cpfOaWithdrawals: [],
+  cpfisEnabled: false,
+  cpfisOaReturn: 0.04,
+  cpfisSaReturn: 0.05,
   retirementWithdrawals: [],
   financialGoals: [],
   cashReserveEnabled: false,

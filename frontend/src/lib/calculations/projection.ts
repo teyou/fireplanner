@@ -595,6 +595,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       cpfLifePayout: incomeRow.cpfLifePayout,
       cpfBequest,
       cpfMilestone,
+      cpfOaWithdrawal: incomeRow.cpfOaWithdrawal,
       propertyEquity: effectivePropertyEquity,
       totalNWIncProperty: totalNW + effectivePropertyEquity,
       withdrawalAmount,
