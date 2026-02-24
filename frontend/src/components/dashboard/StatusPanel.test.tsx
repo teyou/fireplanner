@@ -20,6 +20,8 @@ const fullProps = {
   baristaFireIncome: 28250,
   savingsRate: 0.467,
   totalNetWorth: 1100000,
+  portfolioDepletedAge: null,
+  lifeExpectancy: 90,
 }
 
 describe('StatusPanel', () => {
@@ -45,6 +47,8 @@ describe('StatusPanel', () => {
       baristaFireIncome: null,
       savingsRate: null,
       totalNetWorth: null,
+      portfolioDepletedAge: null,
+      lifeExpectancy: 90,
     })
     // Each null value renders as an em dash
     const dashes = screen.getAllByText('—')
@@ -75,7 +79,7 @@ describe('StatusPanel', () => {
 
   it('renders in a responsive grid', () => {
     const { container } = renderWithRouter(fullProps)
-    const grid = container.firstElementChild
+    const grid = container.querySelector('.grid')
     expect(grid?.className).toContain('grid')
     expect(grid?.className).toContain('grid-cols-2')
   })

@@ -504,6 +504,16 @@ function QuickResults({
   projection: { age: number; balance: number; phase: 'accumulation' | 'decumulation' }[]
 }) {
   const pct = (progress * 100).toFixed(1)
+
+  // Detect portfolio depletion before life expectancy
+  const lifeExpectancy = projection.length > 0 ? projection[projection.length - 1].age : 90
+  const depletionEntry = projection.find(
+    (p) => p.phase === 'decumulation' && p.balance <= 0
+  )
+  const depletionAge = depletionEntry?.age ?? null
+  const depletesBeforeDeath = depletionAge !== null && depletionAge < lifeExpectancy
+  const shortfallYears = depletesBeforeDeath ? lifeExpectancy - depletionAge : 0
+
   return (
     <div className="col-span-full mt-4 p-4 rounded-lg border bg-muted/30 space-y-3">
       {/* Hero: FIRE Age */}
@@ -519,6 +529,14 @@ function QuickResults({
             : `That's ${Math.ceil(yearsToFire)} years from now`}
         </div>
       </div>
+
+      {/* Depletion warning */}
+      {depletesBeforeDeath && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+          <span className="font-medium">Portfolio runs out at age {depletionAge}</span> — that's {shortfallYears} {shortfallYears === 1 ? 'year' : 'years'} short of your life expectancy ({lifeExpectancy}).
+          Consider reducing expenses, saving more, or working a few extra years.
+        </div>
+      )}
 
       {/* Supporting metrics row */}
       <div className="flex items-center justify-center gap-6 text-sm">

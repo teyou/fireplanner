@@ -12,6 +12,8 @@ interface StatusPanelProps {
   baristaFireIncome: number | null
   savingsRate: number | null
   totalNetWorth: number | null
+  portfolioDepletedAge: number | null
+  lifeExpectancy: number
 }
 
 type MetricAccent = 'primary' | 'success' | 'warning'
@@ -93,28 +95,39 @@ export function StatusPanel(props: StatusPanelProps) {
     },
   ]
 
+  const depletesBeforeDeath = props.portfolioDepletedAge !== null && props.portfolioDepletedAge < props.lifeExpectancy
+  const shortfallYears = depletesBeforeDeath ? props.lifeExpectancy - props.portfolioDepletedAge! : 0
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {cards.map((card) => (
-        <MetricCard
-          key={card.label}
-          label={card.label}
-          variant="elevated"
-          accent={card.accent}
-          className="hover:shadow-md transition-shadow"
-          value={
-            card.href ? (
-              <Link to={card.href} className="hover:underline">
-                {card.value}
-              </Link>
-            ) : (
-              card.value
-            )
-          }
-          progress={card.progress}
-          tooltip={card.tooltip}
-        />
-      ))}
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {cards.map((card) => (
+          <MetricCard
+            key={card.label}
+            label={card.label}
+            variant="elevated"
+            accent={card.accent}
+            className="hover:shadow-md transition-shadow"
+            value={
+              card.href ? (
+                <Link to={card.href} className="hover:underline">
+                  {card.value}
+                </Link>
+              ) : (
+                card.value
+              )
+            }
+            progress={card.progress}
+            tooltip={card.tooltip}
+          />
+        ))}
+      </div>
+      {depletesBeforeDeath && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+          <span className="font-medium">Portfolio runs out at age {props.portfolioDepletedAge}</span> — that's {shortfallYears} {shortfallYears === 1 ? 'year' : 'years'} short of your life expectancy ({props.lifeExpectancy}).
+          Consider reducing expenses, saving more, or adjusting your withdrawal strategy.
+        </div>
+      )}
     </div>
   )
 }

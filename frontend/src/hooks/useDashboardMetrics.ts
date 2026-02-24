@@ -12,6 +12,8 @@ interface DashboardMetrics {
   baristaFireIncome: number | null
   savingsRate: number | null
   totalNetWorth: number | null
+  portfolioDepletedAge: number | null
+  lifeExpectancy: number
 }
 
 /**
@@ -35,6 +37,8 @@ export function useDashboardMetrics(): DashboardMetrics {
         baristaFireIncome: null,
         savingsRate: null,
         totalNetWorth: null,
+        portfolioDepletedAge: null,
+        lifeExpectancy: profile.lifeExpectancy,
       }
     }
 
@@ -54,6 +58,8 @@ export function useDashboardMetrics(): DashboardMetrics {
       baristaFireIncome: metrics.baristaFireIncome,
       savingsRate: metrics.savingsRate,
       totalNetWorth: profile.liquidNetWorth + profile.cpfOA + profile.cpfSA + profile.cpfMA + profile.cpfRA,
+      portfolioDepletedAge: projSummary?.portfolioDepletedAge ?? null,
+      lifeExpectancy: profile.lifeExpectancy,
     }
-  }, [metrics, projSummary, profile.currentAge, profile.liquidNetWorth, profile.cpfOA, profile.cpfSA, profile.cpfMA, profile.cpfRA])
+  }, [metrics, projSummary, profile.currentAge, profile.lifeExpectancy, profile.liquidNetWorth, profile.cpfOA, profile.cpfSA, profile.cpfMA, profile.cpfRA])
 }
