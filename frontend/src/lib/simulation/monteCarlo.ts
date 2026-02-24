@@ -437,8 +437,11 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
           : 0
         let netWithdrawal = Math.max(0, withdrawal - income)
 
-        // Don't withdraw more than the portfolio
-        netWithdrawal = Math.min(netWithdrawal, currentBalance)
+        // Don't withdraw more than total available liquidity
+        const totalLiquidity = retirementMitigation.type === 'cash_bucket'
+          ? currentBalance + cashBuckets[s]
+          : currentBalance
+        netWithdrawal = Math.min(netWithdrawal, totalLiquidity)
 
         prevWithdrawals[s] = withdrawal
         prevBalances[s] = currentBalance
