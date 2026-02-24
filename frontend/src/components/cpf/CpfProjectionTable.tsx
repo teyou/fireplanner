@@ -80,6 +80,19 @@ export function CpfProjectionTable() {
           cell: (info) => optionalCurrencyCell(info.getValue()),
         }) as ColumnDef<CpfProjectionRow, number>,
       )
+      if (depletionRow) {
+        cols.push(
+          columnHelper.accessor('oaShortfall', {
+            header: 'OA Shortfall',
+            cell: (info) => {
+              const v = info.getValue()
+              return v > 0
+                ? <span className="text-amber-700 dark:text-amber-300 font-medium">{formatCurrency(v)}</span>
+                : '-'
+            },
+          }) as ColumnDef<CpfProjectionRow, number>,
+        )
+      }
     }
 
     cols.push(
@@ -103,7 +116,7 @@ export function CpfProjectionTable() {
     }
 
     return cols
-  }, [hasHousingDeduction, hasRA, hasBequest])
+  }, [hasHousingDeduction, hasRA, hasBequest, depletionRow])
 
   const table = useReactTable({
     data: rows ?? [],
