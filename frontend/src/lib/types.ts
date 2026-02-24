@@ -20,6 +20,29 @@ export type CpfHousingMode = 'none' | 'simple' | 'property-linked'
 export type RetirementPhase = 'before-55' | '55-to-64' | '65-plus'
 
 // ============================================================
+// Retirement Mitigation (extensible union)
+// ============================================================
+
+export type RetirementMitigationType = 'none' | 'cash_bucket'
+
+export interface CashBucketConfig {
+  type: 'cash_bucket'
+  targetMonths: number       // e.g., 24
+  cashReturn: number         // e.g., 0.02
+}
+
+// Future: BondTentConfig will be added here when implementing bond tent glide paths.
+// Bond tent requires year-varying allocation weights in the MC loop, which means
+// switching from precomputed portfolioReturns to per-year generation using raw
+// per-asset returns (assetReturns[sim][year][asset]).
+
+export type RetirementMitigationConfig =
+  | { type: 'none' }
+  | CashBucketConfig
+
+export type CashReserveMode = 'fixed' | 'months'
+
+// ============================================================
 // Healthcare Configuration
 // ============================================================
 
@@ -93,6 +116,14 @@ export interface ProfileState {
   srsAnnualContribution: number
   srsInvestmentReturn: number
   srsDrawdownStartAge: number
+
+  // Cash Reserve / Emergency Fund
+  cashReserveEnabled: boolean
+  cashReserveMode: CashReserveMode
+  cashReserveFixedAmount: number
+  cashReserveMonths: number
+  cashReserveReturn: number
+  retirementMitigation: RetirementMitigationConfig
 
   // FIRE Targets
   fireType: FireType
@@ -226,6 +257,11 @@ export interface IncomeProjectionRow {
   srsContribution: number
   srsWithdrawal: number
   srsTaxableWithdrawal: number
+
+  // Cash reserve (populated by hook post-processing, not income engine)
+  cashReserveTarget: number
+  cashReserveBalance: number
+  investedSavings: number
 }
 
 export interface IncomeSummaryStats {
@@ -483,6 +519,7 @@ export interface MonteCarloParams {
   strategyParams: StrategyParamsMap
   expenseRatio: number
   inflation: number
+  retirementMitigation: RetirementMitigationConfig
 }
 
 export interface PercentileBands {

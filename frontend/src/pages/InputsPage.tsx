@@ -15,6 +15,7 @@ import { FireTargetsSection } from '@/components/profile/FireTargetsSection'
 import { AssumptionsSection } from '@/components/profile/AssumptionsSection'
 import { CpfSection } from '@/components/profile/CpfSection'
 import { ParentSupportSection } from '@/components/profile/ParentSupportSection'
+import { CashReserveSection } from '@/components/profile/CashReserveSection'
 
 // Income sections
 import { SalaryModelSection } from '@/components/income/SalaryModelSection'
@@ -486,6 +487,7 @@ function NetWorthContent() {
   return (
     <>
       <FinancialSection />
+      <CashReserveSection />
     </>
   )
 }

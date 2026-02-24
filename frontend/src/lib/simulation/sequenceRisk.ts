@@ -21,7 +21,7 @@ import {
   computeWithdrawalsForYear,
   resolveInitialRate,
 } from './monteCarlo.ts'
-import type { PercentileBands, MitigationImpact } from '@/lib/types.ts'
+import type { PercentileBands, MitigationImpact, RetirementMitigationConfig } from '@/lib/types.ts'
 
 // ============================================================
 // Types
@@ -43,6 +43,8 @@ export interface SequenceRiskEngineParams {
   inflation: number
   postRetirementIncome: number[]
   oneTimeWithdrawals?: { year: number; amount: number }[]
+  retirementMitigation?: RetirementMitigationConfig
+  annualExpensesAtRetirement?: number
   crisis: {
     id: string
     name: string

@@ -186,8 +186,8 @@ test.describe('Robust JSON Import/Export', () => {
       // Verify migration added defaults for fields that were missing
       const profileRaw = await getProfileRaw(page)
       expect(profileRaw).toBeTruthy()
-      // After migration, version should be bumped to current (15)
-      expect(profileRaw.version).toBe(15)
+      // After migration, version should be bumped to current (16)
+      expect(profileRaw.version).toBe(16)
       // Migration should have added default values for newer fields
       expect(profileRaw.state.cpfLifeStartAge).toBe(65)
       expect(profileRaw.state.cpfLifePlan).toBe('standard')
@@ -208,10 +208,10 @@ test.describe('Robust JSON Import/Export', () => {
       expect(await getProfileField(page, 'annualExpenses')).toBe(60000)
       expect(await getProfileField(page, 'liquidNetWorth')).toBe(500000)
 
-      // Verify migration ran (version 0 -> 15)
+      // Verify migration ran (version 0 -> 16)
       const profileRaw = await getProfileRaw(page)
       expect(profileRaw).toBeTruthy()
-      expect(profileRaw.version).toBe(15)
+      expect(profileRaw.version).toBe(16)
     })
   })
 

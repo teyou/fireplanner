@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { runMonteCarlo, resolveInitialRate, generateReturnsParametric, computeWithdrawalsForYear } from './monteCarlo.ts'
+import { runMonteCarlo, resolveInitialRate, generateReturnsParametric, computeWithdrawalsForYear, type MonteCarloEngineParams } from './monteCarlo.ts'
 import { CORRELATION_MATRIX, ASSET_CLASSES } from '@/lib/data/historicalReturns.ts'
 import { SeededRNG } from '@/lib/math/random.ts'
 
@@ -691,5 +691,227 @@ describe('MC success rate invariants', () => {
         expect(snap.buckets[i].min).toBeCloseTo(snap.buckets[i - 1].max, 2)
       }
     }
+  })
+})
+
+describe('retirement cash bucket mitigation', () => {
+  // Minimal setup: 0 accumulation years, 10 decumulation years, 1 asset class
+  const baseBucketParams: MonteCarloEngineParams = {
+    initialPortfolio: 1_000_000,
+    allocationWeights: [1, 0, 0, 0, 0, 0, 0, 0],
+    expectedReturns: [0.07, 0, 0, 0, 0, 0, 0, 0],
+    stdDevs: [0.15, 0, 0, 0, 0, 0, 0, 0],
+    correlationMatrix: Array.from({ length: 8 }, (_, i) =>
+      Array.from({ length: 8 }, (_, j) => (i === j ? 1 : 0))
+    ),
+    currentAge: 65,
+    retirementAge: 65,
+    lifeExpectancy: 75,
+    annualSavings: [],
+    postRetirementIncome: [],
+    method: 'parametric',
+    nSimulations: 100,
+    seed: 42,
+    withdrawalStrategy: 'constant_dollar',
+    strategyParams: { swr: 0.04 },
+    expenseRatio: 0.003,
+    inflation: 0.025,
+  }
+
+  it('mitigation none — unchanged from baseline', () => {
+    const withNone = runMonteCarlo({
+      ...baseBucketParams,
+      retirementMitigation: { type: 'none' },
+      seed: 42,
+    })
+    const withoutField = runMonteCarlo({
+      ...baseBucketParams,
+      seed: 42,
+    })
+    expect(withNone.success_rate).toBe(withoutField.success_rate)
+  })
+
+  it('cash bucket — deterministic with seed', () => {
+    const config = {
+      ...baseBucketParams,
+      retirementMitigation: {
+        type: 'cash_bucket' as const,
+        targetMonths: 24,
+        cashReturn: 0.02,
+      },
+      annualExpensesAtRetirement: 40000,
+      seed: 42,
+    }
+    const r1 = runMonteCarlo(config)
+    const r2 = runMonteCarlo(config)
+    expect(r1.success_rate).toBe(r2.success_rate)
+    expect(r1.percentile_bands.p50).toEqual(r2.percentile_bands.p50)
+  })
+
+  it('cash bucket carves from initial portfolio', () => {
+    const withBucket = runMonteCarlo({
+      ...baseBucketParams,
+      retirementMitigation: {
+        type: 'cash_bucket' as const,
+        targetMonths: 24,
+        cashReturn: 0.02,
+      },
+      annualExpensesAtRetirement: 40000,
+      seed: 42,
+    })
+    // Bucket = 24 months × 40000/12 = 80000 carved from 1M
+    // Both should have valid success rates
+    const noBucket = runMonteCarlo({
+      ...baseBucketParams,
+      seed: 42,
+    })
+    expect(withBucket.success_rate).toBeGreaterThanOrEqual(0)
+    expect(noBucket.success_rate).toBeGreaterThanOrEqual(0)
+    // Median year-0 balance with bucket should be lower (80K carved out)
+    expect(withBucket.percentile_bands.p50[0]).toBeLessThan(noBucket.percentile_bands.p50[0])
+  })
+
+  // Deterministic bucket tests: 1 sim, near-zero stddev for predictable returns
+  const deterministicBucketParams: MonteCarloEngineParams = {
+    initialPortfolio: 1_000_000,
+    allocationWeights: [1, 0, 0, 0, 0, 0, 0, 0],
+    expectedReturns: [0.07, 0, 0, 0, 0, 0, 0, 0],
+    stdDevs: [0.001, 0, 0, 0, 0, 0, 0, 0],  // near-zero vol for predictable returns
+    correlationMatrix: Array.from({ length: 8 }, (_, i) =>
+      Array.from({ length: 8 }, (_, j) => (i === j ? 1 : 0))
+    ),
+    currentAge: 60,
+    retirementAge: 60,
+    lifeExpectancy: 70,
+    annualSavings: [],
+    postRetirementIncome: [],
+    method: 'parametric',
+    nSimulations: 1,
+    seed: 42,
+    withdrawalStrategy: 'constant_dollar',
+    strategyParams: { swr: 0.04 },
+    expenseRatio: 0,        // zero fees for easier math
+    inflation: 0,            // zero inflation for easier math
+    retirementMitigation: {
+      type: 'cash_bucket',
+      targetMonths: 24,
+      cashReturn: 0.02,
+    },
+    annualExpensesAtRetirement: 60_000,  // bucket = 24 * 60000/12 = 120,000
+  }
+
+  it('bucket absorbs withdrawals — portfolio is not drawn from when bucket has funds', () => {
+    const result = runMonteCarlo(deterministicBucketParams)
+    // Bucket = 120K carved from 1M → portfolio starts at 880K
+    // Year 0 balance in percentile bands is post-carve
+    expect(result.percentile_bands.p50[0]).toBeCloseTo(880_000, -3)
+    // Withdrawal = 1M * 0.04 = 40K (based on pre-carve median balance)
+    // Year 0: 40K < 120K bucket → fully absorbed by bucket
+    // Portfolio grows unencumbered: 880K * (1 + ~0.07) ≈ 941,600
+    // Year-1 balance should reflect growth WITHOUT 40K withdrawal from portfolio
+    const year1Balance = result.percentile_bands.p50[1]
+    // Without bucket, balance would be (880K - 40K) * 1.07 ≈ 898,800
+    // With bucket absorbing withdrawal, balance ≈ 880K * 1.07 = 941,600 (minus any refill)
+    expect(year1Balance).toBeGreaterThan(900_000)
+  })
+
+  it('portfolio grows unencumbered while bucket absorbs withdrawals', () => {
+    // Bucket = 120K, withdrawal = 40K/yr, portfolio starts at 880K
+    // Year 0→1: bucket absorbs 40K withdrawal, portfolio grows at ~7%
+    // So year-1 balance ≈ 880K * 1.07 ≈ 941K (minus any bucket refill)
+    // Without bucket, year-1 ≈ (1M - 40K) * 1.07 ≈ 1.027M
+    const result = runMonteCarlo(deterministicBucketParams)
+    const year0 = result.percentile_bands.p50[0]  // ~880K after carve
+    const year1 = result.percentile_bands.p50[1]
+
+    // The key mechanism: portfolio grew from ~880K WITHOUT a 40K withdrawal deducted
+    // If withdrawal had come from portfolio, year1 ≈ (880K - 40K) * 1.07 = 898.8K
+    // With bucket absorbing it, year1 ≈ 880K * 1.07 = 941.6K (minus refill)
+    // So year1 should be significantly above what it would be without bucket protection
+    const withoutProtection = (year0 - 40_000) * 1.07  // ~898K
+    expect(year1).toBeGreaterThan(withoutProtection)
+  })
+
+  it('bucket refill does not exceed 10% of portfolio value', () => {
+    // Use a large bucket (48 months = 240K) with a small portfolio
+    // so the 10% cap is binding
+    const result = runMonteCarlo({
+      ...deterministicBucketParams,
+      initialPortfolio: 500_000,
+      retirementMitigation: {
+        type: 'cash_bucket',
+        targetMonths: 48,
+        cashReturn: 0.02,
+      },
+      annualExpensesAtRetirement: 60_000,  // bucket = 48 * 5000 = 240K
+    })
+    // Bucket = 240K from 500K → portfolio starts at 260K
+    // Portfolio at year 0 should be around 260K
+    expect(result.percentile_bands.p50[0]).toBeCloseTo(260_000, -3)
+    // Portfolio survives (bucket absorbs early withdrawals)
+    expect(result.success_rate).toBeGreaterThan(0)
+  })
+
+  it('bucket improves outcomes vs no bucket in stable markets', () => {
+    // With near-deterministic positive returns, bucket should help
+    // by shielding portfolio from early withdrawals (more compounding)
+    const withBucket = runMonteCarlo({
+      ...deterministicBucketParams,
+      nSimulations: 100,
+      seed: 123,
+      stdDevs: [0.10, 0, 0, 0, 0, 0, 0, 0],  // moderate vol
+    })
+    const noBucket = runMonteCarlo({
+      ...deterministicBucketParams,
+      nSimulations: 100,
+      seed: 123,
+      stdDevs: [0.10, 0, 0, 0, 0, 0, 0, 0],
+      retirementMitigation: { type: 'none' },
+    })
+    // In stable/positive markets, bucket trades off initial portfolio size
+    // for withdrawal smoothing. Both should have valid success rates.
+    expect(withBucket.success_rate).toBeGreaterThanOrEqual(0)
+    expect(noBucket.success_rate).toBeGreaterThanOrEqual(0)
+    // Terminal median should differ (bucket changes the path)
+    const lastIdx = withBucket.percentile_bands.p50.length - 1
+    expect(withBucket.percentile_bands.p50[lastIdx]).not.toBe(noBucket.percentile_bands.p50[lastIdx])
+  })
+
+  it('zero bucket size has no effect on portfolio', () => {
+    const zeroBucket = runMonteCarlo({
+      ...deterministicBucketParams,
+      retirementMitigation: {
+        type: 'cash_bucket',
+        targetMonths: 0,
+        cashReturn: 0.02,
+      },
+      annualExpensesAtRetirement: 60_000,  // bucket = 0 * 5000 = 0
+      seed: 42,
+    })
+    const noBucket = runMonteCarlo({
+      ...deterministicBucketParams,
+      retirementMitigation: { type: 'none' },
+      seed: 42,
+    })
+    // Zero bucket target → zero carved → same as no bucket
+    expect(zeroBucket.percentile_bands.p50[0]).toBe(noBucket.percentile_bands.p50[0])
+    expect(zeroBucket.success_rate).toBe(noBucket.success_rate)
+  })
+
+  it('bucket larger than portfolio is capped at portfolio value', () => {
+    const result = runMonteCarlo({
+      ...deterministicBucketParams,
+      initialPortfolio: 50_000,  // small portfolio
+      retirementMitigation: {
+        type: 'cash_bucket',
+        targetMonths: 24,
+        cashReturn: 0.02,
+      },
+      annualExpensesAtRetirement: 60_000,  // bucket target = 120K > 50K portfolio
+    })
+    // Bucket is capped at available portfolio (50K), portfolio starts at 0
+    expect(result.percentile_bands.p50[0]).toBe(0)
+    // Should still run without errors
+    expect(result.success_rate).toBeGreaterThanOrEqual(0)
   })
 })

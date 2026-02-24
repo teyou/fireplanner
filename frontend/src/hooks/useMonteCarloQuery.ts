@@ -16,6 +16,7 @@ import {
   calculateSellAndDownsize,
   calculateSellAndRent,
 } from '@/lib/calculations/property'
+import { computeCashReservePlan, computeCashReserveOffset } from '@/lib/calculations/cashReserve'
 
 interface UseMonteCarloQueryResult {
   mutate: () => void
@@ -70,6 +71,12 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     ownsProperty: propertyStore.ownsProperty,
     healthcareConfig: profile.healthcareConfig,
     retirementWithdrawals: profile.retirementWithdrawals,
+    cashReserveEnabled: profile.cashReserveEnabled,
+    cashReserveMode: profile.cashReserveMode,
+    cashReserveFixedAmount: profile.cashReserveFixedAmount,
+    cashReserveMonths: profile.cashReserveMonths,
+    cashReserveReturn: profile.cashReserveReturn,
+    retirementMitigation: profile.retirementMitigation,
   }), [
     analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights, analysisPortfolio.skipAccumulation,
     profile.currentAge, profile.retirementAge, profile.lifeExpectancy, profile.expenseRatio, profile.inflation,
@@ -80,6 +87,8 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     propertyStore.downsizing, propertyStore.ownsProperty,
     profile.healthcareConfig,
     profile.retirementWithdrawals,
+    profile.cashReserveEnabled, profile.cashReserveMode, profile.cashReserveFixedAmount,
+    profile.cashReserveMonths, profile.cashReserveReturn, profile.retirementMitigation,
   ])
 
   const mutation = useMutation({
@@ -105,6 +114,30 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
             )
           }
         }
+      }
+
+      // Post-process savings through cash reserve
+      let effectiveSavings = annualSavings
+      if (profile.cashReserveEnabled && annualSavings.length > 0) {
+        const reserveOffset = computeCashReserveOffset(
+          profile.liquidNetWorth,
+          profile.cashReserveEnabled,
+          profile.cashReserveMode,
+          profile.cashReserveFixedAmount,
+          profile.cashReserveMonths,
+          profile.annualExpenses,
+        )
+        const reservePlan = computeCashReservePlan({
+          mode: profile.cashReserveMode,
+          target: profile.cashReserveFixedAmount,
+          months: profile.cashReserveMonths,
+          initialBalance: reserveOffset,
+          annualSavingsArray: annualSavings,
+          cashReturn: profile.cashReserveReturn,
+          inflationRate: profile.inflation,
+          annualExpenses: profile.annualExpenses,
+        })
+        effectiveSavings = reservePlan.investedSavings
       }
 
       // Get effective returns and std devs (with overrides)
@@ -185,7 +218,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
         retirementAge: profile.retirementAge,
         lifeExpectancy: profile.lifeExpectancy,
         // When skipping accumulation, no pre-retirement savings (post-retirement income still included)
-        annualSavings: analysisPortfolio.skipAccumulation ? [] : annualSavings,
+        annualSavings: analysisPortfolio.skipAccumulation ? [] : effectiveSavings,
         postRetirementIncome,
         method: simulation.mcMethod,
         nSimulations: simulation.nSimulations,
@@ -194,6 +227,8 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
         expenseRatio: profile.expenseRatio,
         inflation: profile.inflation,
         portfolioAdjustments,
+        retirementMitigation: profile.retirementMitigation,
+        annualExpensesAtRetirement: profile.annualExpenses * Math.pow(1 + profile.inflation, Math.max(0, profile.retirementAge - profile.currentAge)),
       }
 
       return runMonteCarloWorker(params)

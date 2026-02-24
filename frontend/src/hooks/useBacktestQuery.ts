@@ -125,11 +125,14 @@ export function useBacktestQuery(): UseBacktestQueryResult {
       strategyParams: flattenStrategyParams(strategy, withdrawal.strategyParams),
       inflation: profile.inflation,
       oneTimeWithdrawals: oneTimeWithdrawals.length > 0 ? oneTimeWithdrawals : undefined,
+      retirementMitigation: profile.retirementMitigation,
+      annualExpensesAtRetirement: profile.annualExpenses * Math.pow(1 + profile.inflation, Math.max(0, profile.retirementAge - profile.currentAge)),
     }
   }, [
     analysisPortfolio.retirementPortfolio, analysisPortfolio.allocationWeights,
     config, profile.expenseRatio, strategy, withdrawal.strategyParams, profile.inflation,
-    profile.retirementWithdrawals, profile.retirementAge,
+    profile.retirementWithdrawals, profile.retirementAge, profile.retirementMitigation,
+    profile.annualExpenses, profile.currentAge,
   ])
 
   // Base mutation (no heatmap — fast)

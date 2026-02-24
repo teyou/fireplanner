@@ -36,6 +36,8 @@ const PROFILE_DATA_KEYS = [
   'healthcareConfig',
   'retirementWithdrawals',
   'financialGoals',
+  'cashReserveEnabled', 'cashReserveMode', 'cashReserveFixedAmount',
+  'cashReserveMonths', 'cashReserveReturn', 'retirementMitigation',
 ] as const
 
 const DEFAULT_HEALTHCARE_CONFIG: HealthcareConfig = {
@@ -92,6 +94,12 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   healthcareConfig: DEFAULT_HEALTHCARE_CONFIG,
   retirementWithdrawals: [],
   financialGoals: [],
+  cashReserveEnabled: false,
+  cashReserveMode: 'months' as const,
+  cashReserveFixedAmount: 30000,
+  cashReserveMonths: 6,
+  cashReserveReturn: 0.02,
+  retirementMitigation: { type: 'none' as const },
 }
 
 function extractProfileData(state: ProfileState & ProfileActions): Omit<ProfileState, 'validationErrors'> {
@@ -266,7 +274,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 15,
+      version: 16,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -342,6 +350,14 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
         }
         if (version < 15) {
           state.financialGoals = state.financialGoals ?? []
+        }
+        if (version < 16) {
+          state.cashReserveEnabled = state.cashReserveEnabled ?? false
+          state.cashReserveMode = state.cashReserveMode ?? 'months'
+          state.cashReserveFixedAmount = state.cashReserveFixedAmount ?? 30000
+          state.cashReserveMonths = state.cashReserveMonths ?? 6
+          state.cashReserveReturn = state.cashReserveReturn ?? 0.02
+          state.retirementMitigation = state.retirementMitigation ?? { type: 'none' }
         }
         return state
       },

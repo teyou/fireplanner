@@ -20,7 +20,7 @@ import {
   type HistoricalReturnRow,
 } from '@/lib/data/historicalReturnsFull.ts'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns.ts'
-import type { MonteCarloResult, PercentileBands, TerminalStats, FailureDistribution, SpendingMetrics, HistogramBucket, HistogramSnapshot } from '@/lib/types.ts'
+import type { MonteCarloResult, PercentileBands, TerminalStats, FailureDistribution, SpendingMetrics, HistogramBucket, HistogramSnapshot, RetirementMitigationConfig } from '@/lib/types.ts'
 
 // ============================================================
 // Types
@@ -45,6 +45,8 @@ export interface MonteCarloEngineParams {
   expenseRatio: number
   inflation: number
   portfolioAdjustments?: { year: number; amount: number }[]  // sparse one-time equity injections
+  retirementMitigation?: RetirementMitigationConfig
+  annualExpensesAtRetirement?: number  // needed to compute bucket target
 }
 
 export type MonteCarloEngineResult = Omit<
@@ -299,6 +301,9 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
     inflation,
   } = params
 
+  const retirementMitigation = params.retirementMitigation ?? { type: 'none' as const }
+  const annualExpensesAtRetirement = params.annualExpensesAtRetirement ?? 0
+
   const rng = new SeededRNG(seed ?? 42)
 
   const nYearsAccum = Math.max(0, retirementAge - currentAge)
@@ -365,6 +370,10 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
   const wb_p90: number[] = []
   const wb_p95: number[] = []
 
+  // Retirement cash bucket state (one scalar per sim)
+  const cashBuckets = new Float64Array(nSims)      // current bucket balance
+  const cashBucketTargets = new Float64Array(nSims) // target bucket size
+
   for (let t = 0; t < nYearsTotal; t++) {
     if (t < nYearsAccum) {
       // ACCUMULATION: add savings, grow portfolio
@@ -383,6 +392,17 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
         const retirementBalances = balances.map((b) => b[t])
         const medianBalance = percentile(retirementBalances, 50)
         initialWithdrawalAmount = medianBalance * swr
+      }
+
+      // Initialize retirement cash bucket
+      if (decumYear === 0 && retirementMitigation.type === 'cash_bucket') {
+        const bucketTarget = (annualExpensesAtRetirement / 12) * retirementMitigation.targetMonths
+        for (let s = 0; s < nSims; s++) {
+          const available = Math.min(bucketTarget, balances[s][t])
+          cashBuckets[s] = available
+          balances[s][t] -= available
+          cashBucketTargets[s] = bucketTarget
+        }
       }
 
       for (let s = 0; s < nSims; s++) {
@@ -417,8 +437,11 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
           : 0
         let netWithdrawal = Math.max(0, withdrawal - income)
 
-        // Don't withdraw more than the portfolio
-        netWithdrawal = Math.min(netWithdrawal, currentBalance)
+        // Don't withdraw more than total available liquidity
+        const totalLiquidity = retirementMitigation.type === 'cash_bucket'
+          ? currentBalance + cashBuckets[s]
+          : currentBalance
+        netWithdrawal = Math.min(netWithdrawal, totalLiquidity)
 
         prevWithdrawals[s] = withdrawal
         prevBalances[s] = currentBalance
@@ -427,8 +450,28 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
         withdrawalCol[s] = netWithdrawal
         allNetWithdrawals[s].push(netWithdrawal)
 
-        balances[s][t + 1] =
-          (currentBalance - netWithdrawal) * (1 + portfolioReturns[s][t] - expenseRatio)
+        if (retirementMitigation.type === 'cash_bucket' && cashBuckets[s] > 0) {
+          // Draw withdrawal from cash bucket first
+          const fromBucket = Math.min(netWithdrawal, cashBuckets[s])
+          const fromPortfolio = netWithdrawal - fromBucket
+          cashBuckets[s] = (cashBuckets[s] - fromBucket) * (1 + retirementMitigation.cashReturn)
+
+          balances[s][t + 1] =
+            (currentBalance - fromPortfolio) * (1 + portfolioReturns[s][t] - expenseRatio)
+
+          // Refill bucket in positive-return years
+          if (portfolioReturns[s][t] > 0 && balances[s][t + 1] > 0) {
+            const shortfall = Math.max(0, cashBucketTargets[s] - cashBuckets[s])
+            const refillCap = balances[s][t + 1] * 0.10
+            const refill = Math.min(shortfall, refillCap)
+            cashBuckets[s] += refill
+            balances[s][t + 1] -= refill
+          }
+        } else {
+          // Default: withdraw directly from portfolio (existing behavior)
+          balances[s][t + 1] =
+            (currentBalance - netWithdrawal) * (1 + portfolioReturns[s][t] - expenseRatio)
+        }
 
         // Check for failure
         if (balances[s][t + 1] <= 0 && !failed[s]) {

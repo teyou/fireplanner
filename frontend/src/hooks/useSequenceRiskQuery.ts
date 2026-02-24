@@ -118,6 +118,8 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
         inflation: profile.inflation,
         postRetirementIncome,
         oneTimeWithdrawals: oneTimeWithdrawals.length > 0 ? oneTimeWithdrawals : undefined,
+        retirementMitigation: profile.retirementMitigation,
+        annualExpensesAtRetirement: profile.annualExpenses * Math.pow(1 + profile.inflation, Math.max(0, profile.retirementAge - profile.currentAge)),
       }
 
       return runSequenceRiskWorker(params)
