@@ -11,6 +11,45 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-24',
+    category: 'feature',
+    title: 'Locked Assets',
+    description:
+      'Track illiquid holdings (employer RSUs, fixed deposits, foreign pensions) that become accessible at a specific age. Each asset grows at a configurable rate, contributes to total net worth but not accessible net worth for FIRE calculations, and flows into your liquid portfolio upon unlocking. Up to 10 locked assets supported.',
+    affectedSections: ['section-net-worth'],
+  },
+  {
+    date: '2026-02-24',
+    category: 'feature',
+    title: 'CPF Voluntary Top-Ups',
+    description:
+      'Model voluntary contributions to CPF OA, SA, and MA. SA top-ups qualify for RSTU tax relief (up to $8,000 deduction). Top-ups are capped at the Annual Limit ($37,740) and integrate into income projection, CPF balances, and tax calculations.',
+    affectedSections: ['section-cpf'],
+  },
+  {
+    date: '2026-02-24',
+    category: 'fix',
+    title: 'Simulations use actual retirement expenses',
+    description:
+      'Monte Carlo, backtest, and sequence risk engines now use your actual annual expenses at retirement for the initial withdrawal amount instead of portfolio × SWR. SWR optimizer and backtest heatmap continue to vary withdrawal rate independently for rate-sweeping analysis.',
+    affectedSections: ['section-simulation'],
+  },
+  {
+    date: '2026-02-24',
+    category: 'fix',
+    title: 'Percentage input display precision',
+    description:
+      'Fixed floating-point noise in percentage inputs (e.g. 1.7000000000000002% now displays correctly as 1.7%).',
+  },
+  {
+    date: '2026-02-24',
+    category: 'data-update',
+    title: 'Medisave BHS corrected to $79,000',
+    description:
+      'Basic Healthcare Sum (BHS) updated to $79,000 for 2026. CPF Annual Limit constant ($37,740) added for voluntary top-up cap enforcement.',
+    affectedSections: ['section-cpf'],
+  },
+  {
+    date: '2026-02-24',
     category: 'fix',
     title: 'CPF interest uses mid-year approximation',
     description:
