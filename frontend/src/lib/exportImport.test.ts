@@ -79,6 +79,32 @@ describe('exportToJson', () => {
     // Should still export — just skip the corrupted one
     expect(downloadedBlob).not.toBeNull()
   })
+
+  it('export includes per-store version numbers', async () => {
+    // Populate a store via Zustand persist format (which writes {state, version} to localStorage)
+    localStorage.setItem('fireplanner-profile', JSON.stringify({
+      state: { currentAge: 40 },
+      version: 15,
+    }))
+
+    let capturedBlob: Blob | null = null
+    vi.spyOn(document, 'createElement').mockReturnValue({
+      href: '', download: '', click: vi.fn(),
+    } as unknown as HTMLAnchorElement)
+    vi.spyOn(URL, 'createObjectURL').mockImplementation((blob: Blob | MediaSource) => {
+      capturedBlob = blob as Blob
+      return 'blob:test'
+    })
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+
+    exportToJson()
+
+    const text = await capturedBlob!.text()
+    const data = JSON.parse(text)
+    const profile = data.stores['fireplanner-profile']
+    expect(profile.state).toBeDefined()
+    expect(profile.version).toBe(15)
+  })
 })
 
 describe('importFromJson', () => {
