@@ -4,9 +4,16 @@ import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { PercentInput } from '@/components/shared/PercentInput'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Plus, Trash2 } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { cn } from '@/lib/utils'
 
 export function FinancialSection() {
   const store = useProfileStore()
+  const { lockedAssets, addLockedAsset, removeLockedAsset, updateLockedAsset, currentAge } = useProfileStore()
   const mode = useEffectiveMode('section-net-worth')
 
   return (
@@ -90,6 +97,78 @@ export function FinancialSection() {
               max={75}
             />
           )}
+
+          {/* Locked Assets */}
+          <div className="col-span-full mt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <h4 className="text-sm font-medium">Locked Assets</h4>
+              <InfoTooltip text="Illiquid holdings that become accessible at a specific age (e.g., employer RSUs, fixed deposits, foreign pensions). Entered separately from Liquid Net Worth — not double-counted." />
+            </div>
+            {lockedAssets.map((asset, i) => (
+              <div key={asset.id} className="grid grid-cols-[1fr_120px_80px_80px_32px] gap-2 mb-2 items-end">
+                <div>
+                  {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">Name</Label>}
+                  <Input
+                    value={asset.name}
+                    onChange={(e) => updateLockedAsset(asset.id, { name: e.target.value })}
+                    placeholder="e.g., Employer RSUs"
+                    className="h-9"
+                  />
+                </div>
+                <div>
+                  {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">Amount</Label>}
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm z-10">$</span>
+                    <NumberInput
+                      value={asset.amount}
+                      onChange={(v) => updateLockedAsset(asset.id, { amount: v })}
+                      integer
+                      formatWithCommas
+                      className="pl-7 border-blue-300 h-9"
+                    />
+                  </div>
+                </div>
+                <div>
+                  {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">Unlock Age</Label>}
+                  <NumberInput
+                    value={asset.unlockAge}
+                    onChange={(v) => updateLockedAsset(asset.id, { unlockAge: v })}
+                  />
+                </div>
+                <div>
+                  {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">Growth</Label>}
+                  <PercentInput
+                    value={asset.growthRate}
+                    onChange={(v) => updateLockedAsset(asset.id, { growthRate: v })}
+                  />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn("h-9 w-9", i === 0 && "mt-5")}
+                  onClick={() => removeLockedAsset(asset.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            {lockedAssets.length < 10 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => addLockedAsset({
+                  id: crypto.randomUUID(),
+                  name: '',
+                  amount: 0,
+                  unlockAge: currentAge + 10,
+                  growthRate: 0,
+                })}
+                className="mt-1"
+              >
+                <Plus className="h-4 w-4 mr-1" /> Add Locked Asset
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
