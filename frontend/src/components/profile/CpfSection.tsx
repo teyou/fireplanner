@@ -14,6 +14,7 @@ import type { CpfLifePlan, CpfRetirementSum } from '@/lib/types'
 import { getCpfRatesForAge, RETIREMENT_SUM_BASE_YEAR, BRS_BASE, FRS_BASE, ERS_BASE, SA_INTEREST_RATE } from '@/lib/data/cpfRates'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { CpfProjectionTable } from '@/components/cpf/CpfProjectionTable'
+import { CpfAssumptionsPanel } from '@/components/cpf/CpfAssumptionsPanel'
 import { cn, formatCurrency, formatPercent } from '@/lib/utils'
 
 export function CpfSection() {
@@ -486,6 +487,7 @@ export function CpfSection() {
                 Year-by-Year CPF Projection
                 <InfoTooltip text="Projected CPF balances based on your income model, contribution rates, and CPF LIFE configuration. Milestone rows are highlighted when balances cross BRS/FRS/ERS thresholds." />
               </h4>
+              <CpfAssumptionsPanel />
               <CpfProjectionTable />
             </div>
           </>
