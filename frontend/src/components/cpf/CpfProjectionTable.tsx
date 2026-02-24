@@ -29,6 +29,7 @@ export function CpfProjectionTable() {
   const hasHousingDeduction = rows?.some((r) => r.oaHousingDeduction > 0) ?? false
   const hasRA = rows?.some((r) => r.raBalance > 0) ?? false
   const hasBequest = rows?.some((r) => r.bequest > 0) ?? false
+  const hasCpfis = rows?.some((r) => r.cpfisOA > 0 || r.cpfisSA > 0) ?? false
   const depletionRow = rows?.find((r) => r.oaShortfall > 0) ?? null
   const mortgageEndAge = rows && depletionRow
     ? ([...rows].reverse().find((r: CpfProjectionRow) => r.oaHousingDeduction > 0 || r.oaShortfall > 0)?.age ?? 0)
@@ -49,6 +50,19 @@ export function CpfProjectionTable() {
         cell: (info) => currencyCell(info.getValue()),
       }),
     ]
+
+    if (hasCpfis) {
+      cols.push(
+        columnHelper.accessor('cpfisOA', {
+          header: 'CPFIS-OA',
+          cell: (info) => optionalCurrencyCell(info.getValue()),
+        }),
+        columnHelper.accessor('cpfisSA', {
+          header: 'CPFIS-SA',
+          cell: (info) => optionalCurrencyCell(info.getValue()),
+        }),
+      )
+    }
 
     if (hasRA) {
       cols.push(
@@ -117,7 +131,7 @@ export function CpfProjectionTable() {
     }
 
     return cols
-  }, [hasHousingDeduction, hasRA, hasBequest, depletionRow])
+  }, [hasHousingDeduction, hasRA, hasBequest, hasCpfis, depletionRow])
 
   const table = useReactTable({
     data: rows ?? [],
