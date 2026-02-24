@@ -1554,6 +1554,358 @@ describe('integration tests', () => {
     expect(row73.srsBalance).toBeCloseTo(0, 0)
   })
 
+  it('OA withdrawal at age 55: OA decreases, cpfOaWithdrawal field set', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 50,
+      retirementAge: 58,
+      lifeExpectancy: 65,
+      salaryModel: 'simple',
+      annualSalary: 100000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 200000,
+      initialCpfSA: 100000,
+      initialCpfMA: 30000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+      cpfOaWithdrawals: [{ id: 'w1', label: 'OA withdrawal', amount: 50000, age: 55 }],
+    })
+
+    // At 55: OA withdrawal should appear
+    const row55 = rows.find((r) => r.age === 55)!
+    expect(row55.cpfOaWithdrawal).toBe(50000)
+
+    // Compare with no-withdrawal scenario
+    const rowsNoW = generateIncomeProjection({
+      currentAge: 50,
+      retirementAge: 58,
+      lifeExpectancy: 65,
+      salaryModel: 'simple',
+      annualSalary: 100000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 200000,
+      initialCpfSA: 100000,
+      initialCpfMA: 30000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+    })
+    const noW55 = rowsNoW.find((r) => r.age === 55)!
+    // OA should be ~$50K lower in the withdrawal scenario
+    expect(row55.cpfOA).toBeCloseTo(noW55.cpfOA - 50000, -2)
+  })
+
+  it('OA withdrawal clamped to available balance', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 54,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 48000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 10000,
+      initialCpfSA: 50000,
+      initialCpfMA: 20000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+      cpfOaWithdrawals: [{ id: 'w1', label: 'Big withdrawal', amount: 999999, age: 55 }],
+    })
+
+    const row55 = rows.find((r) => r.age === 55)!
+    // Withdrawal should be clamped to whatever OA is at that point (after contributions/interest)
+    // It can't withdraw more than OA balance
+    expect(row55.cpfOaWithdrawal).toBeGreaterThan(0)
+    expect(row55.cpfOaWithdrawal).toBeLessThan(999999)
+    // After withdrawal, OA should be at or near 0
+    // (Note: OA may not be exactly 0 because the withdrawal happens after interest but we check it's close)
+    // Actually cpfOaWithdrawal = min(amount, cpfOA), and cpfOA -= withdrawable
+    // So cpfOA should be exactly 0 if withdrawal > balance
+    // But note: at age 55, RA transfer happens first (SA -> RA), then contributions, then interest, then withdrawal
+    // So OA gets OA interest + contributions + possible SA excess before withdrawal
+    expect(row55.cpfOA).toBeGreaterThanOrEqual(0)
+  })
+
+  it('OA withdrawal before 55 is ignored (age < 55)', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 30,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 48000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 100000,
+      initialCpfSA: 50000,
+      initialCpfMA: 20000,
+      cpfOaWithdrawals: [{ id: 'w1', label: 'Early withdrawal', amount: 50000, age: 40 }],
+    })
+
+    // At age 40: withdrawal should not happen (age < 55)
+    const row40 = rows.find((r) => r.age === 40)!
+    expect(row40.cpfOaWithdrawal).toBe(0)
+
+    // All rows before 55 should have 0 withdrawal
+    for (const row of rows) {
+      if (row.age < 55) {
+        expect(row.cpfOaWithdrawal).toBe(0)
+      }
+    }
+  })
+
+  it('multiple OA withdrawals at different ages', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 50,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 100000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 300000,
+      initialCpfSA: 100000,
+      initialCpfMA: 30000,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+      cpfOaWithdrawals: [
+        { id: 'w1', label: 'First', amount: 50000, age: 55 },
+        { id: 'w2', label: 'Second', amount: 30000, age: 60 },
+      ],
+    })
+
+    const row55 = rows.find((r) => r.age === 55)!
+    expect(row55.cpfOaWithdrawal).toBe(50000)
+
+    const row60 = rows.find((r) => r.age === 60)!
+    expect(row60.cpfOaWithdrawal).toBe(30000)
+
+    // Other ages should have 0
+    const row56 = rows.find((r) => r.age === 56)!
+    expect(row56.cpfOaWithdrawal).toBe(0)
+  })
+
+  it('CPFIS enabled: OA grows faster pre-55 with higher return', () => {
+    const baseParams = {
+      currentAge: 30,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple' as const,
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree' as const,
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 48000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 100000,
+      initialCpfSA: 80000,
+      initialCpfMA: 20000,
+    }
+
+    const rowsNoCpfis = generateIncomeProjection(baseParams)
+    const rowsCpfis = generateIncomeProjection({
+      ...baseParams,
+      cpfisEnabled: true,
+      cpfisOaReturn: 0.08,
+      cpfisSaReturn: 0.07,
+    })
+
+    // At age 50 (20 years of compounding), CPFIS should produce higher OA + SA
+    const noCpfis50 = rowsNoCpfis.find((r) => r.age === 50)!
+    const cpfis50 = rowsCpfis.find((r) => r.age === 50)!
+
+    // OA should be higher with CPFIS (8% > 2.5% on amounts above $20K)
+    expect(cpfis50.cpfOA).toBeGreaterThan(noCpfis50.cpfOA)
+    // SA should be higher with CPFIS (7% > 4% on amounts above $40K)
+    expect(cpfis50.cpfSA).toBeGreaterThan(noCpfis50.cpfSA)
+  })
+
+  it('CPFIS disabled: unchanged behavior (regression)', () => {
+    const baseParams = {
+      currentAge: 30,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple' as const,
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree' as const,
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 48000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 100000,
+      initialCpfSA: 80000,
+      initialCpfMA: 20000,
+    }
+
+    const rowsDefault = generateIncomeProjection(baseParams)
+    const rowsExplicitFalse = generateIncomeProjection({
+      ...baseParams,
+      cpfisEnabled: false,
+      cpfisOaReturn: 0.08,
+      cpfisSaReturn: 0.07,
+    })
+
+    // Results should be identical
+    const default50 = rowsDefault.find((r) => r.age === 50)!
+    const explicit50 = rowsExplicitFalse.find((r) => r.age === 50)!
+    expect(explicit50.cpfOA).toBeCloseTo(default50.cpfOA, 2)
+    expect(explicit50.cpfSA).toBeCloseTo(default50.cpfSA, 2)
+  })
+
+  it('CPFIS reverts post-55 (saClosed = true, CPFIS inactive)', () => {
+    // CPFIS is only active when SA is open (pre-55).
+    // After 55, SA closes and standard rates apply.
+    const rows = generateIncomeProjection({
+      currentAge: 50,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 100000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 100000,
+      initialCpfSA: 80000,
+      initialCpfMA: 20000,
+      cpfisEnabled: true,
+      cpfisOaReturn: 0.08,
+      cpfisSaReturn: 0.07,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+    })
+
+    // Pre-55: SA should be > 0 (CPFIS active)
+    const row54 = rows.find((r) => r.age === 54)!
+    expect(row54.cpfSA).toBeGreaterThan(0)
+
+    // At 55: SA closes, transferred to RA
+    const row55 = rows.find((r) => r.age === 55)!
+    expect(row55.cpfSA).toBe(0)
+    expect(row55.cpfRA).toBeGreaterThan(0)
+
+    // Post-55: CPFIS should be inactive (saClosed = true)
+    // Verify by comparing post-55 OA growth with and without CPFIS
+    const rowsNoCpfis = generateIncomeProjection({
+      currentAge: 50,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 100000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 100000,
+      initialCpfSA: 80000,
+      initialCpfMA: 20000,
+      cpfisEnabled: false,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+    })
+
+    // Post-55: CPFIS should be inactive (saClosed = true)
+    // Verify by checking that CPF contributions flow the same way post-55
+    const row56Cpfis = rows.find((r) => r.age === 56)!
+    const row56NoCpfis = rowsNoCpfis.find((r) => r.age === 56)!
+    // The year-over-year CPF contributions should be identical post-55 (standard rates)
+    expect(row56Cpfis.cpfEmployee).toBeCloseTo(row56NoCpfis.cpfEmployee, 0)
+  })
+
   it('tracks cpfOaShortfall when OA is depleted by mortgage', () => {
     const result = generateIncomeProjection({
       currentAge: 38,

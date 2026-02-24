@@ -10,9 +10,10 @@ import type {
   CpfLifePlan,
   CpfRetirementSum,
   CpfHousingMode,
+  CpfOaWithdrawal,
 } from '@/lib/types'
 import { getMomSalary } from '@/lib/data/momSalary'
-import { calculateCpfContribution, calculateCpfExtraInterestWithAge, calculateCpfLifePayoutAtAge, getRetirementSumAmount, performAge55Transfer, allocatePostAge55Contribution } from './cpf'
+import { calculateCpfContribution, calculateCpfExtraInterestWithAge, calculateCpfLifePayoutAtAge, getRetirementSumAmount, performAge55Transfer, allocatePostAge55Contribution, calculateCpfisInterest } from './cpf'
 import { calculateChargeableIncome, calculateProgressiveTax } from './tax'
 import {
   OA_INTEREST_RATE,
@@ -255,6 +256,12 @@ export interface IncomeProjectionParams {
   srsBalance?: number
   srsInvestmentReturn?: number
   srsDrawdownStartAge?: number
+  // CPF OA Withdrawals (post-55 transfers to liquid portfolio)
+  cpfOaWithdrawals?: CpfOaWithdrawal[]
+  // CPFIS (CPF Investment Scheme)
+  cpfisEnabled?: boolean
+  cpfisOaReturn?: number
+  cpfisSaReturn?: number
 }
 
 /**
@@ -449,11 +456,26 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       }
     }
 
-    // CPF interest
-    const oaInterest = cpfOA * OA_INTEREST_RATE
-    const saInterest = saClosed ? 0 : cpfSA * SA_INTEREST_RATE
+    // CPF interest (CPFIS applies only pre-55 when SA is open)
+    const cpfisActive = (params.cpfisEnabled ?? false) && !saClosed
+    let oaInterest: number
+    let saInterest: number
+    if (cpfisActive) {
+      const cpfisResult = calculateCpfisInterest(
+        cpfOA, cpfSA,
+        params.cpfisOaReturn ?? 0.04,
+        params.cpfisSaReturn ?? 0.05
+      )
+      oaInterest = cpfisResult.oaInterest
+      saInterest = cpfisResult.saInterest
+    } else {
+      oaInterest = cpfOA * OA_INTEREST_RATE
+      saInterest = saClosed ? 0 : cpfSA * SA_INTEREST_RATE
+    }
     const maInterest = cpfMA * MA_INTEREST_RATE
     const raInterest = cpfRA * RA_INTEREST_RATE
+    // Extra interest: when CPFIS active, only retained portions qualify
+    // (simplification: full balances qualify since CPFIS funds are still "in CPF")
     const extraInterest = calculateCpfExtraInterestWithAge(cpfOA, cpfSA, cpfMA, cpfRA, age)
 
     cpfOA += oaInterest
@@ -474,6 +496,16 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       cpfSA += saInterest + extraInterest
     }
     cpfMA += maInterest
+
+    // CPF OA withdrawals at this age (transfer to liquid portfolio)
+    let cpfOaWithdrawalAmount = 0
+    for (const w of (params.cpfOaWithdrawals ?? [])) {
+      if (w.age === age && age >= 55) {
+        const withdrawable = Math.min(w.amount, cpfOA)
+        cpfOA -= withdrawable
+        cpfOaWithdrawalAmount += withdrawable
+      }
+    }
 
     // Tax: only on taxable income
     // SRS drawdown: only 50% is taxable (srsTaxableWithdrawal = withdrawal * 0.5)
@@ -534,11 +566,11 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       cpfOaHousingDeduction,
       cpfOaShortfall,
       cpfLifeAnnuityPremium,
+      cpfOaWithdrawal: cpfOaWithdrawalAmount,
       srsBalance,
       srsContribution,
       srsWithdrawal,
       srsTaxableWithdrawal,
-      cpfOaWithdrawal: 0,
       // Cash reserve defaults (populated by hook post-processing)
       cashReserveTarget: 0,
       cashReserveBalance: 0,

@@ -271,14 +271,13 @@ export interface IncomeProjectionRow {
   cpfOaHousingDeduction: number
   cpfOaShortfall: number  // Amount by which OA cannot cover mortgage deduction (0 when OA is sufficient)
   cpfLifeAnnuityPremium: number
+  // CPF OA withdrawal (transfer to liquid portfolio at age 55+)
+  cpfOaWithdrawal: number
   // SRS lifecycle
   srsBalance: number
   srsContribution: number
   srsWithdrawal: number
   srsTaxableWithdrawal: number
-
-  // CPF OA withdrawal transferred to liquid portfolio
-  cpfOaWithdrawal: number
 
   // Cash reserve (populated by hook post-processing, not income engine)
   cashReserveTarget: number

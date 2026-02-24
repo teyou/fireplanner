@@ -4,6 +4,7 @@ import {
   calculateCpfContribution,
   calculateCpfExtraInterest,
   calculateCpfExtraInterestWithAge,
+  calculateCpfisInterest,
   projectCpfBalances,
   calculateBrsFrsErs,
   estimateCpfLifePayout,
@@ -13,6 +14,12 @@ import {
   performAge55Transfer,
   allocatePostAge55Contribution,
 } from './cpf'
+import {
+  OA_INTEREST_RATE,
+  SA_INTEREST_RATE,
+  CPFIS_OA_RETENTION,
+  CPFIS_SA_RETENTION,
+} from '@/lib/data/cpfRates'
 
 describe('calculateCpfContribution', () => {
   it('age 30, $72K salary → 37% total rate', () => {
@@ -496,5 +503,76 @@ describe('calculateCpfExtraInterestWithAge', () => {
 
   it('age 56: zero balances → zero extra', () => {
     expect(calculateCpfExtraInterestWithAge(0, 0, 0, 0, 56)).toBe(0)
+  })
+})
+
+// ============================================================
+// CPFIS Interest
+// ============================================================
+
+describe('calculateCpfisInterest', () => {
+  it('OA below retention: all at standard 2.5%', () => {
+    const result = calculateCpfisInterest(15000, 30000, 0.06, 0.07)
+    // OA: $15K all at 2.5% = $375
+    expect(result.oaInterest).toBeCloseTo(15000 * OA_INTEREST_RATE, 2)
+    // SA: $30K all at 4% = $1,200
+    expect(result.saInterest).toBeCloseTo(30000 * SA_INTEREST_RATE, 2)
+  })
+
+  it('SA below retention: all at standard 4%', () => {
+    const result = calculateCpfisInterest(50000, 35000, 0.06, 0.07)
+    // SA: $35K all at 4% = $1,400
+    expect(result.saInterest).toBeCloseTo(35000 * SA_INTEREST_RATE, 2)
+  })
+
+  it('OA above retention: split rate calculation', () => {
+    const result = calculateCpfisInterest(50000, 10000, 0.06, 0.07)
+    // OA: $20K at 2.5% + $30K at 6% = $500 + $1,800 = $2,300
+    const expectedOa = CPFIS_OA_RETENTION * OA_INTEREST_RATE + 30000 * 0.06
+    expect(result.oaInterest).toBeCloseTo(expectedOa, 2)
+    // SA: $10K all at 4% = $400
+    expect(result.saInterest).toBeCloseTo(10000 * SA_INTEREST_RATE, 2)
+  })
+
+  it('SA above retention: split rate calculation', () => {
+    const result = calculateCpfisInterest(10000, 100000, 0.06, 0.07)
+    // OA: $10K at 2.5% = $250
+    expect(result.oaInterest).toBeCloseTo(10000 * OA_INTEREST_RATE, 2)
+    // SA: $40K at 4% + $60K at 7% = $1,600 + $4,200 = $5,800
+    const expectedSa = CPFIS_SA_RETENTION * SA_INTEREST_RATE + 60000 * 0.07
+    expect(result.saInterest).toBeCloseTo(expectedSa, 2)
+  })
+
+  it('both above retention', () => {
+    const result = calculateCpfisInterest(80000, 100000, 0.08, 0.10)
+    // OA: $20K at 2.5% + $60K at 8% = $500 + $4,800 = $5,300
+    const expectedOa = CPFIS_OA_RETENTION * OA_INTEREST_RATE + 60000 * 0.08
+    expect(result.oaInterest).toBeCloseTo(expectedOa, 2)
+    // SA: $40K at 4% + $60K at 10% = $1,600 + $6,000 = $7,600
+    const expectedSa = CPFIS_SA_RETENTION * SA_INTEREST_RATE + 60000 * 0.10
+    expect(result.saInterest).toBeCloseTo(expectedSa, 2)
+  })
+
+  it('zero balances', () => {
+    const result = calculateCpfisInterest(0, 0, 0.06, 0.07)
+    expect(result.oaInterest).toBe(0)
+    expect(result.saInterest).toBe(0)
+  })
+
+  it('exactly at retention limit', () => {
+    const result = calculateCpfisInterest(CPFIS_OA_RETENTION, CPFIS_SA_RETENTION, 0.06, 0.07)
+    // All at standard rates since balance equals retention (nothing above)
+    expect(result.oaInterest).toBeCloseTo(CPFIS_OA_RETENTION * OA_INTEREST_RATE, 2)
+    expect(result.saInterest).toBeCloseTo(CPFIS_SA_RETENTION * SA_INTEREST_RATE, 2)
+  })
+
+  it('negative CPFIS return still applies to invested portion', () => {
+    const result = calculateCpfisInterest(50000, 80000, -0.05, -0.10)
+    // OA: $20K at 2.5% + $30K at -5% = $500 - $1,500 = -$1,000
+    const expectedOa = CPFIS_OA_RETENTION * OA_INTEREST_RATE + 30000 * (-0.05)
+    expect(result.oaInterest).toBeCloseTo(expectedOa, 2)
+    // SA: $40K at 4% + $40K at -10% = $1,600 - $4,000 = -$2,400
+    const expectedSa = CPFIS_SA_RETENTION * SA_INTEREST_RATE + 40000 * (-0.10)
+    expect(result.saInterest).toBeCloseTo(expectedSa, 2)
   })
 })

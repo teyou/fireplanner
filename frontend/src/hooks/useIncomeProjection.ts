@@ -68,6 +68,10 @@ export function buildProjectionParams(
     srsBalance: profile.srsBalance,
     srsInvestmentReturn: profile.srsInvestmentReturn,
     srsDrawdownStartAge: profile.srsDrawdownStartAge,
+    cpfOaWithdrawals: profile.cpfOaWithdrawals,
+    cpfisEnabled: profile.cpfisEnabled,
+    cpfisOaReturn: profile.cpfisOaReturn,
+    cpfisSaReturn: profile.cpfisSaReturn,
   }
 }
 
@@ -145,6 +149,10 @@ export function useIncomeProjection(): IncomeProjectionResult {
       srsBalance: profile.srsBalance,
       srsInvestmentReturn: profile.srsInvestmentReturn,
       srsDrawdownStartAge: profile.srsDrawdownStartAge,
+      cpfOaWithdrawals: profile.cpfOaWithdrawals,
+      cpfisEnabled: profile.cpfisEnabled,
+      cpfisOaReturn: profile.cpfisOaReturn,
+      cpfisSaReturn: profile.cpfisSaReturn,
     })
 
     const summary = calculateIncomeSummary(projection, profile.annualExpenses)
@@ -172,6 +180,10 @@ export function useIncomeProjection(): IncomeProjectionResult {
     profile.srsBalance,
     profile.srsInvestmentReturn,
     profile.srsDrawdownStartAge,
+    profile.cpfOaWithdrawals,
+    profile.cpfisEnabled,
+    profile.cpfisOaReturn,
+    profile.cpfisSaReturn,
     profile.validationErrors,
     income.salaryModel,
     income.annualSalary,

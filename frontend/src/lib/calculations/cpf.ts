@@ -20,6 +20,8 @@ import {
   CPF_LIFE_STANDARD_RATE,
   CPF_LIFE_ESCALATING_RATE,
   CPF_LIFE_ESCALATING_INCREASE,
+  CPFIS_OA_RETENTION,
+  CPFIS_SA_RETENTION,
 } from '@/lib/data/cpfRates'
 
 // Re-export CpfLifePlan from types for backward compatibility
@@ -124,6 +126,37 @@ export function calculateCpfExtraInterestWithAge(
   const baseExtraInterest = totalQualifying * EXTRA_INTEREST_RATE
 
   return baseExtraInterest + raAdditionalInterest
+}
+
+/**
+ * Calculate interest earned on CPF balances when CPFIS is enabled.
+ *
+ * Under CPFIS, members must retain minimum amounts in OA ($20K) and SA ($40K)
+ * which continue earning standard CPF interest rates. Amounts above the
+ * retention limits are invested and earn the user-specified CPFIS return rate.
+ *
+ * @param oaBalance - Current OA balance
+ * @param saBalance - Current SA balance
+ * @param cpfisOaReturn - Expected annual return on CPFIS-OA investments
+ * @param cpfisSaReturn - Expected annual return on CPFIS-SA investments
+ */
+export function calculateCpfisInterest(
+  oaBalance: number,
+  saBalance: number,
+  cpfisOaReturn: number,
+  cpfisSaReturn: number
+): { oaInterest: number; saInterest: number } {
+  // OA: first $20K at standard 2.5%, remainder at cpfisOaReturn
+  const oaRetained = Math.min(oaBalance, CPFIS_OA_RETENTION)
+  const oaInvested = Math.max(0, oaBalance - CPFIS_OA_RETENTION)
+  const oaInterest = oaRetained * OA_INTEREST_RATE + oaInvested * cpfisOaReturn
+
+  // SA: first $40K at standard 4%, remainder at cpfisSaReturn
+  const saRetained = Math.min(saBalance, CPFIS_SA_RETENTION)
+  const saInvested = Math.max(0, saBalance - CPFIS_SA_RETENTION)
+  const saInterest = saRetained * SA_INTEREST_RATE + saInvested * cpfisSaReturn
+
+  return { oaInterest, saInterest }
 }
 
 /**

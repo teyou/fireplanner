@@ -54,11 +54,11 @@ function mockIncomeRow(overrides: Partial<IncomeProjectionRow> = {}): IncomeProj
     cpfOaHousingDeduction: 0,
     cpfOaShortfall: 0,
     cpfLifeAnnuityPremium: 0,
+    cpfOaWithdrawal: 0,
     srsBalance: 0,
     srsContribution: 0,
     srsWithdrawal: 0,
     srsTaxableWithdrawal: 0,
-    cpfOaWithdrawal: 0,
     cashReserveTarget: 0,
     cashReserveBalance: 0,
     investedSavings: 0,
@@ -1377,6 +1377,132 @@ describe('generateProjection', () => {
 
       // The savings at age 32 should be lower than age 31 by ~6K (the shortfall)
       expect(row31.savingsOrWithdrawal - row32.savingsOrWithdrawal).toBeCloseTo(6000, -1)
+    })
+  })
+
+  describe('CPF OA withdrawal to liquid NW', () => {
+    it('OA withdrawal adds to liquidNW in pre-retirement', () => {
+      const currentAge = 50
+      const retirementAge = 60
+      const lifeExpectancy = 65
+
+      // Create income rows where age 55 has an OA withdrawal of $50K
+      const incomeRows = generateMockIncomeProjection({
+        currentAge,
+        retirementAge,
+        lifeExpectancy,
+        annualSavings: 20000,
+      })
+      // Simulate OA withdrawal at age 55
+      const row55Idx = 55 - currentAge
+      incomeRows[row55Idx] = mockIncomeRow({
+        ...incomeRows[row55Idx],
+        cpfOaWithdrawal: 50000,
+      })
+
+      const params = makeParams({
+        currentAge,
+        retirementAge,
+        lifeExpectancy,
+        incomeProjection: incomeRows,
+        initialLiquidNW: 100000,
+        expectedReturn: 0,
+        inflation: 0,
+        expenseRatio: 0,
+      })
+
+      const result = generateProjection(params)
+
+      // Row at age 55 should show the OA withdrawal
+      const projRow55 = result.rows.find(r => r.age === 55)!
+      expect(projRow55.cpfOaWithdrawal).toBe(50000)
+
+      // Compare with no-withdrawal scenario
+      const incomeRowsNoW = generateMockIncomeProjection({
+        currentAge,
+        retirementAge,
+        lifeExpectancy,
+        annualSavings: 20000,
+      })
+      const paramsNoW = makeParams({
+        currentAge,
+        retirementAge,
+        lifeExpectancy,
+        incomeProjection: incomeRowsNoW,
+        initialLiquidNW: 100000,
+        expectedReturn: 0,
+        inflation: 0,
+        expenseRatio: 0,
+      })
+      const resultNoW = generateProjection(paramsNoW)
+      const projRow55NoW = resultNoW.rows.find(r => r.age === 55)!
+
+      // LiquidNW should be $50K higher in the withdrawal scenario
+      expect(projRow55.liquidNW).toBeCloseTo(projRow55NoW.liquidNW + 50000, 0)
+    })
+
+    it('OA withdrawal adds to liquidNW in post-retirement', () => {
+      const currentAge = 50
+      const retirementAge = 50
+      const lifeExpectancy = 65
+
+      // Create income rows where age 55 has an OA withdrawal of $30K
+      const incomeRows = generateMockIncomeProjection({
+        currentAge,
+        retirementAge,
+        lifeExpectancy,
+      })
+      const row55Idx = 55 - currentAge
+      incomeRows[row55Idx] = mockIncomeRow({
+        ...incomeRows[row55Idx],
+        age: 55,
+        year: row55Idx,
+        isRetired: true,
+        salary: 0,
+        totalGross: 0,
+        totalNet: 0,
+        annualSavings: 0,
+        cpfOaWithdrawal: 30000,
+      })
+
+      const params = makeParams({
+        currentAge,
+        retirementAge,
+        lifeExpectancy,
+        incomeProjection: incomeRows,
+        initialLiquidNW: 500000,
+        expectedReturn: 0,
+        inflation: 0,
+        expenseRatio: 0,
+        annualExpenses: 50000,
+      })
+
+      const result = generateProjection(params)
+      const projRow55 = result.rows.find(r => r.age === 55)!
+      expect(projRow55.cpfOaWithdrawal).toBe(30000)
+
+      // Compare with no-withdrawal scenario
+      const incomeRowsNoW = generateMockIncomeProjection({
+        currentAge,
+        retirementAge,
+        lifeExpectancy,
+      })
+      const paramsNoW = makeParams({
+        currentAge,
+        retirementAge,
+        lifeExpectancy,
+        incomeProjection: incomeRowsNoW,
+        initialLiquidNW: 500000,
+        expectedReturn: 0,
+        inflation: 0,
+        expenseRatio: 0,
+        annualExpenses: 50000,
+      })
+      const resultNoW = generateProjection(paramsNoW)
+      const projRow55NoW = resultNoW.rows.find(r => r.age === 55)!
+
+      // LiquidNW should be $30K higher in the withdrawal scenario
+      expect(projRow55.liquidNW).toBeCloseTo(projRow55NoW.liquidNW + 30000, 0)
     })
   })
 })

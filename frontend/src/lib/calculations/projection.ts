@@ -329,6 +329,9 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       liquidNW += dsNetEquity
     }
 
+    // CPF OA withdrawal → liquid portfolio
+    liquidNW += incomeRow.cpfOaWithdrawal
+
     const startLiquidNW = liquidNW
     let withdrawalAmount = 0
     let maxPermittedWithdrawal = 0
