@@ -10,7 +10,7 @@ export interface ChangelogEntry {
 /** Newest first. */
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    date: '2026-02-25',
+    date: '2026-02-24',
     category: 'fix',
     title: 'Mortgage now ends after loan term',
     description:
@@ -18,7 +18,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     affectedSections: ['section-property'],
   },
   {
-    date: '2026-02-25',
+    date: '2026-02-24',
     category: 'fix',
     title: 'CPF OA shortfall spills to cash expenses',
     description:
@@ -26,7 +26,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     affectedSections: ['section-property'],
   },
   {
-    date: '2026-02-25',
+    date: '2026-02-24',
     category: 'fix',
     title: 'CPF SA excess at age 55 preserved',
     description:
@@ -118,4 +118,4 @@ export const CHANGELOG: ChangelogEntry[] = [
 ]
 
 /** Bump this string whenever any data file is updated. Triggers the banner for returning users. */
-export const DATA_VINTAGE = '2026-02-25'
+export const DATA_VINTAGE = '2026-02-24'
