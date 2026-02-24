@@ -114,6 +114,18 @@ export interface CpfOaWithdrawal {
 }
 
 // ============================================================
+// Age-Gated Locked Assets
+// ============================================================
+
+export interface LockedAsset {
+  id: string
+  name: string
+  amount: number
+  unlockAge: number
+  growthRate: number
+}
+
+// ============================================================
 // Profile Store
 // ============================================================
 
@@ -200,6 +212,9 @@ export interface ProfileState {
 
   // Financial Goals
   financialGoals: FinancialGoal[]
+
+  // Age-Gated Locked Assets (illiquid holdings that become accessible at a specific age)
+  lockedAssets: LockedAsset[]
 
   // Validation
   validationErrors: ValidationErrors
@@ -336,6 +351,9 @@ export interface FireMetrics {
   cpfDependency: boolean
   liquidBridgeGapYears: number | null
   liquidDepletionAge: number | null
+  lockedAssetsTotal: number
+  accessibleNetWorth: number
+  totalNetWorthWithLocked: number
   /** Breakdown of effective annual expenses used to compute FIRE number */
   expensesBreakdown: {
     baseExpenses: number          // annualExpenses × retirementSpendingAdjustment × fireTypeMultiplier

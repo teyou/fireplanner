@@ -404,6 +404,9 @@ export function calculateAllFireMetrics(params: {
     cpfDependency,
     liquidBridgeGapYears,
     liquidDepletionAge,
+    lockedAssetsTotal: 0,
+    accessibleNetWorth: investableLiquid,
+    totalNetWorthWithLocked: totalNetWorth,
     expensesBreakdown: {
       baseExpenses,
       parentSupportAnnual,
