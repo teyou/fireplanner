@@ -153,6 +153,8 @@ function makeParams(overrides: Partial<ProjectionParams> = {}): ProjectionParams
     parentSupport: [],
     parentSupportEnabled: false,
     healthcareConfig: null,
+    cpfLifeStartAge: 65,
+    cpfLifePlan: 'standard' as const,
     ...overrides,
   }
 }
