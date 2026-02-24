@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "exportedAt": "2025-01-01T00:00:00.000Z",
+  "stores": {
+    "fireplanner-profile": {
+      "state": {
+        "currentAge": 30,
+        "retirementAge": 55,
+        "lifeExpectancy": 90,
+        "annualIncome": 100000,
+        "annualExpenses": 50000,
+        "liquidNetWorth": 200000
+      },
+      "version": 1
+    }
+  }
+}

@@ -280,9 +280,19 @@ function DataActions() {
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const ok = await importFromJson(file)
-    if (!ok) {
-      toast.error('Failed to import — invalid file format')
+    const result = await importFromJson(file)
+    if (!result.success) {
+      toast.error(result.error ?? 'Failed to import — invalid file format')
+    } else {
+      const storeCount = result.storesImported.length
+      const errorCount = Object.keys(result.validationErrors).length
+      if (errorCount > 0) {
+        toast.warning(
+          `Imported ${storeCount} sections (${errorCount} had validation warnings — check your inputs)`
+        )
+      } else {
+        toast.success(`Imported ${storeCount} sections successfully`)
+      }
     }
     // Reset so the same file can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = ''

@@ -304,3 +304,41 @@ export function validateAllocationField(
   if (result.success) return null
   return result.error.issues[0]?.message ?? 'Invalid value'
 }
+
+// ============================================================
+// Store-level validation for import
+// ============================================================
+
+export interface StoreValidationResult {
+  valid: boolean
+  errors: string[]
+  warnings: string[]
+}
+
+const STORE_SCHEMAS: Record<string, z.ZodType> = {
+  'fireplanner-profile': profileSchema,
+  'fireplanner-income': incomeSchema,
+  'fireplanner-allocation': allocationSchema,
+  // simulation, withdrawal, property — add schemas here as they exist
+  // For stores without a full schema, we skip validation (passthrough)
+}
+
+export function validateStoreData(
+  storeKey: string,
+  data: unknown
+): StoreValidationResult {
+  const schema = STORE_SCHEMAS[storeKey]
+  if (!schema) {
+    return { valid: true, errors: [], warnings: [`No schema for store "${storeKey}" — skipping validation`] }
+  }
+
+  const result = schema.safeParse(data)
+  if (result.success) {
+    return { valid: true, errors: [], warnings: [] }
+  }
+
+  const errors = result.error.issues.map(
+    (issue) => `${issue.path.join('.')}: ${issue.message}`
+  )
+  return { valid: false, errors, warnings: [] }
+}
