@@ -333,6 +333,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     let portfolioReturnDollar: number
     let savingsOrWithdrawal: number
     let totalIncome: number
+    let goalDeduction = 0
 
     // Parent support at this age (uses its own growth rate, not inflation)
     const parentSupportExpense = parentSupportEnabled
@@ -390,7 +391,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       const incomeShortfall = Math.max(0, baseExpInflated - incomeRow.totalNet)
 
       // Financial goals that fall in this year (pre-retirement)
-      let goalDeduction = 0
+      goalDeduction = 0
       for (const goal of params.financialGoals ?? []) {
         const endAge = goal.targetAge + goal.durationYears
         if (age >= goal.targetAge && age < endAge) {
@@ -447,15 +448,17 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       }
 
       // Financial goals that fall in retirement
+      goalDeduction = 0
       for (const goal of params.financialGoals ?? []) {
         const endAge = goal.targetAge + goal.durationYears
         if (age >= goal.targetAge && age < endAge) {
           const yearlyAmount = goal.inflationAdjusted
             ? (goal.amount / goal.durationYears) * Math.pow(1 + inflation, year)
             : goal.amount / goal.durationYears
-          oneTimeWithdrawalTotal += yearlyAmount
+          goalDeduction += yearlyAmount
         }
       }
+      oneTimeWithdrawalTotal += goalDeduction
 
       // Actual draw = expense gap after passive income (always fund expenses from portfolio).
       // maxPermittedWithdrawal (strategy-based) is advisory — shown alongside for comparison.
@@ -597,6 +600,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       healthcareCashOutlay,
       mortgageCashPayment: effectiveMortgagePayment,
       downsizingRentExpense,
+      goalExpense: goalDeduction,
       cumulativeSavings: incomeRow.cumulativeSavings,
       activeLifeEvents: incomeRow.activeLifeEvents,
     })

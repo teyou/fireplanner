@@ -1196,5 +1196,93 @@ describe('generateProjection', () => {
       expect(row31.age).toBe(31)
       expect(row31.savingsOrWithdrawal).toBe(20000 - 100000)
     })
+
+    it('goalExpense field shows goal cost at correct ages', () => {
+      const params = makeParams({
+        currentAge: 30,
+        retirementAge: 65,
+        lifeExpectancy: 90,
+        inflation: 0,
+        financialGoals: [
+          {
+            id: 'g1', label: 'Wedding', amount: 50000, targetAge: 35,
+            durationYears: 1, priority: 'important', inflationAdjusted: false, category: 'wedding',
+          },
+        ],
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 90, annualSavings: 20000,
+      })
+
+      const result = generateProjection(params)
+
+      // Age 35 (year 5): goalExpense = 50000
+      expect(result.rows[5].age).toBe(35)
+      expect(result.rows[5].goalExpense).toBe(50000)
+
+      // Age 34 (year 4): no goal active → 0
+      expect(result.rows[4].goalExpense).toBe(0)
+
+      // Age 36 (year 6): goal ended → 0
+      expect(result.rows[6].goalExpense).toBe(0)
+    })
+
+    it('goalExpense field shows per-year amount for multi-year goals', () => {
+      const params = makeParams({
+        currentAge: 30,
+        retirementAge: 65,
+        lifeExpectancy: 90,
+        inflation: 0,
+        financialGoals: [
+          {
+            id: 'g1', label: 'Education', amount: 200000, targetAge: 50,
+            durationYears: 4, priority: 'essential', inflationAdjusted: false, category: 'education',
+          },
+        ],
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 90, annualSavings: 60000,
+      })
+
+      const result = generateProjection(params)
+
+      // Ages 50-53: 200000 / 4 = 50000 per year
+      for (let i = 20; i <= 23; i++) {
+        expect(result.rows[i].age).toBe(50 + (i - 20))
+        expect(result.rows[i].goalExpense).toBe(50000)
+      }
+
+      // Age 54 (year 24): goal ended
+      expect(result.rows[24].goalExpense).toBe(0)
+    })
+
+    it('goalExpense field works for post-retirement goals', () => {
+      const params = makeParams({
+        currentAge: 55,
+        retirementAge: 58,
+        lifeExpectancy: 70,
+        initialLiquidNW: 2000000,
+        inflation: 0,
+        financialGoals: [
+          {
+            id: 'g1', label: 'Car', amount: 100000, targetAge: 62,
+            durationYears: 1, priority: 'important', inflationAdjusted: false, category: 'vehicle',
+          },
+        ],
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 55, retirementAge: 58, lifeExpectancy: 70,
+      })
+
+      const result = generateProjection(params)
+
+      // Age 62 (year 7): goalExpense = 100000
+      const row62 = result.rows.find(r => r.age === 62)!
+      expect(row62.goalExpense).toBe(100000)
+
+      // Age 63: goal ended
+      const row63 = result.rows.find(r => r.age === 63)!
+      expect(row63.goalExpense).toBe(0)
+    })
   })
 })

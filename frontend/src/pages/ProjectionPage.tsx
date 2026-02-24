@@ -54,7 +54,7 @@ const COLUMN_GROUPS: { key: ColumnGroup; label: string }[] = [
 ]
 
 const GROUP_COLUMNS: Record<ColumnGroup, string[]> = {
-  expensesBreakdown: ['baseInflatedExpenses', 'parentSupportExpense', 'healthcareCashOutlay', 'mortgageCashPayment', 'downsizingRentExpense'],
+  expensesBreakdown: ['baseInflatedExpenses', 'parentSupportExpense', 'healthcareCashOutlay', 'mortgageCashPayment', 'downsizingRentExpense', 'goalExpense'],
   incomeBreakdown: ['salary', 'rentalIncome', 'investmentIncome', 'businessIncome', 'governmentIncome', 'srsWithdrawal', 'totalGross'],
   taxCpf: ['sgTax', 'cpfEmployee', 'cpfEmployer', 'totalNet'],
   cpfBalances: ['cpfOA', 'cpfSA', 'cpfMA', 'cpfRA', 'cpfInterest', 'cpfOaHousingDeduction', 'cpfOaShortfall', 'cpfLifePayout', 'cpfBequest', 'cpfMilestone'],
@@ -150,6 +150,7 @@ export function ProjectionPage() {
         healthcareCashOutlay: d(row.healthcareCashOutlay),
         mortgageCashPayment: d(row.mortgageCashPayment),
         downsizingRentExpense: d(row.downsizingRentExpense),
+        goalExpense: d(row.goalExpense),
         cumulativeSavings: d(row.cumulativeSavings),
       }
     })
@@ -307,6 +308,11 @@ export function ProjectionPage() {
     columnHelper.accessor('downsizingRentExpense', {
       id: 'downsizingRentExpense',
       header: 'Rent (DS)',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('goalExpense', {
+      id: 'goalExpense',
+      header: 'Goals',
       cell: (info) => optionalCurrencyCell(info.getValue()),
     }),
 

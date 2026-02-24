@@ -802,6 +802,7 @@ export interface ProjectionRow {
   healthcareCashOutlay: number
   mortgageCashPayment: number     // cash portion of mortgage (excl. CPF OA portion), 0 when paid off
   downsizingRentExpense: number   // rent if sell-and-rent scenario, 0 otherwise
+  goalExpense: number             // financial goal costs at this age
   // Expanded: other
   cumulativeSavings: number
   activeLifeEvents: string[]
