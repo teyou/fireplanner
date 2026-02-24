@@ -195,6 +195,9 @@ export function validateProfileField(
     // Healthcare config sub-fields validated here for field-level checks
     'healthcareConfig.oopBaseAmount': z.number().min(0).max(50000),
     'healthcareConfig.mediSaveTopUpAnnual': z.number().min(0).max(37740),
+    cashReserveFixedAmount: z.number().min(0).max(10_000_000),
+    cashReserveMonths: z.number().int().min(1).max(60),
+    cashReserveReturn: z.number().min(0).max(0.10),
   }
 
   const schema = fieldSchemas[field]
