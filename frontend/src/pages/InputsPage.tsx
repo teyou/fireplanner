@@ -730,9 +730,11 @@ function PropertyContent() {
                             value={Math.floor(existingMortgageRemainingYears)}
                             onChange={(yrs) => {
                               const months = Math.round((existingMortgageRemainingYears % 1) * 12)
-                              setField('existingMortgageRemainingYears', yrs + months / 12)
+                              setField('existingMortgageRemainingYears', Math.max(0, yrs) + months / 12)
                             }}
                             integer
+                            min={0}
+                            max={35}
                           />
                         </div>
                         <span className="text-sm text-muted-foreground whitespace-nowrap">yr</span>
@@ -741,9 +743,11 @@ function PropertyContent() {
                             value={Math.round((existingMortgageRemainingYears % 1) * 12)}
                             onChange={(mos) => {
                               const yrs = Math.floor(existingMortgageRemainingYears)
-                              setField('existingMortgageRemainingYears', yrs + Math.min(mos, 11) / 12)
+                              setField('existingMortgageRemainingYears', yrs + mos / 12)
                             }}
                             integer
+                            min={0}
+                            max={11}
                           />
                         </div>
                         <span className="text-sm text-muted-foreground whitespace-nowrap">mo</span>

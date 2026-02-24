@@ -62,6 +62,13 @@ export function NumberInput({
     }
   }
 
+  const clamp = useCallback((v: number) => {
+    let clamped = v
+    if (min !== undefined && clamped < min) clamped = min
+    if (max !== undefined && clamped > max) clamped = max
+    return clamped
+  }, [min, max])
+
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value
@@ -70,10 +77,10 @@ export function NumberInput({
       const stripped = formatWithCommas ? raw.replace(/,/g, '') : raw
       const parsed = effectiveInteger ? parseInt(stripped, 10) : parseFloat(stripped)
       if (!isNaN(parsed)) {
-        onChange(parsed)
+        onChange(clamp(parsed))
       }
     },
-    [onChange, effectiveInteger, formatWithCommas]
+    [onChange, effectiveInteger, formatWithCommas, clamp]
   )
 
   const handleFocus = useCallback(() => {
@@ -90,9 +97,13 @@ export function NumberInput({
     if (isNaN(parsed) || stripped.trim() === '') {
       setLocalValue(format(value))
     } else {
-      setLocalValue(format(parsed))
+      const clamped = clamp(parsed)
+      if (clamped !== parsed) {
+        onChange(clamped)
+      }
+      setLocalValue(format(clamped))
     }
-  }, [localValue, value, effectiveInteger, formatWithCommas, format])
+  }, [localValue, value, effectiveInteger, formatWithCommas, format, clamp, onChange])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
