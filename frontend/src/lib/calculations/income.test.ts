@@ -2299,7 +2299,8 @@ describe('voluntary CPF top-ups in projection', () => {
     }
     const rows = generateIncomeProjection(params)
     const retiredRow = rows.find(r => r.isRetired)
-    const preRetiredRow = rows.findLast(r => !r.isRetired)
+    const preRetiredRows = rows.filter(r => !r.isRetired)
+    const preRetiredRow = preRetiredRows.length > 0 ? preRetiredRows[preRetiredRows.length - 1] : undefined
     if (retiredRow && preRetiredRow) {
       // Post-55 with saClosed, SA top-up goes to RA or OA.
       // The retired row should NOT have additional top-up applied.
