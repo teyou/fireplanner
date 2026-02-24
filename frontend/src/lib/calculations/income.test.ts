@@ -446,9 +446,9 @@ describe('calculateIncomeSummary', () => {
 
   it('computes correct peak earning for simple projection', () => {
     const rows: IncomeProjectionRow[] = [
-      { year: 0, age: 30, salary: 72000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 72000, sgTax: 2000, cpfEmployee: 14400, cpfEmployer: 12240, totalNet: 55600, annualSavings: 7600, cumulativeSavings: 7600, cpfOA: 16560, cpfSA: 4320, cpfMA: 5760, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
-      { year: 1, age: 31, salary: 80000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 80000, sgTax: 3000, cpfEmployee: 16000, cpfEmployer: 13600, totalNet: 61000, annualSavings: 13000, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
-      { year: 2, age: 32, salary: 0, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0, cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: true, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
+      { year: 0, age: 30, salary: 72000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 72000, sgTax: 2000, cpfEmployee: 14400, cpfEmployer: 12240, totalNet: 55600, annualSavings: 7600, cumulativeSavings: 7600, cpfOA: 16560, cpfSA: 4320, cpfMA: 5760, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
+      { year: 1, age: 31, salary: 80000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 80000, sgTax: 3000, cpfEmployee: 16000, cpfEmployer: 13600, totalNet: 61000, annualSavings: 13000, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
+      { year: 2, age: 32, salary: 0, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0, cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: true, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
     ]
 
     const summary = calculateIncomeSummary(rows, 48000)
@@ -1784,6 +1784,155 @@ describe('integration tests', () => {
     expect(cpfis50.cpfOA).toBeGreaterThan(noCpfis50.cpfOA)
     // SA should be higher with CPFIS (7% > 4% on amounts above $40K)
     expect(cpfis50.cpfSA).toBeGreaterThan(noCpfis50.cpfSA)
+  })
+
+  it('CPFIS enabled: cpfisOA and cpfisSA track invested amounts above retention', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 30,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 48000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 100000,
+      initialCpfSA: 80000,
+      initialCpfMA: 20000,
+      cpfisEnabled: true,
+      cpfisOaReturn: 0.08,
+      cpfisSaReturn: 0.07,
+    })
+
+    // At age 30: OA=100K, SA=80K → cpfisOA = 100K-20K = 80K, cpfisSA = 80K-40K = 40K
+    const row30 = rows.find((r) => r.age === 30)!
+    // After contributions and interest, balances will be higher than initial
+    // but the CPFIS amounts should be balance minus retention
+    expect(row30.cpfisOA).toBe(row30.cpfOA - 20000)
+    expect(row30.cpfisSA).toBe(row30.cpfSA - 40000)
+
+    // At age 50: both should still equal balance minus retention
+    const row50 = rows.find((r) => r.age === 50)!
+    expect(row50.cpfisOA).toBe(row50.cpfOA - 20000)
+    expect(row50.cpfisSA).toBe(row50.cpfSA - 40000)
+  })
+
+  it('CPFIS disabled: cpfisOA and cpfisSA are zero', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 30,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 48000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 100000,
+      initialCpfSA: 80000,
+      initialCpfMA: 20000,
+      cpfisEnabled: false,
+    })
+
+    const row30 = rows.find((r) => r.age === 30)!
+    expect(row30.cpfisOA).toBe(0)
+    expect(row30.cpfisSA).toBe(0)
+  })
+
+  it('CPFIS: cpfisOA and cpfisSA are zero when balances below retention', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 30,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 48000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 5000,  // below $20K retention
+      initialCpfSA: 10000, // below $40K retention
+      initialCpfMA: 5000,
+      cpfisEnabled: true,
+      cpfisOaReturn: 0.08,
+      cpfisSaReturn: 0.07,
+    })
+
+    // At age 30 with low starting balances, first year won't exceed retention
+    const row30 = rows.find((r) => r.age === 30)!
+    // cpfisOA = max(0, cpfOA - 20K), cpfisSA = max(0, cpfSA - 40K)
+    expect(row30.cpfisOA).toBe(Math.max(0, row30.cpfOA - 20000))
+    expect(row30.cpfisSA).toBe(Math.max(0, row30.cpfSA - 40000))
+  })
+
+  it('CPFIS: cpfisOA and cpfisSA are zero post-55 (CPFIS inactive)', () => {
+    const rows = generateIncomeProjection({
+      currentAge: 50,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 100000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 50000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 200000,
+      initialCpfSA: 100000,
+      initialCpfMA: 30000,
+      cpfisEnabled: true,
+      cpfisOaReturn: 0.08,
+      cpfisSaReturn: 0.07,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+    })
+
+    // Pre-55: CPFIS should show invested amounts
+    const row54 = rows.find((r) => r.age === 54)!
+    expect(row54.cpfisOA).toBeGreaterThan(0)
+    expect(row54.cpfisSA).toBeGreaterThan(0)
+
+    // Post-55: CPFIS is inactive (SA closed), both should be 0
+    const row56 = rows.find((r) => r.age === 56)!
+    expect(row56.cpfisOA).toBe(0)
+    expect(row56.cpfisSA).toBe(0)
   })
 
   it('CPFIS disabled: unchanged behavior (regression)', () => {

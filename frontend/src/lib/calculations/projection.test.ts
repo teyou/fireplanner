@@ -55,6 +55,8 @@ function mockIncomeRow(overrides: Partial<IncomeProjectionRow> = {}): IncomeProj
     cpfOaShortfall: 0,
     cpfLifeAnnuityPremium: 0,
     cpfOaWithdrawal: 0,
+    cpfisOA: 0,
+    cpfisSA: 0,
     srsBalance: 0,
     srsContribution: 0,
     srsWithdrawal: 0,

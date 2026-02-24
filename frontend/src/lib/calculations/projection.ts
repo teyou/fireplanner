@@ -20,6 +20,7 @@ import type {
   HealthcareConfig,
   CpfLifePlan,
 } from '@/lib/types'
+import { getBalaFactor } from '@/lib/data/balaTable'
 import { calculateParentSupportAtAge } from './fire'
 import { calculateBrsFrsErs } from './cpf'
 import { calculateHealthcareCostAtAge } from './healthcare'
@@ -62,6 +63,11 @@ export interface ProjectionParams {
   propertyEquity: number
   annualMortgagePayment: number
   annualRentalIncome: number
+  // Dynamic property value
+  existingPropertyValue: number
+  propertyAppreciationRate: number
+  propertyLeaseYears: number
+  applyBalaDecay: boolean
   // Downsizing
   downsizing: DownsizingConfig | null
   existingMortgageBalance: number
@@ -223,6 +229,10 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     propertyEquity,
     annualMortgagePayment,
     annualRentalIncome,
+    existingPropertyValue,
+    propertyAppreciationRate,
+    propertyLeaseYears,
+    applyBalaDecay,
     downsizing,
     existingMortgageBalance,
     existingMortgageRate,
@@ -357,8 +367,35 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     // When CPF OA can't cover its mortgage share, the shortfall spills to cash
     effectiveMortgagePayment += incomeRow.cpfOaShortfall
     let effectiveRentalIncome = annualRentalIncome
-    let effectivePropertyEquity = propertyEquity
     let downsizingRentExpense = 0
+
+    // Dynamic property value: appreciation +/- Bala's Table leasehold decay
+    let effectivePropertyValue = 0
+    let effectiveMortgageBalance = 0
+
+    if (existingPropertyValue > 0 && !soldProperty) {
+      const appreciated = existingPropertyValue * Math.pow(1 + propertyAppreciationRate, year)
+      if (applyBalaDecay && propertyLeaseYears < 800) {
+        const initialFactor = getBalaFactor(propertyLeaseYears)
+        const currentFactor = getBalaFactor(Math.max(0, propertyLeaseYears - year))
+        effectivePropertyValue = initialFactor > 0
+          ? appreciated * (currentFactor / initialFactor)
+          : 0
+      } else {
+        effectivePropertyValue = appreciated
+      }
+
+      if (age < mortgageEndAge) {
+        effectiveMortgageBalance = outstandingMortgageAtAge(
+          existingMortgageBalance,
+          existingMonthlyPayment,
+          existingMortgageRate,
+          year,
+        )
+      }
+    }
+
+    let effectivePropertyEquity = Math.max(0, effectivePropertyValue - effectiveMortgageBalance)
 
     if (soldProperty && downsizing) {
       // After selling, no existing mortgage or rental income
@@ -374,9 +411,13 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
           downsizing.newMortgageRate,
           yearsSinceSell,
         )
+        effectivePropertyValue = downsizing.newPropertyCost
+        effectiveMortgageBalance = newMortgageBalance
         effectivePropertyEquity = newDownPayment + (downsizing.newPropertyCost * downsizing.newLtv - newMortgageBalance)
       } else if (downsizing.scenario === 'sell-and-rent') {
         effectiveMortgagePayment = 0
+        effectivePropertyValue = 0
+        effectiveMortgageBalance = 0
         effectivePropertyEquity = 0
         // Rent grows over time from sell age
         const yearsSinceSell = age - dsSellAge
@@ -599,6 +640,10 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       cpfBequest,
       cpfMilestone,
       cpfOaWithdrawal: incomeRow.cpfOaWithdrawal,
+      cpfisOA: incomeRow.cpfisOA,
+      cpfisSA: incomeRow.cpfisSA,
+      propertyValue: effectivePropertyValue,
+      mortgageBalance: effectiveMortgageBalance,
       propertyEquity: effectivePropertyEquity,
       totalNWIncProperty: totalNW + effectivePropertyEquity,
       withdrawalAmount,

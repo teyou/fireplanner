@@ -24,6 +24,7 @@ export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
   )
 
   const hasRA = data.some((r) => r.cpfRA > 0)
+  const hasCpfis = data.some((r) => r.cpfisOA > 0 || r.cpfisSA > 0)
 
   const columns = useMemo(() => {
     const cols = [
@@ -83,6 +84,25 @@ export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
       }),
     ]
 
+    if (hasCpfis) {
+      cols.push(
+        columnHelper.accessor('cpfisOA', {
+          header: 'CPFIS-OA',
+          cell: (info) => {
+            const v = info.getValue()
+            return v > 0 ? formatCurrency(v) : '-'
+          },
+        }),
+        columnHelper.accessor('cpfisSA', {
+          header: 'CPFIS-SA',
+          cell: (info) => {
+            const v = info.getValue()
+            return v > 0 ? formatCurrency(v) : '-'
+          },
+        }),
+      )
+    }
+
     if (hasRA) {
       cols.push(
         columnHelper.accessor('cpfRA', {
@@ -100,7 +120,7 @@ export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
     )
 
     return cols
-  }, [hasRA])
+  }, [hasRA, hasCpfis])
 
   const table = useReactTable({
     data: displayData,

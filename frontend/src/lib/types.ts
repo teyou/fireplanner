@@ -284,6 +284,9 @@ export interface IncomeProjectionRow {
   cpfLifeAnnuityPremium: number
   // CPF OA withdrawal (transfer to liquid portfolio at age 55+)
   cpfOaWithdrawal: number
+  // CPFIS invested amounts (portion above retention limits; 0 when CPFIS disabled or post-55)
+  cpfisOA: number
+  cpfisSA: number
   // SRS lifecycle
   srsBalance: number
   srsContribution: number
@@ -804,6 +807,9 @@ export interface PropertyState {
   existingMortgageRemainingYears: number
   mortgageCpfMonthly: number
   ownershipPercent: number  // 0.01–1.0, default 1.0 (100%). Scales all property values for co-ownership.
+  existingAppreciationRate: number   // annual appreciation rate for existing property (separate from new purchase analysis)
+  existingLeaseYears: number         // remaining lease years for existing property
+  existingApplyBalaDecay: boolean    // whether to apply Bala's Table depreciation to existing property in projection
   // Downsizing
   downsizing: DownsizingConfig
   // HDB monetization
@@ -856,6 +862,8 @@ export interface ProjectionRow {
   cpfOaHousingDeduction: number
   cpfOaShortfall: number
   cpfOaWithdrawal: number
+  cpfisOA: number
+  cpfisSA: number
   cpfLifePayout: number
   cpfBequest: number
   cpfMilestone: 'brs' | 'frs' | 'ers' | 'cpfLifeStart' | 'raCreated' | null
@@ -864,6 +872,8 @@ export interface ProjectionRow {
   maxPermittedWithdrawal: number
   withdrawalExcess: number
   // Property
+  propertyValue: number            // market value after appreciation ± Bala's decay
+  mortgageBalance: number          // outstanding mortgage at this age
   propertyEquity: number
   totalNWIncProperty: number
   // Expanded: expenses breakdown

@@ -21,6 +21,8 @@ import {
   MA_INTEREST_RATE,
   RA_INTEREST_RATE,
   CPF_LIFE_BASIC_PREMIUM_RATE,
+  CPFIS_OA_RETENTION,
+  CPFIS_SA_RETENTION,
 } from '@/lib/data/cpfRates'
 
 export const DEFAULT_CAREER_PHASES: CareerPhase[] = [
@@ -567,6 +569,8 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       cpfOaShortfall,
       cpfLifeAnnuityPremium,
       cpfOaWithdrawal: cpfOaWithdrawalAmount,
+      cpfisOA: cpfisActive ? Math.max(0, cpfOA - CPFIS_OA_RETENTION) : 0,
+      cpfisSA: cpfisActive ? Math.max(0, cpfSA - CPFIS_SA_RETENTION) : 0,
       srsBalance,
       srsContribution,
       srsWithdrawal,
