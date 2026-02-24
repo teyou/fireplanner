@@ -96,7 +96,7 @@ export function HealthcareSection() {
             <div className="flex items-center justify-between">
               <Label className="text-sm flex items-center gap-1">
                 MediShield Life
-                <InfoTooltip text="National health insurance scheme. Premiums are fully payable from MediSave. Mandatory for all Singapore citizens and PRs." source="CPF Board" sourceUrl="https://www.cpf.gov.sg/member/healthcare-financing/medishield-life/medishield-life-premiums" />
+                <InfoTooltip text="National health insurance scheme. Premiums are fully payable from MediSave. Mandatory for all Singapore citizens and PRs." source="CPF Board" sourceUrl="https://www.cpf.gov.sg/member/healthcare-financing/medishield-life/medishield-life-premiums-and-subsidies" />
               </Label>
               <Switch
                 checked={config.mediShieldLifeEnabled}

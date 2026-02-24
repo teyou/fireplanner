@@ -1,7 +1,7 @@
 // Healthcare Premium Data — Singapore
 //
 // MediShield Life premiums:
-//   Source: CPF Board (https://www.cpf.gov.sg/member/healthcare-financing/medishield-life/medishield-life-premiums)
+//   Source: CPF Board (https://www.cpf.gov.sg/member/healthcare-financing/medishield-life/medishield-life-premiums-and-subsidies)
 //   As of: 1 Apr 2025
 //   License: Public data
 //

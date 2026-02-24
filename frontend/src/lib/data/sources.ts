@@ -32,7 +32,7 @@ export const DATA_SOURCES: Record<string, DataSource[]> = {
   income: [
     {
       name: 'MOM Salary Benchmarks',
-      url: 'https://stats.mom.gov.sg',
+      url: 'https://stats.mom.gov.sg/pages/income-summary-table.aspx',
       period: '2024',
       license: 'SG Open Data License',
     },
@@ -90,7 +90,7 @@ export const DATA_SOURCES: Record<string, DataSource[]> = {
   property: [
     {
       name: "Bala's Table (SLA)",
-      url: 'https://www.sla.gov.sg',
+      url: 'https://www.sla.gov.sg/properties/land-sales-and-lease-management/lease-management/',
       period: '2024',
       license: 'Public data',
     },
@@ -104,7 +104,7 @@ export const DATA_SOURCES: Record<string, DataSource[]> = {
   healthcare: [
     {
       name: 'MediShield Life Premiums',
-      url: 'https://www.cpf.gov.sg/member/healthcare-financing/medishield-life/medishield-life-premiums',
+      url: 'https://www.cpf.gov.sg/member/healthcare-financing/medishield-life/medishield-life-premiums-and-subsidies',
       period: '2025',
       license: 'Public data',
     },

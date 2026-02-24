@@ -274,7 +274,7 @@ function DataDrivenPanel({
       <div className="space-y-1">
         <Label className="text-sm flex items-center">
           Education Level
-          <InfoTooltip text="MOM salary data is segmented by education level" source="MOM Stats" sourceUrl="https://stats.mom.gov.sg" />
+          <InfoTooltip text="MOM salary data is segmented by education level" source="MOM Stats" sourceUrl="https://stats.mom.gov.sg/pages/income-summary-table.aspx" />
         </Label>
         <Select
           value={education}

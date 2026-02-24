@@ -48,7 +48,7 @@ export function PropertyInputForm() {
           <div className="space-y-2">
             <Label>
               Lease (years)
-              <InfoTooltip text="99-year leasehold is standard for condos. 999 or freehold for some landed. Leasehold decay follows Bala's Table." source="SLA" sourceUrl="https://www.sla.gov.sg" />
+              <InfoTooltip text="99-year leasehold is standard for condos. 999 or freehold for some landed. Leasehold decay follows Bala's Table." source="SLA" sourceUrl="https://www.sla.gov.sg/properties/land-sales-and-lease-management/lease-management/" />
             </Label>
             <Input
               type="number"
