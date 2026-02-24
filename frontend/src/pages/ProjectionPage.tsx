@@ -55,7 +55,7 @@ const COLUMN_GROUPS: { key: ColumnGroup; label: string }[] = [
 ]
 
 const GROUP_COLUMNS: Record<ColumnGroup, string[]> = {
-  expensesBreakdown: ['baseInflatedExpenses', 'parentSupportExpense', 'healthcareCashOutlay', 'mortgageCashPayment', 'downsizingRentExpense', 'goalExpense'],
+  expensesBreakdown: ['baseInflatedExpenses', 'parentSupportExpense', 'healthcareCashOutlay', 'cpfOaHousingDeduction', 'mortgageCashPayment', 'downsizingRentExpense', 'goalExpense'],
   incomeBreakdown: ['salary', 'rentalIncome', 'investmentIncome', 'businessIncome', 'governmentIncome', 'srsWithdrawal', 'totalGross'],
   taxCpf: ['sgTax', 'cpfEmployee', 'cpfEmployer', 'totalNet'],
   cpfBalances: ['cpfOA', 'cpfSA', 'cpfMA', 'cpfRA', 'cpfInterest', 'cpfOaHousingDeduction', 'cpfOaShortfall', 'cpfLifePayout', 'cpfBequest', 'cpfMilestone'],
@@ -317,7 +317,7 @@ export function ProjectionPage() {
     }),
     columnHelper.accessor('mortgageCashPayment', {
       id: 'mortgageCashPayment',
-      header: 'Mortgage',
+      header: 'Mortgage(Cash)',
       cell: (info) => optionalCurrencyCell(info.getValue()),
     }),
     columnHelper.accessor('downsizingRentExpense', {
@@ -418,7 +418,7 @@ export function ProjectionPage() {
     }),
     columnHelper.accessor('cpfOaHousingDeduction', {
       id: 'cpfOaHousingDeduction',
-      header: 'OA Withdrawal',
+      header: 'Mortgage(CPF)',
       cell: (info) => optionalCurrencyCell(info.getValue()),
     }),
     columnHelper.accessor('cpfOaShortfall', {
