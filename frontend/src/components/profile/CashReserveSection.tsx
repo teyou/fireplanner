@@ -161,7 +161,7 @@ export function CashReserveSection() {
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 flex-1">
                 <Label className="text-sm font-medium">Retirement Cash Bucket</Label>
-                <InfoTooltip text="In retirement, withdrawals come from a cash bucket first. In positive-return years, the bucket refills from the portfolio. This avoids selling equities during downturns." />
+                <InfoTooltip text="In retirement, withdrawals come from a cash bucket first. In positive-return years, the bucket refills from the portfolio. This avoids selling equities during downturns. Applied to Monte Carlo simulations only." />
               </div>
               <Switch checked={bucketEnabled} onCheckedChange={handleBucketToggle} />
             </div>
