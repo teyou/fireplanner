@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { useIncomeProjection } from '@/hooks/useIncomeProjection'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { calculateBrsFrsErs } from '@/lib/calculations/cpf'
+import { RETIREMENT_SUM_BASE_YEAR, BRS_BASE, FRS_BASE, ERS_BASE } from '@/lib/data/cpfRates'
+import { formatCurrency } from '@/lib/utils'
 
 export interface CpfProjectionRow {
   age: number
@@ -17,6 +19,7 @@ export interface CpfProjectionRow {
   oaShortfall: number
   bequest: number
   milestone: 'brs' | 'frs' | 'ers' | 'cpfLifeStart' | 'raCreated' | null
+  milestoneFormula: string | null
 }
 
 /**
@@ -111,6 +114,24 @@ export function useCpfProjection(): {
         }
       }
 
+      // Build formula text for milestone rows
+      let milestoneFormula: string | null = null
+      if (milestone === 'frs') {
+        const years = Math.max(0, 55 - currentAge) + Math.max(0, new Date().getFullYear() - RETIREMENT_SUM_BASE_YEAR)
+        milestoneFormula = `FRS at 55: ${formatCurrency(FRS_BASE)} (${RETIREMENT_SUM_BASE_YEAR}) × 1.035^${years} = ${formatCurrency(brsFrsErs.frs)}`
+      } else if (milestone === 'brs') {
+        const years = Math.max(0, 55 - currentAge) + Math.max(0, new Date().getFullYear() - RETIREMENT_SUM_BASE_YEAR)
+        milestoneFormula = `BRS at 55: ${formatCurrency(BRS_BASE)} (${RETIREMENT_SUM_BASE_YEAR}) × 1.035^${years} = ${formatCurrency(brsFrsErs.brs)}`
+      } else if (milestone === 'ers') {
+        const years = Math.max(0, 55 - currentAge) + Math.max(0, new Date().getFullYear() - RETIREMENT_SUM_BASE_YEAR)
+        milestoneFormula = `ERS at 55: ${formatCurrency(ERS_BASE)} (${RETIREMENT_SUM_BASE_YEAR}) × 1.035^${years} = ${formatCurrency(brsFrsErs.ers)}`
+      } else if (milestone === 'raCreated') {
+        const prevSA = prevRow ? prevRow.cpfSA : 0
+        milestoneFormula = `SA (${formatCurrency(prevSA)}) → RA. Target: FRS = ${formatCurrency(brsFrsErs.frs)}`
+      } else if (milestone === 'cpfLifeStart') {
+        milestoneFormula = `RA at ${row.age}: ${formatCurrency(totalBalance)}. ${cpfLifePlan.charAt(0).toUpperCase() + cpfLifePlan.slice(1)} plan. Payout: ${formatCurrency(row.cpfLifePayout / 12)}/mo (${formatCurrency(row.cpfLifePayout)}/yr)`
+      }
+
       return {
         age: row.age,
         oaBalance: row.cpfOA,
@@ -125,6 +146,7 @@ export function useCpfProjection(): {
         oaShortfall: row.cpfOaShortfall,
         bequest,
         milestone,
+        milestoneFormula,
       }
     })
 

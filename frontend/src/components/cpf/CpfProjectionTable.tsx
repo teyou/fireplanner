@@ -10,6 +10,7 @@ import { useCpfProjection, type CpfProjectionRow } from '@/hooks/useCpfProjectio
 import { useProfileStore } from '@/stores/useProfileStore'
 import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { InfoTooltip } from '@/components/shared/InfoTooltip'
 
 const columnHelper = createColumnHelper<CpfProjectionRow>()
 
@@ -193,11 +194,16 @@ export function CpfProjectionTable() {
                 ))}
                 {isMilestone && (
                   <td className="px-2 py-1.5 text-xs text-muted-foreground whitespace-nowrap">
-                    {original.milestone === 'brs' && 'BRS reached'}
-                    {original.milestone === 'frs' && 'FRS reached'}
-                    {original.milestone === 'ers' && 'ERS reached'}
-                    {original.milestone === 'cpfLifeStart' && 'CPF LIFE starts'}
-                    {original.milestone === 'raCreated' && 'RA created'}
+                    <span className="inline-flex items-center gap-0.5">
+                      {original.milestone === 'brs' && 'BRS reached'}
+                      {original.milestone === 'frs' && 'FRS reached'}
+                      {original.milestone === 'ers' && 'ERS reached'}
+                      {original.milestone === 'cpfLifeStart' && 'CPF LIFE starts'}
+                      {original.milestone === 'raCreated' && 'RA created'}
+                      {original.milestoneFormula && (
+                        <InfoTooltip text={original.milestoneFormula} />
+                      )}
+                    </span>
                   </td>
                 )}
               </tr>
