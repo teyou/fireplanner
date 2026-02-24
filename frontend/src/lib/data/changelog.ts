@@ -20,6 +20,14 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-24',
     category: 'feature',
+    title: 'CPFIS invested amounts and additional return in projections',
+    description:
+      'Year-by-year CPF and income projection tables now show CPFIS-OA, CPFIS-SA (amounts above $20K/$40K retention invested at your custom rates), and CPFIS Add. Return (extra interest earned vs standard CPF rates). Columns appear only when CPFIS is enabled.',
+    affectedSections: ['section-cpf'],
+  },
+  {
+    date: '2026-02-24',
+    category: 'feature',
     title: 'CPF OA Withdrawal modelling',
     description:
       'Model lump-sum withdrawals from CPF OA after age 55. Withdrawn amounts transfer into your liquid portfolio, improving post-retirement cashflow.',
