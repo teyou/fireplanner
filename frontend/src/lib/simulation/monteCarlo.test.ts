@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { runMonteCarlo, resolveInitialRate, generateReturnsParametric, computeWithdrawalsForYear } from './monteCarlo.ts'
+import { runMonteCarlo, resolveInitialRate, generateReturnsParametric, computeWithdrawalsForYear, type MonteCarloEngineParams } from './monteCarlo.ts'
 import { CORRELATION_MATRIX, ASSET_CLASSES } from '@/lib/data/historicalReturns.ts'
 import { SeededRNG } from '@/lib/math/random.ts'
 
@@ -691,5 +691,83 @@ describe('MC success rate invariants', () => {
         expect(snap.buckets[i].min).toBeCloseTo(snap.buckets[i - 1].max, 2)
       }
     }
+  })
+})
+
+describe('retirement cash bucket mitigation', () => {
+  // Minimal setup: 0 accumulation years, 10 decumulation years, 1 asset class
+  const baseBucketParams: MonteCarloEngineParams = {
+    initialPortfolio: 1_000_000,
+    allocationWeights: [1, 0, 0, 0, 0, 0, 0, 0],
+    expectedReturns: [0.07, 0, 0, 0, 0, 0, 0, 0],
+    stdDevs: [0.15, 0, 0, 0, 0, 0, 0, 0],
+    correlationMatrix: Array.from({ length: 8 }, (_, i) =>
+      Array.from({ length: 8 }, (_, j) => (i === j ? 1 : 0))
+    ),
+    currentAge: 65,
+    retirementAge: 65,
+    lifeExpectancy: 75,
+    annualSavings: [],
+    postRetirementIncome: [],
+    method: 'parametric',
+    nSimulations: 100,
+    seed: 42,
+    withdrawalStrategy: 'constant_dollar',
+    strategyParams: { swr: 0.04 },
+    expenseRatio: 0.003,
+    inflation: 0.025,
+  }
+
+  it('mitigation none — unchanged from baseline', () => {
+    const withNone = runMonteCarlo({
+      ...baseBucketParams,
+      retirementMitigation: { type: 'none' },
+      seed: 42,
+    })
+    const withoutField = runMonteCarlo({
+      ...baseBucketParams,
+      seed: 42,
+    })
+    expect(withNone.success_rate).toBe(withoutField.success_rate)
+  })
+
+  it('cash bucket — deterministic with seed', () => {
+    const config = {
+      ...baseBucketParams,
+      retirementMitigation: {
+        type: 'cash_bucket' as const,
+        targetMonths: 24,
+        cashReturn: 0.02,
+      },
+      annualExpensesAtRetirement: 40000,
+      seed: 42,
+    }
+    const r1 = runMonteCarlo(config)
+    const r2 = runMonteCarlo(config)
+    expect(r1.success_rate).toBe(r2.success_rate)
+    expect(r1.percentile_bands.p50).toEqual(r2.percentile_bands.p50)
+  })
+
+  it('cash bucket carves from initial portfolio', () => {
+    const withBucket = runMonteCarlo({
+      ...baseBucketParams,
+      retirementMitigation: {
+        type: 'cash_bucket' as const,
+        targetMonths: 24,
+        cashReturn: 0.02,
+      },
+      annualExpensesAtRetirement: 40000,
+      seed: 42,
+    })
+    // Bucket = 24 months × 40000/12 = 80000 carved from 1M
+    // Both should have valid success rates
+    const noBucket = runMonteCarlo({
+      ...baseBucketParams,
+      seed: 42,
+    })
+    expect(withBucket.success_rate).toBeGreaterThanOrEqual(0)
+    expect(noBucket.success_rate).toBeGreaterThanOrEqual(0)
+    // Median year-0 balance with bucket should be lower (80K carved out)
+    expect(withBucket.percentile_bands.p50[0]).toBeLessThan(noBucket.percentile_bands.p50[0])
   })
 })
