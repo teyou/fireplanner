@@ -84,6 +84,16 @@ export function StartPage() {
   const draftSavingsRate = draftIncome > 0 ? draftAnnualSavings / draftIncome : 0
   const draftProgress = draftFireNumber > 0 ? Math.min(1, draftNetWorth / draftFireNumber) : 0
 
+  // Determine the effective retirement age for the projection:
+  // - Goal-first: use the user's desired retirement age
+  // - Story-first: use 65 (default SG retirement benchmark) if FIRE age > 65
+  const effectiveRetirementAge =
+    activePathway === 'goal-first'
+      ? draftRetirementAge
+      : draftFireAge > 65
+        ? 65
+        : undefined
+
   // Year-by-year projection for the chart
   const draftProjection = projectNetWorthPath({
     currentAge: draftAge,
@@ -92,6 +102,7 @@ export function StartPage() {
     realReturn: draftNetRealReturn,
     annualExpenses: draftExpenses,
     fireNumber: draftFireNumber,
+    retirementAge: effectiveRetirementAge,
   })
 
   // Show results when inputs are filled and valid
@@ -321,7 +332,7 @@ export function StartPage() {
                 tooltip="Cash, savings, stocks, bonds, and other investments — excluding CPF and property"
               />
             </div>
-            {showResults && <QuickResults fireNumber={draftFireNumber} yearsToFire={draftYearsToFire} fireAge={draftFireAge} savingsRate={draftSavingsRate} progress={draftProgress} projection={draftProjection} />}
+            {showResults && <QuickResults fireNumber={draftFireNumber} yearsToFire={draftYearsToFire} fireAge={draftFireAge} savingsRate={draftSavingsRate} progress={draftProgress} projection={draftProjection} desiredRetirementAge={draftRetirementAge} />}
             {sectionToggles}
             <div className="flex justify-end">
               <Button
@@ -374,7 +385,7 @@ export function StartPage() {
                 tooltip="Cash, savings, stocks, bonds, and other investments — excluding CPF and property"
               />
             </div>
-            {showResults && <QuickResults fireNumber={draftFireNumber} yearsToFire={draftYearsToFire} fireAge={draftFireAge} savingsRate={draftSavingsRate} progress={draftProgress} projection={draftProjection} />}
+            {showResults && <QuickResults fireNumber={draftFireNumber} yearsToFire={draftYearsToFire} fireAge={draftFireAge} savingsRate={draftSavingsRate} progress={draftProgress} projection={draftProjection} desiredRetirementAge={draftFireAge > 65 ? 65 : undefined} />}
             {sectionToggles}
             <div className="flex justify-end">
               <Button
@@ -495,6 +506,7 @@ function QuickResults({
   savingsRate,
   progress,
   projection,
+  desiredRetirementAge,
 }: {
   fireNumber: number
   yearsToFire: number
@@ -502,6 +514,7 @@ function QuickResults({
   savingsRate: number
   progress: number
   projection: { age: number; balance: number; phase: 'accumulation' | 'decumulation' }[]
+  desiredRetirementAge?: number
 }) {
   const pct = (progress * 100).toFixed(1)
 
@@ -514,24 +527,53 @@ function QuickResults({
   const depletesBeforeDeath = depletionAge !== null && depletionAge < lifeExpectancy
   const shortfallYears = depletesBeforeDeath ? lifeExpectancy - depletionAge : 0
 
+  // Determine messaging scenario
+  const alreadyFire = yearsToFire === 0
+  const hasShortfall = desiredRetirementAge != null && fireAge > desiredRetirementAge
+
   return (
     <div className="col-span-full mt-4 p-4 rounded-lg border bg-muted/30 space-y-3">
-      {/* Hero: FIRE Age */}
+      {/* Hero messaging */}
       <div className="text-center space-y-1">
-        <div className="text-2xl font-bold">
-          {yearsToFire === 0
-            ? "You've already reached Financial Independence!"
-            : `You could retire at Age ${fireAge}`}
-        </div>
-        <div className="text-sm text-muted-foreground">
-          {yearsToFire === 0
-            ? "Your savings exceed your FIRE number — focus on making it last"
-            : `That's ${Math.ceil(yearsToFire)} years from now`}
-        </div>
+        {alreadyFire ? (
+          <>
+            <div className="text-2xl font-bold">
+              You've already reached Financial Independence!
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Your savings exceed your FIRE number — focus on making it last
+            </div>
+          </>
+        ) : hasShortfall ? (
+          <>
+            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+              Retiring at {desiredRetirementAge} would leave a shortfall
+            </div>
+            <div className="text-sm text-muted-foreground">
+              At your current pace, financial independence is at age {fireAge}.
+              {depletesBeforeDeath
+                ? ` If you stop working at ${desiredRetirementAge}, your portfolio runs out by age ${depletionAge}.`
+                : ` You'd need to save more, earn more, or spend less to close the gap.`}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="text-2xl font-bold">
+              {desiredRetirementAge != null && fireAge < desiredRetirementAge
+                ? `You're on track — FIRE by age ${fireAge}`
+                : `You could retire at Age ${fireAge}`}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {desiredRetirementAge != null && fireAge < desiredRetirementAge
+                ? `That's ${desiredRetirementAge - fireAge} years ahead of your target retirement at ${desiredRetirementAge}`
+                : `That's ${Math.ceil(yearsToFire)} years from now`}
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Depletion warning */}
-      {depletesBeforeDeath && (
+      {/* Depletion warning — shown for non-shortfall cases too (e.g. story-first with age > 65) */}
+      {depletesBeforeDeath && !hasShortfall && (
         <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
           <span className="font-medium">Portfolio runs out at age {depletionAge}</span> — that's {shortfallYears} {shortfallYears === 1 ? 'year' : 'years'} short of your life expectancy ({lifeExpectancy}).
           Consider reducing expenses, saving more, or working a few extra years.

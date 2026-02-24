@@ -120,7 +120,13 @@ export function calculateParentSupportAtAge(entries: ParentSupport[], age: numbe
  * Project year-by-year net worth from current age to life expectancy.
  * Accumulation phase: balance grows via savings + returns.
  * Decumulation phase: balance shrinks via expense withdrawals.
- * Phase switches when balance >= fireNumber.
+ *
+ * Phase switches when:
+ * 1. balance >= fireNumber (financially independent), OR
+ * 2. age >= retirementAge (forced retirement — stops working even if not FI)
+ *
+ * When retirementAge is provided and reached before FIRE number,
+ * this models the realistic scenario of early retirement with insufficient savings.
  */
 export function projectNetWorthPath(params: {
   currentAge: number
@@ -130,13 +136,18 @@ export function projectNetWorthPath(params: {
   annualExpenses: number
   fireNumber: number
   lifeExpectancy?: number
+  retirementAge?: number
 }): { age: number; balance: number; phase: 'accumulation' | 'decumulation' }[] {
-  const { currentAge, annualSavings, currentNW, realReturn, annualExpenses, fireNumber, lifeExpectancy = 90 } = params
+  const { currentAge, annualSavings, currentNW, realReturn, annualExpenses, fireNumber, lifeExpectancy = 90, retirementAge } = params
   const path: { age: number; balance: number; phase: 'accumulation' | 'decumulation' }[] = []
   let balance = currentNW
   let phase: 'accumulation' | 'decumulation' = currentNW >= fireNumber ? 'decumulation' : 'accumulation'
 
   for (let age = currentAge; age <= lifeExpectancy; age++) {
+    // Force decumulation at retirement age even if FIRE number not reached
+    if (phase === 'accumulation' && retirementAge != null && age >= retirementAge) {
+      phase = 'decumulation'
+    }
     path.push({ age, balance: Math.max(0, balance), phase })
     if (phase === 'accumulation') {
       balance = balance * (1 + realReturn) + annualSavings
