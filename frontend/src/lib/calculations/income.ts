@@ -483,7 +483,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     let topUpOAActual = 0
     let topUpSAActual = 0
     let topUpMAActual = 0
-    let topUpRAActual = 0
+    let _topUpRAActual = 0
     if (!isRetired) {
       const topUpOA = params.cpfTopUpOA ?? 0
       const topUpSA = params.cpfTopUpSA ?? 0
@@ -496,7 +496,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
         // Post-55: SA top-up goes to RA (up to retirement sum target), overflow to OA
         const raRoom = Math.max(0, retirementSumTarget - cpfRA)
         const toRA = Math.min(topUpSA, raRoom)
-        topUpRAActual += toRA
+        _topUpRAActual += toRA
         cpfRA += toRA
         const overflow = topUpSA - toRA
         topUpOAActual += overflow
