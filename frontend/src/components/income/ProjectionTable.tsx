@@ -101,7 +101,7 @@ export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
           },
         }),
         columnHelper.accessor('cpfisReturn', {
-          header: 'CPFIS Return',
+          header: 'CPFIS Add. Return',
           cell: (info) => {
             const v = info.getValue()
             return v > 0 ? formatCurrency(v) : '-'
