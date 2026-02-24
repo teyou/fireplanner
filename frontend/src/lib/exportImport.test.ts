@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { exportToJson, importFromJson, type ImportResult } from './exportImport'
+import { exportToJson, importFromJson } from './exportImport'
 import { STORE_REGISTRY } from './storeRegistry'
 
 const STORE_KEYS = [

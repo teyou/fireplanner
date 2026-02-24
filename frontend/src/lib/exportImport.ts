@@ -5,7 +5,7 @@
  * Import pipeline: parse -> detect format -> migrate -> validate -> write -> reload
  */
 
-import { STORE_REGISTRY, migrateStoreData } from './storeRegistry'
+import { migrateStoreData } from './storeRegistry'
 import { validateStoreData } from './validation/schemas'
 
 const STORE_KEYS = [

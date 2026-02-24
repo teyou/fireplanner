@@ -26,18 +26,20 @@ describe('migrateStoreData', () => {
   it('returns data unchanged when version matches current', () => {
     const data = { state: { currentAge: 35 }, version: STORE_REGISTRY['fireplanner-profile'].currentVersion }
     const result = migrateStoreData('fireplanner-profile', data)
-    expect(result.state.currentAge).toBe(35)
-    expect(result.version).toBe(STORE_REGISTRY['fireplanner-profile'].currentVersion)
+    expect(result).not.toBeNull()
+    expect(result!.state.currentAge).toBe(35)
+    expect(result!.version).toBe(STORE_REGISTRY['fireplanner-profile'].currentVersion)
   })
 
   it('migrates old profile data (adds missing fields)', () => {
     // Version 1 data — missing cpfLifeStartAge, healthcareConfig, etc.
     const data = { state: { currentAge: 30, retirementAge: 65 }, version: 1 }
     const result = migrateStoreData('fireplanner-profile', data)
-    expect(result.version).toBe(STORE_REGISTRY['fireplanner-profile'].currentVersion)
-    expect(result.state.cpfLifeStartAge).toBe(65)
-    expect(result.state.healthcareConfig).toBeDefined()
-    expect(result.state.financialGoals).toEqual([])
+    expect(result).not.toBeNull()
+    expect(result!.version).toBe(STORE_REGISTRY['fireplanner-profile'].currentVersion)
+    expect(result!.state.cpfLifeStartAge).toBe(65)
+    expect(result!.state.healthcareConfig).toBeDefined()
+    expect(result!.state.financialGoals).toEqual([])
   })
 
   it('returns null for unknown store key', () => {
