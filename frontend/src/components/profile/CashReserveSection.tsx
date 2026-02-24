@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react'
+import { CheckCircle2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -8,7 +9,7 @@ import { NumberInput } from '@/components/shared/NumberInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { formatCurrency } from '@/lib/utils'
-import type { CashReserveMode, RetirementMitigationConfig } from '@/lib/types'
+import type { CashReserveMode } from '@/lib/types'
 
 export function CashReserveSection() {
   const enabled = useProfileStore((s) => s.cashReserveEnabled)
@@ -38,6 +39,8 @@ export function CashReserveSection() {
   const shortfall = computedTarget - liquidNetWorth
   const isFunded = liquidNetWorth >= computedTarget
   const annualSavings = Math.max(0, annualIncome - annualExpenses)
+  const monthsToFill = annualSavings > 0 ? Math.ceil(shortfall / annualSavings * 12) : 0
+  const monthsToFillLabel = monthsToFill > 240 ? '>240' : String(monthsToFill)
 
   const bucketEnabled = retirementMitigation.type === 'cash_bucket'
 
@@ -45,7 +48,7 @@ export function CashReserveSection() {
     if (checked) {
       setField('retirementMitigation', { type: 'cash_bucket', targetMonths: 24, cashReturn: 0.02 })
     } else {
-      setField('retirementMitigation', { type: 'none' } as RetirementMitigationConfig)
+      setField('retirementMitigation', { type: 'none' })
     }
   }, [setField])
 
@@ -142,11 +145,12 @@ export function CashReserveSection() {
             <div className="text-sm">
               {isFunded ? (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-xs font-medium">
-                  Funded ✓
+                  <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
+                  Funded
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 text-xs font-medium">
-                  Needs {formatCurrency(shortfall)} more{annualSavings > 0 && ` (est. ${Math.ceil(shortfall / annualSavings * 12)} months to fill)`}
+                  Needs {formatCurrency(shortfall)} more{annualSavings > 0 && ` (est. ${monthsToFillLabel} months to fill)`}
                 </span>
               )}
             </div>
