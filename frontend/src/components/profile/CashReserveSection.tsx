@@ -18,6 +18,7 @@ export function CashReserveSection() {
   const cashReturn = useProfileStore((s) => s.cashReserveReturn)
   const annualExpenses = useProfileStore((s) => s.annualExpenses)
   const liquidNetWorth = useProfileStore((s) => s.liquidNetWorth)
+  const annualIncome = useProfileStore((s) => s.annualIncome)
   const retirementMitigation = useProfileStore((s) => s.retirementMitigation)
   const setField = useProfileStore((s) => s.setField)
 
@@ -36,6 +37,7 @@ export function CashReserveSection() {
 
   const shortfall = computedTarget - liquidNetWorth
   const isFunded = liquidNetWorth >= computedTarget
+  const annualSavings = Math.max(0, annualIncome - annualExpenses)
 
   const bucketEnabled = retirementMitigation.type === 'cash_bucket'
 
@@ -140,11 +142,11 @@ export function CashReserveSection() {
             <div className="text-sm">
               {isFunded ? (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-xs font-medium">
-                  Funded
+                  Funded ✓
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 text-xs font-medium">
-                  Needs {formatCurrency(shortfall)} more
+                  Needs {formatCurrency(shortfall)} more{annualSavings > 0 && ` (est. ${Math.ceil(shortfall / annualSavings * 12)} months to fill)`}
                 </span>
               )}
             </div>
