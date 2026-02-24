@@ -471,3 +471,43 @@ describe('runDetailedWindow', () => {
     expect(withOneTime.summary.success_rate).toBeLessThanOrEqual(baseline.summary.success_rate)
   })
 })
+
+// ---------------------------------------------------------------------------
+// annualExpensesAtRetirement
+// ---------------------------------------------------------------------------
+
+describe('annualExpensesAtRetirement', () => {
+  it('runBacktest uses expenses as initial withdrawal instead of portfolio × SWR', () => {
+    // With SWR=4%, default withdrawal = 1M × 0.04 = $40K
+    // With expenses = $20K, withdrawal should be lower → higher success rate
+    const withExpenses = runBacktest({
+      ...PARAMS,
+      annualExpensesAtRetirement: 20_000,
+    })
+    const withoutExpenses = runBacktest(PARAMS)
+
+    // Lower withdrawal → more portfolio preserved → higher success rate
+    expect(withExpenses.summary.success_rate).toBeGreaterThanOrEqual(
+      withoutExpenses.summary.success_rate,
+    )
+    // Results should actually differ (not silently ignored)
+    expect(withExpenses.summary.median_ending_balance).not.toBe(
+      withoutExpenses.summary.median_ending_balance,
+    )
+  })
+
+  it('generateHeatmap ignores annualExpensesAtRetirement so SWR axis varies', () => {
+    // If expenses leaked through, every cell in the SWR axis would produce
+    // identical success rates because the withdrawal is fixed at the expense amount.
+    const heatmap = generateHeatmap(
+      { ...PARAMS, annualExpensesAtRetirement: 20_000 },
+      [0.03, 0.06],
+      0.03,  // just 2 SWR values for speed
+      [30, 30],
+      1,     // single duration
+    )
+
+    // The two SWR values (3% and 6%) should produce different success rates
+    expect(heatmap.success_rates[0][0]).not.toBe(heatmap.success_rates[1][0])
+  })
+})

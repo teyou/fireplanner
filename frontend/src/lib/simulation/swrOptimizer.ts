@@ -75,8 +75,12 @@ export function optimizeSwr(
       sp['swr'] = mid
     }
 
+    // Strip annualExpensesAtRetirement so the optimizer can vary withdrawal
+    // rate via strategyParams. If expenses were passed through, every
+    // iteration would compute the same fixed withdrawal regardless of SWR.
+    const { annualExpensesAtRetirement: _, ...restBaseParams } = baseParams
     const params: MonteCarloEngineParams = {
-      ...baseParams,
+      ...restBaseParams,
       strategyParams: sp,
       nSimulations: nSims,
       seed,

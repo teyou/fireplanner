@@ -128,4 +128,21 @@ describe('optimizeSwr', () => {
     expect(typeof result).toBe('number')
     expect(result).toBeGreaterThanOrEqual(0.02)
   })
+
+  it('strips annualExpensesAtRetirement so SWR binary search still varies withdrawal', () => {
+    // If expenses leak through, every MC iteration uses the fixed expense amount
+    // regardless of candidate SWR, and the optimizer can't distinguish rates.
+    const withExpenses = optimizeSwr(0.90, {
+      ...BASE_PARAMS,
+      annualExpensesAtRetirement: 36_000, // 1.8% of $2M — very conservative
+    }, { nSims: 500, seed: 12345 })
+
+    const withoutExpenses = optimizeSwr(0.90, BASE_PARAMS, { nSims: 500, seed: 12345 })
+
+    // Both should converge to a valid SWR within the search range
+    expect(withExpenses).toBeGreaterThanOrEqual(0.02)
+    expect(withExpenses).toBeLessThanOrEqual(0.08)
+    // They should produce the same result because the optimizer ignores expenses
+    expect(withExpenses).toBe(withoutExpenses)
+  })
 })

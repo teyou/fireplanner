@@ -155,9 +155,14 @@ function runSingleWindow(
   strategy: string,
   strategyParams: Record<string, number>,
   oneTimeWithdrawals?: { year: number; amount: number }[],
+  annualExpensesAtRetirement: number = 0,
 ): WindowResult {
   let portfolio = initialPortfolio
-  const initialWithdrawal = initialPortfolio * swr
+  // Use user's actual retirement expenses when available;
+  // fall back to portfolio × SWR rate when no expenses are specified.
+  const initialWithdrawal = annualExpensesAtRetirement > 0
+    ? annualExpensesAtRetirement
+    : initialPortfolio * swr
   let prevWithdrawal = 0
   let prevPortfolio = initialPortfolio
   let totalWithdrawn = 0
@@ -274,7 +279,9 @@ export function runDetailedWindow(
     withdrawalStrategy,
     strategyParams,
     oneTimeWithdrawals,
+    annualExpensesAtRetirement,
   } = params
+  const expenses = annualExpensesAtRetirement ?? 0
 
   const { portfolioReturns, inflationRates, years } = getPortfolioReturns(
     allocationWeights,
@@ -297,7 +304,11 @@ export function runDetailedWindow(
   }
 
   let portfolio = initialPortfolio
-  const initialWithdrawal = initialPortfolio * swr
+  // Use user's actual retirement expenses when available;
+  // fall back to portfolio × SWR rate when no expenses are specified.
+  const initialWithdrawal = expenses > 0
+    ? expenses
+    : initialPortfolio * swr
   let prevWithdrawal = 0
   let prevPortfolio = initialPortfolio
   let survived = true
@@ -414,6 +425,7 @@ export function runBacktest(params: BacktestEngineParams): BacktestEngineResult 
     withdrawalStrategy,
     strategyParams,
     oneTimeWithdrawals,
+    annualExpensesAtRetirement,
   } = params
 
   const { portfolioReturns, inflationRates, years } = getPortfolioReturns(
@@ -443,6 +455,7 @@ export function runBacktest(params: BacktestEngineParams): BacktestEngineResult 
       withdrawalStrategy,
       strategyParams,
       oneTimeWithdrawals,
+      annualExpensesAtRetirement,
     )
 
     results.push({
@@ -526,6 +539,7 @@ export function generateHeatmap(
     durationValues.map((duration) => {
       const result = runBacktest({
         ...params,
+        annualExpensesAtRetirement: undefined,
         swr,
         retirementDuration: duration,
       })

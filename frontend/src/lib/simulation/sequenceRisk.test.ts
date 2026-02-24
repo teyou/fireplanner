@@ -279,4 +279,27 @@ describe('runSequenceRisk', () => {
       expect(Number.isFinite(m.crisis_success_rate)).toBe(true)
     }
   })
+
+  // ---------------------------------------------------------------------------
+  // annualExpensesAtRetirement
+  // ---------------------------------------------------------------------------
+
+  it('uses annualExpensesAtRetirement for initial withdrawal when set', () => {
+    // Default: withdrawal = $2M × 0.04 = $80K
+    // With expenses = $40K: withdrawal is halved → higher success rate
+    const withExpenses = runSequenceRisk({
+      ...PARAMS,
+      annualExpensesAtRetirement: 40_000,
+    })
+    const withoutExpenses = runSequenceRisk(PARAMS)
+
+    // Lower withdrawal should preserve more portfolio → higher or equal success
+    expect(withExpenses.normal_success_rate).toBeGreaterThanOrEqual(
+      withoutExpenses.normal_success_rate,
+    )
+    // Crisis success should also differ (not silently ignored)
+    expect(withExpenses.crisis_success_rate).not.toBe(
+      withoutExpenses.crisis_success_rate,
+    )
+  })
 })
