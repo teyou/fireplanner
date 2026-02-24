@@ -70,7 +70,7 @@ export function useFireCalculations(): FireCalculationsResult {
         cpfLifePlan: profile.cpfLifePlan,
         cpfRetirementSum: profile.cpfRetirementSum,
         cpfHousingMode: (property.mortgageCpfMonthly > 0 ? 'simple' : 'none') as CpfHousingMode,
-        cpfHousingMonthly: property.mortgageCpfMonthly,
+        cpfHousingMonthly: property.mortgageCpfMonthly * (property.ownershipPercent ?? 1),
         cpfMortgageYearsLeft: property.existingMortgageRemainingYears,
       })
 

@@ -8,10 +8,12 @@ import { usePropertyStore } from '@/stores/usePropertyStore'
 import { validateCrossStoreRules } from '@/lib/validation/rules'
 
 /** Derive CPF housing params from property store (single source of truth) */
-function deriveCpfHousingFromProperty(property: { mortgageCpfMonthly: number; existingMortgageRemainingYears: number }) {
+function deriveCpfHousingFromProperty(property: { mortgageCpfMonthly: number; existingMortgageRemainingYears: number; ownershipPercent?: number }) {
+  const pct = property.ownershipPercent ?? 1
+  const scaledCpf = property.mortgageCpfMonthly * pct
   return {
-    cpfHousingMode: (property.mortgageCpfMonthly > 0 ? 'simple' : 'none') as CpfHousingMode,
-    cpfHousingMonthly: property.mortgageCpfMonthly,
+    cpfHousingMode: (scaledCpf > 0 ? 'simple' : 'none') as CpfHousingMode,
+    cpfHousingMonthly: scaledCpf,
     cpfMortgageYearsLeft: property.existingMortgageRemainingYears,
   }
 }

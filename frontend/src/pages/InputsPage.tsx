@@ -676,6 +676,12 @@ function PropertyContent() {
                           <span className="font-medium">{formatCurrency(existingMortgageBalance * (ownershipPercent ?? 1))}</span>
                           <span>Monthly payment:</span>
                           <span className="font-medium">{formatCurrency(existingMonthlyPayment * (ownershipPercent ?? 1))}/mo</span>
+                          {mortgageCpfMonthly > 0 && (
+                            <>
+                              <span>CPF OA portion:</span>
+                              <span className="font-medium">{formatCurrency(mortgageCpfMonthly * (ownershipPercent ?? 1))}/mo</span>
+                            </>
+                          )}
                         </>
                       )}
                     </div>
