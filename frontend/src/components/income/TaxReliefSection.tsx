@@ -310,7 +310,7 @@ export function TaxReliefSection() {
           <div className="flex items-center justify-between text-sm">
             <span className="flex items-center gap-1">
               CPF Relief (Employee)
-              <InfoTooltip text="Employee CPF contribution is automatically deducted from your taxable income. Computed from your salary and age, subject to the OW ceiling ($8,000/month from 2026) and annual salary ceiling ($102,000). Do not include this in Personal Reliefs above." source="IRAS / CPF Board" sourceUrl="https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/tax-reliefs-rebates-and-deductions/tax-reliefs/central-provident-fund(cpf)-relief-for-employees" />
+              <InfoTooltip text="Employee CPF contribution is automatically deducted from your taxable income. Computed from your salary and age, subject to the OW ceiling ($8,000/month from 2026) and annual salary ceiling ($102,000). Do not include this in Personal Reliefs above." source="IRAS" sourceUrl="https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/tax-reliefs-rebates-and-deductions/tax-reliefs/central-provident-fund(cpf)-relief-for-employees" />
             </span>
             <span className="font-medium text-green-700 dark:text-green-400">{formatCurrency(cpfEmployee)}</span>
           </div>
