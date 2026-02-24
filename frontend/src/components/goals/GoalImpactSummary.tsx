@@ -102,6 +102,8 @@ export function GoalImpactSummary() {
       healthcareConfig: profile.healthcareConfig?.enabled ? profile.healthcareConfig : null,
       retirementWithdrawals: profile.retirementWithdrawals,
       financialGoals: [],  // No goals for comparison
+      cpfLifeStartAge: profile.cpfLifeStartAge,
+      cpfLifePlan: profile.cpfLifePlan,
     })
 
     return summary

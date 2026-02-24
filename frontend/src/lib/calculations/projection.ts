@@ -18,8 +18,10 @@ import type {
   FinancialGoal,
   DownsizingConfig,
   HealthcareConfig,
+  CpfLifePlan,
 } from '@/lib/types'
 import { calculateParentSupportAtAge } from './fire'
+import { calculateBrsFrsErs } from './cpf'
 import { calculateHealthcareCostAtAge } from './healthcare'
 import {
   outstandingMortgageAtAge,
@@ -76,6 +78,9 @@ export interface ProjectionParams {
   retirementWithdrawals?: RetirementWithdrawal[]
   // Financial goals (pre- and post-retirement)
   financialGoals?: FinancialGoal[]
+  // CPF LIFE (for bequest + milestone computation)
+  cpfLifeStartAge: number
+  cpfLifePlan: CpfLifePlan
 }
 
 export interface ProjectionResult {
@@ -226,6 +231,8 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     parentSupport,
     parentSupportEnabled,
     healthcareConfig,
+    cpfLifeStartAge,
+    cpfLifePlan,
   } = params
 
   const rows: ProjectionRow[] = []
@@ -237,6 +244,17 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
   let peakTotalNW = 0
   let peakTotalNWAge = currentAge
   let portfolioDepletedAge: number | null = null
+
+  // CPF milestone + bequest tracking
+  const brsFrsErs = calculateBrsFrsErs(currentAge)
+  let brsReached = false
+  let frsReached = false
+  let ersReached = false
+  let cpfLifeStarted = false
+  let annuityPremium = 0
+  let payoutsFromAnnuity = 0
+  let raFullyDepleted = false
+  let prevCpfTotal = 0
 
   // Pre-compute downsizing results
   const dsActive = downsizing && downsizing.scenario !== 'none'
@@ -484,6 +502,57 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       portfolioDepletedAge = age
     }
 
+    // CPF detail: interest, milestones, bequest
+    const annualContribution = incomeRow.cpfEmployee + incomeRow.cpfEmployer
+    const cpfInterest = i > 0
+      ? Math.max(0, cpfTotal - prevCpfTotal - annualContribution + incomeRow.cpfOaHousingDeduction)
+      : 0
+
+    let cpfMilestone: ProjectionRow['cpfMilestone'] = null
+    if (!brsReached && cpfTotal >= brsFrsErs.brs) {
+      cpfMilestone = 'brs'
+      brsReached = true
+    }
+    if (!frsReached && cpfTotal >= brsFrsErs.frs) {
+      cpfMilestone = 'frs'
+      frsReached = true
+    }
+    if (!ersReached && cpfTotal >= brsFrsErs.ers) {
+      cpfMilestone = 'ers'
+      ersReached = true
+    }
+    if (!cpfLifeStarted && age === cpfLifeStartAge) {
+      cpfMilestone = 'cpfLifeStart'
+      cpfLifeStarted = true
+    }
+    if (age === 55 && incomeRow.cpfRA > 0 && cpfMilestone === null) {
+      cpfMilestone = 'raCreated'
+    }
+
+    if (incomeRow.cpfLifeAnnuityPremium > 0) {
+      annuityPremium = incomeRow.cpfLifeAnnuityPremium
+    }
+    let cpfBequest = 0
+    if (age >= cpfLifeStartAge && annuityPremium > 0) {
+      if (cpfLifePlan === 'basic') {
+        if (incomeRow.cpfRA > 0) {
+          cpfBequest = incomeRow.cpfRA + annuityPremium
+        } else {
+          if (!raFullyDepleted) {
+            raFullyDepleted = true
+            payoutsFromAnnuity = 0
+          }
+          payoutsFromAnnuity += incomeRow.cpfLifePayout
+          cpfBequest = Math.max(0, annuityPremium - payoutsFromAnnuity)
+        }
+      } else {
+        payoutsFromAnnuity += incomeRow.cpfLifePayout
+        cpfBequest = Math.max(0, annuityPremium - payoutsFromAnnuity)
+      }
+    }
+
+    prevCpfTotal = cpfTotal
+
     rows.push({
       age,
       year,
@@ -512,6 +581,12 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       cpfSA: incomeRow.cpfSA,
       cpfMA: incomeRow.cpfMA,
       cpfRA: incomeRow.cpfRA,
+      cpfInterest,
+      cpfOaHousingDeduction: incomeRow.cpfOaHousingDeduction,
+      cpfOaShortfall: incomeRow.cpfOaShortfall,
+      cpfLifePayout: incomeRow.cpfLifePayout,
+      cpfBequest,
+      cpfMilestone,
       propertyEquity: effectivePropertyEquity,
       totalNWIncProperty: totalNW + effectivePropertyEquity,
       withdrawalAmount,

@@ -117,6 +117,8 @@ export function useProjection(): ProjectionResult {
       healthcareConfig: profile.healthcareConfig?.enabled ? profile.healthcareConfig : null,
       retirementWithdrawals: profile.retirementWithdrawals,
       financialGoals: profile.financialGoals,
+      cpfLifeStartAge: profile.cpfLifeStartAge,
+      cpfLifePlan: profile.cpfLifePlan,
     })
 
     return { rows, summary, hasErrors: false, errors: {} }
@@ -167,5 +169,7 @@ export function useProjection(): ProjectionResult {
     profile.healthcareConfig,
     profile.retirementWithdrawals,
     profile.financialGoals,
+    profile.cpfLifeStartAge,
+    profile.cpfLifePlan,
   ])
 }

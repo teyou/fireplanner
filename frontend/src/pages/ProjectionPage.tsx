@@ -57,7 +57,7 @@ const GROUP_COLUMNS: Record<ColumnGroup, string[]> = {
   expensesBreakdown: ['baseInflatedExpenses', 'parentSupportExpense', 'healthcareCashOutlay', 'mortgageCashPayment', 'downsizingRentExpense'],
   incomeBreakdown: ['salary', 'rentalIncome', 'investmentIncome', 'businessIncome', 'governmentIncome', 'srsWithdrawal', 'totalGross'],
   taxCpf: ['sgTax', 'cpfEmployee', 'cpfEmployer', 'totalNet'],
-  cpfBalances: ['cpfOA', 'cpfSA', 'cpfMA'],
+  cpfBalances: ['cpfOA', 'cpfSA', 'cpfMA', 'cpfRA', 'cpfInterest', 'cpfOaHousingDeduction', 'cpfOaShortfall', 'cpfLifePayout', 'cpfBequest', 'cpfMilestone'],
   portfolio: ['portfolioReturnPct', 'withdrawalAmount', 'maxPermittedWithdrawal', 'withdrawalExcess', 'cumulativeSavings'],
 }
 
@@ -84,6 +84,14 @@ export function ProjectionPage() {
 
   const dollarBasis = useUIStore((s) => s.dollarBasis)
   const setUIField = useUIStore((s) => s.setField)
+
+  // Detect which CPF detail columns have data (hide empty ones to reduce clutter)
+  const hasOaHousing = rows?.some((r) => r.cpfOaHousingDeduction > 0) ?? false
+  const hasOaShortfall = rows?.some((r) => r.cpfOaShortfall > 0) ?? false
+  const hasRa = rows?.some((r) => r.cpfRA > 0) ?? false
+  const hasBequest = rows?.some((r) => r.cpfBequest > 0) ?? false
+  const hasCpfLife = rows?.some((r) => r.cpfLifePayout > 0) ?? false
+  const hasMilestone = rows?.some((r) => r.cpfMilestone !== null) ?? false
 
   const [viewMode, setViewMode] = useState<'table' | 'chart'>('table')
   const [activeGroups, setActiveGroups] = useState<Set<ColumnGroup>>(new Set())
@@ -127,6 +135,11 @@ export function ProjectionPage() {
         cpfSA: d(row.cpfSA),
         cpfMA: d(row.cpfMA),
         cpfRA: d(row.cpfRA),
+        cpfInterest: d(row.cpfInterest),
+        cpfOaHousingDeduction: d(row.cpfOaHousingDeduction),
+        cpfOaShortfall: d(row.cpfOaShortfall),
+        cpfLifePayout: d(row.cpfLifePayout),
+        cpfBequest: d(row.cpfBequest),
         withdrawalAmount: d(row.withdrawalAmount),
         maxPermittedWithdrawal: d(row.maxPermittedWithdrawal),
         withdrawalExcess: d(row.withdrawalExcess),
@@ -198,6 +211,13 @@ export function ProjectionPage() {
     if (!hasSrs) {
       vis['srsWithdrawal'] = false
     }
+    // Hide CPF detail columns when no relevant data exists
+    if (!hasRa) vis['cpfRA'] = false
+    if (!hasOaHousing) vis['cpfOaHousingDeduction'] = false
+    if (!hasOaShortfall) vis['cpfOaShortfall'] = false
+    if (!hasBequest) vis['cpfBequest'] = false
+    if (!hasCpfLife) vis['cpfLifePayout'] = false
+    if (!hasMilestone) vis['cpfMilestone'] = false
     // Hide less-essential default columns on mobile to reduce horizontal scroll
     if (isMobile) {
       vis['portfolioReturnDollar'] = vis['portfolioReturnDollar'] || false
@@ -205,7 +225,7 @@ export function ProjectionPage() {
       vis['fireProgress'] = vis['fireProgress'] || false
     }
     return vis
-  }, [activeGroups, isMobile, hasSrs])
+  }, [activeGroups, isMobile, hasSrs, hasRa, hasOaHousing, hasOaShortfall, hasBequest, hasCpfLife, hasMilestone])
 
   const defaultVisibleCount = useMemo(() => {
     return DEFAULT_COLUMN_IDS.filter(id => columnVisibility[id] !== false).length
@@ -365,6 +385,57 @@ export function ProjectionPage() {
       header: 'CPF MA',
       cell: (info) => currencyCell(info.getValue()),
     }),
+    columnHelper.accessor('cpfRA', {
+      id: 'cpfRA',
+      header: 'CPF RA',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('cpfInterest', {
+      id: 'cpfInterest',
+      header: 'CPF Interest',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('cpfOaHousingDeduction', {
+      id: 'cpfOaHousingDeduction',
+      header: 'OA Withdrawal',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('cpfOaShortfall', {
+      id: 'cpfOaShortfall',
+      header: 'OA Shortfall',
+      cell: (info) => {
+        const v = info.getValue() as number
+        return v > 0
+          ? formatCurrency(v)
+          : '-'
+      },
+    }),
+    columnHelper.accessor('cpfLifePayout', {
+      id: 'cpfLifePayout',
+      header: 'CPF LIFE',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('cpfBequest', {
+      id: 'cpfBequest',
+      header: 'Bequest',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('cpfMilestone', {
+      id: 'cpfMilestone',
+      header: 'Milestone',
+      cell: (info) => {
+        const v = info.getValue()
+        if (!v) return '-'
+        const labels: Record<string, string> = {
+          brs: 'BRS reached',
+          frs: 'FRS reached',
+          ers: 'ERS reached',
+          cpfLifeStart: 'CPF LIFE starts',
+          raCreated: 'RA created',
+        }
+        return labels[v as string] ?? '-'
+      },
+    }) as ColumnDef<ProjectionRow, number | string>,
 
     // Expanded: Portfolio
     columnHelper.accessor('portfolioReturnPct', {

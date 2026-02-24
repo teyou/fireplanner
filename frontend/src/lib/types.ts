@@ -783,6 +783,12 @@ export interface ProjectionRow {
   cpfSA: number
   cpfMA: number
   cpfRA: number
+  cpfInterest: number
+  cpfOaHousingDeduction: number
+  cpfOaShortfall: number
+  cpfLifePayout: number
+  cpfBequest: number
+  cpfMilestone: 'brs' | 'frs' | 'ers' | 'cpfLifeStart' | 'raCreated' | null
   // Expanded: withdrawal detail
   withdrawalAmount: number
   maxPermittedWithdrawal: number
