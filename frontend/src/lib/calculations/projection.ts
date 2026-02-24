@@ -226,7 +226,6 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     glidePathConfig,
     withdrawalStrategy,
     strategyParams,
-    propertyEquity,
     annualMortgagePayment,
     annualRentalIncome,
     existingPropertyValue,
