@@ -48,7 +48,7 @@ export function PropertyInputForm() {
           <div className="space-y-2">
             <Label>
               Lease (years)
-              <InfoTooltip text="99-year leasehold is standard for condos. 999 or freehold for some landed." />
+              <InfoTooltip text="99-year leasehold is standard for condos. 999 or freehold for some landed. Leasehold decay follows Bala's Table." source="SLA" sourceUrl="https://www.sla.gov.sg" />
             </Label>
             <Input
               type="number"
@@ -146,7 +146,7 @@ export function PropertyInputForm() {
           <div className="space-y-2">
             <Label>
               Existing Properties
-              <InfoTooltip text="Number of properties already owned. Affects ABSD rate." />
+              <InfoTooltip text="Number of properties already owned. Affects ABSD rate." source="IRAS" sourceUrl="https://www.iras.gov.sg/taxes/stamp-duty/for-property/buying-or-acquiring-property/additional-buyer's-stamp-duty-(absd)" />
             </Label>
             <Input
               type="number"

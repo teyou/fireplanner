@@ -96,7 +96,7 @@ export function HealthcareSection() {
             <div className="flex items-center justify-between">
               <Label className="text-sm flex items-center gap-1">
                 MediShield Life
-                <InfoTooltip text="National health insurance scheme. Premiums are fully payable from MediSave. Mandatory for all Singapore citizens and PRs." />
+                <InfoTooltip text="National health insurance scheme. Premiums are fully payable from MediSave. Mandatory for all Singapore citizens and PRs." source="CPF Board" sourceUrl="https://www.cpf.gov.sg/member/healthcare-financing/medishield-life/medishield-life-premiums" />
               </Label>
               <Switch
                 checked={config.mediShieldLifeEnabled}
@@ -107,7 +107,7 @@ export function HealthcareSection() {
             <div className="flex items-center justify-between">
               <Label className="text-sm flex items-center gap-1">
                 CareShield LIFE
-                <InfoTooltip text="Long-term care insurance. Premiums paid from age 30 to 67. Mandatory for those born 1980 or later." />
+                <InfoTooltip text="Long-term care insurance. Premiums paid from age 30 to 67. Mandatory for those born 1980 or later." source="CareShield LIFE" sourceUrl="https://www.careshieldlife.gov.sg" />
               </Label>
               <Switch
                 checked={config.careShieldLifeEnabled}
@@ -307,7 +307,7 @@ export function HealthcareSection() {
               label="Medical Inflation Rate"
               value={config.oopInflationRate}
               onChange={(v) => updateConfig('oopInflationRate', v)}
-              tooltip="Annual increase in out-of-pocket costs above general inflation. Singapore CPI Healthcare averaged 2.24% over 20 years; 3% is moderately conservative. Set to 0% for no medical inflation."
+              tooltip="Annual increase in out-of-pocket costs above general inflation. Singapore CPI Healthcare averaged 2.24% over 20 years; 3% is moderately conservative. Set to 0% for no medical inflation. Source: SingStat CPI Health."
             />
           </div>
 
@@ -322,7 +322,7 @@ export function HealthcareSection() {
             value={config.mediSaveTopUpAnnual}
             onChange={(v) => updateConfig('mediSaveTopUpAnnual', v)}
             error={validationErrors['healthcareConfig.mediSaveTopUpAnnual']}
-            tooltip="Voluntary annual top-up to MediSave account. Maximum $37,740 (current BHS cap). Helps offset future healthcare premiums."
+            tooltip="Voluntary annual top-up to MediSave account. Maximum $37,740 (current BHS cap). Helps offset future healthcare premiums. Source: CPF Board."
           />
 
           {/* Cost Preview Table */}
