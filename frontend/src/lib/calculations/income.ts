@@ -11,10 +11,12 @@ import type {
   CpfRetirementSum,
   CpfHousingMode,
   CpfOaWithdrawal,
+  LockedAsset,
 } from '@/lib/types'
 import { getMomSalary } from '@/lib/data/momSalary'
 import { calculateCpfContribution, calculateCpfExtraInterestWithAge, calculateCpfLifePayoutAtAge, getRetirementSumAmount, performAge55Transfer, allocatePostAge55Contribution, calculateCpfisInterest } from './cpf'
 import { calculateChargeableIncome, calculateProgressiveTax } from './tax'
+import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
 import {
   OA_INTEREST_RATE,
   SA_INTEREST_RATE,
@@ -264,6 +266,12 @@ export interface IncomeProjectionParams {
   cpfisEnabled?: boolean
   cpfisOaReturn?: number
   cpfisSaReturn?: number
+  // Voluntary CPF top-ups (pre-retirement only)
+  cpfTopUpOA?: number
+  cpfTopUpSA?: number
+  cpfTopUpMA?: number
+  // Age-gated locked assets
+  lockedAssets?: LockedAsset[]
 }
 
 /**
@@ -430,8 +438,13 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     const totalGross = salary + rentalIncome + investmentIncome + businessIncome + governmentIncome + srsWithdrawal
 
     // CPF contributions (only if employed and not paused)
+    // Track per-account contributions for mid-year interest approximation
     let cpfEmployee = 0
     let cpfEmployer = 0
+    let oaContrib = 0
+    let saContrib = 0
+    let maContrib = 0
+    let raContrib = 0
     const cpfPaused = isCpfPaused(age, params.lifeEvents, params.lifeEventsEnabled)
 
     if (!isRetired && params.employerCpfEnabled && salary > 0 && !cpfPaused) {
@@ -442,43 +455,94 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       if (saClosed) {
         if (age >= cpfLifeStartAge) {
           // Post-LIFE: no more RA accumulation, SA portion → OA
-          cpfOA += cpf.oaAllocation + cpf.saAllocation
-          cpfMA += cpf.maAllocation
+          oaContrib = cpf.oaAllocation + cpf.saAllocation
+          maContrib = cpf.maAllocation
+          cpfOA += oaContrib
+          cpfMA += maContrib
         } else {
           // Post-55, pre-LIFE: SA allocation goes to RA (if room) or overflows to OA
           const alloc = allocatePostAge55Contribution(cpf, cpfRA, retirementSumTarget)
-          cpfOA += alloc.oaAllocation
-          cpfRA += alloc.raAllocation
-          cpfMA += alloc.maAllocation
+          oaContrib = alloc.oaAllocation
+          raContrib = alloc.raAllocation
+          maContrib = alloc.maAllocation
+          cpfOA += oaContrib
+          cpfRA += raContrib
+          cpfMA += maContrib
         }
       } else {
-        cpfOA += cpf.oaAllocation
-        cpfSA += cpf.saAllocation
-        cpfMA += cpf.maAllocation
+        oaContrib = cpf.oaAllocation
+        saContrib = cpf.saAllocation
+        maContrib = cpf.maAllocation
+        cpfOA += oaContrib
+        cpfSA += saContrib
+        cpfMA += maContrib
       }
     }
 
-    // CPF interest (CPFIS applies only pre-55 when SA is open)
+    // Voluntary CPF top-ups (pre-retirement only)
+    let topUpOAActual = 0
+    let topUpSAActual = 0
+    let topUpMAActual = 0
+    let _topUpRAActual = 0
+    if (!isRetired) {
+      const topUpOA = params.cpfTopUpOA ?? 0
+      const topUpSA = params.cpfTopUpSA ?? 0
+      const topUpMA = params.cpfTopUpMA ?? 0
+
+      topUpOAActual = topUpOA
+      cpfOA += topUpOAActual
+
+      if (saClosed) {
+        // Post-55: SA top-up goes to RA (up to retirement sum target), overflow to OA
+        const raRoom = Math.max(0, retirementSumTarget - cpfRA)
+        const toRA = Math.min(topUpSA, raRoom)
+        _topUpRAActual += toRA
+        cpfRA += toRA
+        const overflow = topUpSA - toRA
+        topUpOAActual += overflow
+        cpfOA += overflow
+      } else {
+        topUpSAActual = topUpSA
+        cpfSA += topUpSAActual
+      }
+
+      // MA top-up capped at BHS minus current MA
+      const maRoom = Math.max(0, MEDISAVE_BHS - cpfMA)
+      topUpMAActual = Math.min(topUpMA, maRoom)
+      cpfMA += topUpMAActual
+    }
+
+    // Mid-year effective balances for interest calculation.
+    // CPF contributions arrive monthly; on average they earn ~half a year of interest.
+    // Housing deductions also occur monthly. Using the mid-year approximation:
+    //   midBalance = endBalance - (contributions - deductions) / 2
+    // Voluntary top-ups are assumed to be a lump sum at start of year, so they earn full year interest.
+    const midOA = cpfOA - (oaContrib - cpfOaHousingDeduction) / 2
+    const midSA = cpfSA - saContrib / 2
+    const midMA = cpfMA - maContrib / 2
+    const midRA = cpfRA - raContrib / 2
+
+    // CPF interest on mid-year balances (CPFIS applies only pre-55 when SA is open)
     const cpfisActive = (params.cpfisEnabled ?? false) && !saClosed
     let oaInterest: number
     let saInterest: number
     if (cpfisActive) {
       const cpfisResult = calculateCpfisInterest(
-        cpfOA, cpfSA,
+        midOA, midSA,
         params.cpfisOaReturn ?? 0.04,
         params.cpfisSaReturn ?? 0.05
       )
       oaInterest = cpfisResult.oaInterest
       saInterest = cpfisResult.saInterest
     } else {
-      oaInterest = cpfOA * OA_INTEREST_RATE
-      saInterest = saClosed ? 0 : cpfSA * SA_INTEREST_RATE
+      oaInterest = midOA * OA_INTEREST_RATE
+      saInterest = saClosed ? 0 : midSA * SA_INTEREST_RATE
     }
-    const maInterest = cpfMA * MA_INTEREST_RATE
-    const raInterest = cpfRA * RA_INTEREST_RATE
+    const maInterest = midMA * MA_INTEREST_RATE
+    const raInterest = midRA * RA_INTEREST_RATE
     // Extra interest: when CPFIS active, only retained portions qualify
     // (simplification: full balances qualify since CPFIS funds are still "in CPF")
-    const extraInterest = calculateCpfExtraInterestWithAge(cpfOA, cpfSA, cpfMA, cpfRA, age)
+    const extraInterest = calculateCpfExtraInterestWithAge(midOA, midSA, midMA, midRA, age)
 
     cpfOA += oaInterest
     if (saClosed) {
@@ -519,7 +583,8 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       cpfEmployee,
       srsContribution,
       params.personalReliefs,
-      params.residencyStatus
+      params.residencyStatus,
+      (!isRetired ? (params.cpfTopUpSA ?? 0) : 0)
     )
     const taxResult = calculateProgressiveTax(chargeableIncome)
     const sgTax = taxResult.taxPayable
@@ -530,10 +595,22 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     // Savings
     const inflationAdjustedExpenses = params.annualExpenses * Math.pow(1 + params.inflation, year)
     const savingsPaused = isSavingsPaused(age, params.lifeEvents, params.lifeEventsEnabled)
-    const annualSavings = savingsPaused ? 0 : Math.max(0, totalNet - inflationAdjustedExpenses)
+    const voluntaryTopUps = !isRetired
+      ? (params.cpfTopUpOA ?? 0) + (params.cpfTopUpSA ?? 0) + (params.cpfTopUpMA ?? 0)
+      : 0
+    const annualSavings = savingsPaused ? 0 : Math.max(0, totalNet - inflationAdjustedExpenses - voluntaryTopUps)
     cumulativeSavings += annualSavings
 
     const activeLifeEvents = getActiveLifeEventNames(age, params.lifeEvents, params.lifeEventsEnabled)
+
+    // Locked asset unlocks
+    let lockedAssetUnlock = 0
+    for (const asset of (params.lockedAssets ?? [])) {
+      if (age === asset.unlockAge) {
+        const yearsGrown = asset.unlockAge - params.currentAge
+        lockedAssetUnlock += asset.amount * Math.pow(1 + asset.growthRate, yearsGrown)
+      }
+    }
 
     // Record annuity premium on the LIFE start row
     let cpfLifeAnnuityPremium = 0
@@ -579,6 +656,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       srsContribution,
       srsWithdrawal,
       srsTaxableWithdrawal,
+      lockedAssetUnlock,
       // Cash reserve defaults (populated by hook post-processing)
       cashReserveTarget: 0,
       cashReserveBalance: 0,

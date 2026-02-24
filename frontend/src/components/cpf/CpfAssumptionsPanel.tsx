@@ -108,6 +108,11 @@ export function CpfAssumptionsPanel() {
             CPF LIFE: {planLabels[cpfLifePlan]} from age {cpfLifeStartAge} &middot; RA earns {formatPercent(RA_INTEREST_RATE)} until payout starts
           </div>
 
+          {/* Interest methodology note */}
+          <div className="text-xs text-muted-foreground">
+            Interest method: Mid-year approximation — contributions and withdrawals are treated as spread evenly through the year.
+          </div>
+
           {/* Source links */}
           <div className="pt-1 border-t text-xs text-muted-foreground flex flex-wrap gap-3">
             <span>Sources:</span>

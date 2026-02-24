@@ -114,6 +114,18 @@ export interface CpfOaWithdrawal {
 }
 
 // ============================================================
+// Age-Gated Locked Assets
+// ============================================================
+
+export interface LockedAsset {
+  id: string
+  name: string
+  amount: number
+  unlockAge: number
+  growthRate: number
+}
+
+// ============================================================
 // Profile Store
 // ============================================================
 
@@ -134,6 +146,12 @@ export interface ProfileState {
   cpfSA: number
   cpfMA: number
   cpfRA: number
+
+  // Voluntary CPF Top-Ups (annual cash top-ups from take-home pay, pre-retirement only)
+  cpfTopUpOA: number
+  cpfTopUpSA: number   // RSTU: up to $8,000/yr tax relief
+  cpfTopUpMA: number   // Capped at BHS minus current MA balance
+
   srsBalance: number
   srsAnnualContribution: number
   srsInvestmentReturn: number
@@ -194,6 +212,9 @@ export interface ProfileState {
 
   // Financial Goals
   financialGoals: FinancialGoal[]
+
+  // Age-Gated Locked Assets (illiquid holdings that become accessible at a specific age)
+  lockedAssets: LockedAsset[]
 
   // Validation
   validationErrors: ValidationErrors
@@ -294,6 +315,9 @@ export interface IncomeProjectionRow {
   srsWithdrawal: number
   srsTaxableWithdrawal: number
 
+  // Locked asset unlocks (value of locked assets that become accessible at this age)
+  lockedAssetUnlock: number
+
   // Cash reserve (populated by hook post-processing, not income engine)
   cashReserveTarget: number
   cashReserveBalance: number
@@ -330,6 +354,9 @@ export interface FireMetrics {
   cpfDependency: boolean
   liquidBridgeGapYears: number | null
   liquidDepletionAge: number | null
+  lockedAssetsTotal: number
+  accessibleNetWorth: number
+  totalNetWorthWithLocked: number
   /** Breakdown of effective annual expenses used to compute FIRE number */
   expensesBreakdown: {
     baseExpenses: number          // annualExpenses × retirementSpendingAdjustment × fireTypeMultiplier

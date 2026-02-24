@@ -98,6 +98,18 @@ export const FRS_BASE = 220400
 export const ERS_BASE = 440800
 export const BRS_GROWTH_RATE = 0.035 // 3.5% p.a.
 
+// CPF Annual Limit — total mandatory + voluntary contributions cap per calendar year
+// Source: https://www.cpf.gov.sg/member/growing-your-savings/saving-more-with-cpf/top-up-ordinary-special-and-medisave-savings
+// As of: 2026
+export const CPF_ANNUAL_LIMIT = 37740
+
+// Retirement Sum Top-Up (RSTU) — voluntary SA/RA cash top-up
+// Tax relief: up to $8,000 for self, $8,000 for family members
+// Source: https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/tax-reliefs-rebates-and-deductions/tax-reliefs/central-provident-fund-(cpf)-cash-top-up-relief
+// As of: 2026
+export const RSTU_TAX_RELIEF_CAP = 8000
+export const RSTU_FAMILY_TAX_RELIEF_CAP = 8000
+
 // CPFIS (CPF Investment Scheme) retention limits
 // Members must retain these minimum balances before investing the remainder
 // Source: https://www.cpf.gov.sg/member/growing-your-savings/earning-higher-returns/investing-your-cpf-savings

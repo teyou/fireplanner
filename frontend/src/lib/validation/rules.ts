@@ -6,7 +6,7 @@ import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
  * Returns a map of field names to error messages.
  */
 export function validateProfileConsistency(
-  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'lifeStage' | 'cpfLifeStartAge' | 'parentSupportEnabled' | 'parentSupport' | 'healthcareConfig' | 'retirementWithdrawals' | 'financialGoals' | 'cpfOaWithdrawals'>
+  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'lifeStage' | 'cpfLifeStartAge' | 'parentSupportEnabled' | 'parentSupport' | 'healthcareConfig' | 'retirementWithdrawals' | 'financialGoals' | 'cpfOaWithdrawals'> & { lockedAssets?: ProfileState['lockedAssets'] }
 ): ValidationErrors {
   const errors: ValidationErrors = {}
 
@@ -88,6 +88,22 @@ export function validateProfileConsistency(
     }
     if (w.amount <= 0) {
       errors[`cpfOaWithdrawal_${w.id}_amount`] = 'Amount must be positive'
+    }
+  }
+
+  // Locked asset cross-store rules
+  if (profile.lockedAssets) {
+    for (let i = 0; i < profile.lockedAssets.length; i++) {
+      const asset = profile.lockedAssets[i]
+      if (asset.unlockAge <= profile.currentAge) {
+        errors[`lockedAssets.${i}.unlockAge`] = 'Unlock age must be greater than current age'
+      }
+      if (asset.unlockAge > profile.lifeExpectancy) {
+        errors[`lockedAssets.${i}.unlockAge`] = 'Unlock age must not exceed life expectancy'
+      }
+    }
+    if (profile.lockedAssets.length > 10) {
+      errors['lockedAssets'] = 'Maximum 10 locked assets'
     }
   }
 

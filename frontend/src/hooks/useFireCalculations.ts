@@ -73,6 +73,10 @@ export function useFireCalculations(): FireCalculationsResult {
         cpfHousingMode: (property.mortgageCpfMonthly > 0 ? 'simple' : 'none') as CpfHousingMode,
         cpfHousingMonthly: property.mortgageCpfMonthly * (property.ownershipPercent ?? 1),
         cpfMortgageYearsLeft: property.existingMortgageRemainingYears,
+        cpfTopUpOA: profile.cpfTopUpOA,
+        cpfTopUpSA: profile.cpfTopUpSA,
+        cpfTopUpMA: profile.cpfTopUpMA,
+        lockedAssets: profile.lockedAssets,
       })
 
       if (projection.length > 0) {
@@ -128,6 +132,7 @@ export function useFireCalculations(): FireCalculationsResult {
       parentSupportEnabled: profile.parentSupportEnabled,
       healthcareConfig: profile.healthcareConfig?.enabled ? profile.healthcareConfig : null,
       cashReserveOffset,
+      lockedAssets: profile.lockedAssets,
     })
 
     return { metrics, hasErrors: false, errors: {} }
@@ -154,6 +159,9 @@ export function useFireCalculations(): FireCalculationsResult {
     profile.cpfLifeStartAge,
     profile.cpfLifePlan,
     profile.cpfRetirementSum,
+    profile.cpfTopUpOA,
+    profile.cpfTopUpSA,
+    profile.cpfTopUpMA,
     property.mortgageCpfMonthly,
     property.existingMortgageRemainingYears,
     profile.validationErrors,
@@ -185,5 +193,6 @@ export function useFireCalculations(): FireCalculationsResult {
     profile.cashReserveFixedAmount,
     profile.cashReserveMonths,
     profile.cashReserveReturn,
+    profile.lockedAssets,
   ])
 }

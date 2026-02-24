@@ -65,6 +65,7 @@ function mockIncomeRow(overrides: Partial<IncomeProjectionRow> = {}): IncomeProj
     cashReserveTarget: 0,
     cashReserveBalance: 0,
     investedSavings: 0,
+    lockedAssetUnlock: 0,
     ...overrides,
   }
 }

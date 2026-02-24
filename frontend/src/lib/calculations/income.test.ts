@@ -446,9 +446,9 @@ describe('calculateIncomeSummary', () => {
 
   it('computes correct peak earning for simple projection', () => {
     const rows: IncomeProjectionRow[] = [
-      { year: 0, age: 30, salary: 72000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 72000, sgTax: 2000, cpfEmployee: 14400, cpfEmployer: 12240, totalNet: 55600, annualSavings: 7600, cumulativeSavings: 7600, cpfOA: 16560, cpfSA: 4320, cpfMA: 5760, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
-      { year: 1, age: 31, salary: 80000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 80000, sgTax: 3000, cpfEmployee: 16000, cpfEmployer: 13600, totalNet: 61000, annualSavings: 13000, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
-      { year: 2, age: 32, salary: 0, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0, cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: true, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0 },
+      { year: 0, age: 30, salary: 72000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 72000, sgTax: 2000, cpfEmployee: 14400, cpfEmployer: 12240, totalNet: 55600, annualSavings: 7600, cumulativeSavings: 7600, cpfOA: 16560, cpfSA: 4320, cpfMA: 5760, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0, lockedAssetUnlock: 0 },
+      { year: 1, age: 31, salary: 80000, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 80000, sgTax: 3000, cpfEmployee: 16000, cpfEmployer: 13600, totalNet: 61000, annualSavings: 13000, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: false, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0, lockedAssetUnlock: 0 },
+      { year: 2, age: 32, salary: 0, rentalIncome: 0, investmentIncome: 0, businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0, cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0, cumulativeSavings: 20600, cpfOA: 35000, cpfSA: 9000, cpfMA: 12000, cpfRA: 0, isRetired: true, activeLifeEvents: [], cpfLifePayout: 0, cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0, srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0, cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0, lockedAssetUnlock: 0 },
     ]
 
     const summary = calculateIncomeSummary(rows, 48000)
@@ -899,6 +899,116 @@ describe('integration tests', () => {
     // After housing end age, no more deductions
     const row56 = withHousing.find((r) => r.age === 56)!
     expect(row56.cpfOaHousingDeduction).toBe(0)
+  })
+
+  it('CPF interest uses mid-year approximation (contributions earn half-year interest)', () => {
+    // Setup: zero initial balances, known salary, zero inflation
+    // Age 30: oaRate=0.23, saRate=0.06, maRate=0.08 on $72K salary
+    // oaContrib = 72000 * 0.23 = 16560
+    // saContrib = 72000 * 0.06 = 4320
+    // maContrib = 72000 * 0.08 = 5760
+    //
+    // Mid-year effective balances (starting from 0):
+    //   midOA = 16560 - 16560/2 = 8280
+    //   midSA = 4320  - 4320/2  = 2160
+    //   midMA = 5760  - 5760/2  = 2880
+    //
+    // Interest at mid-year balances:
+    //   oaInterest = 8280 * 0.025 = 207.00
+    //   saInterest = 2160 * 0.04  = 86.40
+    //   maInterest = 2880 * 0.04  = 115.20
+    //   extraInterest on first $60K combined (max $20K from OA):
+    //     OA qualifying = min(8280, 20000) = 8280
+    //     remaining cap = 60000 - 8280 = 51720
+    //     SA+MA = 2160 + 2880 = 5040 < 51720
+    //     extra = (8280 + 5040) * 0.01 = 133.20
+    //     extra goes to SA (pre-55)
+    //
+    // Final balances:
+    //   cpfOA = 16560 + 207.00 = 16767.00
+    //   cpfSA = 4320  + 86.40 + 133.20 = 4539.60
+    //   cpfMA = 5760  + 115.20 = 5875.20
+    const rows = generateIncomeProjection({
+      currentAge: 30,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 30000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 0,
+      initialCpfSA: 0,
+      initialCpfMA: 0,
+    })
+
+    const row30 = rows.find((r) => r.age === 30)!
+
+    // With mid-year approximation, first-year interest is exactly half
+    // of what full-year-on-contributions would yield
+    expect(row30.cpfOA).toBeCloseTo(16767.00, 2)
+    expect(row30.cpfSA).toBeCloseTo(4539.60, 2)
+    expect(row30.cpfMA).toBeCloseTo(5875.20, 2)
+
+    // Verify: WITHOUT mid-year approx, OA would have been 16560 + 16560*0.025 = 16974
+    // The difference is exactly half the contribution interest: (16560*0.025)/2 = 207
+    expect(row30.cpfOA).toBeLessThan(16974)
+    expect(16974 - row30.cpfOA).toBeCloseTo(207, 2)
+  })
+
+  it('mid-year approximation accounts for housing deductions correctly', () => {
+    // With housing deduction, the deduction reduces mid-year balance less
+    // than full-year would, since deductions are also spread monthly.
+    // Setup: $50K initial OA, $1000/mo housing, $72K salary at age 30
+    //   oaContrib = 72000 * 0.23 = 16560
+    //   housingDeduction = 1000 * 12 = 12000
+    //   OA after deduction: 50000 - 12000 = 38000
+    //   OA after contrib: 38000 + 16560 = 54560
+    //   midOA = 54560 - (16560 - 12000)/2 = 54560 - 2280 = 52280
+    //   oaInterest = 52280 * 0.025 = 1307.00
+    //   final OA = 54560 + 1307 = 55867 (plus extra interest allocated to SA)
+    const rows = generateIncomeProjection({
+      currentAge: 30,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      salaryModel: 'simple',
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 30000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 50000,
+      initialCpfSA: 0,
+      initialCpfMA: 0,
+      cpfHousingMode: 'simple',
+      cpfHousingMonthly: 1000,
+      cpfMortgageYearsLeft: 25,
+    })
+
+    const row30 = rows.find((r) => r.age === 30)!
+
+    // OA interest uses mid-year balance of 52280
+    // oaInterest = 52280 * 0.025 = 1307.00
+    expect(row30.cpfOA).toBeCloseTo(54560 + 1307, 0)
   })
 
   it('manual CPF LIFE stream takes precedence over automated', () => {
@@ -2108,5 +2218,163 @@ describe('integration tests', () => {
     for (const row of preShortfall) {
       expect(row.cpfOaShortfall).toBe(0)
     }
+  })
+})
+
+// ============================================================
+// Voluntary CPF top-ups in projection
+// ============================================================
+
+describe('voluntary CPF top-ups in projection', () => {
+  const topUpBaseParams = {
+    currentAge: 30,
+    retirementAge: 55,
+    lifeExpectancy: 70,
+    salaryModel: 'simple' as const,
+    annualSalary: 100000,
+    salaryGrowthRate: 0,
+    realisticPhases: DEFAULT_CAREER_PHASES,
+    promotionJumps: [],
+    momEducation: 'degree' as const,
+    momAdjustment: 1.0,
+    employerCpfEnabled: true,
+    incomeStreams: [],
+    lifeEvents: [],
+    lifeEventsEnabled: false,
+    annualExpenses: 48000,
+    inflation: 0,
+    personalReliefs: 20000,
+    srsAnnualContribution: 0,
+    initialCpfOA: 50000,
+    initialCpfSA: 50000,
+    initialCpfMA: 30000,
+  }
+
+  it('SA top-up increases SA balance each pre-retirement year', () => {
+    const params = {
+      ...topUpBaseParams,
+      cpfTopUpSA: 8000,
+      initialCpfSA: 50000,
+    }
+    const withTopUp = generateIncomeProjection(params)
+    const paramsNoTopUp = { ...params, cpfTopUpSA: 0 }
+    const withoutTopUp = generateIncomeProjection(paramsNoTopUp)
+
+    // At year 1 (second row), SA should be higher with top-up
+    expect(withTopUp[1].cpfSA).toBeGreaterThan(withoutTopUp[1].cpfSA)
+    // Difference should be approximately $8,000 + interest on the extra amount
+    const diff = withTopUp[1].cpfSA - withoutTopUp[1].cpfSA
+    expect(diff).toBeGreaterThanOrEqual(8000)
+  })
+
+  it('top-ups reduce annual savings (liquid portfolio contribution)', () => {
+    const params = { ...topUpBaseParams, cpfTopUpSA: 8000, cpfTopUpOA: 2000 }
+    const withTopUp = generateIncomeProjection(params)
+    const paramsNoTopUp = { ...params, cpfTopUpSA: 0, cpfTopUpOA: 0 }
+    const withoutTopUp = generateIncomeProjection(paramsNoTopUp)
+
+    // Savings should be lower with top-ups
+    expect(withTopUp[0].annualSavings).toBeLessThan(withoutTopUp[0].annualSavings)
+  })
+
+  it('MA top-up is capped at BHS minus current MA', () => {
+    const params = {
+      ...topUpBaseParams,
+      cpfTopUpMA: 50000,
+      initialCpfMA: 60000,  // close to BHS ($79,000)
+    }
+    const rows = generateIncomeProjection(params)
+    // MA should not wildly exceed BHS
+    expect(rows[0].cpfMA).toBeLessThanOrEqual(85000)
+  })
+
+  it('no top-ups applied after retirement', () => {
+    const params = {
+      ...topUpBaseParams,
+      currentAge: 60,
+      retirementAge: 62,
+      lifeExpectancy: 70,
+      cpfTopUpSA: 8000,
+      initialCpfSA: 0,
+    }
+    const rows = generateIncomeProjection(params)
+    const retiredRow = rows.find(r => r.isRetired)
+    const preRetiredRows = rows.filter(r => !r.isRetired)
+    const preRetiredRow = preRetiredRows.length > 0 ? preRetiredRows[preRetiredRows.length - 1] : undefined
+    if (retiredRow && preRetiredRow) {
+      // Post-55 with saClosed, SA top-up goes to RA or OA.
+      // The retired row should NOT have additional top-up applied.
+      // Compare RA delta: should be only interest, not interest + topUp
+      const raDiff = retiredRow.cpfRA - preRetiredRow.cpfRA
+      expect(Math.abs(raDiff)).toBeLessThan(8000)
+    }
+  })
+})
+
+// ============================================================
+// Locked asset unlock in projection
+// ============================================================
+
+describe('locked asset unlock in projection', () => {
+  const lockedAssetBaseParams = {
+    currentAge: 30,
+    retirementAge: 65,
+    lifeExpectancy: 90,
+    salaryModel: 'simple' as const,
+    annualSalary: 72000,
+    salaryGrowthRate: 0.03,
+    realisticPhases: DEFAULT_CAREER_PHASES,
+    promotionJumps: [],
+    momEducation: 'degree' as const,
+    momAdjustment: 1.0,
+    employerCpfEnabled: true,
+    incomeStreams: [],
+    lifeEvents: [],
+    lifeEventsEnabled: false,
+    annualExpenses: 30000,
+    inflation: 0.025,
+    personalReliefs: 20000,
+    srsAnnualContribution: 0,
+    initialCpfOA: 0,
+    initialCpfSA: 0,
+    initialCpfMA: 0,
+  }
+
+  it('adds unlocked asset value at unlock age', () => {
+    const params = {
+      ...lockedAssetBaseParams,
+      lockedAssets: [
+        { id: '1', name: 'RSUs', amount: 50000, unlockAge: 35, growthRate: 0.05 },
+      ],
+    }
+    const rows = generateIncomeProjection(params)
+    const unlockRow = rows.find(r => r.age === 35)
+    // At age 35 (5 years growth at 5%): 50000 * 1.05^5 ≈ 63814
+    expect(unlockRow?.lockedAssetUnlock).toBeCloseTo(50000 * Math.pow(1.05, 5), 0)
+  })
+
+  it('returns 0 for lockedAssetUnlock in non-unlock years', () => {
+    const params = {
+      ...lockedAssetBaseParams,
+      lockedAssets: [
+        { id: '1', name: 'RSUs', amount: 50000, unlockAge: 35, growthRate: 0 },
+      ],
+    }
+    const rows = generateIncomeProjection(params)
+    const nonUnlockRow = rows.find(r => r.age === 32)
+    expect(nonUnlockRow?.lockedAssetUnlock).toBe(0)
+  })
+
+  it('handles multiple locked assets unlocking at same age', () => {
+    const params = {
+      ...lockedAssetBaseParams,
+      lockedAssets: [
+        { id: '1', name: 'RSUs', amount: 50000, unlockAge: 35, growthRate: 0 },
+        { id: '2', name: 'FD', amount: 30000, unlockAge: 35, growthRate: 0 },
+      ],
+    }
+    const rows = generateIncomeProjection(params)
+    const unlockRow = rows.find(r => r.age === 35)
+    expect(unlockRow?.lockedAssetUnlock).toBe(80000)
   })
 })

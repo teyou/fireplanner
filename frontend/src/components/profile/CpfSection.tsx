@@ -29,6 +29,7 @@ export function CpfSection() {
     cpfisEnabled, cpfisOaReturn, cpfisSaReturn,
     cpfOaWithdrawals,
     addCpfOaWithdrawal, removeCpfOaWithdrawal, updateCpfOaWithdrawal,
+    cpfTopUpOA, cpfTopUpSA, cpfTopUpMA,
     validationErrors, setField,
   } = useProfileStore()
   const incomeStreams = useIncomeStore((s) => s.incomeStreams)
@@ -320,6 +321,41 @@ export function CpfSection() {
             </p>
           )}
         </div>
+      </CardContent>
+    </Card>
+
+    {/* Voluntary Top-Ups */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Voluntary Top-Ups</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CurrencyInput
+            label="Annual SA Top-Up (RSTU)"
+            value={cpfTopUpSA}
+            onChange={(v) => setField('cpfTopUpSA', v)}
+            error={validationErrors.cpfTopUpSA}
+            tooltip="Cash top-up to SA (or RA if 55+). Up to $8,000/year qualifies for tax relief. Source: IRAS."
+          />
+          <CurrencyInput
+            label="Annual MA Top-Up"
+            value={cpfTopUpMA}
+            onChange={(v) => setField('cpfTopUpMA', v)}
+            error={validationErrors.cpfTopUpMA}
+            tooltip="Voluntary MediSave contribution. Capped at BHS ($79,000) minus your current MA balance each year."
+          />
+          <CurrencyInput
+            label="Annual OA Top-Up"
+            value={cpfTopUpOA}
+            onChange={(v) => setField('cpfTopUpOA', v)}
+            error={validationErrors.cpfTopUpOA}
+            tooltip="Voluntary cash top-up to OA. No specific tax relief for OA top-ups."
+          />
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Top-ups are applied pre-retirement only and reduce your annual liquid savings.
+        </p>
       </CardContent>
     </Card>
 

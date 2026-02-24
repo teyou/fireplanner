@@ -199,6 +199,31 @@ describe('calculateSrsDeduction', () => {
   })
 })
 
+describe('RSTU tax relief', () => {
+  it('deducts SA top-up from chargeable income', () => {
+    // $100K income, $20K CPF, $0 SRS, $0 reliefs, $8K RSTU
+    const chargeable = calculateChargeableIncome(100000, 20000, 0, 0, 'citizen', 8000)
+    // 100000 - 20000 - 8000 = 72000
+    expect(chargeable).toBe(72000)
+  })
+
+  it('caps RSTU deduction at $8,000', () => {
+    const chargeable = calculateChargeableIncome(100000, 20000, 0, 0, 'citizen', 15000)
+    // Still only 8000 deducted: 100000 - 20000 - 8000 = 72000
+    expect(chargeable).toBe(72000)
+  })
+
+  it('handles zero RSTU top-up', () => {
+    const chargeable = calculateChargeableIncome(100000, 20000, 0, 0, 'citizen', 0)
+    expect(chargeable).toBe(80000)
+  })
+
+  it('handles undefined RSTU (backward compat)', () => {
+    const chargeable = calculateChargeableIncome(100000, 20000, 0, 0, 'citizen')
+    expect(chargeable).toBe(80000)
+  })
+})
+
 describe('computeTotalReliefs', () => {
   it('default breakdown for age 30 = just earned income $1,000', () => {
     const bd = getDefaultBreakdown(30)

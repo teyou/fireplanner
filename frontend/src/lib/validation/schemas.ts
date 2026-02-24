@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
+import { RSTU_TAX_RELIEF_CAP, CPF_ANNUAL_LIMIT } from '@/lib/data/cpfRates'
 
 // ============================================================
 // Field-level schemas (for per-field validation in stores)
@@ -195,12 +197,21 @@ export function validateProfileField(
     // CPFIS return fields
     cpfisOaReturn: z.number().min(0).max(0.20),
     cpfisSaReturn: z.number().min(0).max(0.20),
+    // CPF voluntary top-up fields
+    cpfTopUpOA: z.number().min(0).max(CPF_ANNUAL_LIMIT),
+    cpfTopUpSA: z.number().min(0).max(RSTU_TAX_RELIEF_CAP),
+    cpfTopUpMA: z.number().min(0).max(MEDISAVE_BHS),
     // Healthcare config sub-fields validated here for field-level checks
     'healthcareConfig.oopBaseAmount': z.number().min(0).max(50000),
-    'healthcareConfig.mediSaveTopUpAnnual': z.number().min(0).max(37740),
+    'healthcareConfig.mediSaveTopUpAnnual': z.number().min(0).max(MEDISAVE_BHS),
     cashReserveFixedAmount: z.number().min(0).max(10_000_000),
     cashReserveMonths: z.number().int().min(1).max(60),
     cashReserveReturn: z.number().min(0).max(0.10),
+    // Locked asset sub-fields
+    'lockedAsset.name': z.string().min(1).max(50),
+    'lockedAsset.amount': z.number().gt(0).max(100_000_000),
+    'lockedAsset.unlockAge': z.number().int().min(18).max(120),
+    'lockedAsset.growthRate': z.number().min(0).max(0.20),
   }
 
   const schema = fieldSchemas[field]

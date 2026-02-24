@@ -17,7 +17,7 @@ interface PercentInputProps {
 }
 
 function toDisplay(decimal: number): string {
-  return (decimal * 100).toFixed(1)
+  return parseFloat((decimal * 100).toPrecision(12)).toFixed(1)
 }
 
 export function PercentInput({

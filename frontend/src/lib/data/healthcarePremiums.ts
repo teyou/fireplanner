@@ -24,11 +24,12 @@
 export const HEALTHCARE_DATA_YEAR = 2025
 
 /**
- * MediSave Basic Healthcare Sum (BHS) — annual contribution limit.
- * Source: CPF Board (https://www.cpf.gov.sg/member/healthcare-financing/medisave)
- * As of: 2025
+ * MediSave Basic Healthcare Sum (BHS) — maximum MediSave balance.
+ * Once MA reaches BHS, further contributions overflow to OA/SA.
+ * Source: https://www.cpf.gov.sg/member/infohub/news/news-releases/cpf-interest-rates-from-1-january-to-31-march-2026-and-basic-healthcare-sum-for-2026
+ * As of: 2026
  */
-export const MEDISAVE_BHS = 37740
+export const MEDISAVE_BHS = 79000
 
 /**
  * MediShield Life annual premiums by age bracket.

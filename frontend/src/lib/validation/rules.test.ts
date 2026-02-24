@@ -106,7 +106,7 @@ describe('validateProfileConsistency edge cases', () => {
       healthcareConfig: {
         ...defaultHealthcareConfig,
         enabled: true,
-        mediSaveTopUpAnnual: 50000, // exceeds $37,740 max
+        mediSaveTopUpAnnual: 80000, // exceeds $79,000 BHS
       },
       retirementWithdrawals: [],
       financialGoals: [],
@@ -387,6 +387,44 @@ describe('financial goals validation', () => {
       cpfOaWithdrawals: [],
     })
     expect(errors['goal_g1_duration']).toBeTruthy()
+  })
+})
+
+describe('locked assets cross-store rules', () => {
+  it('catches locked asset with unlockAge <= currentAge', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 35,
+      retirementAge: 65,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [],
+      cpfOaWithdrawals: [],
+      lockedAssets: [{ id: '1', name: 'Test', amount: 10000, unlockAge: 30, growthRate: 0 }],
+    })
+    expect(errors['lockedAssets.0.unlockAge']).toBeTruthy()
+  })
+
+  it('accepts locked asset with unlockAge > currentAge', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 35,
+      retirementAge: 65,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [],
+      cpfOaWithdrawals: [],
+      lockedAssets: [{ id: '1', name: 'Test', amount: 10000, unlockAge: 55, growthRate: 0 }],
+    })
+    expect(errors['lockedAssets.0.unlockAge']).toBeUndefined()
   })
 })
 

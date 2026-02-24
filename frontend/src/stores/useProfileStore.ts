@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ProfileState, ParentSupport, RetirementWithdrawal, CpfOaWithdrawal, FinancialGoal, HealthcareConfig, OopCurveVariant, ValidationErrors } from '@/lib/types'
+import type { ProfileState, ParentSupport, RetirementWithdrawal, CpfOaWithdrawal, FinancialGoal, LockedAsset, HealthcareConfig, OopCurveVariant, ValidationErrors } from '@/lib/types'
 import { validateProfileField } from '@/lib/validation/schemas'
 import { validateProfileConsistency } from '@/lib/validation/rules'
 import { interpolateOopMultiplier } from '@/lib/data/healthcareOop'
@@ -23,6 +23,9 @@ interface ProfileActions {
   removeFinancialGoal: (id: string) => void
   updateFinancialGoal: (id: string, updates: Partial<Omit<FinancialGoal, 'id'>>) => void
   clearFinancialGoals: () => void
+  addLockedAsset: (asset: LockedAsset) => void
+  removeLockedAsset: (id: string) => void
+  updateLockedAsset: (id: string, updates: Partial<Omit<LockedAsset, 'id'>>) => void
   reset: () => void
 }
 
@@ -30,6 +33,7 @@ const PROFILE_DATA_KEYS = [
   'currentAge', 'retirementAge', 'lifeExpectancy', 'lifeStage', 'maritalStatus',
   'residencyStatus', 'annualIncome', 'annualExpenses', 'liquidNetWorth',
   'cpfOA', 'cpfSA', 'cpfMA', 'cpfRA', 'srsBalance', 'srsAnnualContribution', 'srsInvestmentReturn', 'srsDrawdownStartAge',
+  'cpfTopUpOA', 'cpfTopUpSA', 'cpfTopUpMA',
   'fireType', 'swr', 'fireNumberBasis', 'retirementSpendingAdjustment',
   'expectedReturn', 'usePortfolioReturn', 'inflation', 'expenseRatio', 'rebalanceFrequency',
   'retirementPhase', 'cpfLifeActualMonthlyPayout',
@@ -40,6 +44,7 @@ const PROFILE_DATA_KEYS = [
   'healthcareConfig',
   'retirementWithdrawals',
   'financialGoals',
+  'lockedAssets',
   'cashReserveEnabled', 'cashReserveMode', 'cashReserveFixedAmount',
   'cashReserveMonths', 'cashReserveReturn', 'retirementMitigation',
 ] as const
@@ -71,6 +76,9 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   cpfSA: 0,
   cpfMA: 0,
   cpfRA: 0,
+  cpfTopUpOA: 0,
+  cpfTopUpSA: 0,
+  cpfTopUpMA: 0,
   srsBalance: 0,
   srsAnnualContribution: 0,
   srsInvestmentReturn: 0.04,
@@ -102,6 +110,7 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   healthcareConfig: DEFAULT_HEALTHCARE_CONFIG,
   retirementWithdrawals: [],
   financialGoals: [],
+  lockedAssets: [],
   cashReserveEnabled: false,
   cashReserveMode: 'months' as const,
   cashReserveFixedAmount: 30000,
@@ -309,6 +318,41 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
           }
         }),
 
+      addLockedAsset: (asset: LockedAsset) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = { ...stateData, lockedAssets: [...stateData.lockedAssets, asset] }
+          return {
+            lockedAssets: updated.lockedAssets,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
+      removeLockedAsset: (id: string) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = { ...stateData, lockedAssets: stateData.lockedAssets.filter((a) => a.id !== id) }
+          return {
+            lockedAssets: updated.lockedAssets,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
+      updateLockedAsset: (id: string, updates: Partial<Omit<LockedAsset, 'id'>>) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = {
+            ...stateData,
+            lockedAssets: stateData.lockedAssets.map((a) =>
+              a.id === id ? { ...a, ...updates } : a
+            ),
+          }
+          return {
+            lockedAssets: updated.lockedAssets,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
       reset: () =>
         set({
           ...DEFAULT_PROFILE,
@@ -317,7 +361,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 17,
+      version: 19,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -407,6 +451,14 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
           state.cpfisEnabled = state.cpfisEnabled ?? false
           state.cpfisOaReturn = state.cpfisOaReturn ?? 0.04
           state.cpfisSaReturn = state.cpfisSaReturn ?? 0.05
+        }
+        if (version < 18) {
+          state.cpfTopUpOA = state.cpfTopUpOA ?? 0
+          state.cpfTopUpSA = state.cpfTopUpSA ?? 0
+          state.cpfTopUpMA = state.cpfTopUpMA ?? 0
+        }
+        if (version < 19) {
+          if (state.lockedAssets === undefined) state.lockedAssets = []
         }
         return state
       },
