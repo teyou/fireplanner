@@ -1,24 +1,11 @@
 /**
  * Property analysis calculations for Singapore.
  * BSD, ABSD, Bala's Table decay, LTV, mortgage, rental yield, NPV.
- *
- * All rates from IRAS and URA as of 2024.
  */
 
 import { getBalaFactor } from '@/lib/data/balaTable'
-
-// ============================================================
-// Buyer's Stamp Duty (BSD)
-// ============================================================
-
-const BSD_BRACKETS: [number, number][] = [
-  [180000, 0.01],
-  [180000, 0.02],
-  [640000, 0.03],
-  [500000, 0.04],
-  [1500000, 0.05],
-  [Infinity, 0.06],
-]
+import { BSD_BRACKETS, ABSD_RATES } from '@/lib/data/stampDutyRates'
+import type { ResidencyType } from '@/lib/data/stampDutyRates'
 
 export function calculateBSD(purchasePrice: number): number {
   let remaining = purchasePrice
@@ -35,14 +22,6 @@ export function calculateBSD(purchasePrice: number): number {
 // ============================================================
 // Additional Buyer's Stamp Duty (ABSD)
 // ============================================================
-
-type ResidencyType = 'citizen' | 'pr' | 'foreigner'
-
-const ABSD_RATES: Record<ResidencyType, number[]> = {
-  citizen: [0, 0.20, 0.30],      // 1st, 2nd, 3rd+
-  pr: [0.05, 0.30, 0.35],
-  foreigner: [0.60, 0.60, 0.60],
-}
 
 export function calculateABSD(
   purchasePrice: number,
