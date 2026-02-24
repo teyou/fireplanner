@@ -68,7 +68,9 @@ export const CPF_RATES: CpfRateEntry[] = [
 export const OW_CEILING_MONTHLY = 8000
 export const OW_CEILING_ANNUAL = OW_CEILING_MONTHLY * 12 // $96,000
 
-// Additional Wage (AW) ceiling: $102,000 - total OW subject to CPF for the year
+// Additional Wages (AW) ceiling
+// Source: https://www.cpf.gov.sg/employer/employer-obligations/how-much-cpf-contributions-to-pay
+// AW ceiling = $102,000 - Total OW subject to CPF for the year (from 1 Jan 2026)
 export const AW_CEILING_TOTAL = 102000
 
 // Interest rates
