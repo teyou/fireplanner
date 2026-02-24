@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { listScenarios, saveScenario, loadScenario, deleteScenario } from './scenarios'
+import { STORE_REGISTRY } from './storeRegistry'
 
 beforeEach(() => {
   localStorage.clear()
@@ -69,19 +70,44 @@ describe('loadScenario', () => {
   })
 
   it('restores store data to localStorage', () => {
-    localStorage.setItem('fireplanner-profile', JSON.stringify({ currentAge: 35 }))
+    localStorage.setItem('fireplanner-profile', JSON.stringify({ state: { currentAge: 35 }, version: 15 }))
     const id = saveScenario('Saved Plan')
 
     // Change the profile
-    localStorage.setItem('fireplanner-profile', JSON.stringify({ currentAge: 50 }))
+    localStorage.setItem('fireplanner-profile', JSON.stringify({ state: { currentAge: 50 }, version: 15 }))
 
     // Load the saved scenario
     const rehydrate = vi.fn()
     const result = loadScenario(id, rehydrate)
 
     expect(result).toBe(true)
-    expect(JSON.parse(localStorage.getItem('fireplanner-profile')!)).toEqual({ currentAge: 35 })
+    const stored = JSON.parse(localStorage.getItem('fireplanner-profile')!)
+    expect(stored.state.currentAge).toBe(35)
+    expect(stored.version).toBe(STORE_REGISTRY['fireplanner-profile'].currentVersion)
     expect(rehydrate).toHaveBeenCalled()
+  })
+
+  it('loadScenario migrates old-version store data', () => {
+    const scenarios = [{
+      metadata: { id: 'old-1', name: 'Old', createdAt: new Date().toISOString() },
+      stores: {
+        'fireplanner-profile': { state: { currentAge: 30 }, version: 1 },
+      },
+    }]
+    localStorage.setItem('fireplanner-scenarios', JSON.stringify(scenarios))
+
+    const reloadMock = vi.fn()
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, reload: reloadMock },
+      writable: true,
+      configurable: true,
+    })
+
+    loadScenario('old-1')
+
+    const stored = JSON.parse(localStorage.getItem('fireplanner-profile')!)
+    expect(stored.state.cpfLifeStartAge).toBe(65)
+    expect(stored.version).toBe(STORE_REGISTRY['fireplanner-profile'].currentVersion)
   })
 
   it('calls window.location.reload when no rehydrate callback', () => {

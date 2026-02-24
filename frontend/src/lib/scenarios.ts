@@ -4,6 +4,8 @@
  * Persisted in localStorage under 'fireplanner-scenarios' key.
  */
 
+import { migrateStoreData } from './storeRegistry'
+
 const STORAGE_KEY = 'fireplanner-scenarios'
 const MAX_SCENARIOS = 5
 
@@ -96,9 +98,26 @@ export function loadScenario(id: string, rehydrate?: () => void): boolean {
   const scenario = scenarios.find((s) => s.metadata.id === id)
   if (!scenario) return false
 
-  // Write each store back to localStorage
-  for (const [key, value] of Object.entries(scenario.stores)) {
-    try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* storage unavailable */ }
+  for (const [key, rawValue] of Object.entries(scenario.stores)) {
+    const value = rawValue as Record<string, unknown>
+    let storeState: Record<string, unknown>
+    let storeVersion: number
+
+    if (value.state && typeof value.version === 'number') {
+      storeState = value.state as Record<string, unknown>
+      storeVersion = value.version as number
+    } else {
+      storeState = value
+      storeVersion = 0
+    }
+
+    const migrated = migrateStoreData(key, { state: storeState, version: storeVersion })
+    const finalState = migrated ? migrated.state : storeState
+    const finalVersion = migrated ? migrated.version : storeVersion
+
+    try {
+      localStorage.setItem(key, JSON.stringify({ state: finalState, version: finalVersion }))
+    } catch { /* storage unavailable */ }
   }
 
   // Rehydrate stores if callback provided, otherwise fall back to reload
