@@ -20,6 +20,9 @@
 //   As of: 2025
 //   License: Public data
 
+/** Year these premiums were last verified against official sources */
+export const HEALTHCARE_DATA_YEAR = 2025
+
 /**
  * MediSave Basic Healthcare Sum (BHS) — annual contribution limit.
  * Source: CPF Board (https://www.cpf.gov.sg/member/healthcare-financing/medisave)
