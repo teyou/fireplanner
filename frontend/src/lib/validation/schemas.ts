@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
+import { RSTU_TAX_RELIEF_CAP, CPF_ANNUAL_LIMIT } from '@/lib/data/cpfRates'
 
 // ============================================================
 // Field-level schemas (for per-field validation in stores)
@@ -196,6 +197,10 @@ export function validateProfileField(
     // CPFIS return fields
     cpfisOaReturn: z.number().min(0).max(0.20),
     cpfisSaReturn: z.number().min(0).max(0.20),
+    // CPF voluntary top-up fields
+    cpfTopUpOA: z.number().min(0).max(CPF_ANNUAL_LIMIT),
+    cpfTopUpSA: z.number().min(0).max(RSTU_TAX_RELIEF_CAP),
+    cpfTopUpMA: z.number().min(0).max(MEDISAVE_BHS),
     // Healthcare config sub-fields validated here for field-level checks
     'healthcareConfig.oopBaseAmount': z.number().min(0).max(50000),
     'healthcareConfig.mediSaveTopUpAnnual': z.number().min(0).max(MEDISAVE_BHS),

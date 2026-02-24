@@ -903,3 +903,33 @@ describe('validateProfileField CPFIS returns', () => {
     expect(validateProfileField('cpfisSaReturn', 0.21)).toBeTruthy()
   })
 })
+
+describe('cpfTopUp validation', () => {
+  it('accepts valid SA top-up within RSTU cap', () => {
+    expect(validateProfileField('cpfTopUpSA', 8000)).toBeNull()
+  })
+
+  it('rejects SA top-up exceeding RSTU cap', () => {
+    expect(validateProfileField('cpfTopUpSA', 9000)).toBeTruthy()
+  })
+
+  it('accepts zero top-up', () => {
+    expect(validateProfileField('cpfTopUpSA', 0)).toBeNull()
+  })
+
+  it('rejects negative top-up', () => {
+    expect(validateProfileField('cpfTopUpSA', -100)).toBeTruthy()
+  })
+
+  it('accepts valid OA top-up', () => {
+    expect(validateProfileField('cpfTopUpOA', 5000)).toBeNull()
+  })
+
+  it('accepts valid MA top-up', () => {
+    expect(validateProfileField('cpfTopUpMA', 10000)).toBeNull()
+  })
+
+  it('rejects MA top-up exceeding BHS', () => {
+    expect(validateProfileField('cpfTopUpMA', 80000)).toBeTruthy()
+  })
+})
