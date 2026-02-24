@@ -662,6 +662,25 @@ function PropertyContent() {
                     </div>
                   </>
                 )}
+                {(ownershipPercent ?? 1) < 1 && (
+                  <div className="md:col-span-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-sm">
+                    <p className="font-medium text-blue-800 dark:text-blue-200 mb-1">
+                      Your {Math.round((ownershipPercent ?? 1) * 100)}% share used in projections:
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-blue-700 dark:text-blue-300">
+                      <span>Property value:</span>
+                      <span className="font-medium">{formatCurrency(existingPropertyValue * (ownershipPercent ?? 1))}</span>
+                      {propertyStatus === 'with-mortgage' && (
+                        <>
+                          <span>Outstanding mortgage:</span>
+                          <span className="font-medium">{formatCurrency(existingMortgageBalance * (ownershipPercent ?? 1))}</span>
+                          <span>Monthly payment:</span>
+                          <span className="font-medium">{formatCurrency(existingMonthlyPayment * (ownershipPercent ?? 1))}/mo</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <div className="md:col-span-2 p-2 bg-muted/50 rounded text-sm text-muted-foreground">
                   Earning rental income from this property? Add it as a <Link to="/income" className="text-primary underline underline-offset-2 hover:text-primary/80">Rental income stream</Link> in the Income section.
                 </div>
