@@ -20,6 +20,7 @@ import {
   validateAllocationField,
   validateSimulationField,
   retirementWithdrawalSchema,
+  validateStoreData,
 } from './schemas'
 import {
   validateProfileConsistency,
@@ -782,5 +783,45 @@ describe('retirementWithdrawalSchema', () => {
 
   it('rejects negative amount', () => {
     expect(retirementWithdrawalSchema.safeParse({ ...validEntry, amount: -1000 }).success).toBe(false)
+  })
+})
+
+describe('validateStoreData', () => {
+  it('returns success for valid profile data', () => {
+    const data = {
+      currentAge: 35, retirementAge: 60, lifeExpectancy: 90,
+      lifeStage: 'pre-fire', maritalStatus: 'single', residencyStatus: 'citizen',
+      annualIncome: 100000, annualExpenses: 48000, liquidNetWorth: 500000,
+      cpfOA: 50000, cpfSA: 30000, cpfMA: 20000, cpfRA: 0,
+      srsBalance: 0, srsAnnualContribution: 0,
+      fireType: 'regular', swr: 0.04, retirementSpendingAdjustment: 1.0,
+      expectedReturn: 0.07, inflation: 0.025, expenseRatio: 0.003,
+      rebalanceFrequency: 'annual',
+      retirementPhase: null, cpfLifeActualMonthlyPayout: 0,
+      cpfLifeStartAge: 65, cpfLifePlan: 'standard', cpfRetirementSum: 'frs',
+      cpfHousingMode: 'none', cpfHousingMonthly: 0, cpfMortgageYearsLeft: 25,
+    }
+    const result = validateStoreData('fireplanner-profile', data)
+    expect(result.valid).toBe(true)
+    expect(result.errors).toEqual([])
+  })
+
+  it('returns errors for invalid profile data', () => {
+    const data = { currentAge: 'banana', retirementAge: 10 }
+    const result = validateStoreData('fireplanner-profile', data)
+    expect(result.valid).toBe(false)
+    expect(result.errors.length).toBeGreaterThan(0)
+  })
+
+  it('returns valid:true with warnings for unknown store keys (passthrough)', () => {
+    const result = validateStoreData('unknown-store', { anything: true })
+    expect(result.valid).toBe(true)
+    expect(result.warnings).toContain('No schema for store "unknown-store" — skipping validation')
+  })
+
+  it('returns errors for invalid allocation weights', () => {
+    const data = { currentWeights: [1, 0, 0, 0, 0, 0, 0, 0.5], targetWeights: [1, 0, 0, 0, 0, 0, 0, 0] }
+    const result = validateStoreData('fireplanner-allocation', data)
+    expect(result.valid).toBe(false)
   })
 })
