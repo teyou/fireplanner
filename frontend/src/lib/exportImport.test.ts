@@ -378,3 +378,34 @@ describe('importFromJson', () => {
     expect(stored.state.retirementAge).toBe(60)
   })
 })
+
+describe('import round-trip with version mismatch', () => {
+  it('imports with downgraded versions and migrates correctly', async () => {
+    // Simulate an old export by using version 5 (before healthcareConfig, retirementWithdrawals, cpfRA, financialGoals were added)
+    const exportData = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      stores: {
+        'fireplanner-profile': {
+          state: { currentAge: 35, retirementAge: 60, lifeExpectancy: 90, annualExpenses: 48000, swr: 0.04 },
+          version: 5,
+        },
+      },
+    }
+
+    localStorage.clear()
+    mockReload()
+
+    const result = await importFromJson(jsonFile(exportData))
+    expect(result.success).toBe(true)
+
+    const stored = JSON.parse(localStorage.getItem('fireplanner-profile')!)
+    // Migration v5→current should have added these:
+    expect(stored.state.healthcareConfig).toBeDefined()
+    expect(stored.state.healthcareConfig.enabled).toBe(false)
+    expect(stored.state.retirementWithdrawals).toEqual([])
+    expect(stored.state.cpfRA).toBe(0)
+    expect(stored.state.financialGoals).toEqual([])
+    expect(stored.version).toBe(STORE_REGISTRY['fireplanner-profile'].currentVersion)
+  })
+})
