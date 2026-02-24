@@ -67,7 +67,7 @@ export function SrsTaxPlanningCard() {
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           SRS Tax Planning
-          <InfoTooltip text="Supplementary Retirement Scheme contributions are tax-deductible up to $15,300/yr (citizens/PR) or $35,700/yr (foreigners). On withdrawal after age 62, only 50% is taxable." source="IRAS" sourceUrl="https://www.iras.gov.sg/schemes/individual/supplementary-retirement-scheme-(srs)" />
+          <InfoTooltip text="Supplementary Retirement Scheme contributions are tax-deductible up to $15,300/yr (citizens/PR) or $35,700/yr (foreigners). On withdrawal after age 62, only 50% is taxable." source="IRAS" sourceUrl="https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/special-tax-schemes/srs-contributions" />
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
