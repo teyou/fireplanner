@@ -17,7 +17,7 @@ export const DATA_SOURCES: Record<string, DataSource[]> = {
     {
       name: 'CPF Contribution Rates',
       url: 'https://www.cpf.gov.sg/employer/employer-obligations/how-much-cpf-contributions-to-pay',
-      period: '2024',
+      period: '2026',
       license: 'Public data',
     },
   ],
@@ -94,6 +94,20 @@ export const DATA_SOURCES: Record<string, DataSource[]> = {
       period: '2024',
       license: 'Public data',
     },
+    {
+      name: 'BSD/ABSD Rates (IRAS)',
+      url: 'https://www.iras.gov.sg/taxes/stamp-duty/for-property',
+      period: '2023',
+      license: 'Public data',
+    },
+  ],
+  healthcare: [
+    {
+      name: 'MediShield Life Premiums',
+      url: 'https://www.cpf.gov.sg/member/healthcare-financing/medishield-life/medishield-life-premiums',
+      period: '2025',
+      license: 'Public data',
+    },
   ],
   crisisScenarios: [
     {
@@ -122,7 +136,7 @@ export const ROUTE_SOURCES: Record<string, string[]> = {
   'section-expenses': [],
   'section-net-worth': [],
   'section-cpf': ['cpf'],
-  'section-healthcare': [],
+  'section-healthcare': ['healthcare'],
   'section-property': ['property'],
   'section-allocation': ['historicalReturns'],
 }
