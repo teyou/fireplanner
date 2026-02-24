@@ -181,23 +181,48 @@ describe('projectCpfBalances', () => {
 })
 
 describe('calculateBrsFrsErs', () => {
-  it('age 55 → no growth needed (current year values)', () => {
-    const result = calculateBrsFrsErs(55)
-    expect(result.brs).toBeCloseTo(106500, 0)
-    expect(result.frs).toBeCloseTo(213000, 0)
-    expect(result.ers).toBeCloseTo(426000, 0)
+  // Pin currentYear to 2026 so tests don't drift with calendar time
+  const YEAR = 2026
+
+  it('age 55 in base year → no growth needed', () => {
+    const result = calculateBrsFrsErs(55, YEAR)
+    expect(result.brs).toBeCloseTo(110200, 0)
+    expect(result.frs).toBeCloseTo(220400, 0)
+    expect(result.ers).toBeCloseTo(440800, 0)
   })
 
-  it('age 30 → 25 years of 3.5% growth', () => {
-    const result = calculateBrsFrsErs(30)
+  it('age 46 in 2026 → 9 years growth (matching financial planner feedback)', () => {
+    const result = calculateBrsFrsErs(46, YEAR)
+    const growthFactor = Math.pow(1.035, 9)
+    expect(result.frs).toBeCloseTo(220400 * growthFactor, 0)
+    // Should be ~$300K, not ~$290K
+    expect(result.frs).toBeGreaterThan(295000)
+    expect(result.frs).toBeLessThan(305000)
+  })
+
+  it('age 30 in 2026 → 25 years growth', () => {
+    const result = calculateBrsFrsErs(30, YEAR)
     const growthFactor = Math.pow(1.035, 25)
-    expect(result.brs).toBeCloseTo(106500 * growthFactor, 0)
-    expect(result.frs).toBeCloseTo(213000 * growthFactor, 0)
+    expect(result.brs).toBeCloseTo(110200 * growthFactor, 0)
+    expect(result.frs).toBeCloseTo(220400 * growthFactor, 0)
   })
 
-  it('age >= 55 → no further growth', () => {
-    const result = calculateBrsFrsErs(60)
-    expect(result.brs).toBeCloseTo(106500, 0)
+  it('age >= 55 → no further growth (already past)', () => {
+    const result = calculateBrsFrsErs(60, YEAR)
+    // Still applies yearsSinceBase: 2026 - 2026 = 0, yearsUntil55 = 0
+    expect(result.brs).toBeCloseTo(110200, 0)
+  })
+
+  it('future year adds offset: age 46 in 2027 → 10 years growth', () => {
+    const result = calculateBrsFrsErs(46, 2027)
+    const growthFactor = Math.pow(1.035, 10) // 9 years to 55 + 1 year offset
+    expect(result.frs).toBeCloseTo(220400 * growthFactor, 0)
+  })
+
+  it('ERS = 2x FRS, BRS = 0.5x FRS at any age', () => {
+    const result = calculateBrsFrsErs(40, YEAR)
+    expect(result.ers).toBeCloseTo(result.frs * 2, 0)
+    expect(result.brs).toBeCloseTo(result.frs / 2, 0)
   })
 })
 
@@ -280,19 +305,21 @@ describe('calculateCpfLifePayoutAtAge', () => {
 })
 
 describe('getRetirementSumAmount', () => {
-  it('returns projected BRS/FRS/ERS at age 55', () => {
+  it('returns projected BRS/FRS/ERS (uses current year internally)', () => {
     const brs = getRetirementSumAmount('brs', 55)
     const frs = getRetirementSumAmount('frs', 55)
     const ers = getRetirementSumAmount('ers', 55)
-    expect(brs).toBeCloseTo(106500, 0)
-    expect(frs).toBeCloseTo(213000, 0)
-    expect(ers).toBeCloseTo(426000, 0)
+    // At age 55, only yearsSinceBase matters. In 2026 with base 2026, that's 0.
+    // These will shift if run in a different year, so check ratios instead.
+    expect(ers).toBeCloseTo(frs * 2, 0)
+    expect(brs).toBeCloseTo(frs / 2, 0)
+    expect(frs).toBeGreaterThan(200000)
   })
 
   it('returns grown values for younger ages', () => {
-    const frs = getRetirementSumAmount('frs', 30)
-    const growthFactor = Math.pow(1.035, 25)
-    expect(frs).toBeCloseTo(213000 * growthFactor, 0)
+    const frs30 = getRetirementSumAmount('frs', 30)
+    const frs55 = getRetirementSumAmount('frs', 55)
+    expect(frs30).toBeGreaterThan(frs55) // younger = more growth years
   })
 
   it('ERS = 2x FRS, BRS = 0.5x FRS at any age', () => {
