@@ -133,7 +133,7 @@ export function TaxReliefSection() {
             <div className="space-y-1">
               <Label className="text-sm flex items-center gap-1">
                 Earned Income Relief
-                <InfoTooltip text="Automatically determined by age. Under 55: $1,000. Age 55-59: $6,000. Age 60+: $8,000." />
+                <InfoTooltip text="Automatically determined by age. Under 55: $1,000. Age 55-59: $6,000. Age 60+: $8,000." source="IRAS" sourceUrl="https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/tax-reliefs-rebates-and-deductions/tax-reliefs/earned-income-relief" />
               </Label>
               <div className="inline-flex items-center px-3 py-1.5 rounded-md bg-muted text-sm font-medium">
                 {formatCurrency(earnedIncome)}
@@ -295,7 +295,7 @@ export function TaxReliefSection() {
               </div>
               {isOverCap && (
                 <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                  Capped at {formatCurrency(RELIEF_AMOUNTS.reliefCap)} (IRAS personal relief cap)
+                  Capped at {formatCurrency(RELIEF_AMOUNTS.reliefCap)} (<a href="https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/tax-reliefs-rebates-and-deductions/overall-relief-cap" target="_blank" rel="noopener noreferrer" className="underline">IRAS personal relief cap</a>)
                 </p>
               )}
             </div>
@@ -310,7 +310,7 @@ export function TaxReliefSection() {
           <div className="flex items-center justify-between text-sm">
             <span className="flex items-center gap-1">
               CPF Relief (Employee)
-              <InfoTooltip text="Employee CPF contribution is automatically deducted from your taxable income. Computed from your salary and age, subject to the OW ceiling ($8,000/month from 2026) and annual salary ceiling ($102,000). Do not include this in Personal Reliefs above." />
+              <InfoTooltip text="Employee CPF contribution is automatically deducted from your taxable income. Computed from your salary and age, subject to the OW ceiling ($8,000/month from 2026) and annual salary ceiling ($102,000). Do not include this in Personal Reliefs above." source="CPF Board" sourceUrl="https://www.cpf.gov.sg/employer/employer-obligations/how-much-cpf-contributions-to-pay" />
             </span>
             <span className="font-medium text-green-700 dark:text-green-400">{formatCurrency(cpfEmployee)}</span>
           </div>
@@ -320,7 +320,7 @@ export function TaxReliefSection() {
             <div className="flex items-center justify-between text-sm">
               <span className="flex items-center gap-1">
                 SRS Deduction
-                <InfoTooltip text={`SRS contributions are tax-deductible up to ${residencyStatus === 'foreigner' ? '$35,700' : '$15,300'}/year. Set your annual SRS contribution in the FIRE Profile section. Do not include this in Personal Reliefs above.`} />
+                <InfoTooltip text={`SRS contributions are tax-deductible up to ${residencyStatus === 'foreigner' ? '$35,700' : '$15,300'}/year. Set your annual SRS contribution in the FIRE Profile section. Do not include this in Personal Reliefs above.`} source="IRAS" sourceUrl="https://www.iras.gov.sg/schemes/individual/supplementary-retirement-scheme-(srs)" />
               </span>
               <span className="font-medium text-green-700 dark:text-green-400">{formatCurrency(srsDeduction)}</span>
             </div>

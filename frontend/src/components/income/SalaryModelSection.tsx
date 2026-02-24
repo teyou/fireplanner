@@ -274,7 +274,7 @@ function DataDrivenPanel({
       <div className="space-y-1">
         <Label className="text-sm flex items-center">
           Education Level
-          <InfoTooltip text="MOM salary data is segmented by education level" />
+          <InfoTooltip text="MOM salary data is segmented by education level" source="MOM Stats" sourceUrl="https://stats.mom.gov.sg" />
         </Label>
         <Select
           value={education}
@@ -296,7 +296,7 @@ function DataDrivenPanel({
         value={adjustment}
         onChange={onAdjustmentChange}
         error={errors.momAdjustment}
-        tooltip="Multiply MOM median by this factor (1.0 = median, 1.2 = 20% above median)"
+        tooltip="Multiply MOM median by this factor (1.0 = median, 1.2 = 20% above median). Based on MOM Labour Force Survey data."
         step={1}
       />
 
