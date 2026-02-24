@@ -25,13 +25,21 @@ interface QuickProjectionChartProps {
 export function QuickProjectionChart({ data, fireNumber, fireAge }: QuickProjectionChartProps) {
   const colors = useChartColors()
 
+  // Only show FIRE reference lines when the portfolio actually reaches the FIRE number.
+  // In shortfall scenarios (forced early retirement), the FIRE number is never reached
+  // and showing it would be misleading (line way above chart scale, age line after depletion).
+  const portfolioReachesFire = data.some((pt) => pt.balance >= fireNumber)
+
   // Split into two series so Recharts colors them independently.
-  // The crossover point appears in both series so the areas connect.
-  const chartData = data.map((pt) => ({
-    age: pt.age,
-    accumulation: pt.phase === 'accumulation' || pt.age === fireAge ? pt.balance : undefined,
-    decumulation: pt.phase === 'decumulation' || pt.age === fireAge ? pt.balance : undefined,
-  }))
+  // The first decumulation point appears in both series so the areas connect seamlessly.
+  const chartData = data.map((pt, i) => {
+    const isTransition = pt.phase === 'decumulation' && i > 0 && data[i - 1].phase === 'accumulation'
+    return {
+      age: pt.age,
+      accumulation: pt.phase === 'accumulation' || isTransition ? pt.balance : undefined,
+      decumulation: pt.phase === 'decumulation' ? pt.balance : undefined,
+    }
+  })
 
   return (
     <div className="mt-4 space-y-2">
@@ -74,18 +82,22 @@ export function QuickProjectionChart({ data, fireNumber, fireAge }: QuickProject
               isAnimationActive
               animationDuration={800}
             />
-            <ReferenceLine
-              y={fireNumber}
-              stroke={colors.success}
-              strokeDasharray="5 5"
-              label={{ value: 'FIRE #', position: 'right', fill: colors.success, fontSize: 11 }}
-            />
-            <ReferenceLine
-              x={fireAge}
-              stroke={colors.warning}
-              strokeDasharray="3 3"
-              label={{ value: 'FIRE', position: 'top', fill: colors.warning, fontSize: 11 }}
-            />
+            {portfolioReachesFire && (
+              <ReferenceLine
+                y={fireNumber}
+                stroke={colors.success}
+                strokeDasharray="5 5"
+                label={{ value: 'FIRE #', position: 'right', fill: colors.success, fontSize: 11 }}
+              />
+            )}
+            {portfolioReachesFire && (
+              <ReferenceLine
+                x={fireAge}
+                stroke={colors.warning}
+                strokeDasharray="3 3"
+                label={{ value: 'FIRE', position: 'top', fill: colors.warning, fontSize: 11 }}
+              />
+            )}
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -98,10 +110,12 @@ export function QuickProjectionChart({ data, fireNumber, fireAge }: QuickProject
           <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: colors.warning }} />
           Spending
         </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block w-2.5 h-1 border-t-2 border-dashed" style={{ borderColor: colors.success }} />
-          FIRE Number
-        </span>
+        {portfolioReachesFire && (
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-2.5 h-1 border-t-2 border-dashed" style={{ borderColor: colors.success }} />
+            FIRE Number
+          </span>
+        )}
       </div>
     </div>
   )
