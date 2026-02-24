@@ -8,9 +8,11 @@ import {
 interface InfoTooltipProps {
   text: string
   formula?: string
+  source?: string
+  sourceUrl?: string
 }
 
-export function InfoTooltip({ text, formula }: InfoTooltipProps) {
+export function InfoTooltip({ text, formula, source, sourceUrl }: InfoTooltipProps) {
   return (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
@@ -23,6 +25,18 @@ export function InfoTooltip({ text, formula }: InfoTooltipProps) {
           <p className="text-sm">{text}</p>
           {formula && (
             <p className="text-xs text-muted-foreground mt-1 font-mono">{formula}</p>
+          )}
+          {source && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Source:{' '}
+              {sourceUrl ? (
+                <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
+                  {source}
+                </a>
+              ) : (
+                source
+              )}
+            </p>
           )}
         </TooltipContent>
       </Tooltip>
