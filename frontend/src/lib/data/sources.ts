@@ -91,7 +91,7 @@ export const DATA_SOURCES: Record<string, DataSource[]> = {
     {
       name: "Bala's Table (SLA)",
       url: 'https://isomer-user-content.by.gov.sg/50/ade6cd16-890b-4a1b-9d1d-d0e189daba03/balas-table.pdf',
-      period: '2024',
+      period: '2017 (static)',
       license: 'Public data',
     },
     {
