@@ -381,10 +381,11 @@ describe('autoDetectRetirementSum', () => {
 })
 
 describe('performAge55Transfer', () => {
-  it('SA covers full target → RA = target, OA unchanged', () => {
+  it('SA covers full target → RA = target, SA excess goes to OA', () => {
     const result = performAge55Transfer(100000, 250000, 213000)
     expect(result.newRA).toBe(213000)
-    expect(result.newOA).toBe(100000) // OA untouched
+    // Excess SA = 250K - 213K = 37K → added to OA
+    expect(result.newOA).toBe(100000 + 37000) // 137K
     expect(result.newSA).toBe(0) // SA always closed
   })
 

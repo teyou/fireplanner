@@ -1285,4 +1285,94 @@ describe('generateProjection', () => {
       expect(row63.goalExpense).toBe(0)
     })
   })
+
+  describe('mortgage ends after remaining years', () => {
+    it('stops deducting mortgage payment after mortgage term expires', () => {
+      // Mortgage remaining = 3 years from age 30, so ends at age 33
+      const params = makeParams({
+        currentAge: 30, retirementAge: 40, lifeExpectancy: 36,
+        initialLiquidNW: 500000,
+        annualMortgagePayment: 24000, // $2K/month cash portion
+        existingMortgageRemainingYears: 3,
+        inflation: 0, expectedReturn: 0, expenseRatio: 0,
+        annualExpenses: 30000,
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 40, lifeExpectancy: 36,
+        annualSavings: 20000,
+      })
+
+      const result = generateProjection(params)
+
+      // Ages 30-32 (3 years): mortgage is active, savings reduced by 24K
+      // Age 33+: mortgage ended, savings should NOT be reduced by 24K
+      const row32 = result.rows.find(r => r.age === 32)! // last year of mortgage
+      const row33 = result.rows.find(r => r.age === 33)! // first year after mortgage
+
+      // With mortgage: savingsOrWithdrawal = 20K - 24K = -4K
+      // Without mortgage: savingsOrWithdrawal = 20K
+      // So row33 should accumulate more than row32
+      expect(row33.savingsOrWithdrawal).toBeGreaterThan(row32.savingsOrWithdrawal)
+    })
+
+    it('handles fractional remaining years by rounding up', () => {
+      // 2 years 6 months = 2.5 years. ceil(2.5) = 3. Mortgage ends at age 33.
+      const params = makeParams({
+        currentAge: 30, retirementAge: 40, lifeExpectancy: 36,
+        initialLiquidNW: 500000,
+        annualMortgagePayment: 24000,
+        existingMortgageRemainingYears: 2.5, // 2y 6m
+        inflation: 0, expectedReturn: 0, expenseRatio: 0,
+        annualExpenses: 30000,
+      })
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 40, lifeExpectancy: 36,
+        annualSavings: 20000,
+      })
+
+      const result = generateProjection(params)
+
+      // At age 32 (year 2), mortgage still active (ceil(2.5)=3 years total)
+      const row32 = result.rows.find(r => r.age === 32)!
+      // At age 33 (year 3), mortgage ended
+      const row33 = result.rows.find(r => r.age === 33)!
+
+      expect(row33.savingsOrWithdrawal).toBeGreaterThan(row32.savingsOrWithdrawal)
+    })
+  })
+
+  describe('CPF OA shortfall spills to cash', () => {
+    it('increases cash mortgage when OA cannot cover CPF portion', () => {
+      // Income rows where OA runs dry partway through
+      const params = makeParams({
+        currentAge: 30, retirementAge: 40, lifeExpectancy: 34,
+        initialLiquidNW: 500000,
+        annualMortgagePayment: 12000, // $1K/month cash portion
+        existingMortgageRemainingYears: 25,
+        inflation: 0, expectedReturn: 0, expenseRatio: 0,
+        annualExpenses: 30000,
+      })
+
+      // Create income rows where cpfOaShortfall > 0 starting at age 32
+      const incomeRows = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 40, lifeExpectancy: 34,
+        annualSavings: 20000,
+      })
+      // Simulate: at age 32, OA is depleted and shortfall kicks in
+      incomeRows[2].cpfOaShortfall = 6000 // $500/month CPF portion now unpaid by OA
+      incomeRows[3].cpfOaShortfall = 6000
+      incomeRows[4].cpfOaShortfall = 6000
+      params.incomeProjection = incomeRows
+
+      const result = generateProjection(params)
+
+      // At age 31 (no shortfall): savings reduced by only cash mortgage (12K)
+      const row31 = result.rows.find(r => r.age === 31)!
+      // At age 32 (6K shortfall): savings should be reduced by 12K + 6K = 18K
+      const row32 = result.rows.find(r => r.age === 32)!
+
+      // The savings at age 32 should be lower than age 31 by ~6K (the shortfall)
+      expect(row31.savingsOrWithdrawal - row32.savingsOrWithdrawal).toBeCloseTo(6000, -1)
+    })
+  })
 })

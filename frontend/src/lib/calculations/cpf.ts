@@ -135,8 +135,9 @@ export function performAge55Transfer(
   saBalance: number,
   retirementSumTarget: number
 ): { newOA: number; newSA: number; newRA: number } {
-  // Step 1: Transfer SA → RA (SA always fully transfers)
+  // Step 1: Transfer SA → RA (up to retirement sum target)
   const saToRA = Math.min(saBalance, retirementSumTarget)
+  const saExcess = saBalance - saToRA
   let raBalance = saToRA
   const remainingTarget = retirementSumTarget - saToRA
 
@@ -144,8 +145,9 @@ export function performAge55Transfer(
   const oaToRA = Math.min(oaBalance, Math.max(0, remainingTarget))
   raBalance += oaToRA
 
+  // SA excess above retirement sum goes to OA
   return {
-    newOA: oaBalance - oaToRA,
+    newOA: oaBalance - oaToRA + saExcess,
     newSA: 0, // SA is always closed at 55
     newRA: raBalance,
   }

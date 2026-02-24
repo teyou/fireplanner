@@ -256,6 +256,9 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
   let raFullyDepleted = false
   let prevCpfTotal = 0
 
+  // Mortgage ends after the remaining term
+  const mortgageEndAge = currentAge + Math.ceil(params.existingMortgageRemainingYears)
+
   // Pre-compute downsizing results
   const dsActive = downsizing && downsizing.scenario !== 'none'
   const dsSellAge = dsActive ? downsizing.sellAge : Infinity
@@ -347,7 +350,9 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     const healthcareCashOutlay = healthcareCost?.cashOutlay ?? 0
 
     // Property cashflows depend on whether property has been sold
-    let effectiveMortgagePayment = annualMortgagePayment
+    let effectiveMortgagePayment = age >= mortgageEndAge ? 0 : annualMortgagePayment
+    // When CPF OA can't cover its mortgage share, the shortfall spills to cash
+    effectiveMortgagePayment += incomeRow.cpfOaShortfall
     let effectiveRentalIncome = annualRentalIncome
     let effectivePropertyEquity = propertyEquity
     let downsizingRentExpense = 0
