@@ -55,15 +55,15 @@ const COLUMN_GROUPS: { key: ColumnGroup; label: string }[] = [
 ]
 
 const GROUP_COLUMNS: Record<ColumnGroup, string[]> = {
-  expensesBreakdown: ['baseInflatedExpenses', 'parentSupportExpense', 'healthcareCashOutlay', 'cpfOaHousingDeduction', 'mortgageCashPayment', 'downsizingRentExpense', 'goalExpense'],
+  expensesBreakdown: ['baseInflatedExpenses', 'parentSupportExpense', 'healthcareCashOutlay', 'downsizingRentExpense', 'goalExpense'],
   incomeBreakdown: ['salary', 'rentalIncome', 'investmentIncome', 'businessIncome', 'governmentIncome', 'srsWithdrawal', 'totalGross'],
   taxCpf: ['sgTax', 'cpfEmployee', 'cpfEmployer', 'totalNet'],
   cpfBalances: ['cpfOA', 'cpfSA', 'cpfMA', 'cpfRA', 'cpfInterest', 'cpfOaHousingDeduction', 'cpfOaShortfall', 'cpfLifePayout', 'cpfBequest', 'cpfMilestone'],
   portfolio: ['portfolioReturnPct', 'withdrawalAmount', 'maxPermittedWithdrawal', 'withdrawalExcess', 'cumulativeSavings'],
-  property: ['propertyValue', 'mortgageBalance', 'mortgageCashPayment', 'propertyEquity', 'totalNWIncProperty', 'activeLifeEvents'],
+  property: ['propertyValue', 'mortgageBalance', 'propertyEquity', 'totalNWIncProperty', 'activeLifeEvents'],
 }
 
-const DEFAULT_COLUMN_IDS = ['age', 'totalIncome', 'annualExpenses', 'savingsOrWithdrawal', 'portfolioReturnDollar', 'liquidNW', 'cpfTotal', 'totalNW', 'fireProgress']
+const DEFAULT_COLUMN_IDS = ['age', 'totalIncome', 'annualExpenses', 'mortgageCashPayment', 'savingsOrWithdrawal', 'portfolioReturnDollar', 'liquidNW', 'cpfTotal', 'totalNW', 'fireProgress']
 
 function currencyCell(value: number): string {
   return formatCurrency(value)
@@ -94,6 +94,7 @@ export function ProjectionPage() {
   const hasBequest = rows?.some((r) => r.cpfBequest > 0) ?? false
   const hasCpfLife = rows?.some((r) => r.cpfLifePayout > 0) ?? false
   const hasMilestone = rows?.some((r) => r.cpfMilestone !== null) ?? false
+  const hasMortgageCash = rows?.some((r) => r.mortgageCashPayment > 0) ?? false
   const hasPropertyValue = rows?.some((r) => r.propertyValue > 0) ?? false
   const hasMortgageBalance = rows?.some((r) => r.mortgageBalance > 0) ?? false
   const hasPropertyEquity = rows?.some((r) => r.propertyEquity > 0) ?? false
@@ -228,6 +229,8 @@ export function ProjectionPage() {
     if (!hasBequest) vis['cpfBequest'] = false
     if (!hasCpfLife) vis['cpfLifePayout'] = false
     if (!hasMilestone) vis['cpfMilestone'] = false
+    // Hide mortgage(cash) default column when no mortgage data exists
+    if (!hasMortgageCash) vis['mortgageCashPayment'] = false
     // Hide property columns when no property data exists
     if (!hasPropertyValue) vis['propertyValue'] = false
     if (!hasMortgageBalance) vis['mortgageBalance'] = false
@@ -241,7 +244,7 @@ export function ProjectionPage() {
       vis['fireProgress'] = vis['fireProgress'] || false
     }
     return vis
-  }, [activeGroups, isMobile, hasSrs, hasRa, hasOaHousing, hasOaShortfall, hasBequest, hasCpfLife, hasMilestone, hasPropertyEquity, hasLifeEvents])
+  }, [activeGroups, isMobile, hasSrs, hasMortgageCash, hasRa, hasOaHousing, hasOaShortfall, hasBequest, hasCpfLife, hasMilestone, hasPropertyEquity, hasLifeEvents])
 
   const defaultVisibleCount = useMemo(() => {
     return DEFAULT_COLUMN_IDS.filter(id => columnVisibility[id] !== false).length
@@ -267,8 +270,13 @@ export function ProjectionPage() {
       cell: (info) => currencyCell(info.getValue()),
     }),
     columnHelper.accessor('annualExpenses', {
-      header: 'Regular Expenses',
+      header: 'Daily Expenses',
       cell: (info) => currencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('mortgageCashPayment', {
+      id: 'mortgageCashPayment',
+      header: 'Mortgage(Cash)',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
     }),
     columnHelper.accessor('savingsOrWithdrawal', {
       header: 'Savings/Draw',
@@ -313,11 +321,6 @@ export function ProjectionPage() {
     columnHelper.accessor('healthcareCashOutlay', {
       id: 'healthcareCashOutlay',
       header: 'Healthcare',
-      cell: (info) => optionalCurrencyCell(info.getValue()),
-    }),
-    columnHelper.accessor('mortgageCashPayment', {
-      id: 'mortgageCashPayment',
-      header: 'Mortgage(Cash)',
       cell: (info) => optionalCurrencyCell(info.getValue()),
     }),
     columnHelper.accessor('downsizingRentExpense', {
