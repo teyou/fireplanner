@@ -11,6 +11,22 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-24',
+    category: 'feature',
+    title: 'CPF OA Withdrawal modelling',
+    description:
+      'Model lump-sum withdrawals from CPF OA after age 55. Withdrawn amounts transfer into your liquid portfolio, improving post-retirement cashflow.',
+    affectedSections: ['section-cpf'],
+  },
+  {
+    date: '2026-02-24',
+    category: 'feature',
+    title: 'CPFIS (CPF Investment Scheme)',
+    description:
+      'Enable CPFIS to model investing CPF OA/SA balances above retention limits ($20K OA, $40K SA) at custom return rates. CPFIS automatically reverts to standard rates after age 55 when SA closes.',
+    affectedSections: ['section-cpf'],
+  },
+  {
+    date: '2026-02-24',
     category: 'fix',
     title: 'Mortgage now ends after loan term',
     description:
