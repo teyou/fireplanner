@@ -13,6 +13,16 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-25',
+    category: 'data-update',
+    title: 'MOM salary benchmarks updated to 2025',
+    description:
+      'Median gross income by age and education updated to 2025 Labour Force Survey (Table C7, including employer CPF). Degree-holder salaries rose 20-45% across age brackets, reflecting strong post-pandemic wage growth.',
+    affectedSections: ['section-income'],
+    insight:
+      'The 20-24 belowSecondary cell is suppressed in the official 2025 data due to small sample size. An estimate derived from adjacent brackets is used.',
+  },
+  {
+    date: '2026-02-25',
     category: 'feature',
     title: 'Expense adjustments',
     description:

@@ -104,12 +104,12 @@ describe('calculateRealisticSalary', () => {
 // ============================================================
 
 describe('calculateDataDrivenSalary', () => {
-  it('returns $72K for age 30 degree with adjustment 1.0', () => {
-    expect(calculateDataDrivenSalary(30, 'degree', 1.0)).toBe(72000)
+  it('returns MOM 2025 value for age 30 degree with adjustment 1.0', () => {
+    expect(calculateDataDrivenSalary(30, 'degree', 1.0)).toBe(90996)
   })
 
   it('applies adjustment factor', () => {
-    expect(calculateDataDrivenSalary(30, 'degree', 1.2)).toBeCloseTo(86400, 0)
+    expect(calculateDataDrivenSalary(30, 'degree', 1.2)).toBeCloseTo(90996 * 1.2, 0)
   })
 
   it('returns lower salary for lower education level', () => {
@@ -118,20 +118,20 @@ describe('calculateDataDrivenSalary', () => {
     expect(diploma).toBeLessThan(degree)
   })
 
-  it('returns $57K for age 25 degree', () => {
-    expect(calculateDataDrivenSalary(25, 'degree', 1.0)).toBe(57000)
+  it('returns MOM 2025 value for age 25 degree', () => {
+    expect(calculateDataDrivenSalary(25, 'degree', 1.0)).toBe(70224)
   })
 
   it('inflates MOM benchmark to future nominal dollars', () => {
-    // Age 40 degree = $97,500 in today's dollars
-    // 10 years forward at 2.5% inflation → $97,500 × 1.025^10 ≈ $124,834
+    // Age 40 degree = $126,540 in today's dollars
+    // 10 years forward at 2.5% inflation → $126,540 × 1.025^10 ≈ $161,996
     const result = calculateDataDrivenSalary(40, 'degree', 1.0, 0.025, 10)
-    expect(result).toBeCloseTo(97500 * Math.pow(1.025, 10), 0)
+    expect(result).toBeCloseTo(126540 * Math.pow(1.025, 10), 0)
   })
 
   it('returns today-dollar MOM value when yearsForward is 0', () => {
     // No inflation applied at year 0 (current age)
-    expect(calculateDataDrivenSalary(30, 'degree', 1.0, 0.025, 0)).toBe(72000)
+    expect(calculateDataDrivenSalary(30, 'degree', 1.0, 0.025, 0)).toBe(90996)
   })
 })
 
@@ -168,7 +168,7 @@ describe('getSalaryAtAge', () => {
       momAdjustment: 1.0,
       inflation: 0.025,
     })
-    // MOM benchmark for age 35 degree = $85,800 inflated 5 years at 2.5%
+    // MOM benchmark for age 35 degree = $111,096 inflated 5 years at 2.5%
     expect(result).toBe(calculateDataDrivenSalary(35, 'degree', 1.0, 0.025, 5))
   })
 })

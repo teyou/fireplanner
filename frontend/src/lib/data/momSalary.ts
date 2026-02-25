@@ -1,83 +1,84 @@
 // MOM Salary Benchmarks — Median Gross Annual Income by Age and Education
-// Source: MOM Labour Force Survey, Table 7B (https://stats.mom.gov.sg)
-// Downloaded: 2024-12-01
+// Source: MOM Labour Force Survey 2025, Table C7 (https://stats.mom.gov.sg/Pages/Gross-Monthly-Income-Tables2025.aspx)
+// Downloaded: 2026-02-25
 // License: SG Open Data License
-// Note: Monthly medians annualized (× 12). Approximate values.
+// Note: Monthly medians annualized (× 12). Includes employer CPF.
+//       belowSecondary 20-24 is suppressed in official data (small sample); estimated from adjacent brackets.
 
 import type { MomSalaryEntry } from '@/lib/types'
 
 export const MOM_SALARY_DATA: MomSalaryEntry[] = [
   {
     ageGroup: '20-24',
-    belowSecondary: 20280,
-    secondary: 22620,
-    postSecondary: 24960,
-    diploma: 28080,
-    degree: 42000,
+    belowSecondary: 28200, // suppressed in official data; estimated from 25-29 ratio
+    secondary: 30816,
+    postSecondary: 30804,
+    diploma: 40620,
+    degree: 56160,
   },
   {
     ageGroup: '25-29',
-    belowSecondary: 24960,
-    secondary: 28080,
-    postSecondary: 32760,
-    diploma: 36960,
-    degree: 57000,
+    belowSecondary: 36504,
+    secondary: 39756,
+    postSecondary: 40716,
+    diploma: 46848,
+    degree: 70224,
   },
   {
     ageGroup: '30-34',
-    belowSecondary: 28080,
-    secondary: 33540,
-    postSecondary: 39000,
-    diploma: 45240,
-    degree: 72000,
+    belowSecondary: 40956,
+    secondary: 45600,
+    postSecondary: 45636,
+    diploma: 56160,
+    degree: 90996,
   },
   {
     ageGroup: '35-39',
-    belowSecondary: 30420,
-    secondary: 37440,
-    postSecondary: 43680,
-    diploma: 50700,
-    degree: 85800,
+    belowSecondary: 40320,
+    secondary: 46020,
+    postSecondary: 48672,
+    diploma: 65520,
+    degree: 111096,
   },
   {
     ageGroup: '40-44',
-    belowSecondary: 31200,
-    secondary: 39000,
-    postSecondary: 46800,
-    diploma: 54600,
-    degree: 97500,
+    belowSecondary: 38868,
+    secondary: 48336,
+    postSecondary: 49140,
+    diploma: 72000,
+    degree: 126540,
   },
   {
     ageGroup: '45-49',
-    belowSecondary: 30420,
-    secondary: 39000,
-    postSecondary: 46020,
-    diploma: 54600,
-    degree: 102000,
+    belowSecondary: 39492,
+    secondary: 50544,
+    postSecondary: 49140,
+    diploma: 75348,
+    degree: 136320,
   },
   {
     ageGroup: '50-54',
-    belowSecondary: 28860,
-    secondary: 36660,
-    postSecondary: 43680,
-    diploma: 50700,
-    degree: 97500,
+    belowSecondary: 39312,
+    secondary: 48000,
+    postSecondary: 49140,
+    diploma: 76056,
+    degree: 141000,
   },
   {
     ageGroup: '55-59',
-    belowSecondary: 24180,
-    secondary: 31200,
-    postSecondary: 37440,
-    diploma: 42900,
-    degree: 84000,
+    belowSecondary: 35088,
+    secondary: 45396,
+    postSecondary: 45636,
+    diploma: 69300,
+    degree: 133344,
   },
   {
     ageGroup: '60-64',
-    belowSecondary: 18720,
-    secondary: 24180,
-    postSecondary: 28860,
-    diploma: 33540,
-    degree: 63000,
+    belowSecondary: 27960,
+    secondary: 38976,
+    postSecondary: 38316,
+    diploma: 60000,
+    degree: 112992,
   },
 ]
 

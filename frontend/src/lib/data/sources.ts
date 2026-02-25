@@ -32,8 +32,8 @@ export const DATA_SOURCES: Record<string, DataSource[]> = {
   income: [
     {
       name: 'MOM Salary Benchmarks',
-      url: 'https://stats.mom.gov.sg/pages/income-summary-table.aspx',
-      period: '2024',
+      url: 'https://stats.mom.gov.sg/Pages/Gross-Monthly-Income-Tables2025.aspx',
+      period: '2025',
       license: 'SG Open Data License',
     },
   ],
