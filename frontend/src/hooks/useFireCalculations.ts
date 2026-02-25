@@ -77,6 +77,7 @@ export function useFireCalculations(): FireCalculationsResult {
         cpfTopUpSA: profile.cpfTopUpSA,
         cpfTopUpMA: profile.cpfTopUpMA,
         lockedAssets: profile.lockedAssets,
+        expenseAdjustments: profile.expenseAdjustments,
       })
 
       if (projection.length > 0) {

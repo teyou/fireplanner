@@ -125,6 +125,7 @@ export function useProjection(): ProjectionResult {
       financialGoals: profile.financialGoals,
       cpfLifeStartAge: profile.cpfLifeStartAge,
       cpfLifePlan: profile.cpfLifePlan,
+      expenseAdjustments: profile.expenseAdjustments,
     })
 
     return { rows, summary, hasErrors: false, errors: {} }
@@ -179,5 +180,6 @@ export function useProjection(): ProjectionResult {
     profile.financialGoals,
     profile.cpfLifeStartAge,
     profile.cpfLifePlan,
+    profile.expenseAdjustments,
   ])
 }
