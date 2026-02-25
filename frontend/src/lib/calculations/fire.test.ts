@@ -1030,7 +1030,6 @@ describe('normalizeProjectionFireNumber', () => {
     const simpleToday = 48000 / 0.04  // 1,200,000
     // Projection raw: different expenses at age 46
     const projRaw = (48000 * Math.pow(1.025, 16) + 12000) / 0.04 // mortgage adds $12K
-    const projFactor = Math.pow(1.025, 16)
 
     // Today basis
     const normToday = normalizeProjectionFireNumber(projRaw, 46, 30, 0.025, 1)
@@ -1051,5 +1050,93 @@ describe('normalizeProjectionFireNumber', () => {
     // All deviation percentages should be identical
     expect(devToday).toBeCloseTo(devRet, 10)
     expect(devToday).toBeCloseTo(devFire, 10)
+  })
+})
+
+describe('dollar basis consistency with projection numbers', () => {
+  const baseParams = {
+    currentAge: 30,
+    retirementAge: 45,
+    annualIncome: 120000,
+    annualExpenses: 60000,
+    liquidNetWorth: 100000,
+    cpfTotal: 0,
+    swr: 0.04,
+    expectedReturn: 0.07,
+    inflation: 0.025,
+    expenseRatio: 0.003,
+  }
+
+  // Simulate a first-retired row at age 46 (isRetired = age > retirementAge)
+  const firstRetiredAge = 46
+  const mockRetiredRow = {
+    annualExpenses: 60000 * Math.pow(1.025, 16), // inflated to age 46
+    mortgageCashPayment: 18000,
+    cpfLifePayout: 0,
+    rentalIncome: 0,
+    age: firstRetiredAge,
+  }
+
+  it('normalized projection number is in the same dollar basis as simple number for each basis', () => {
+    for (const basis of ['today', 'retirement', 'fireAge'] as const) {
+      const metrics = calculateAllFireMetrics({ ...baseParams, fireNumberBasis: basis })
+      const rawProj = calculateProjectionFireNumber(mockRetiredRow, baseParams.swr)
+
+      const { baseExpenses, parentSupportAnnual, healthcareCashOutlay, effectiveExpenses } = metrics.expensesBreakdown
+      const preInflationTotal = baseExpenses + parentSupportAnnual + healthcareCashOutlay
+      const basisFactor = preInflationTotal > 0 ? effectiveExpenses / preInflationTotal : 1
+
+      const normalized = normalizeProjectionFireNumber(
+        rawProj, firstRetiredAge, baseParams.currentAge, baseParams.inflation, basisFactor
+      )
+
+      // The normalized projection should be in the same order of magnitude as the simple number
+      // (not off by an inflation factor of 1.025^16 ≈ 1.48)
+      const ratio = normalized / metrics.fireNumber
+      expect(ratio).toBeGreaterThan(0.5)
+      expect(ratio).toBeLessThan(2.0)
+    }
+  })
+
+  it('deviation percentage is identical across all dollar bases', () => {
+    const deviations: number[] = []
+
+    for (const basis of ['today', 'retirement', 'fireAge'] as const) {
+      const metrics = calculateAllFireMetrics({ ...baseParams, fireNumberBasis: basis })
+      const rawProj = calculateProjectionFireNumber(mockRetiredRow, baseParams.swr)
+
+      const { baseExpenses, parentSupportAnnual, healthcareCashOutlay, effectiveExpenses } = metrics.expensesBreakdown
+      const preInflationTotal = baseExpenses + parentSupportAnnual + healthcareCashOutlay
+      const basisFactor = preInflationTotal > 0 ? effectiveExpenses / preInflationTotal : 1
+
+      const normalized = normalizeProjectionFireNumber(
+        rawProj, firstRetiredAge, baseParams.currentAge, baseParams.inflation, basisFactor
+      )
+
+      const deviation = (normalized - metrics.fireNumber) / metrics.fireNumber
+      deviations.push(deviation)
+    }
+
+    // All three deviations should be identical (same real comparison, different dollar years)
+    expect(deviations[0]).toBeCloseTo(deviations[1], 6)
+    expect(deviations[0]).toBeCloseTo(deviations[2], 4) // fireAge has convergence tolerance
+  })
+
+  it('no deviation when projection matches simple formula (zero inflation)', () => {
+    const params = { ...baseParams, inflation: 0 }
+    const metrics = calculateAllFireMetrics(params)
+    // With zero inflation, projection row expenses = today's expenses
+    const noInflationRow = {
+      annualExpenses: 60000, // no inflation applied
+      mortgageCashPayment: 0,
+      cpfLifePayout: 0,
+      rentalIncome: 0,
+      age: firstRetiredAge,
+    }
+    const rawProj = calculateProjectionFireNumber(noInflationRow, params.swr)
+    const normalized = normalizeProjectionFireNumber(rawProj, firstRetiredAge, params.currentAge, 0, 1)
+
+    // With no offsets and no inflation, projection = simple exactly
+    expect(normalized).toBeCloseTo(metrics.fireNumber, 0)
   })
 })
