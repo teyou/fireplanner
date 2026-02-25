@@ -10,6 +10,7 @@ import { useProjection } from '@/hooks/useProjection'
 import { PercentInput } from '@/components/shared/PercentInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { formatCurrency, formatPercent } from '@/lib/utils'
+import { useAdjustedFireNumber } from '@/hooks/useAdjustedFireNumber'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import type { FireType, FireNumberBasis } from '@/lib/types'
 
@@ -18,6 +19,7 @@ export function FireTargetsSection() {
   const mode = useEffectiveMode('section-fire-settings')
   const { metrics, hasErrors } = useFireCalculations()
   const { summary: projSummary } = useProjection()
+  const { projectionFireNumber, deviationPct, showProjectionNumber, deviationFactors } = useAdjustedFireNumber()
 
   // Prefer projection's simulated FIRE age over NPER estimate
   const projFireAge = projSummary?.fireAchievedAge ?? null
@@ -162,6 +164,24 @@ export function FireTargetsSection() {
                     <div className="flex justify-between border-t border-border/50 pt-0.5 font-medium">
                       <span>/ {(swr * 100).toFixed(1)}% SWR</span>
                       <span>{formatCurrency(metrics.fireNumber)}</span>
+                    </div>
+                  </div>
+                )}
+                {/* Projection-derived FIRE Number annotation */}
+                {showProjectionNumber && projectionFireNumber !== null && deviationPct !== null && (
+                  <div className="text-[10px] mt-1 p-1.5 rounded bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                    <div className="flex justify-between font-medium text-blue-800 dark:text-blue-200">
+                      <span className="flex items-center gap-0.5">
+                        Projection-derived
+                        <InfoTooltip text="Based on first retirement year's actual cash flows from the year-by-year projection, which accounts for mortgage payments, CPF LIFE payouts, and rental income that the simple formula excludes." />
+                      </span>
+                      <span>{formatCurrency(projectionFireNumber)}</span>
+                    </div>
+                    <div className="text-blue-600 dark:text-blue-300 mt-0.5">
+                      {deviationPct > 0 ? '+' : ''}{(deviationPct * 100).toFixed(1)}% vs formula
+                      {deviationFactors.length > 0 && (
+                        <span> ({deviationFactors.join(', ')})</span>
+                      )}
                     </div>
                   </div>
                 )}
