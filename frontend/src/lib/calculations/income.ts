@@ -16,7 +16,7 @@ import type {
 } from '@/lib/types'
 import { getMomSalary } from '@/lib/data/momSalary'
 import { getEffectiveExpenses } from './expenses'
-import { calculateCpfContribution, calculateCpfExtraInterestWithAge, calculateCpfLifePayoutAtAge, getRetirementSumAmount, performAge55Transfer, allocatePostAge55Contribution, calculateCpfisInterest } from './cpf'
+import { calculateCpfContribution, calculateCpfExtraInterestWithAge, calculateCpfLifePayoutAtAge, getRetirementSumAmount, performAge55Transfer, allocatePostAge55Contribution, calculateCpfisInterest, capMaAtBhs } from './cpf'
 import { calculateChargeableIncome, calculateProgressiveTax } from './tax'
 import { earnedIncomeReliefForAge, RELIEF_AMOUNTS } from '@/lib/data/taxBrackets'
 import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
@@ -465,24 +465,28 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       if (saClosed) {
         if (age >= cpfLifeStartAge) {
           // Post-LIFE: no more RA accumulation, SA portion → OA
-          oaContrib = cpf.oaAllocation + cpf.saAllocation
-          maContrib = cpf.maAllocation
+          const postLifeMaCap = capMaAtBhs(cpf.maAllocation, cpfMA, MEDISAVE_BHS, true, cpfRA, retirementSumTarget, true)
+          maContrib = postLifeMaCap.maAllocation
+          oaContrib = cpf.oaAllocation + cpf.saAllocation + postLifeMaCap.overflowToOA
           cpfOA += oaContrib
           cpfMA += maContrib
         } else {
           // Post-55, pre-LIFE: SA allocation goes to RA (if room) or overflows to OA
           const alloc = allocatePostAge55Contribution(cpf, cpfRA, retirementSumTarget)
-          oaContrib = alloc.oaAllocation
-          raContrib = alloc.raAllocation
-          maContrib = alloc.maAllocation
+          const postMaCap = capMaAtBhs(alloc.maAllocation, cpfMA, MEDISAVE_BHS, true, cpfRA + alloc.raAllocation, retirementSumTarget, false)
+          maContrib = postMaCap.maAllocation
+          oaContrib = alloc.oaAllocation + postMaCap.overflowToOA
+          raContrib = alloc.raAllocation + postMaCap.overflowToRA
           cpfOA += oaContrib
           cpfRA += raContrib
           cpfMA += maContrib
         }
       } else {
+        // Pre-55: apply BHS cap, overflow → SA
+        const preMaCap = capMaAtBhs(cpf.maAllocation, cpfMA, MEDISAVE_BHS, false, 0, 0, false)
         oaContrib = cpf.oaAllocation
-        saContrib = cpf.saAllocation
-        maContrib = cpf.maAllocation
+        saContrib = cpf.saAllocation + preMaCap.overflowToSA
+        maContrib = preMaCap.maAllocation
         cpfOA += oaContrib
         cpfSA += saContrib
         cpfMA += maContrib
@@ -572,6 +576,18 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       cpfSA += saInterest + extraInterest
     }
     cpfMA += maInterest
+
+    // Point B: Interest may push MA above BHS. Cap and redirect excess.
+    // We pass maInterest as the "allocation" and (cpfMA - maInterest) as the pre-interest balance.
+    const postLife = saClosed && age >= cpfLifeStartAge
+    if (cpfMA > MEDISAVE_BHS) {
+      const interestOverflow = capMaAtBhs(maInterest, cpfMA - maInterest, MEDISAVE_BHS, saClosed, cpfRA, retirementSumTarget, postLife)
+      // Adjust MA back: remove the full interest, add only the capped portion
+      cpfMA = cpfMA - maInterest + interestOverflow.maAllocation
+      cpfOA += interestOverflow.overflowToOA
+      cpfSA += interestOverflow.overflowToSA
+      cpfRA += interestOverflow.overflowToRA
+    }
 
     // CPF OA withdrawals at this age (transfer to liquid portfolio)
     let cpfOaWithdrawalAmount = 0

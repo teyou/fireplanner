@@ -207,6 +207,61 @@ export function allocatePostAge55Contribution(
 }
 
 /**
+ * Cap MA allocation at BHS and route excess to other CPF accounts.
+ *
+ * When mandatory contributions or interest push MA above BHS ($79,000),
+ * the excess overflows based on age state:
+ * - Pre-55 (!saClosed): excess → SA
+ * - Post-55, pre-LIFE, RA < target: excess → RA (up to target), remainder → OA
+ * - Post-55, RA >= target: excess → OA
+ * - Post-LIFE: excess → OA (RA is annuitized, must not receive overflow)
+ *
+ * Note: Healthcare deductions (MediShield Life, ISP, CareShield) are processed
+ * separately. BHS overflow is computed on gross MA before healthcare deductions,
+ * slightly overestimating overflow by ~$500-2,500/year. Accepted approximation.
+ */
+export function capMaAtBhs(
+  maAllocation: number,
+  currentMaBalance: number,
+  bhs: number,
+  saClosed: boolean,
+  raBalance: number,
+  retirementSumTarget: number,
+  postLife: boolean,
+): {
+  maAllocation: number
+  overflowToSA: number
+  overflowToRA: number
+  overflowToOA: number
+} {
+  const maRoom = Math.max(0, bhs - currentMaBalance)
+
+  if (maAllocation <= maRoom) {
+    return { maAllocation, overflowToSA: 0, overflowToRA: 0, overflowToOA: 0 }
+  }
+
+  const actualMa = Math.min(maAllocation, maRoom)
+  const excess = maAllocation - actualMa
+
+  if (!saClosed) {
+    // Pre-55: all excess → SA
+    return { maAllocation: actualMa, overflowToSA: excess, overflowToRA: 0, overflowToOA: 0 }
+  }
+
+  if (postLife) {
+    // Post-LIFE: RA is annuitized, all excess → OA
+    return { maAllocation: actualMa, overflowToSA: 0, overflowToRA: 0, overflowToOA: excess }
+  }
+
+  // Post-55, pre-LIFE: excess → RA (up to target), remainder → OA
+  const raRoom = Math.max(0, retirementSumTarget - raBalance)
+  const toRA = Math.min(excess, raRoom)
+  const toOA = excess - toRA
+
+  return { maAllocation: actualMa, overflowToSA: 0, overflowToRA: toRA, overflowToOA: toOA }
+}
+
+/**
  * Project CPF balances year-by-year from startAge to endAge.
  */
 export function projectCpfBalances(

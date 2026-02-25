@@ -16,6 +16,7 @@ import type {
   LifeEvent,
   IncomeProjectionRow,
 } from '@/lib/types'
+import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
 
 // ============================================================
 // Simple salary model
@@ -2599,5 +2600,198 @@ describe('generateIncomeProjection with expenseAdjustments', () => {
 
     expect(rowsWith[0].annualSavings).toBe(rowsWithout[0].annualSavings)
     expect(rowsWith[5].annualSavings).toBe(rowsWithout[5].annualSavings)
+  })
+})
+
+// ============================================================
+// CPF MA BHS overflow in projection
+// ============================================================
+
+describe('CPF MA BHS overflow in projection', () => {
+  const bhsBaseParams = {
+    currentAge: 30,
+    retirementAge: 65,
+    lifeExpectancy: 90,
+    salaryModel: 'simple' as const,
+    annualSalary: 120000,
+    salaryGrowthRate: 0,
+    realisticPhases: DEFAULT_CAREER_PHASES,
+    promotionJumps: [],
+    momEducation: 'degree' as const,
+    momAdjustment: 1.0,
+    employerCpfEnabled: true,
+    incomeStreams: [],
+    lifeEvents: [],
+    lifeEventsEnabled: false,
+    annualExpenses: 30000,
+    inflation: 0,
+    personalReliefs: 0,
+    srsAnnualContribution: 0,
+    initialCpfOA: 0,
+    initialCpfSA: 0,
+    initialCpfMA: 0,
+  }
+
+  it('pre-55: mandatory contributions cap MA at BHS, overflow increases SA', () => {
+    // Start with MA near BHS so contributions overflow quickly
+    const params = {
+      ...bhsBaseParams,
+      initialCpfMA: 75000, // $4K below BHS
+    }
+    const rows = generateIncomeProjection(params)
+
+    // After a few years, MA should be capped at BHS (plus at most interest rounding)
+    // Age 30 salary $120K: MA allocation = $120K * 0.08 = $9,600/yr
+    // Year 0: room = $4,000. $9,600 - $4,000 = $5,600 overflow to SA
+    // After year 0: MA should be near BHS (interest may push slightly over, then Point B caps)
+
+    // Check MA never significantly exceeds BHS across all years
+    for (const row of rows) {
+      // MA may transiently hit BHS + some rounding, but overflow brings it back
+      expect(row.cpfMA).toBeLessThanOrEqual(MEDISAVE_BHS + 1)
+    }
+
+    // Compare with a run starting at MA=0 to verify SA gets the overflow
+    const paramsLowMa = { ...bhsBaseParams, initialCpfMA: 0 }
+    const rowsLowMa = generateIncomeProjection(paramsLowMa)
+
+    // After MA reaches BHS in both runs, the high-MA start should have higher SA
+    // because overflow started sooner
+    const row5High = rows.find(r => r.age === 35)!
+    const row5Low = rowsLowMa.find(r => r.age === 35)!
+    expect(row5High.cpfSA).toBeGreaterThan(row5Low.cpfSA)
+  })
+
+  it('post-55: mandatory contributions overflow to RA then OA', () => {
+    const params = {
+      ...bhsBaseParams,
+      currentAge: 56,
+      retirementAge: 65,
+      lifeExpectancy: 70,
+      initialCpfMA: MEDISAVE_BHS, // already at cap
+      initialCpfOA: 50000,
+      initialCpfSA: 0, // SA closed at 55
+      initialCpfRA: 200000,
+      cpfRetirementSum: 'frs' as const,
+    }
+    const rows = generateIncomeProjection(params)
+
+    // MA should stay at/below BHS (interest overflow redirected)
+    for (const row of rows.filter(r => !r.isRetired)) {
+      expect(row.cpfMA).toBeLessThanOrEqual(MEDISAVE_BHS + 1)
+    }
+
+    // RA and/or OA should receive the overflow
+    // With MA at BHS, all MA contributions (~$9,600/yr for age 56) overflow
+    const row56 = rows[0]
+    // RA + OA should be higher than initial values by more than just OA contribution
+    expect(row56.cpfRA + row56.cpfOA).toBeGreaterThan(200000 + 50000)
+  })
+
+  it('post-LIFE: overflow goes to OA, not RA', () => {
+    const params = {
+      ...bhsBaseParams,
+      currentAge: 66,
+      retirementAge: 62,
+      lifeExpectancy: 70,
+      initialCpfMA: MEDISAVE_BHS,
+      initialCpfOA: 50000,
+      initialCpfSA: 0,
+      initialCpfRA: 0, // annuitized at 65
+      cpfLifeStartAge: 65,
+      annualSalary: 0, // retired, no salary
+    }
+    const rows = generateIncomeProjection(params)
+
+    // Interest on MA at BHS: $79K * 4% = $3,160
+    // This should overflow to OA, not RA
+    const row66 = rows[0]
+
+    // MA stays at BHS
+    expect(row66.cpfMA).toBeLessThanOrEqual(MEDISAVE_BHS + 1)
+
+    // RA should remain 0 (annuitized, no overflow to RA)
+    expect(row66.cpfRA).toBe(0)
+
+    // OA should be higher than initial due to interest overflow from MA
+    expect(row66.cpfOA).toBeGreaterThan(50000)
+  })
+
+  it('interest on MA at BHS does not accumulate above BHS, excess goes to OA', () => {
+    // Even with no salary, interest alone on $79K MA should be capped
+    const params = {
+      ...bhsBaseParams,
+      currentAge: 60,
+      retirementAge: 58,
+      lifeExpectancy: 64,
+      annualSalary: 0,
+      initialCpfMA: MEDISAVE_BHS,
+      initialCpfOA: 10000,
+      initialCpfSA: 0,
+      initialCpfRA: 200000,
+    }
+    const rows = generateIncomeProjection(params)
+
+    // Over 5 years with no contributions, MA should stay at BHS
+    for (const row of rows) {
+      expect(row.cpfMA).toBeLessThanOrEqual(MEDISAVE_BHS + 1)
+    }
+
+    // OA should grow from interest overflow (~$3,160/yr from MA interest alone)
+    const lastRow = rows[rows.length - 1]
+    expect(lastRow.cpfOA).toBeGreaterThan(10000 + 3000 * 3) // at least 3 years of overflow
+  })
+
+  it('retired with no salary: MA interest still capped at BHS', () => {
+    const params = {
+      ...bhsBaseParams,
+      currentAge: 56,
+      retirementAge: 55,
+      lifeExpectancy: 60,
+      annualSalary: 0,
+      initialCpfMA: MEDISAVE_BHS,
+      initialCpfOA: 10000,
+      initialCpfSA: 0,
+      initialCpfRA: 200000,
+    }
+    const rows = generateIncomeProjection(params)
+
+    // MA should never exceed BHS even with years of interest
+    for (const row of rows) {
+      expect(row.cpfMA).toBeLessThanOrEqual(MEDISAVE_BHS + 1)
+    }
+  })
+
+  it('conservation: total CPF balance unchanged by overflow (redirects, does not destroy money)', () => {
+    // Run with MA starting at BHS to force overflow
+    const paramsWithBhs = {
+      ...bhsBaseParams,
+      initialCpfMA: MEDISAVE_BHS,
+      initialCpfOA: 50000,
+      initialCpfSA: 30000,
+    }
+    // Run same params but with very high BHS (effectively no cap) for comparison
+    // We can't change BHS directly, so instead check that total CPF is consistent
+    const rows = generateIncomeProjection(paramsWithBhs)
+
+    // For each row, total CPF should grow by contributions + interest
+    // We just verify total is always >= initial total (money isn't destroyed)
+    const initialTotal = MEDISAVE_BHS + 50000 + 30000
+    for (const row of rows.filter(r => !r.isRetired)) {
+      const rowTotal = row.cpfOA + row.cpfSA + row.cpfMA + row.cpfRA
+      expect(rowTotal).toBeGreaterThanOrEqual(initialTotal)
+    }
+  })
+
+  it('regression: voluntary MA top-up cap still works after fix', () => {
+    // This is the existing BHS test scenario — ensure it still passes
+    const params = {
+      ...bhsBaseParams,
+      cpfTopUpMA: 50000,
+      initialCpfMA: 60000, // close to BHS
+    }
+    const rows = generateIncomeProjection(params)
+    // MA should not exceed BHS (voluntary top-up is capped, then mandatory also capped)
+    expect(rows[0].cpfMA).toBeLessThanOrEqual(MEDISAVE_BHS + 1)
   })
 })

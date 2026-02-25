@@ -13,6 +13,7 @@ import {
   autoDetectRetirementSum,
   performAge55Transfer,
   allocatePostAge55Contribution,
+  capMaAtBhs,
 } from './cpf'
 import {
   OA_INTEREST_RATE,
@@ -20,6 +21,7 @@ import {
   CPFIS_OA_RETENTION,
   CPFIS_SA_RETENTION,
 } from '@/lib/data/cpfRates'
+import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
 
 describe('calculateCpfContribution', () => {
   it('age 30, $72K salary → 37% total rate', () => {
@@ -574,5 +576,95 @@ describe('calculateCpfisInterest', () => {
     // SA: $40K at 4% + $40K at -10% = $1,600 - $4,000 = -$2,400
     const expectedSa = CPFIS_SA_RETENTION * SA_INTEREST_RATE + 40000 * (-0.10)
     expect(result.saInterest).toBeCloseTo(expectedSa, 2)
+  })
+})
+
+// ============================================================
+// capMaAtBhs — Medisave BHS overflow routing
+// ============================================================
+
+describe('capMaAtBhs', () => {
+  const BHS = MEDISAVE_BHS // 79,000
+
+  it('MA + allocation below BHS → no overflow', () => {
+    const result = capMaAtBhs(5000, 70000, BHS, false, 0, 0, false)
+    expect(result.maAllocation).toBe(5000)
+    expect(result.overflowToSA).toBe(0)
+    expect(result.overflowToRA).toBe(0)
+    expect(result.overflowToOA).toBe(0)
+  })
+
+  it('MA exactly at BHS, allocation > 0 → full allocation overflows', () => {
+    const result = capMaAtBhs(5000, BHS, BHS, false, 0, 0, false)
+    expect(result.maAllocation).toBe(0)
+    expect(result.overflowToSA).toBe(5000)
+  })
+
+  it('MA below BHS, allocation partially fits → split between MA and overflow', () => {
+    // Room = 79000 - 76000 = 3000, allocation = 5000
+    const result = capMaAtBhs(5000, 76000, BHS, false, 0, 0, false)
+    expect(result.maAllocation).toBe(3000)
+    expect(result.overflowToSA).toBe(2000)
+  })
+
+  it('pre-55: overflow goes to SA', () => {
+    const result = capMaAtBhs(10000, BHS, BHS, false, 0, 0, false)
+    expect(result.maAllocation).toBe(0)
+    expect(result.overflowToSA).toBe(10000)
+    expect(result.overflowToRA).toBe(0)
+    expect(result.overflowToOA).toBe(0)
+  })
+
+  it('post-55 pre-LIFE, RA has room → overflow to RA', () => {
+    const result = capMaAtBhs(5000, BHS, BHS, true, 200000, 213000, false)
+    expect(result.maAllocation).toBe(0)
+    expect(result.overflowToSA).toBe(0)
+    expect(result.overflowToRA).toBe(5000) // 13K room in RA, only 5K overflow
+    expect(result.overflowToOA).toBe(0)
+  })
+
+  it('post-55 pre-LIFE, RA full → overflow to OA', () => {
+    const result = capMaAtBhs(5000, BHS, BHS, true, 213000, 213000, false)
+    expect(result.maAllocation).toBe(0)
+    expect(result.overflowToSA).toBe(0)
+    expect(result.overflowToRA).toBe(0)
+    expect(result.overflowToOA).toBe(5000)
+  })
+
+  it('post-55 pre-LIFE, partial RA room → split RA + OA', () => {
+    // RA room = 213000 - 211000 = 2000, excess = 5000
+    const result = capMaAtBhs(5000, BHS, BHS, true, 211000, 213000, false)
+    expect(result.maAllocation).toBe(0)
+    expect(result.overflowToSA).toBe(0)
+    expect(result.overflowToRA).toBe(2000)
+    expect(result.overflowToOA).toBe(3000)
+  })
+
+  it('post-LIFE: overflow always to OA (even if RA=0 < retirementSumTarget)', () => {
+    // postLife=true means RA is annuitized; must not receive overflow
+    const result = capMaAtBhs(5000, BHS, BHS, true, 0, 213000, true)
+    expect(result.maAllocation).toBe(0)
+    expect(result.overflowToSA).toBe(0)
+    expect(result.overflowToRA).toBe(0)
+    expect(result.overflowToOA).toBe(5000)
+  })
+
+  it('conservation of money: total always equals original maAllocation', () => {
+    fc.assert(
+      fc.property(
+        fc.nat({ max: 20000 }),   // maAllocation
+        fc.nat({ max: 100000 }),  // currentMaBalance
+        fc.boolean(),             // saClosed
+        fc.nat({ max: 300000 }),  // raBalance
+        fc.nat({ max: 300000 }),  // retirementSumTarget
+        fc.boolean(),             // postLife
+        (maAlloc, maBalance, saClosed, raBalance, retirementSumTarget, postLife) => {
+          const result = capMaAtBhs(maAlloc, maBalance, BHS, saClosed, raBalance, retirementSumTarget, postLife)
+          const total = result.maAllocation + result.overflowToSA + result.overflowToRA + result.overflowToOA
+          return Math.abs(total - maAlloc) < 0.01
+        }
+      ),
+      { numRuns: 500 }
+    )
   })
 })
