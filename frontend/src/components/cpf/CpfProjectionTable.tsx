@@ -174,7 +174,7 @@ export function CpfProjectionTable() {
                   key={header.id}
                   className={cn(
                     "px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap",
-                    header.column.id === 'age' && "sticky left-0 z-20 bg-background"
+                    header.column.id === 'age' && "sticky left-0 z-30 bg-background"
                   )}
                 >
                   {header.isPlaceholder
@@ -219,7 +219,7 @@ export function CpfProjectionTable() {
                       key={cell.id}
                       className={cn(
                         "px-2 py-1.5 whitespace-nowrap tabular-nums",
-                        isAgeCol && cn("sticky left-0 z-10 font-medium group-hover:bg-muted/50", ageBg)
+                        isAgeCol && cn("sticky left-0 z-20 font-medium group-hover:bg-muted/50", ageBg)
                       )}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

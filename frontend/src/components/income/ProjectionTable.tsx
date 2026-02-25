@@ -145,7 +145,7 @@ export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
                 {headerGroup.headers.map((header) => (
                   <th key={header.id} className={cn(
                     "px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap",
-                    header.column.id === 'age' && "sticky left-0 z-20 bg-background"
+                    header.column.id === 'age' && "sticky left-0 z-30 bg-background"
                   )}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
@@ -175,7 +175,7 @@ export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
                       <td key={cell.id} className={cn(
                         "px-2 py-1.5 whitespace-nowrap tabular-nums",
                         isAgeCol && cn(
-                          "sticky left-0 z-10 font-medium group-hover:bg-muted/50",
+                          "sticky left-0 z-20 font-medium group-hover:bg-muted/50",
                           row.original.isRetired ? 'bg-muted/30'
                             : hasEvents ? 'bg-yellow-50 dark:bg-yellow-900/10'
                             : 'bg-background'
