@@ -14,6 +14,10 @@ interface StatusPanelProps {
   totalNetWorth: number | null
   portfolioDepletedAge: number | null
   lifeExpectancy: number
+  projectionFireNumber: number | null
+  deviationPct: number | null
+  showProjectionNumber: boolean
+  deviationFactors: string[]
 }
 
 type MetricAccent = 'primary' | 'success' | 'warning'
@@ -34,11 +38,20 @@ export function StatusPanel(props: StatusPanelProps) {
   }[] = [
     {
       label: 'FIRE Number',
-      value: props.fireNumber != null
-        ? <AnimatedNumber value={props.fireNumber} format={formatCurrency} />
-        : '—',
+      value: (
+        <>
+          {props.fireNumber != null
+            ? <AnimatedNumber value={props.fireNumber} format={formatCurrency} />
+            : '—'}
+          {props.showProjectionNumber && props.projectionFireNumber != null && props.deviationPct != null && (
+            <div className="text-[10px] text-muted-foreground font-normal mt-0.5">
+              Proj: {formatCurrency(props.projectionFireNumber)} ({props.deviationPct > 0 ? '+' : ''}{(props.deviationPct * 100).toFixed(1)}%)
+            </div>
+          )}
+        </>
+      ),
       href: '/inputs#section-fire-settings',
-      accent: 'primary',
+      accent: 'primary' as MetricAccent,
     },
     {
       label: 'Progress',
