@@ -13,6 +13,30 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-25',
+    category: 'feature',
+    title: 'Goal and withdrawal shortfall tracking in projection engine',
+    description:
+      'The projection engine now computes exact unfunded amounts for financial goals and one-time retirement withdrawals instead of silently clamping the portfolio to zero. When expenses exceed your portfolio, each expense type gets a proportional share of the deficit so you can see precisely how much went unfunded.',
+    affectedSections: ['section-fire-settings'],
+  },
+  {
+    date: '2026-02-25',
+    category: 'feature',
+    title: 'Shortfall warnings on projection table',
+    description:
+      'The projection page now shows amber warning banners when financial goals or retirement withdrawals cannot be fully funded, with affected ages and total shortfall amounts. Expense columns show a red asterisk on underfunded rows with a tooltip showing the unfunded amount.',
+    affectedSections: ['section-fire-settings'],
+  },
+  {
+    date: '2026-02-25',
+    category: 'fix',
+    title: 'Pre-retirement depletion now highlighted in projection table',
+    description:
+      'Portfolio depletion caused by large pre-retirement expenses (e.g., property purchases via financial goals) now correctly shows red highlighting on affected rows. Previously only post-retirement depletion was visually flagged.',
+    affectedSections: ['section-fire-settings'],
+  },
+  {
+    date: '2026-02-25',
     category: 'fix',
     title: 'Tax-exempt income streams now correctly excluded from tax',
     description:
