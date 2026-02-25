@@ -514,14 +514,14 @@ export function ReferencePage() {
   return (
     <TooltipProvider delayDuration={200}>
       <div className="space-y-6">
-        <div className="flex items-start justify-between gap-4">
+        <div className="space-y-3 md:space-y-0 md:flex md:items-start md:justify-between md:gap-4">
           <div>
             <h1 className="text-2xl font-bold">Reference Guide</h1>
             <p className="text-muted-foreground text-sm">
               Learn about FIRE planning concepts, Singapore-specific considerations, and how to use this tool effectively.
             </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0 pt-1">
+          <div className="flex items-center gap-2 shrink-0">
             <Switch id="eli5" checked={tooltipsEnabled} onCheckedChange={setTooltipsEnabled} />
             <Label htmlFor="eli5" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">
               ELI5 tooltips
