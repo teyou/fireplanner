@@ -174,7 +174,7 @@ export function CpfProjectionTable() {
                   key={header.id}
                   className={cn(
                     "px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap",
-                    header.column.id === 'age' && "sticky left-0 z-30 bg-background shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                    header.column.id === 'age' && "sticky left-0 z-30 bg-background border-r border-border"
                   )}
                 >
                   {header.isPlaceholder
@@ -207,19 +207,12 @@ export function CpfProjectionTable() {
               >
                 {row.getVisibleCells().map((cell) => {
                   const isAgeCol = cell.column.id === 'age'
-                  const ageBg = original.oaShortfall > 0 ? 'bg-amber-50 dark:bg-amber-900/10'
-                    : original.milestone === 'frs' ? 'bg-green-50 dark:bg-green-900/10'
-                    : original.milestone === 'brs' ? 'bg-green-50/50 dark:bg-green-900/5'
-                    : original.milestone === 'ers' ? 'bg-green-100 dark:bg-green-900/20'
-                    : original.milestone === 'cpfLifeStart' ? 'bg-blue-50 dark:bg-blue-900/10'
-                    : original.milestone === 'raCreated' ? 'bg-purple-50 dark:bg-purple-900/10'
-                    : 'bg-background'
                   return (
                     <td
                       key={cell.id}
                       className={cn(
                         "px-2 py-1.5 whitespace-nowrap tabular-nums",
-                        isAgeCol && cn("sticky left-0 z-10 font-medium shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] group-hover:bg-muted/50", ageBg)
+                        isAgeCol && "sticky left-0 z-10 font-medium bg-background border-r border-border group-hover:bg-muted"
                       )}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

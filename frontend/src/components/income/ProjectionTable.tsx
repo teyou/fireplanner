@@ -145,7 +145,7 @@ export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
                 {headerGroup.headers.map((header) => (
                   <th key={header.id} className={cn(
                     "px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap",
-                    header.column.id === 'age' && "sticky left-0 z-30 bg-background shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                    header.column.id === 'age' && "sticky left-0 z-30 bg-background border-r border-border"
                   )}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
@@ -174,12 +174,7 @@ export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
                     return (
                       <td key={cell.id} className={cn(
                         "px-2 py-1.5 whitespace-nowrap tabular-nums",
-                        isAgeCol && cn(
-                          "sticky left-0 z-10 font-medium shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] group-hover:bg-muted/50",
-                          row.original.isRetired ? 'bg-muted/30'
-                            : hasEvents ? 'bg-yellow-50 dark:bg-yellow-900/10'
-                            : 'bg-background'
-                        )
+                        isAgeCol && "sticky left-0 z-10 font-medium bg-background border-r border-border group-hover:bg-muted"
                       )}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
