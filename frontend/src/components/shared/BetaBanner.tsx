@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { X, FlaskConical } from 'lucide-react'
 
-const DISMISS_KEY = 'fireplanner-beta-banner-dismissed'
+const DISMISS_KEY = 'fireplanner-beta-banner-dismissed-v2'
 const TELEGRAM_URL = 'https://t.me/sgfireplannerann'
 const FEEDBACK_URL =
   'https://www.reddit.com/r/singaporefi/comments/1rcdnl3/i_built_a_free_singapore_fire_calculator_cpf_srs/'
