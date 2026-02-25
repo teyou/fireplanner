@@ -1514,6 +1514,34 @@ describe('generateProjection', () => {
     })
   })
 
+  describe('CPF milestone MA exclusion', () => {
+    it('BRS milestone does NOT trigger when only MA pushes total above threshold', () => {
+      // Set up: OA+SA+RA = 80K (below BRS ~$107K), but MA = 60K → total = 140K > BRS
+      // Milestone should NOT fire because MA cannot fund retirement sum
+      const params = makeParams({
+        currentAge: 30, retirementAge: 33, lifeExpectancy: 34,
+        expectedReturn: 0, initialLiquidNW: 100000,
+      })
+      params.incomeProjection = params.incomeProjection.map((row) => ({
+        ...row,
+        cpfOA: 50000,
+        cpfSA: 20000,
+        cpfMA: 60000,
+        cpfRA: 10000,
+      }))
+
+      const result = generateProjection(params)
+
+      // OA+SA+RA = 80K, which is below BRS (~$107K for age 30)
+      // Total including MA = 140K would have crossed BRS under the old code
+      for (const row of result.rows) {
+        expect(row.cpfMilestone).not.toBe('brs')
+        expect(row.cpfMilestone).not.toBe('frs')
+        expect(row.cpfMilestone).not.toBe('ers')
+      }
+    })
+  })
+
   describe('property projection', () => {
     it('freehold appreciation: value grows at appreciation rate', () => {
       const params = makeParams({

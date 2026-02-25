@@ -61,6 +61,8 @@ export function useCpfProjection(): {
         ? prevRow.cpfOA + prevRow.cpfSA + prevRow.cpfMA + prevRow.cpfRA
         : 0
       const totalBalance = row.cpfOA + row.cpfSA + row.cpfMA + row.cpfRA
+      // Retirement balance excludes MA — MediSave cannot fund BRS/FRS/ERS
+      const retirementBalance = row.cpfOA + row.cpfSA + row.cpfRA
       const annualContribution = row.cpfEmployee + row.cpfEmployer
       // Interest approximation: balance change minus contributions, plus housing deductions
       const annualInterest = i > 0
@@ -69,15 +71,15 @@ export function useCpfProjection(): {
 
       let milestone: CpfProjectionRow['milestone'] = null
 
-      if (!brsReached && totalBalance >= brsFrsErs.brs) {
+      if (!brsReached && retirementBalance >= brsFrsErs.brs) {
         milestone = 'brs'
         brsReached = true
       }
-      if (!frsReached && totalBalance >= brsFrsErs.frs) {
+      if (!frsReached && retirementBalance >= brsFrsErs.frs) {
         milestone = 'frs'
         frsReached = true
       }
-      if (!ersReached && totalBalance >= brsFrsErs.ers) {
+      if (!ersReached && retirementBalance >= brsFrsErs.ers) {
         milestone = 'ers'
         ersReached = true
       }

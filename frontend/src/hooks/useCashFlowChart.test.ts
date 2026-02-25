@@ -109,10 +109,37 @@ describe('useCashFlowChart', () => {
   })
 
   it('srsWithdrawal is not visible when no SRS configured', () => {
-    // SRS withdrawal is not directly on ProjectionRow, so it's always 0
+    // Default profile has zero SRS contribution, so no withdrawal flows through
     const { result } = renderHook(() => useCashFlowChart('all'))
     expect(result.current).not.toBeNull()
     const data = result.current!
     expect(data.visibleSeries).not.toContain('srsWithdrawal')
+  })
+
+  it('srsWithdrawal flows through from ProjectionRow when SRS is configured', () => {
+    // Configure SRS so drawdown generates non-zero srsWithdrawal rows
+    useProfileStore.setState({
+      ...useProfileStore.getState(),
+      currentAge: 30,
+      retirementAge: 60,
+      lifeExpectancy: 80,
+      srsAnnualContribution: 15300,
+      srsBalance: 0,
+      srsInvestmentReturn: 0.04,
+      srsDrawdownStartAge: 63,
+      validationErrors: {},
+    })
+
+    const { result } = renderHook(() => useCashFlowChart('all'))
+    expect(result.current).not.toBeNull()
+    const data = result.current!
+
+    // During SRS drawdown years (63-72), srsWithdrawal should be > 0
+    const drawdownRows = data.rows.filter((r) => r.age >= 63 && r.age < 73)
+    expect(drawdownRows.length).toBeGreaterThan(0)
+    expect(drawdownRows.some((r) => r.srsWithdrawal > 0)).toBe(true)
+
+    // srsWithdrawal should appear in visibleSeries
+    expect(data.visibleSeries).toContain('srsWithdrawal')
   })
 })

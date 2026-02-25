@@ -16,6 +16,7 @@ import type {
 import { getMomSalary } from '@/lib/data/momSalary'
 import { calculateCpfContribution, calculateCpfExtraInterestWithAge, calculateCpfLifePayoutAtAge, getRetirementSumAmount, performAge55Transfer, allocatePostAge55Contribution, calculateCpfisInterest } from './cpf'
 import { calculateChargeableIncome, calculateProgressiveTax } from './tax'
+import { earnedIncomeReliefForAge, RELIEF_AMOUNTS } from '@/lib/data/taxBrackets'
 import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
 import {
   OA_INTEREST_RATE,
@@ -322,6 +323,11 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     }
   }
 
+  // Strip out the frozen earned income relief from personalReliefs so we can
+  // re-add the correct age-dependent amount each year (and omit it entirely
+  // for years with no earned income).
+  const baseReliefs = params.personalReliefs - earnedIncomeReliefForAge(params.currentAge)
+
   for (let age = params.currentAge; age <= params.lifeExpectancy; age++) {
     const year = age - params.currentAge
     const isRetired = age > params.retirementAge
@@ -577,12 +583,23 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     // SRS drawdown: only 50% is taxable (srsTaxableWithdrawal = withdrawal * 0.5)
     const taxableIncome = salary + rentalIncome + businessIncome + srsTaxableWithdrawal
     // Investment income and CPF LIFE are tax-exempt
+
+    // Earned income relief applies only when there is employment or business income,
+    // and the amount depends on age (under 55: $1K, 55-59: $6K, 60+: $8K).
+    const hasEarnedIncome = salary > 0 || businessIncome > 0
+    const applicableReliefs = Math.min(
+      RELIEF_AMOUNTS.reliefCap,
+      Math.max(0, hasEarnedIncome
+        ? baseReliefs + earnedIncomeReliefForAge(age)
+        : baseReliefs)
+    )
+
     // Use actual SRS contribution this year (0 during drawdown/post-retirement)
     const chargeableIncome = calculateChargeableIncome(
       taxableIncome,
       cpfEmployee,
       srsContribution,
-      params.personalReliefs,
+      applicableReliefs,
       params.residencyStatus,
       (!isRetired ? (params.cpfTopUpSA ?? 0) : 0)
     )

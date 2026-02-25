@@ -65,7 +65,7 @@ function mapProjectionRow(row: ProjectionRow): CashFlowRow {
   const investment = row.investmentIncome
   const business = row.businessIncome
   const government = row.governmentIncome
-  const srsWithdrawal = 0 // Not on ProjectionRow; SRS data lives in IncomeProjectionRow
+  const srsWithdrawal = row.srsWithdrawal
   const portfolioWithdrawal = row.isRetired ? row.withdrawalAmount : 0
 
   // Outflows (negative values)

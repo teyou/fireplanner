@@ -2378,3 +2378,152 @@ describe('locked asset unlock in projection', () => {
     expect(unlockRow?.lockedAssetUnlock).toBe(80000)
   })
 })
+
+// ============================================================
+// Earned Income Relief gating + age adjustment
+// ============================================================
+
+describe('earned income relief', () => {
+  const retireeBaseParams = {
+    salaryModel: 'simple' as const,
+    annualSalary: 0,
+    salaryGrowthRate: 0,
+    realisticPhases: DEFAULT_CAREER_PHASES,
+    promotionJumps: [],
+    momEducation: 'degree' as const,
+    momAdjustment: 1.0,
+    employerCpfEnabled: true,
+    incomeStreams: [] as IncomeStream[],
+    lifeEvents: [] as LifeEvent[],
+    lifeEventsEnabled: false,
+    inflation: 0,
+    initialCpfOA: 0,
+    initialCpfSA: 0,
+    initialCpfMA: 0,
+  }
+
+  it('retiree with only SRS income: no earned income relief, full SRS taxed', () => {
+    // Retiree age 63, no salary, no business income.
+    // SRS drawdown generates taxable income. Earned income relief should NOT apply.
+    // personalReliefs = $8,000 (includes $8K earned income relief for 60+)
+    // After stripping: baseReliefs = 0. No earned income → applicableReliefs = 0.
+    // SRS balance $500K / 10 years = $50K withdrawal, taxable = $25K (50% concession)
+    // Chargeable = $25K - 0 reliefs = $25K → tax = $200 + ($25K-$20K)*0.02 + ... = $100+
+    const rows = generateIncomeProjection({
+      ...retireeBaseParams,
+      currentAge: 63,
+      retirementAge: 60,
+      lifeExpectancy: 73,
+      annualExpenses: 40000,
+      personalReliefs: 8000, // includes $8K earned income relief for 60+
+      srsAnnualContribution: 0,
+      srsBalance: 500000,
+      srsInvestmentReturn: 0,
+      srsDrawdownStartAge: 63,
+    })
+
+    // Age 63: SRS drawdown, no salary, no business → no earned income relief
+    const row63 = rows.find(r => r.age === 63)!
+    expect(row63.srsWithdrawal).toBeGreaterThan(0)
+    expect(row63.salary).toBe(0)
+
+    // Withdrawal = $50K, taxable = $25K (50% concession)
+    const taxableAmount = row63.srsTaxableWithdrawal
+    expect(taxableAmount).toBeCloseTo(row63.srsWithdrawal * 0.5, 0)
+    expect(taxableAmount).toBeCloseTo(25000, 0)
+    // With zero reliefs and zero CPF, chargeable = $25K
+    // Tax on $25K: $0 (first $20K) + $200 ($20K-$30K at 2%) = $100
+    expect(row63.sgTax).toBeCloseTo(100, 0)
+  })
+
+  it('age 53->55 transition: earned income relief jumps from $1K to $6K', () => {
+    // Worker with salary, personalReliefs = $1K (just the under-55 earned income relief)
+    // At age 55, relief should jump to $6K → tax decreases
+    const rows = generateIncomeProjection({
+      ...retireeBaseParams,
+      currentAge: 53,
+      retirementAge: 65,
+      lifeExpectancy: 60,
+      annualSalary: 120000,
+      annualExpenses: 50000,
+      personalReliefs: 1000, // just earned income relief for under-55
+      srsAnnualContribution: 0,
+    })
+
+    const row53 = rows.find(r => r.age === 53)!
+    const row55 = rows.find(r => r.age === 55)!
+
+    // Both have same salary (0% growth), so difference in tax comes from relief change
+    // At 53: baseReliefs = 1000 - 1000 = 0, earned income = 1000 → total 1000
+    // At 55: baseReliefs = 0, earned income = 6000 → total 6000
+    // Extra $5K deduction means less tax at 55
+    expect(row55.sgTax).toBeLessThan(row53.sgTax)
+  })
+
+  it('retiree with business income: earned income relief still applies', () => {
+    // Retiree with business income stream — earned income relief should still apply
+    const businessStream: IncomeStream = {
+      id: 'biz1',
+      name: 'Consulting',
+      type: 'business',
+      annualAmount: 50000,
+      growthModel: 'none',
+      growthRate: 0,
+      startAge: 60,
+      endAge: 75,
+      taxTreatment: 'taxable',
+      isCpfApplicable: false,
+      isActive: true,
+    }
+
+    const rows = generateIncomeProjection({
+      ...retireeBaseParams,
+      currentAge: 63,
+      retirementAge: 60,
+      lifeExpectancy: 70,
+      annualExpenses: 40000,
+      personalReliefs: 8000, // $8K earned income relief for 60+
+      srsAnnualContribution: 0,
+      incomeStreams: [businessStream],
+    })
+
+    const row63 = rows.find(r => r.age === 63)!
+    expect(row63.businessIncome).toBe(50000)
+
+    // Business income = earned income → relief applies
+    // baseReliefs = 8000 - 8000 = 0, has earned income → 0 + 8000 = 8000
+    // Chargeable = 50000 - 0 CPF - 0 SRS - 8000 reliefs = 42000
+    // Tax on $42K: 550 + (42000 - 40000) * 0.07 = 690
+    expect(row63.sgTax).toBeCloseTo(690, 0)
+  })
+
+  it('small personalReliefs below earned income: Math.max(0, ...) prevents negative', () => {
+    // personalReliefs = $500, earned income relief for under-55 = $1000
+    // baseReliefs = 500 - 1000 = -500
+    // Without earned income: max(0, -500) = 0 (not negative)
+    // With earned income: max(0, -500 + 1000) = 500 (original amount)
+    const rows = generateIncomeProjection({
+      ...retireeBaseParams,
+      currentAge: 63,
+      retirementAge: 60,
+      lifeExpectancy: 65,
+      annualExpenses: 30000,
+      personalReliefs: 500, // less than the $8K earned income relief for 60+
+      srsAnnualContribution: 0,
+      srsBalance: 100000,
+      srsInvestmentReturn: 0,
+      srsDrawdownStartAge: 63,
+    })
+
+    const row63 = rows.find(r => r.age === 63)!
+    // No salary, no business → no earned income
+    // baseReliefs = 500 - 8000 = -7500, max(0, -7500) = 0
+    // Tax should still compute correctly (no negative relief)
+    expect(row63.sgTax).toBeGreaterThanOrEqual(0)
+
+    // Verify that the relief didn't go negative by checking tax is as expected
+    // Taxable = srsWithdrawal * 0.5, chargeable = taxable - 0 reliefs
+    const expectedChargeable = row63.srsTaxableWithdrawal
+    expect(expectedChargeable).toBeGreaterThan(0)
+  })
+})

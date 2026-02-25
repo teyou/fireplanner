@@ -126,4 +126,36 @@ describe('useCpfProjection', () => {
       expect(row.annualInterest).toBeGreaterThanOrEqual(0)
     }
   })
+
+  it('BRS/FRS/ERS milestones exclude MA from balance comparison', () => {
+    // Set up a profile where MA is large enough that OA+SA+MA+RA > BRS
+    // but OA+SA+RA alone is NOT > BRS. Milestones should not trigger prematurely.
+    useProfileStore.setState({
+      ...useProfileStore.getState(),
+      currentAge: 30,
+      retirementAge: 65,
+      lifeExpectancy: 90,
+      validationErrors: {},
+    })
+    // Set high initial MA to inflate total balance
+    useProfileStore.setState({
+      ...useProfileStore.getState(),
+      cpfOA: 10000,
+      cpfSA: 10000,
+      cpfMA: 100000,
+    })
+
+    const { result } = renderHook(() => useCpfProjection())
+    const rows = result.current.rows!
+
+    // At age 30 with OA=10K, SA=10K: retirement balance = ~20K
+    // Total with MA = ~120K, which could trigger BRS (~$107K) if MA is included
+    // First few rows should not have BRS milestone
+    const firstRow = rows[0]
+    const retirementBal = firstRow.oaBalance + firstRow.saBalance + firstRow.raBalance
+    if (retirementBal < 107000) {
+      // Verify BRS milestone hasn't triggered yet
+      expect(firstRow.milestone).not.toBe('brs')
+    }
+  })
 })
