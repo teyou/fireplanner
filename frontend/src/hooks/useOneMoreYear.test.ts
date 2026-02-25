@@ -111,4 +111,93 @@ describe('useOneMoreYear', () => {
       expect(['safe', 'marginal', 'risky']).toContain(s.riskLevel)
     }
   })
+
+  it('risky risk level when effectiveSwr > 4.5%', () => {
+    // Set up so that expenses / portfolio > 4.5% at retirement
+    // With currentAge == retirementAge (0 years), portfolio = NW directly.
+    // NW = 1M, expenses = 80K → SWR = 80K/1M = 8% → risky
+    useProfileStore.setState({
+      ...useProfileStore.getState(),
+      currentAge: 55,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      annualIncome: 80000,
+      annualExpenses: 80000, // All income consumed, no savings
+      liquidNetWorth: 1000000,
+      cpfOA: 0,
+      cpfSA: 0,
+      cpfMA: 0,
+      cpfRA: 0,
+      swr: 0.04,
+      usePortfolioReturn: false,
+      expectedReturn: 0.07,
+      inflation: 0.025,
+      expenseRatio: 0.003,
+      validationErrors: {},
+    })
+    const { result } = renderHook(() => useOneMoreYear())
+    expect(result.current.hasData).toBe(true)
+    const baseScenario = result.current.scenarios[0]
+    // effectiveSwr = 80K / 1M = 0.08 → risky
+    expect(baseScenario.effectiveSwr).toBeGreaterThan(0.045)
+    expect(baseScenario.riskLevel).toBe('risky')
+  })
+
+  it('marginal risk level at swr boundary of 4.5%', () => {
+    // Set up portfolio so that effectiveSwr = expenses / portfolio = 0.045 exactly
+    // expenses = 80K → portfolio needed = 80K / 0.045 = 1,777,777.78
+    // With currentAge == retirementAge, portfolio = totalNW
+    const targetNW = Math.ceil(80000 / 0.045) // 1777778
+    useProfileStore.setState({
+      ...useProfileStore.getState(),
+      currentAge: 55,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      annualIncome: 80000,
+      annualExpenses: 80000,
+      liquidNetWorth: targetNW,
+      cpfOA: 0,
+      cpfSA: 0,
+      cpfMA: 0,
+      cpfRA: 0,
+      swr: 0.04,
+      usePortfolioReturn: false,
+      expectedReturn: 0.07,
+      inflation: 0.025,
+      expenseRatio: 0.003,
+      validationErrors: {},
+    })
+    const { result } = renderHook(() => useOneMoreYear())
+    expect(result.current.hasData).toBe(true)
+    const baseScenario = result.current.scenarios[0]
+    // effectiveSwr = 80K / 1777778 ≈ 0.045 → marginal (not risky)
+    expect(baseScenario.effectiveSwr).toBeCloseTo(0.045, 3)
+    expect(baseScenario.riskLevel).toBe('marginal')
+  })
+
+  it('Infinity effectiveSwr when portfolio is 0', () => {
+    // Zero NW, zero savings → portfolio = 0 → effectiveSwr = Infinity → risky
+    useProfileStore.setState({
+      ...useProfileStore.getState(),
+      currentAge: 55,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      annualIncome: 48000,
+      annualExpenses: 48000,
+      liquidNetWorth: 0,
+      cpfOA: 0,
+      cpfSA: 0,
+      cpfMA: 0,
+      cpfRA: 0,
+      swr: 0.04,
+      usePortfolioReturn: false,
+      expectedReturn: 0.07,
+      validationErrors: {},
+    })
+    const { result } = renderHook(() => useOneMoreYear())
+    expect(result.current.hasData).toBe(true)
+    const baseScenario = result.current.scenarios[0]
+    expect(baseScenario.effectiveSwr).toBe(Infinity)
+    expect(baseScenario.riskLevel).toBe('risky')
+  })
 })

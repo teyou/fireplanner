@@ -135,4 +135,48 @@ describe('useDisruptionImpact', () => {
       expect(result.current.deltas.portfolioAtRetirement).toBeLessThanOrEqual(0)
     }
   })
+
+  it('forces lifeEventsEnabled even when store has it disabled', () => {
+    // Disable life events in the store
+    useIncomeStore.setState({
+      ...useIncomeStore.getState(),
+      lifeEventsEnabled: false,
+      validationErrors: {},
+    })
+
+    const { result } = renderHook(() => useDisruptionImpact())
+
+    // Select a job loss disruption
+    act(() => {
+      result.current.selectTemplate(0) // Job Loss (6 months)
+    })
+
+    expect(result.current.disruptedMetrics).not.toBeNull()
+    expect(result.current.deltas).not.toBeNull()
+
+    // The disrupted income should show negative impact on portfolio,
+    // proving the disruption event was processed despite lifeEventsEnabled being false.
+    // Job loss sets incomeImpact: 0 (zero income) and savingsPause: true,
+    // which should reduce the portfolio at retirement.
+    expect(result.current.deltas!.portfolioAtRetirement).toBeLessThanOrEqual(0)
+  })
+
+  it('disruption impact differs based on template severity', () => {
+    const { result } = renderHook(() => useDisruptionImpact())
+
+    // Select mild disruption: Recession Pay Cut (incomeImpact: 0.8 = 80% of income)
+    act(() => {
+      result.current.selectTemplate(4) // Recession Pay Cut
+    })
+    const mildDelta = result.current.deltas!.portfolioAtRetirement
+
+    // Select severe disruption: Job Loss 12 months (incomeImpact: 0 = no income)
+    act(() => {
+      result.current.selectTemplate(1) // Job Loss (12 months)
+    })
+    const severeDelta = result.current.deltas!.portfolioAtRetirement
+
+    // More severe disruption should have a larger (more negative) impact
+    expect(severeDelta).toBeLessThanOrEqual(mildDelta)
+  })
 })

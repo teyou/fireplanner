@@ -10,6 +10,7 @@ import {
   calculateProgress,
   calculateAllFireMetrics,
   projectPortfolioAtRetirement,
+  projectNetWorthPath,
   calculateLiquidBridgeGap,
   calculateParentSupportAtAge,
   calculateProjectionFireNumber,
@@ -490,6 +491,80 @@ describe('calculateLiquidBridgeGap', () => {
     const result = calculateLiquidBridgeGap(0, 80000, 58, 65, 0.03, 90)
     expect(result.liquidDepletionAge).toBe(58)
     expect(result.liquidBridgeGapYears).toBe(7) // 65 - 58
+  })
+})
+
+describe('projectNetWorthPath', () => {
+  it('phase transitions to decumulation at retirementAge even when balance < fireNumber', () => {
+    const path = projectNetWorthPath({
+      currentAge: 55,
+      annualSavings: 10000,
+      currentNW: 100000,
+      realReturn: 0,
+      annualExpenses: 30000,
+      fireNumber: 1000000, // way above current NW
+      lifeExpectancy: 65,
+      retirementAge: 58,
+    })
+
+    // Before retirement: accumulation
+    const row55 = path.find(p => p.age === 55)!
+    const row57 = path.find(p => p.age === 57)!
+    expect(row55.phase).toBe('accumulation')
+    expect(row57.phase).toBe('accumulation')
+
+    // At and after retirementAge: forced decumulation (even though balance < fireNumber)
+    const row58 = path.find(p => p.age === 58)!
+    const row60 = path.find(p => p.age === 60)!
+    expect(row58.phase).toBe('decumulation')
+    expect(row60.phase).toBe('decumulation')
+  })
+
+  it('balance declines after forced decumulation with zero return', () => {
+    const path = projectNetWorthPath({
+      currentAge: 55,
+      annualSavings: 10000,
+      currentNW: 200000,
+      realReturn: 0,
+      annualExpenses: 50000,
+      fireNumber: 5000000,
+      lifeExpectancy: 65,
+      retirementAge: 58,
+    })
+
+    // After forced decumulation at 58, balance should decline each year
+    const row58 = path.find(p => p.age === 58)!
+    const row59 = path.find(p => p.age === 59)!
+    const row60 = path.find(p => p.age === 60)!
+
+    // At age 58: balance = accumulation result up to age 57 = 200000 + 10000*3 = 230000
+    expect(row58.balance).toBeCloseTo(230000, 0)
+    // After decumulation at 58: 230000 - 50000 = 180000
+    expect(row59.balance).toBeCloseTo(180000, 0)
+    // After decumulation at 59: 180000 - 50000 = 130000
+    expect(row60.balance).toBeCloseTo(130000, 0)
+  })
+
+  it('balance clamps to 0 after depletion', () => {
+    const path = projectNetWorthPath({
+      currentAge: 55,
+      annualSavings: 0,
+      currentNW: 100000,
+      realReturn: 0,
+      annualExpenses: 40000,
+      fireNumber: 5000000,
+      lifeExpectancy: 65,
+      retirementAge: 55, // immediately decumulating
+    })
+
+    // 100000 / 40000 = 2.5 years → depletes around age 57-58
+    const row58 = path.find(p => p.age === 58)!
+    expect(row58.balance).toBe(0)
+
+    // All subsequent rows should also be 0
+    for (const entry of path.filter(p => p.age >= 58)) {
+      expect(entry.balance).toBe(0)
+    }
   })
 })
 

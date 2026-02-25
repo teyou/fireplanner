@@ -174,6 +174,104 @@ describe('validateCrossStoreRules edge cases', () => {
   })
 })
 
+describe('validateCrossStoreRules life event validation', () => {
+  const baseProfile = { currentAge: 30, retirementAge: 65, lifeExpectancy: 90 }
+  const baseIncome = {
+    incomeStreams: [],
+    promotionJumps: [],
+  }
+
+  it('catches life event endAge > lifeExpectancy', () => {
+    const errors = validateCrossStoreRules(baseProfile, {
+      ...baseIncome,
+      lifeEventsEnabled: true,
+      lifeEvents: [{
+        id: 'le1',
+        name: 'Career break',
+        startAge: 40,
+        endAge: 95,
+        incomeImpact: -0.5,
+        affectedStreamIds: [],
+        savingsPause: false,
+        cpfPause: false,
+      }],
+    })
+    expect(errors['lifeEvent_le1_endAge']).toBeTruthy()
+  })
+
+  it('catches life event startAge >= endAge', () => {
+    const errors = validateCrossStoreRules(baseProfile, {
+      ...baseIncome,
+      lifeEventsEnabled: true,
+      lifeEvents: [{
+        id: 'le1',
+        name: 'Bad event',
+        startAge: 50,
+        endAge: 50,
+        incomeImpact: 0,
+        affectedStreamIds: [],
+        savingsPause: false,
+        cpfPause: false,
+      }],
+    })
+    expect(errors['lifeEvent_le1_startAge']).toBeTruthy()
+  })
+
+  it('skips life event validation when lifeEventsEnabled is false', () => {
+    const errors = validateCrossStoreRules(baseProfile, {
+      ...baseIncome,
+      lifeEventsEnabled: false,
+      lifeEvents: [{
+        id: 'le1',
+        name: 'Invalid but skipped',
+        startAge: 50,
+        endAge: 50,
+        incomeImpact: 0,
+        affectedStreamIds: [],
+        savingsPause: false,
+        cpfPause: false,
+      }],
+    })
+    // No errors because lifeEventsEnabled is false
+    expect(errors['lifeEvent_le1_startAge']).toBeUndefined()
+    expect(errors['lifeEvent_le1_endAge']).toBeUndefined()
+  })
+
+  it('validates multiple life events independently', () => {
+    const errors = validateCrossStoreRules(baseProfile, {
+      ...baseIncome,
+      lifeEventsEnabled: true,
+      lifeEvents: [
+        {
+          id: 'le1',
+          name: 'Valid event',
+          startAge: 40,
+          endAge: 45,
+          incomeImpact: -0.3,
+          affectedStreamIds: [],
+          savingsPause: false,
+          cpfPause: false,
+        },
+        {
+          id: 'le2',
+          name: 'Bad end age',
+          startAge: 85,
+          endAge: 95,
+          incomeImpact: -0.5,
+          affectedStreamIds: [],
+          savingsPause: false,
+          cpfPause: false,
+        },
+      ],
+    })
+    // First event is valid
+    expect(errors['lifeEvent_le1_startAge']).toBeUndefined()
+    expect(errors['lifeEvent_le1_endAge']).toBeUndefined()
+    // Second event has endAge > lifeExpectancy
+    expect(errors['lifeEvent_le2_endAge']).toBeTruthy()
+  })
+})
+
 describe('validateWithdrawalCrossStoreRules edge cases', () => {
   it('does not warn when floor is within 3x expenses', () => {
     const errors = validateWithdrawalCrossStoreRules(
@@ -425,6 +523,144 @@ describe('locked assets cross-store rules', () => {
       lockedAssets: [{ id: '1', name: 'Test', amount: 10000, unlockAge: 55, growthRate: 0 }],
     })
     expect(errors['lockedAssets.0.unlockAge']).toBeUndefined()
+  })
+
+  it('catches locked asset with unlockAge > lifeExpectancy', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 35,
+      retirementAge: 65,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [],
+      cpfOaWithdrawals: [],
+      lockedAssets: [{ id: '1', name: 'Test', amount: 10000, unlockAge: 95, growthRate: 0 }],
+    })
+    expect(errors['lockedAssets.0.unlockAge']).toBeTruthy()
+  })
+
+  it('catches more than 10 locked assets', () => {
+    const lockedAssets = Array.from({ length: 11 }, (_, i) => ({
+      id: `la${i}`,
+      name: `Asset ${i}`,
+      amount: 10000,
+      unlockAge: 55,
+      growthRate: 0,
+    }))
+    const errors = validateProfileConsistency({
+      currentAge: 35,
+      retirementAge: 65,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [],
+      cpfOaWithdrawals: [],
+      lockedAssets,
+    })
+    expect(errors['lockedAssets']).toBeTruthy()
+  })
+})
+
+describe('expense adjustment validation', () => {
+  it('catches endAge <= startAge', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [],
+      cpfOaWithdrawals: [],
+      expenseAdjustments: [{ id: 'ea1', label: 'Kids', amount: 12000, startAge: 40, endAge: 40 }],
+    })
+    expect(errors['expenseAdjustment_ea1_endAge']).toBeTruthy()
+  })
+
+  it('catches endAge > lifeExpectancy', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [],
+      cpfOaWithdrawals: [],
+      expenseAdjustments: [{ id: 'ea1', label: 'Care', amount: 5000, startAge: 60, endAge: 95 }],
+    })
+    expect(errors['expenseAdjustment_ea1_endAge']).toContain('life expectancy')
+  })
+
+  it('accepts valid expense adjustment', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [],
+      cpfOaWithdrawals: [],
+      expenseAdjustments: [{ id: 'ea1', label: 'Kids', amount: 12000, startAge: 35, endAge: 55 }],
+    })
+    expect(errors['expenseAdjustment_ea1_endAge']).toBeUndefined()
+  })
+
+  it('catches more than 10 expense adjustments', () => {
+    const expenseAdjustments = Array.from({ length: 11 }, (_, i) => ({
+      id: `ea${i}`, label: `Adj ${i}`, amount: 1000, startAge: 30, endAge: 50,
+    }))
+    const errors = validateProfileConsistency({
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [],
+      cpfOaWithdrawals: [],
+      expenseAdjustments,
+    })
+    expect(errors['expenseAdjustments']).toContain('Maximum 10')
+  })
+
+  it('allows null endAge (ongoing adjustment)', () => {
+    const errors = validateProfileConsistency({
+      currentAge: 30,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      lifeStage: 'pre-fire',
+      cpfLifeStartAge: 65,
+      parentSupportEnabled: false,
+      parentSupport: [],
+      healthcareConfig: defaultHealthcareConfig,
+      retirementWithdrawals: [],
+      financialGoals: [],
+      cpfOaWithdrawals: [],
+      expenseAdjustments: [{ id: 'ea1', label: 'Ongoing', amount: 5000, startAge: 40, endAge: null }],
+    })
+    expect(errors['expenseAdjustment_ea1_endAge']).toBeUndefined()
   })
 })
 

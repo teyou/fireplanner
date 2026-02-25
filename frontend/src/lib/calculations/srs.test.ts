@@ -109,4 +109,41 @@ describe('compareSrsVsRstu', () => {
     expect(result.rstuNetBenefit).toBeCloseTo(2295, 0)
     expect(result.recommendation).toBeTruthy()
   })
+
+  it('recommendation contains RSTU (RSTU always wins)', () => {
+    const result = compareSrsVsRstu({
+      currentIncome: 120000,
+      currentMarginalRate: 0.15,
+      amount: 15300,
+    })
+    // RSTU always has higher net benefit because SRS has withdrawal tax
+    expect(result.rstuNetBenefit).toBeGreaterThan(result.srsNetBenefit)
+    expect(result.recommendation).toContain('RSTU')
+  })
+
+  it('net benefit difference equals amount * 0.5 * 0.02', () => {
+    const amount = 15300
+    const result = compareSrsVsRstu({
+      currentIncome: 120000,
+      currentMarginalRate: 0.15,
+      amount,
+    })
+    // RSTU - SRS = amount * 0.5 * 0.02 (the SRS withdrawal tax component)
+    const expectedDiff = amount * 0.5 * 0.02
+    expect(result.rstuNetBenefit - result.srsNetBenefit).toBeCloseTo(expectedDiff, 6)
+  })
+
+  it('zero marginal rate: both benefits are 0 or negative', () => {
+    const result = compareSrsVsRstu({
+      currentIncome: 15000,
+      currentMarginalRate: 0,
+      amount: 15300,
+    })
+    // SRS: 0 tax saved - 15300 * 0.5 * 0.02 = -153
+    expect(result.srsNetBenefit).toBeCloseTo(-153, 0)
+    // RSTU: 0 tax saved
+    expect(result.rstuNetBenefit).toBe(0)
+    // RSTU still wins (0 > -153)
+    expect(result.rstuNetBenefit).toBeGreaterThan(result.srsNetBenefit)
+  })
 })

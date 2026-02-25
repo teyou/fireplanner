@@ -284,6 +284,53 @@ describe('runSequenceRisk', () => {
   // annualExpensesAtRetirement
   // ---------------------------------------------------------------------------
 
+  // ---------------------------------------------------------------------------
+  // Negative balance clamping (sequenceRisk.ts:195-210)
+  // ---------------------------------------------------------------------------
+
+  it('all percentile band values are >= 0 with aggressive SWR', () => {
+    // With 20% SWR, many simulations deplete — verify balance clamping to 0
+    const result = runSequenceRisk({
+      ...PARAMS,
+      initialPortfolio: 500_000,
+      strategyParams: { swr: 0.20 },
+      nSimulations: 200,
+    })
+
+    for (const bands of [result.normal_percentile_bands, result.crisis_percentile_bands]) {
+      for (const val of bands.p5) expect(val).toBeGreaterThanOrEqual(0)
+      for (const val of bands.p10) expect(val).toBeGreaterThanOrEqual(0)
+      for (const val of bands.p25) expect(val).toBeGreaterThanOrEqual(0)
+      for (const val of bands.p50) expect(val).toBeGreaterThanOrEqual(0)
+      for (const val of bands.p75) expect(val).toBeGreaterThanOrEqual(0)
+      for (const val of bands.p90) expect(val).toBeGreaterThanOrEqual(0)
+      for (const val of bands.p95) expect(val).toBeGreaterThanOrEqual(0)
+    }
+  })
+
+  it('very aggressive SWR produces low crisis success rate with many failures', () => {
+    // With 50% SWR on a $500K portfolio, most simulations should fail
+    const result = runSequenceRisk({
+      ...PARAMS,
+      initialPortfolio: 500_000,
+      strategyParams: { swr: 0.50 },
+      nSimulations: 200,
+    })
+
+    // Crisis success rate should be very low (most sims fail)
+    expect(result.crisis_success_rate).toBeLessThan(0.2)
+    // Normal success rate should also be low
+    expect(result.normal_success_rate).toBeLessThan(0.3)
+    // All percentile bands still non-negative (clamped)
+    for (const val of result.crisis_percentile_bands.p5) {
+      expect(val).toBeGreaterThanOrEqual(0)
+    }
+  })
+
+  // ---------------------------------------------------------------------------
+  // annualExpensesAtRetirement
+  // ---------------------------------------------------------------------------
+
   it('uses annualExpensesAtRetirement for initial withdrawal when set', () => {
     // Default: withdrawal = $2M × 0.04 = $80K
     // With expenses = $40K: withdrawal is halved → higher success rate

@@ -293,6 +293,29 @@ describe('runBacktest', () => {
     const result = runBacktest({ ...PARAMS, inflation: 0.03 })
     expect(result.results.length).toBeGreaterThan(0)
   })
+
+  it('produces 0% survival rate with 100% withdrawal rate', () => {
+    // SWR of 1.0 means withdrawing the entire portfolio each year.
+    // Over a 10+ year duration, every historical window should fail.
+    const result = runBacktest({
+      ...PARAMS,
+      swr: 1.0,
+      retirementDuration: 15,
+      withdrawalStrategy: 'constant_dollar',
+      strategyParams: { swr: 1.0 },
+    })
+
+    // Every window should have failed
+    expect(result.summary.success_rate).toBe(0)
+    expect(result.summary.failed_periods).toBe(result.summary.total_periods)
+    expect(result.summary.successful_periods).toBe(0)
+
+    // Every individual result should show survived === false
+    for (const r of result.results) {
+      expect(r.survived).toBe(false)
+      expect(r.ending_balance).toBe(0)
+    }
+  })
 })
 
 // ---------------------------------------------------------------------------

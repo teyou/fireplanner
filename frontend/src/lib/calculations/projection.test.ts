@@ -1865,4 +1865,326 @@ describe('generateProjection', () => {
       }
     })
   })
+
+  // ============================================================
+  // Task 1: Retirement withdrawals (durationYears + inflationAdjusted)
+  // ============================================================
+
+  describe('retirement withdrawals', () => {
+    it('single-year withdrawal deducted at specified age', () => {
+      const currentAge = 50
+      const retirementAge = 50
+      const lifeExpectancy = 55
+
+      const params = makeParams({
+        currentAge, retirementAge, lifeExpectancy,
+        initialLiquidNW: 500000,
+        expectedReturn: 0, inflation: 0, expenseRatio: 0,
+        annualExpenses: 0, // isolate withdrawal effects
+        retirementWithdrawals: [
+          { id: 'rw1', label: 'Car', amount: 30000, age: 53, durationYears: 1, inflationAdjusted: false },
+        ],
+      })
+
+      const result = generateProjection(params)
+
+      // Age 53: withdrawal should be deducted
+      const row53 = result.rows.find(r => r.age === 53)!
+      expect(row53.retirementWithdrawalExpense).toBe(30000)
+
+      // Ages before and after should have zero retirement withdrawal
+      const row52 = result.rows.find(r => r.age === 52)!
+      const row54 = result.rows.find(r => r.age === 54)!
+      expect(row52.retirementWithdrawalExpense).toBe(0)
+      expect(row54.retirementWithdrawalExpense).toBe(0)
+    })
+
+    it('multi-year withdrawal spans durationYears', () => {
+      const currentAge = 50
+      const retirementAge = 50
+      const lifeExpectancy = 58
+
+      const params = makeParams({
+        currentAge, retirementAge, lifeExpectancy,
+        initialLiquidNW: 500000,
+        expectedReturn: 0, inflation: 0, expenseRatio: 0,
+        annualExpenses: 0,
+        retirementWithdrawals: [
+          { id: 'rw1', label: 'Hobby', amount: 10000, age: 52, durationYears: 3, inflationAdjusted: false },
+        ],
+      })
+
+      const result = generateProjection(params)
+
+      // Active at ages 52, 53, 54 (age >= 52 && age < 52+3)
+      for (const age of [52, 53, 54]) {
+        const row = result.rows.find(r => r.age === age)!
+        expect(row.retirementWithdrawalExpense).toBe(10000)
+      }
+
+      // Not active outside the range
+      for (const age of [51, 55, 56]) {
+        const row = result.rows.find(r => r.age === age)!
+        expect(row.retirementWithdrawalExpense).toBe(0)
+      }
+    })
+
+    it('inflation-adjusted withdrawal grows with inflation over years', () => {
+      const currentAge = 50
+      const retirementAge = 50
+      const lifeExpectancy = 55
+      const inflation = 0.03
+
+      const params = makeParams({
+        currentAge, retirementAge, lifeExpectancy,
+        initialLiquidNW: 1000000,
+        expectedReturn: 0, inflation, expenseRatio: 0,
+        annualExpenses: 0,
+        retirementWithdrawals: [
+          { id: 'rw1', label: 'Care', amount: 20000, age: 51, durationYears: 3, inflationAdjusted: true },
+        ],
+      })
+
+      const result = generateProjection(params)
+
+      // At age 51, year = 1 (since currentAge=50), so amount = 20000 * (1.03)^1
+      const row51 = result.rows.find(r => r.age === 51)!
+      expect(row51.retirementWithdrawalExpense).toBeCloseTo(20000 * Math.pow(1.03, 1), 0)
+
+      // At age 52, year = 2, so amount = 20000 * (1.03)^2
+      const row52 = result.rows.find(r => r.age === 52)!
+      expect(row52.retirementWithdrawalExpense).toBeCloseTo(20000 * Math.pow(1.03, 2), 0)
+
+      // At age 53, year = 3, so amount = 20000 * (1.03)^3
+      const row53 = result.rows.find(r => r.age === 53)!
+      expect(row53.retirementWithdrawalExpense).toBeCloseTo(20000 * Math.pow(1.03, 3), 0)
+    })
+
+    it('overlapping retirement withdrawals are summed correctly', () => {
+      const currentAge = 50
+      const retirementAge = 50
+      const lifeExpectancy = 55
+
+      const params = makeParams({
+        currentAge, retirementAge, lifeExpectancy,
+        initialLiquidNW: 500000,
+        expectedReturn: 0, inflation: 0, expenseRatio: 0,
+        annualExpenses: 0,
+        retirementWithdrawals: [
+          { id: 'rw1', label: 'Travel', amount: 15000, age: 52, durationYears: 2, inflationAdjusted: false },
+          { id: 'rw2', label: 'Car', amount: 25000, age: 52, durationYears: 1, inflationAdjusted: false },
+        ],
+      })
+
+      const result = generateProjection(params)
+
+      // At age 52: both active → 15000 + 25000 = 40000
+      const row52 = result.rows.find(r => r.age === 52)!
+      expect(row52.retirementWithdrawalExpense).toBe(40000)
+
+      // At age 53: only rw1 active → 15000
+      const row53 = result.rows.find(r => r.age === 53)!
+      expect(row53.retirementWithdrawalExpense).toBe(15000)
+
+      // At age 54: neither active → 0
+      const row54 = result.rows.find(r => r.age === 54)!
+      expect(row54.retirementWithdrawalExpense).toBe(0)
+    })
+  })
+
+  // ============================================================
+  // Task 2: CPF LIFE bequest
+  // ============================================================
+
+  describe('CPF LIFE bequest', () => {
+    it('standard plan: bequest decreases as cumulative payouts increase', () => {
+      const currentAge = 63
+      const retirementAge = 63
+      const lifeExpectancy = 68
+      const cpfLifeStartAge = 65
+
+      const incomeRows = generateMockIncomeProjection({
+        currentAge, retirementAge, lifeExpectancy,
+      })
+
+      // Set annuity premium at cpfLifeStartAge row
+      const startIdx = cpfLifeStartAge - currentAge
+      incomeRows[startIdx] = mockIncomeRow({
+        ...incomeRows[startIdx],
+        age: cpfLifeStartAge,
+        year: startIdx,
+        isRetired: true,
+        salary: 0, totalGross: 0, totalNet: 0, annualSavings: 0,
+        cpfLifeAnnuityPremium: 200000,
+        cpfLifePayout: 18000,
+        cpfRA: 0,
+      })
+
+      // Subsequent rows get payouts but no more premium
+      for (let i = startIdx + 1; i < incomeRows.length; i++) {
+        incomeRows[i] = mockIncomeRow({
+          ...incomeRows[i],
+          age: currentAge + i,
+          year: i,
+          isRetired: true,
+          salary: 0, totalGross: 0, totalNet: 0, annualSavings: 0,
+          cpfLifePayout: 18000,
+          cpfRA: 0,
+        })
+      }
+
+      const params = makeParams({
+        currentAge, retirementAge, lifeExpectancy,
+        incomeProjection: incomeRows,
+        initialLiquidNW: 500000,
+        expectedReturn: 0, inflation: 0, expenseRatio: 0,
+        annualExpenses: 0,
+        cpfLifeStartAge,
+        cpfLifePlan: 'standard',
+      })
+
+      const result = generateProjection(params)
+
+      // Standard plan: bequest = max(0, premium - cumulative payouts)
+      const row65 = result.rows.find(r => r.age === 65)!
+      const row66 = result.rows.find(r => r.age === 66)!
+      const row67 = result.rows.find(r => r.age === 67)!
+
+      // Bequest should decrease each year
+      expect(row65.cpfBequest).toBeGreaterThan(0)
+      expect(row66.cpfBequest).toBeLessThan(row65.cpfBequest)
+      expect(row67.cpfBequest).toBeLessThan(row66.cpfBequest)
+    })
+
+    it('standard plan: bequest reaches 0 when payouts exceed premium', () => {
+      const currentAge = 63
+      const retirementAge = 63
+      const lifeExpectancy = 80
+      const cpfLifeStartAge = 65
+
+      const incomeRows = generateMockIncomeProjection({
+        currentAge, retirementAge, lifeExpectancy,
+      })
+
+      // Premium = 100K, payout = 20K/yr → exhausted in 5 years
+      const startIdx = cpfLifeStartAge - currentAge
+      incomeRows[startIdx] = mockIncomeRow({
+        ...incomeRows[startIdx],
+        age: cpfLifeStartAge,
+        year: startIdx,
+        isRetired: true,
+        salary: 0, totalGross: 0, totalNet: 0, annualSavings: 0,
+        cpfLifeAnnuityPremium: 100000,
+        cpfLifePayout: 20000,
+        cpfRA: 0,
+      })
+
+      for (let i = startIdx + 1; i < incomeRows.length; i++) {
+        incomeRows[i] = mockIncomeRow({
+          ...incomeRows[i],
+          age: currentAge + i,
+          year: i,
+          isRetired: true,
+          salary: 0, totalGross: 0, totalNet: 0, annualSavings: 0,
+          cpfLifePayout: 20000,
+          cpfRA: 0,
+        })
+      }
+
+      const params = makeParams({
+        currentAge, retirementAge, lifeExpectancy,
+        incomeProjection: incomeRows,
+        initialLiquidNW: 500000,
+        expectedReturn: 0, inflation: 0, expenseRatio: 0,
+        annualExpenses: 0,
+        cpfLifeStartAge,
+        cpfLifePlan: 'standard',
+      })
+
+      const result = generateProjection(params)
+
+      // After 5 years of 20K payouts (100K total), bequest should be 0
+      // Age 70 = 5 years after start, cumulative payouts = 6*20K = 120K > 100K
+      const row70 = result.rows.find(r => r.age === 70)!
+      expect(row70.cpfBequest).toBe(0)
+
+      // Earlier row should still have bequest > 0
+      const row66 = result.rows.find(r => r.age === 66)!
+      expect(row66.cpfBequest).toBeGreaterThan(0)
+    })
+
+    it('basic plan: bequest includes RA balance while RA > 0, then decreases after depletion', () => {
+      const currentAge = 63
+      const retirementAge = 63
+      const lifeExpectancy = 72
+      const cpfLifeStartAge = 65
+
+      const incomeRows = generateMockIncomeProjection({
+        currentAge, retirementAge, lifeExpectancy,
+      })
+
+      // At cpfLifeStartAge: premium = 150K, RA = 80K (depletes over time)
+      const startIdx = cpfLifeStartAge - currentAge
+      incomeRows[startIdx] = mockIncomeRow({
+        ...incomeRows[startIdx],
+        age: cpfLifeStartAge,
+        year: startIdx,
+        isRetired: true,
+        salary: 0, totalGross: 0, totalNet: 0, annualSavings: 0,
+        cpfLifeAnnuityPremium: 150000,
+        cpfLifePayout: 15000,
+        cpfRA: 60000, // RA still has balance
+      })
+
+      // RA depletes gradually
+      const raValues = [60000, 40000, 20000, 0, 0, 0, 0]
+      for (let i = startIdx; i < incomeRows.length; i++) {
+        const raIdx = i - startIdx
+        const ra = raValues[raIdx] ?? 0
+        incomeRows[i] = mockIncomeRow({
+          ...incomeRows[i],
+          age: currentAge + i,
+          year: i,
+          isRetired: true,
+          salary: 0, totalGross: 0, totalNet: 0, annualSavings: 0,
+          cpfLifeAnnuityPremium: i === startIdx ? 150000 : 0,
+          cpfLifePayout: 15000,
+          cpfRA: ra,
+        })
+      }
+
+      const params = makeParams({
+        currentAge, retirementAge, lifeExpectancy,
+        incomeProjection: incomeRows,
+        initialLiquidNW: 500000,
+        expectedReturn: 0, inflation: 0, expenseRatio: 0,
+        annualExpenses: 0,
+        cpfLifeStartAge,
+        cpfLifePlan: 'basic',
+      })
+
+      const result = generateProjection(params)
+
+      // While RA > 0: bequest = RA + annuityPremium
+      const row65 = result.rows.find(r => r.age === 65)!
+      expect(row65.cpfBequest).toBe(60000 + 150000) // RA + premium
+
+      const row66 = result.rows.find(r => r.age === 66)!
+      expect(row66.cpfBequest).toBe(40000 + 150000)
+
+      const row67 = result.rows.find(r => r.age === 67)!
+      expect(row67.cpfBequest).toBe(20000 + 150000)
+
+      // After RA depletes (cpfRA = 0): bequest transitions to max(0, premium - cumPayouts)
+      const row68 = result.rows.find(r => r.age === 68)!
+      // First year after depletion: payoutsFromAnnuity resets to 0, then adds 15000
+      // bequest = max(0, 150000 - 15000) = 135000
+      expect(row68.cpfBequest).toBe(135000)
+
+      const row69 = result.rows.find(r => r.age === 69)!
+      // payoutsFromAnnuity = 15000 + 15000 = 30000
+      // bequest = max(0, 150000 - 30000) = 120000
+      expect(row69.cpfBequest).toBe(120000)
+    })
+  })
 })
