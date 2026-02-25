@@ -201,6 +201,7 @@ export function HealthcareSection() {
                     </Label>
                     <Input
                       type="number"
+                      inputMode="numeric"
                       min={currentAge + 1}
                       max={120}
                       value={config.ispDowngradeAge ?? ''}

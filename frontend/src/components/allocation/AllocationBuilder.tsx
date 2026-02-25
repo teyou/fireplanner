@@ -120,6 +120,7 @@ export function AllocationBuilder() {
                   <td className="py-2 px-2">
                     <Input
                       type="number"
+                      inputMode="decimal"
                       value={(currentWeights[i] * 100).toFixed(1)}
                       onChange={(e) => handleCurrentWeightChange(i, e.target.value)}
                       step={1}
@@ -134,6 +135,7 @@ export function AllocationBuilder() {
                   <td className="py-2 px-2">
                     <Input
                       type="number"
+                      inputMode="decimal"
                       value={(targetWeights[i] * 100).toFixed(1)}
                       onChange={(e) => handleTargetWeightChange(i, e.target.value)}
                       step={1}

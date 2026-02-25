@@ -96,6 +96,7 @@ function OverrideCell({
   return (
     <Input
       type="number"
+      inputMode="decimal"
       placeholder={displayDefault}
       value={localValue}
       onFocus={handleFocus}

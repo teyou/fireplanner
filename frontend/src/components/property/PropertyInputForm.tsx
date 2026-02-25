@@ -52,6 +52,7 @@ export function PropertyInputForm() {
             </Label>
             <Input
               type="number"
+              inputMode="numeric"
               value={store.leaseYears}
               onChange={(e) => store.setField('leaseYears', Number(e.target.value))}
             />
@@ -64,6 +65,7 @@ export function PropertyInputForm() {
             <div className="relative">
               <Input
                 type="number"
+                inputMode="decimal"
                 step={0.5}
                 className="pr-7"
                 value={(store.appreciationRate * 100).toFixed(1)}
@@ -78,6 +80,7 @@ export function PropertyInputForm() {
             <div className="relative">
               <Input
                 type="number"
+                inputMode="decimal"
                 step={0.5}
                 className="pr-7"
                 value={(store.rentalYield * 100).toFixed(1)}
@@ -92,6 +95,7 @@ export function PropertyInputForm() {
             <div className="relative">
               <Input
                 type="number"
+                inputMode="decimal"
                 step={0.1}
                 className="pr-7"
                 value={(store.mortgageRate * 100).toFixed(1)}
@@ -106,6 +110,7 @@ export function PropertyInputForm() {
             <Label>Mortgage Term (years)</Label>
             <Input
               type="number"
+              inputMode="numeric"
               value={store.mortgageTerm}
               onChange={(e) => store.setField('mortgageTerm', Number(e.target.value))}
             />
@@ -118,6 +123,7 @@ export function PropertyInputForm() {
             <div className="relative">
               <Input
                 type="number"
+                inputMode="decimal"
                 className="pr-7"
                 value={(store.ltv * 100).toFixed(0)}
                 onChange={(e) => store.setField('ltv', Number(e.target.value) / 100)}
@@ -150,6 +156,7 @@ export function PropertyInputForm() {
             </Label>
             <Input
               type="number"
+              inputMode="numeric"
               min={0}
               max={10}
               value={store.propertyCount}
