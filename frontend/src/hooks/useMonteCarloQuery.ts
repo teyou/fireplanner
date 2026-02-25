@@ -170,6 +170,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
           )
 
           let netEquity = 0
+          let shortfall = 0
           if (ds.scenario === 'sell-and-downsize') {
             const result = calculateSellAndDownsize({
               salePrice: ds.expectedSalePrice,
@@ -182,6 +183,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
               propertyCount: 0,
             })
             netEquity = result.netEquityToPortfolio
+            shortfall = result.shortfall
           } else if (ds.scenario === 'sell-and-rent') {
             const result = calculateSellAndRent({
               salePrice: ds.expectedSalePrice,
@@ -189,10 +191,13 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
               monthlyRent: ds.monthlyRent,
             })
             netEquity = result.netProceedsToPortfolio
+            shortfall = result.shortfall
           }
 
-          if (netEquity > 0) {
-            portfolioAdjustments.push({ year: mcYear, amount: netEquity })
+          // Inject net equity or deduct shortfall from portfolio
+          const netAdjustment = netEquity - shortfall
+          if (netAdjustment !== 0) {
+            portfolioAdjustments.push({ year: mcYear, amount: netAdjustment })
           }
         }
       }

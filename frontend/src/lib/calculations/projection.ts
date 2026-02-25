@@ -276,6 +276,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
   const dsActive = downsizing && downsizing.scenario !== 'none'
   const dsSellAge = dsActive ? downsizing.sellAge : Infinity
   let dsNetEquity = 0
+  let dsShortfall = 0
   let dsNewMonthlyPayment = 0
   let dsAnnualRent = 0
 
@@ -300,6 +301,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
         propertyCount: 0, // selling existing, buying replacement = still 1st property
       })
       dsNetEquity = result.netEquityToPortfolio
+      dsShortfall = result.shortfall
       dsNewMonthlyPayment = result.newMonthlyPayment
     } else if (downsizing.scenario === 'sell-and-rent') {
       const result = calculateSellAndRent({
@@ -308,6 +310,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
         monthlyRent: downsizing.monthlyRent,
       })
       dsNetEquity = result.netProceedsToPortfolio
+      dsShortfall = result.shortfall
       dsAnnualRent = result.annualRent
     }
   }
@@ -336,10 +339,10 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       returnRate = expectedReturn - expenseRatio
     }
 
-    // Downsizing: inject lump sum at sell age (before capturing startLiquidNW)
+    // Downsizing: inject equity or deduct shortfall at sell age (before capturing startLiquidNW)
     const soldProperty = dsActive && age >= dsSellAge
     if (dsActive && age === dsSellAge) {
-      liquidNW += dsNetEquity
+      liquidNW += dsNetEquity - dsShortfall
     }
 
     // CPF OA withdrawal → liquid portfolio
