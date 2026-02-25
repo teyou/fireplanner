@@ -3,135 +3,31 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { useProjection } from '@/hooks/useProjection'
 import { generateProjection } from '@/lib/calculations/projection'
-import { calculatePortfolioReturn } from '@/lib/calculations/portfolio'
-import { computeHdbSublettingIncome, computeLbsProceeds } from '@/lib/calculations/hdb'
 import { useProfileStore } from '@/stores/useProfileStore'
-import { useAllocationStore } from '@/stores/useAllocationStore'
-import { useSimulationStore } from '@/stores/useSimulationStore'
-import { usePropertyStore } from '@/stores/usePropertyStore'
-import { useIncomeProjection } from '@/hooks/useIncomeProjection'
-import { useFireCalculations } from '@/hooks/useFireCalculations'
-import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
 import { formatCurrency } from '@/lib/utils'
 
 /**
  * Shows the impact of financial goals on FIRE timeline by comparing
  * projection with goals vs projection without goals.
+ *
+ * Reuses the exact ProjectionParams from useProjection to ensure
+ * an apples-to-apples comparison — only financialGoals differs.
  */
 export function GoalImpactSummary() {
   const profile = useProfileStore()
-  const allocation = useAllocationStore()
-  const simulation = useSimulationStore()
-  const property = usePropertyStore()
-  const { projection: incomeProjection, hasErrors: incomeHasErrors } = useIncomeProjection()
-  const { metrics: fireMetrics, hasErrors: fireHasErrors } = useFireCalculations()
-  const { summary: withGoalsSummary } = useProjection()
+  const { summary: withGoalsSummary, params: projectionParams } = useProjection()
 
   const noGoalsSummary = useMemo(() => {
-    if (incomeHasErrors || fireHasErrors || !incomeProjection || !fireMetrics) return null
+    if (!projectionParams) return null
     if (profile.financialGoals.length === 0) return null
 
-    const assetReturns = ASSET_CLASSES.map((ac, i) =>
-      allocation.returnOverrides[i] ?? ac.expectedReturn
-    )
-
-    const allocationErrors = allocation.validationErrors
-    const allocationHasErrors = Object.keys(allocationErrors).length > 0
-    let effectiveReturn = profile.expectedReturn
-    if (profile.usePortfolioReturn && !allocationHasErrors) {
-      effectiveReturn = calculatePortfolioReturn(allocation.currentWeights, assetReturns)
-    }
-
-    const isLbs = property.ownsProperty
-      && property.propertyType === 'hdb'
-      && property.hdbMonetizationStrategy === 'lbs'
-    const lbsResult = isLbs
-      ? computeLbsProceeds({
-          flatValue: property.existingPropertyValue,
-          remainingLease: property.existingLeaseYears,
-          retainedLease: property.hdbLbsRetainedLease,
-          cpfRaBalance: profile.cpfRA,
-          retirementSum: 213000,
-        })
-      : null
-
     const { summary } = generateProjection({
-      incomeProjection,
-      currentAge: profile.currentAge,
-      retirementAge: profile.retirementAge,
-      lifeExpectancy: profile.lifeExpectancy,
-      initialLiquidNW: profile.liquidNetWorth + (lbsResult?.cashProceeds ?? 0),
-      swr: profile.swr,
-      expectedReturn: effectiveReturn,
-      usePortfolioReturn: profile.usePortfolioReturn && !allocationHasErrors,
-      inflation: profile.inflation,
-      expenseRatio: profile.expenseRatio,
-      annualExpenses: profile.annualExpenses,
-      retirementSpendingAdjustment: profile.retirementSpendingAdjustment,
-      fireNumber: fireMetrics.fireNumber,
-      currentWeights: allocation.currentWeights,
-      targetWeights: allocation.targetWeights,
-      assetReturns,
-      glidePathConfig: allocation.glidePathConfig,
-      withdrawalStrategy: simulation.selectedStrategy,
-      strategyParams: simulation.strategyParams,
-      propertyEquity: property.ownsProperty
-        ? Math.max(0, property.existingPropertyValue - property.existingMortgageBalance)
-        : 0,
-      annualMortgagePayment: property.ownsProperty ? property.existingMonthlyPayment * 12 : 0,
-      annualRentalIncome: property.ownsProperty
-        ? property.existingRentalIncome * 12 + (
-            property.propertyType === 'hdb' && property.hdbMonetizationStrategy === 'sublet'
-              ? computeHdbSublettingIncome({
-                  rooms: property.hdbSublettingRooms,
-                  monthlyRate: property.hdbSublettingRate,
-                }).annualGross
-              : 0
-          )
-        : 0,
-      existingPropertyValue: property.ownsProperty
-        ? property.existingPropertyValue
-        : 0,
-      propertyAppreciationRate: property.existingAppreciationRate,
-      propertyLeaseYears: property.existingLeaseYears,
-      applyBalaDecay: property.existingApplyBalaDecay,
-      downsizing: property.ownsProperty && property.downsizing.scenario !== 'none'
-        ? property.downsizing
-        : null,
-      existingMortgageBalance: property.existingMortgageBalance,
-      existingMortgageRate: property.existingMortgageRate,
-      existingMonthlyPayment: property.existingMonthlyPayment,
-      existingMortgageRemainingYears: property.existingMortgageRemainingYears,
-      residencyForAbsd: property.residencyForAbsd,
-      parentSupport: profile.parentSupport,
-      parentSupportEnabled: profile.parentSupportEnabled,
-      healthcareConfig: profile.healthcareConfig?.enabled ? profile.healthcareConfig : null,
-      retirementWithdrawals: profile.retirementWithdrawals,
-      financialGoals: [],  // No goals for comparison
-      cpfLifeStartAge: profile.cpfLifeStartAge,
-      cpfLifePlan: profile.cpfLifePlan,
+      ...projectionParams,
+      financialGoals: [],  // Only difference: no goals
     })
 
     return summary
-  }, [
-    incomeProjection, incomeHasErrors, fireMetrics, fireHasErrors,
-    profile.financialGoals, profile.currentAge, profile.retirementAge,
-    profile.lifeExpectancy, profile.liquidNetWorth, profile.swr,
-    profile.expectedReturn, profile.usePortfolioReturn, profile.inflation,
-    profile.expenseRatio, profile.annualExpenses, profile.retirementSpendingAdjustment,
-    profile.parentSupport, profile.parentSupportEnabled, profile.healthcareConfig,
-    profile.retirementWithdrawals, profile.cpfRA,
-    allocation.currentWeights, allocation.targetWeights, allocation.returnOverrides,
-    allocation.glidePathConfig, allocation.validationErrors,
-    simulation.selectedStrategy, simulation.strategyParams,
-    property.ownsProperty, property.existingPropertyValue, property.existingMortgageBalance,
-    property.existingMonthlyPayment, property.existingRentalIncome,
-    property.existingMortgageRate, property.existingMortgageRemainingYears,
-    property.downsizing, property.residencyForAbsd, property.propertyType,
-    property.hdbMonetizationStrategy, property.hdbSublettingRooms, property.hdbSublettingRate,
-    property.hdbLbsRetainedLease, property.existingLeaseYears,
-    property.existingAppreciationRate, property.existingApplyBalaDecay,
-  ])
+  }, [projectionParams, profile.financialGoals])
 
   // Don't show if there are no goals or no data
   if (profile.financialGoals.length === 0) return null

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { ProjectionRow, ProjectionSummary } from '@/lib/types'
-import { generateProjection } from '@/lib/calculations/projection'
+import { generateProjection, type ProjectionParams } from '@/lib/calculations/projection'
 import { calculatePortfolioReturn } from '@/lib/calculations/portfolio'
 import { computeHdbSublettingIncome, computeLbsProceeds } from '@/lib/calculations/hdb'
 import { useProfileStore } from '@/stores/useProfileStore'
@@ -14,6 +14,7 @@ import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
 interface ProjectionResult {
   rows: ProjectionRow[] | null
   summary: ProjectionSummary | null
+  params: ProjectionParams | null
   hasErrors: boolean
   errors: Record<string, string>
 }
@@ -38,7 +39,7 @@ export function useProjection(): ProjectionResult {
     const allErrors = { ...incomeErrors, ...fireErrors }
 
     if (incomeHasErrors || fireHasErrors || !incomeProjection || !fireMetrics) {
-      return { rows: null, summary: null, hasErrors: true, errors: allErrors }
+      return { rows: null, summary: null, params: null, hasErrors: true, errors: allErrors }
     }
 
     // Compute effective asset returns (with overrides applied)
@@ -70,7 +71,7 @@ export function useProjection(): ProjectionResult {
 
     const ownershipPct = property.ownershipPercent ?? 1
 
-    const { rows, summary } = generateProjection({
+    const projectionParams: ProjectionParams = {
       incomeProjection,
       currentAge: profile.currentAge,
       retirementAge: profile.retirementAge,
@@ -126,9 +127,11 @@ export function useProjection(): ProjectionResult {
       cpfLifeStartAge: profile.cpfLifeStartAge,
       cpfLifePlan: profile.cpfLifePlan,
       expenseAdjustments: profile.expenseAdjustments,
-    })
+    }
 
-    return { rows, summary, hasErrors: false, errors: {} }
+    const { rows, summary } = generateProjection(projectionParams)
+
+    return { rows, summary, params: projectionParams, hasErrors: false, errors: {} }
   }, [
     incomeProjection,
     incomeHasErrors,
