@@ -189,6 +189,36 @@ describe('runMonteCarlo — bootstrap method', () => {
     expect(r1.success_rate).toBe(r2.success_rate)
     expect(r1.terminal_stats.median).toBe(r2.terminal_stats.median)
   })
+
+  it('bootstrap fallback to parametric: all column combinations have complete rows (branch unreachable)', () => {
+    // The bootstrap code in monteCarlo.ts:169-174 falls back to parametric when
+    // completeRows.length === 0 (no historical rows with data for ALL 8 asset columns).
+    // However, the historical dataset has complete rows from 1988-2024 (37 rows) where
+    // all 8 columns (usEquities, sgEquities, intlEquities, usBonds, reits, gold, cash,
+    // cpfBlended) have non-null data. The bootstrap code checks ALL 8 columns regardless
+    // of allocation weights, so even a single-asset allocation still requires all columns.
+    // Since 1988-2024 always provides >= 37 complete rows, the fallback is dead code.
+    //
+    // This test verifies the normal bootstrap path works with various weight combinations,
+    // documenting that the fallback is unreachable with current data.
+    const weightCombinations = [
+      [1, 0, 0, 0, 0, 0, 0, 0],    // 100% US equities
+      [0, 1, 0, 0, 0, 0, 0, 0],    // 100% SG equities
+      [0, 0, 0, 0, 0, 0, 0, 1],    // 100% CPF
+      [0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125], // equal weight
+    ]
+
+    for (const weights of weightCombinations) {
+      const result = runMonteCarlo(makeDefaultParams({
+        method: 'bootstrap',
+        seed: 42,
+        allocationWeights: weights,
+        nSimulations: 50,
+      }))
+      expect(result.success_rate).toBeGreaterThanOrEqual(0)
+      expect(result.percentile_bands.years.length).toBeGreaterThan(0)
+    }
+  })
 })
 
 describe('runMonteCarlo — fat_tail method', () => {

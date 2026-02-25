@@ -206,6 +206,48 @@ describe('choleskyDecomposition', () => {
     expect(reconstructed[0][1]).toBeCloseTo(1, 6)
   })
 
+  it('handles double-jitter fallback for severely non-positive-definite matrix', () => {
+    // Matrix with off-diagonal elements > diagonal elements.
+    // After first jitter (adding 1e-8*I), Cholesky still encounters a negative
+    // diagonal because sum of squared L values exceeds the jittered diagonal:
+    //   L[0][0] = sqrt(1 + 1e-8) ≈ 1
+    //   L[1][0] = 2 / 1 = 2
+    //   diag for [1][1] = (1 + 1e-8) - 4 = -3 + 1e-8 < 0 → double-jitter fires
+    // The double-jitter path sets L[i][j] = sqrt(1e-8) instead of throwing.
+    const A = [
+      [1, 2, 2],
+      [2, 1, 2],
+      [2, 2, 1],
+    ]
+
+    // Should not throw
+    const L = choleskyDecomposition(A)
+
+    // Verify output dimensions
+    expect(L.length).toBe(3)
+    expect(L[0].length).toBe(3)
+    expect(L[1].length).toBe(3)
+    expect(L[2].length).toBe(3)
+
+    // Verify L is lower triangular
+    expect(L[0][1]).toBe(0)
+    expect(L[0][2]).toBe(0)
+    expect(L[1][2]).toBe(0)
+
+    // All diagonal elements should be positive (sqrt of positive value or sqrt(1e-8))
+    for (let i = 0; i < 3; i++) {
+      expect(L[i][i]).toBeGreaterThan(0)
+    }
+
+    // L*L^T won't perfectly reconstruct A because jitter modifies the matrix.
+    // But the result should be a valid lower-triangular matrix with finite values.
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        expect(Number.isFinite(L[i][j])).toBe(true)
+      }
+    }
+  })
+
   it('works with the 8x8 correlation matrix structure', () => {
     // Simplified version of the real 8x8 corr matrix (already positive semi-definite)
     const corr = [
