@@ -5,7 +5,7 @@ import { useProfileStore } from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { calculateProgressiveTax, calculateChargeableIncome } from '@/lib/calculations/tax'
 import { getCpfRatesForAge, OW_CEILING_ANNUAL } from '@/lib/data/cpfRates'
-import { SRS_ANNUAL_CAP, SRS_ANNUAL_CAP_FOREIGNER } from '@/lib/data/taxBrackets'
+import { SRS_ANNUAL_CAP, SRS_ANNUAL_CAP_FOREIGNER, earnedIncomeReliefForAge } from '@/lib/data/taxBrackets'
 import { formatCurrency } from '@/lib/utils'
 
 export function SrsTaxPlanningCard() {
@@ -21,22 +21,28 @@ export function SrsTaxPlanningCard() {
     const rates = getCpfRatesForAge(currentAge)
     const cpfEmployee = Math.min(annualIncome, OW_CEILING_ANNUAL) * rates.employeeRate
 
+    // Strip earned income relief and only re-add it when there's actual
+    // earned income (salary > 0). Mirrors generateIncomeProjection() logic.
+    const earnedRelief = earnedIncomeReliefForAge(currentAge)
+    const baseReliefs = Math.max(0, personalReliefs - earnedRelief)
+    const applicableReliefs = annualIncome > 0 ? baseReliefs + earnedRelief : baseReliefs
+
     // Chargeable income without any SRS contribution
     const chargeableNoSrs = calculateChargeableIncome(
-      annualIncome, cpfEmployee, 0, personalReliefs, residencyStatus
+      annualIncome, cpfEmployee, 0, applicableReliefs, residencyStatus
     )
     const taxNoSrs = calculateProgressiveTax(chargeableNoSrs).taxPayable
 
     // Chargeable income with current SRS contribution
     const chargeableWithCurrent = calculateChargeableIncome(
-      annualIncome, cpfEmployee, srsAnnualContribution, personalReliefs, residencyStatus
+      annualIncome, cpfEmployee, srsAnnualContribution, applicableReliefs, residencyStatus
     )
     const taxWithCurrent = calculateProgressiveTax(chargeableWithCurrent).taxPayable
     const currentSavings = taxNoSrs - taxWithCurrent
 
     // Chargeable income with max SRS contribution
     const chargeableWithMax = calculateChargeableIncome(
-      annualIncome, cpfEmployee, srsCap, personalReliefs, residencyStatus
+      annualIncome, cpfEmployee, srsCap, applicableReliefs, residencyStatus
     )
     const taxWithMax = calculateProgressiveTax(chargeableWithMax).taxPayable
     const maxSavings = taxNoSrs - taxWithMax
