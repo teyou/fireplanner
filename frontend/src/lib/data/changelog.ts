@@ -14,6 +14,23 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-25',
     category: 'feature',
+    title: 'Expense adjustments',
+    description:
+      'Model changing expenses over your lifetime with named adjustments on top of your base spending. Each adjustment has a label, amount, start age, and optional end age. A live "Effective Spending by Phase" preview shows your total at each transition age. Adjustments flow through to FIRE calculations, income projections, withdrawal comparisons, and simulation hooks.',
+    affectedSections: ['section-expenses'],
+    insight:
+      'Adjustments use a half-open interval [startAge, endAge) and "ongoing" end ages resolve to lifeExpectancy at computation time, so they stay correct if you change your life expectancy later.',
+  },
+  {
+    date: '2026-02-25',
+    category: 'fix',
+    title: 'Section reset only clears its own fields',
+    description:
+      'Reset buttons now only clear the fields displayed in that section, not the entire profile. Previously, clicking reset in CPF or Net Worth would also wipe your age, income, and expenses. The button is now consistently labelled "Reset Section" with a section-specific confirmation dialog.',
+  },
+  {
+    date: '2026-02-25',
+    category: 'feature',
     title: 'Projection-derived FIRE number',
     description:
       'Dashboard and FIRE targets now show a projection-derived FIRE number alongside the simple formula when they differ by more than 5%. The projection number accounts for mortgage cash payments, CPF LIFE payouts, and rental income from your year-by-year plan.',
