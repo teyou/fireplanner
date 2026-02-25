@@ -168,6 +168,7 @@ function StreamRow({
           <Label className="text-xs">Start Age</Label>
           <Input
             type="number"
+            inputMode="numeric"
             value={stream.startAge}
             onChange={(e) => onUpdate({ startAge: parseInt(e.target.value) || 0 })}
             className={cn('border-blue-300', errors[`${prefix}_startAge`] && 'border-destructive')}
@@ -181,6 +182,7 @@ function StreamRow({
           <Label className="text-xs">End Age</Label>
           <Input
             type="number"
+            inputMode="numeric"
             value={stream.endAge}
             onChange={(e) => onUpdate({ endAge: parseInt(e.target.value) || 0 })}
             className={cn('border-blue-300', errors[`${prefix}_endAge`] && 'border-destructive')}

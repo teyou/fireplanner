@@ -105,6 +105,7 @@ export function BacktestControls({ config, setConfig, isPending, canRun, validat
               </Label>
               <Input
                 type="number"
+                inputMode="decimal"
                 min={0}
                 max={100}
                 step={5}
@@ -122,6 +123,7 @@ export function BacktestControls({ config, setConfig, isPending, canRun, validat
               </Label>
               <Input
                 type="number"
+                inputMode="decimal"
                 min={1}
                 max={10}
                 step={0.25}
@@ -138,6 +140,7 @@ export function BacktestControls({ config, setConfig, isPending, canRun, validat
             </Label>
             <Input
               type="number"
+              inputMode="numeric"
               min={10}
               max={60}
               step={5}
@@ -305,6 +308,7 @@ function ParamInput({ label, value, onChange, prefix, suffix, step, tooltip }: {
         {prefix && <span className="text-sm text-muted-foreground">{prefix}</span>}
         <Input
           type="number"
+          inputMode="decimal"
           className="h-8 text-sm"
           value={parseFloat(value.toPrecision(12))}
           step={step}
@@ -329,6 +333,7 @@ function HeatmapField({ label, value, onChange, suffix, step }: {
       <div className="flex items-center gap-1">
         <Input
           type="number"
+          inputMode="decimal"
           className="h-7 text-xs"
           value={parseFloat(value.toPrecision(12))}
           step={step}

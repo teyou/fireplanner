@@ -251,6 +251,7 @@ function ParamInput({ label, value, onChange, prefix, suffix, step, tooltip }: {
         {prefix && <span className="text-sm text-muted-foreground">{prefix}</span>}
         <Input
           type="number"
+          inputMode="decimal"
           className="h-8 text-sm"
           value={parseFloat(value.toPrecision(12))}
           step={step}

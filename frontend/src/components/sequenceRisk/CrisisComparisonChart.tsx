@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import type { PercentileBands } from '@/lib/types'
 import { formatCurrency } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface CrisisComparisonChartProps {
   normalBands: PercentileBands
@@ -9,6 +10,7 @@ interface CrisisComparisonChartProps {
 }
 
 export function CrisisComparisonChart({ normalBands, crisisBands }: CrisisComparisonChartProps) {
+  const isMobile = useIsMobile()
   const data = normalBands.ages.map((age, i) => ({
     age,
     normalP50: normalBands.p50[i],
@@ -31,7 +33,7 @@ export function CrisisComparisonChart({ normalBands, crisisBands }: CrisisCompar
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="age" label={{ value: 'Age', position: 'insideBottom', offset: -5 }} />
             <YAxis tickFormatter={(v: number) => formatCurrency(v)} width={90} />
-            <Tooltip formatter={(value: number) => formatCurrency(value)} />
+            <Tooltip trigger={isMobile ? 'click' : undefined} formatter={(value: number) => formatCurrency(value)} />
             <Legend />
             <Line type="monotone" dataKey="normalP50" name="Normal (p50)" stroke="#16a34a" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="normalP25" name="Normal (p25)" stroke="#16a34a" strokeWidth={1} strokeDasharray="4 4" dot={false} />

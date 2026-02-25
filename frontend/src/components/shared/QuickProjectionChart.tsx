@@ -9,6 +9,7 @@ import {
 } from 'recharts'
 import { useChartColors } from '@/lib/chartTheme'
 import { formatCurrency } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface ProjectionPoint {
   age: number
@@ -24,6 +25,7 @@ interface QuickProjectionChartProps {
 
 export function QuickProjectionChart({ data, fireNumber, fireAge }: QuickProjectionChartProps) {
   const colors = useChartColors()
+  const isMobile = useIsMobile()
 
   // Only show FIRE reference lines when the portfolio actually reaches the FIRE number.
   // In shortfall scenarios (forced early retirement), the FIRE number is never reached
@@ -57,6 +59,7 @@ export function QuickProjectionChart({ data, fireNumber, fireAge }: QuickProject
               width={60}
             />
             <Tooltip
+              trigger={isMobile ? 'click' : undefined}
               formatter={(value: number) => formatCurrency(value)}
               labelFormatter={(age: number) => `Age ${age}`}
             />

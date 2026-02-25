@@ -234,6 +234,7 @@ function EventRow({
           <Label className="text-xs">Start Age</Label>
           <Input
             type="number"
+            inputMode="numeric"
             value={event.startAge}
             onChange={(e) => onUpdate({ startAge: parseInt(e.target.value) || 0 })}
             className={cn('border-blue-300', errors[`${prefix}_startAge`] && 'border-destructive')}
@@ -247,6 +248,7 @@ function EventRow({
           <Label className="text-xs">End Age</Label>
           <Input
             type="number"
+            inputMode="numeric"
             value={event.endAge}
             onChange={(e) => onUpdate({ endAge: parseInt(e.target.value) || 0 })}
             className={cn('border-blue-300', errors[`${prefix}_endAge`] && 'border-destructive')}

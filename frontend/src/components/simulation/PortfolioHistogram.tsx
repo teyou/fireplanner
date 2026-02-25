@@ -13,12 +13,14 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface PortfolioHistogramProps {
   snapshots: HistogramSnapshot[]
 }
 
 export function PortfolioHistogram({ snapshots }: PortfolioHistogramProps) {
+  const isMobile = useIsMobile()
   const [selectedAge, setSelectedAge] = useState(String(snapshots[0]?.age ?? 0))
 
   const snapshot = snapshots.find(s => String(s.age) === selectedAge) ?? snapshots[0]
@@ -72,6 +74,7 @@ export function PortfolioHistogram({ snapshots }: PortfolioHistogramProps) {
             />
             <YAxis tick={{ fontSize: 11 }} />
             <RechartsTooltip
+              trigger={isMobile ? 'click' : undefined}
               formatter={(value: number) => [value, 'Simulations']}
               labelFormatter={(label: string) => `Range: ${label}`}
             />

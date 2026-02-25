@@ -108,6 +108,7 @@ export function GlidePathSection() {
               </Label>
               <Input
                 type="number"
+                inputMode="numeric"
                 value={glidePathConfig.startAge}
                 onChange={(e) =>
                   setGlidePathConfig({
@@ -134,6 +135,7 @@ export function GlidePathSection() {
               </Label>
               <Input
                 type="number"
+                inputMode="numeric"
                 value={glidePathConfig.endAge}
                 onChange={(e) =>
                   setGlidePathConfig({

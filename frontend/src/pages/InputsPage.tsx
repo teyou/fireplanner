@@ -1252,7 +1252,7 @@ export function InputsPage() {
         <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
           <button
             onClick={() => setSectionOrder('sectionOrder', 'goal-first')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            className={`flex-1 px-2 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
               sectionOrder === 'goal-first'
                 ? 'bg-background shadow-sm text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
@@ -1262,7 +1262,7 @@ export function InputsPage() {
           </button>
           <button
             onClick={() => setSectionOrder('sectionOrder', 'story-first')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            className={`flex-1 px-2 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
               sectionOrder === 'story-first'
                 ? 'bg-background shadow-sm text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
@@ -1272,7 +1272,7 @@ export function InputsPage() {
           </button>
           <button
             onClick={() => setSectionOrder('sectionOrder', 'already-fire')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            className={`flex-1 px-2 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
               sectionOrder === 'already-fire'
                 ? 'bg-background shadow-sm text-foreground'
                 : 'text-muted-foreground hover:text-foreground'

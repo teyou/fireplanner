@@ -4,6 +4,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface InfoTooltipProps {
   text: string
@@ -12,32 +18,61 @@ interface InfoTooltipProps {
   sourceUrl?: string
 }
 
-export function InfoTooltip({ text, formula, source, sourceUrl }: InfoTooltipProps) {
+function InfoContent({ text, formula, source, sourceUrl }: InfoTooltipProps) {
+  return (
+    <>
+      <p className="text-sm">{text}</p>
+      {formula && (
+        <p className="text-xs text-muted-foreground mt-1 font-mono">{formula}</p>
+      )}
+      {source && (
+        <p className="text-xs text-muted-foreground mt-1">
+          Source:{' '}
+          {sourceUrl ? (
+            <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
+              {source}
+            </a>
+          ) : (
+            source
+          )}
+        </p>
+      )}
+    </>
+  )
+}
+
+const baseTriggerClassName = "inline-flex items-center justify-center rounded-full text-xs cursor-help ml-1"
+const desktopTriggerClassName = `${baseTriggerClassName} w-5 h-5 bg-muted text-muted-foreground`
+const mobileTriggerClassName = `${baseTriggerClassName} w-6 h-6 min-w-[28px] min-h-[28px] bg-muted text-muted-foreground ring-1 ring-border`
+
+export function InfoTooltip(props: InfoTooltipProps) {
+  const isMobile = useIsMobile()
+
+  if (isMobile) {
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <button type="button" className={mobileTriggerClassName}>
+            i
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="max-w-xs p-3">
+          <InfoContent {...props} />
+        </PopoverContent>
+      </Popover>
+    )
+  }
+
   return (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <button type="button" onClick={(e) => e.preventDefault()} className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-muted text-muted-foreground text-xs cursor-help ml-1">
+          <button type="button" onClick={(e) => e.preventDefault()} className={desktopTriggerClassName}>
             i
           </button>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
-          <p className="text-sm">{text}</p>
-          {formula && (
-            <p className="text-xs text-muted-foreground mt-1 font-mono">{formula}</p>
-          )}
-          {source && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Source:{' '}
-              {sourceUrl ? (
-                <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
-                  {source}
-                </a>
-              ) : (
-                source
-              )}
-            </p>
-          )}
+          <InfoContent {...props} />
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

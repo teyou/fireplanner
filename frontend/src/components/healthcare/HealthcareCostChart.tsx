@@ -4,6 +4,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, R
 import { useProfileStore } from '@/stores/useProfileStore'
 import { formatCurrency } from '@/lib/utils'
 import { generateHealthcareProjection } from '@/lib/calculations/healthcare'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface ChartDataPoint {
   age: number
@@ -15,6 +16,7 @@ interface ChartDataPoint {
 }
 
 export function HealthcareCostChart() {
+  const isMobile = useIsMobile()
   const config = useProfileStore((s) => s.healthcareConfig)
   const currentAge = useProfileStore((s) => s.currentAge)
   const retirementAge = useProfileStore((s) => s.retirementAge)
@@ -57,6 +59,7 @@ export function HealthcareCostChart() {
                 width={80}
               />
               <Tooltip
+                trigger={isMobile ? 'click' : undefined}
                 formatter={(value: number, name: string) => [
                   formatCurrency(value),
                   name,

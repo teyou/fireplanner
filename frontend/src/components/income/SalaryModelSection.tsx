@@ -210,6 +210,7 @@ function RealisticPanel({
                 <Label className="text-xs">Age</Label>
                 <Input
                   type="number"
+                  inputMode="numeric"
                   value={jump.age}
                   onChange={(e) => updateJump(i, { age: parseInt(e.target.value) || 0 })}
                   className={cn('w-20 border-blue-300', errors[`promotionJump_${i}_age`] && 'border-destructive')}
