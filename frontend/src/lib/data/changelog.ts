@@ -14,6 +14,26 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-25',
     category: 'fix',
+    title: 'Tax-exempt income streams now correctly excluded from tax',
+    description:
+      'Income streams marked as "Tax-Exempt" were still being taxed. The tax calculation was hardcoded by stream type (rental and business always taxable, investment and government always exempt) instead of reading the tax treatment you selected. Now your tax treatment choice is the single source of truth for every stream type.',
+    affectedSections: ['section-income'],
+    insight:
+      'This also means investment streams marked "Taxable" (e.g., foreign dividends) will now correctly be included in taxable income, and government streams marked "Taxable" will too. Previously the type-based hardcoding overrode your selection in both directions.',
+  },
+  {
+    date: '2026-02-25',
+    category: 'fix',
+    title: 'Per-stream CPF contribution control now works',
+    description:
+      'The "CPF Applicable" toggle on employment income streams was being ignored. All employment income generated CPF contributions regardless of the setting. Now only streams with CPF Applicable enabled attract CPF contributions. Your primary salary always generates CPF when employer CPF is enabled.',
+    affectedSections: ['section-income'],
+    insight:
+      'This matters for freelance or contract income added as employment streams. A $40K side income with CPF Applicable off was previously generating ~$14,800 in phantom CPF contributions, inflating your projected CPF balances by $600K+ over a career.',
+  },
+  {
+    date: '2026-02-25',
+    category: 'fix',
     title: 'MediSave BHS overflow enforced on contributions and interest',
     description:
       'CPF MediSave (MA) is now capped at the Basic Healthcare Sum ($79,000). Mandatory contributions and interest that would push MA above BHS overflow to SA (pre-55), RA then OA (post-55 pre-LIFE), or OA (post-LIFE), matching CPF Board rules. Previously only voluntary top-ups were capped, causing SA/RA to be underfunded and CPF LIFE payouts underestimated.',
