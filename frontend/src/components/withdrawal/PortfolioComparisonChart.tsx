@@ -4,6 +4,7 @@ import type { DeterministicComparisonResult } from '@/lib/calculations/withdrawa
 import type { WithdrawalStrategyType } from '@/lib/types'
 import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
 import { formatCurrency } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const STRATEGY_COLORS: Record<string, string> = {
   constant_dollar: '#2563eb',
@@ -25,6 +26,7 @@ interface PortfolioComparisonChartProps {
 }
 
 export function PortfolioComparisonChart({ results }: PortfolioComparisonChartProps) {
+  const isMobile = useIsMobile()
   const strategies = Object.keys(results.yearResults) as WithdrawalStrategyType[]
   if (strategies.length === 0) return null
 
@@ -50,7 +52,7 @@ export function PortfolioComparisonChart({ results }: PortfolioComparisonChartPr
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="age" label={{ value: 'Age', position: 'insideBottom', offset: -5 }} />
             <YAxis tickFormatter={(v: number) => formatCurrency(v)} width={90} />
-            <Tooltip formatter={(value: number) => formatCurrency(value)} />
+            <Tooltip trigger={isMobile ? 'click' : undefined} formatter={(value: number) => formatCurrency(value)} />
             <Legend formatter={(value: string) => getStrategyLabel(value as WithdrawalStrategyType)} />
             <ReferenceLine y={0} stroke="#ef4444" strokeDasharray="3 3" label="Ruin" />
             {strategies.map((s) => (

@@ -12,9 +12,11 @@ import {
 } from 'recharts'
 import { usePassiveIncomeSummary } from '@/hooks/usePassiveIncomeSummary'
 import { formatCurrency, formatPercent } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 export function PassiveIncomePanel() {
   const data = usePassiveIncomeSummary()
+  const isMobile = useIsMobile()
 
   if (!data) return null
 
@@ -97,7 +99,7 @@ export function PassiveIncomePanel() {
                     tickFormatter={(v: number) => formatCurrency(v)}
                     width={80}
                   />
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Tooltip trigger={isMobile ? 'click' : undefined} formatter={(value: number) => formatCurrency(value)} />
                   <Area
                     type="monotone"
                     dataKey="rentalIncome"

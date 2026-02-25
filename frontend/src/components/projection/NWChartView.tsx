@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import type { ProjectionRow } from '@/lib/types'
 import { formatCurrency } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface NWChartViewProps {
   rows: ProjectionRow[]
@@ -24,6 +25,7 @@ interface ChartDataPoint {
 }
 
 export function NWChartView({ rows, retirementAge }: NWChartViewProps) {
+  const isMobile = useIsMobile()
   const data: ChartDataPoint[] = rows.map((row) => ({
     age: row.age,
     liquidNW: Math.max(0, row.liquidNW),
@@ -47,6 +49,7 @@ export function NWChartView({ rows, retirementAge }: NWChartViewProps) {
             width={70}
           />
           <Tooltip
+            trigger={isMobile ? 'click' : undefined}
             formatter={(value: number, name: string) => [
               formatCurrency(value),
               name === 'liquidNW' ? 'Liquid NW' : name === 'cpfTotal' ? 'CPF' : 'Property Equity',

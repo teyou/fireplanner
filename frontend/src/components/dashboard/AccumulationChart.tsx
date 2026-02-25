@@ -5,12 +5,14 @@ import { useProfileStore } from '@/stores/useProfileStore'
 import { useChartColors } from '@/lib/chartTheme'
 import { ChartSkeleton } from '@/components/shared/ChartSkeleton'
 import { formatCurrency } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 export function AccumulationChart() {
   const { accumulationData, fireNumberLine } = useDashboardCharts()
   const currentAge = useProfileStore((s) => s.currentAge)
   const retirementAge = useProfileStore((s) => s.retirementAge)
   const colors = useChartColors()
+  const isMobile = useIsMobile()
 
   if (accumulationData.length === 0) {
     return (
@@ -37,7 +39,7 @@ export function AccumulationChart() {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="age" label={{ value: 'Age', position: 'insideBottom', offset: -5 }} />
             <YAxis tickFormatter={(v: number) => formatCurrency(v)} width={90} />
-            <Tooltip formatter={(value: number) => formatCurrency(value)} />
+            <Tooltip trigger={isMobile ? 'click' : undefined} formatter={(value: number) => formatCurrency(value)} />
             <Area
               type="monotone"
               dataKey="value"

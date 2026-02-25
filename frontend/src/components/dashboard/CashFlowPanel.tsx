@@ -15,6 +15,7 @@ import { useCashFlowChart, type CashFlowPhase, type CashFlowRow } from '@/hooks/
 import { ChartSkeleton } from '@/components/shared/ChartSkeleton'
 import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 // ============================================================
 // Series configuration
@@ -144,6 +145,7 @@ const PHASE_OPTIONS: { value: CashFlowPhase; label: string }[] = [
 export function CashFlowPanel() {
   const [phase, setPhase] = useState<CashFlowPhase>('all')
   const data = useCashFlowChart(phase)
+  const isMobile = useIsMobile()
 
   if (!data) {
     return (
@@ -200,7 +202,7 @@ export function CashFlowPanel() {
                 tickFormatter={(v: number) => formatCurrency(v)}
                 width={90}
               />
-              <Tooltip content={<CashFlowTooltip />} />
+              <Tooltip trigger={isMobile ? 'click' : undefined} content={<CashFlowTooltip />} />
 
               {/* Zero line */}
               <ReferenceLine y={0} stroke="#94a3b8" strokeWidth={1.5} />

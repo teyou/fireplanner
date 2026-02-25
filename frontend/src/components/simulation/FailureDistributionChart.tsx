@@ -1,6 +1,7 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { FailureDistribution } from '@/lib/types'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface FailureDistributionChartProps {
   distribution: FailureDistribution
@@ -8,6 +9,7 @@ interface FailureDistributionChartProps {
 }
 
 export function FailureDistributionChart({ distribution, nSimulations }: FailureDistributionChartProps) {
+  const isMobile = useIsMobile()
   if (distribution.total_failures === 0) {
     return null
   }
@@ -31,6 +33,7 @@ export function FailureDistributionChart({ distribution, nSimulations }: Failure
             <XAxis dataKey="name" fontSize={12} />
             <YAxis />
             <Tooltip
+              trigger={isMobile ? 'click' : undefined}
               formatter={(value: number) => [
                 `${value} failures`,
                 'Ruin probability',

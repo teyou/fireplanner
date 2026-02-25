@@ -3,6 +3,7 @@ import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer,
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { formatCurrency } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const PRIORITY_FILL: Record<string, string> = {
   essential: '#3b82f6',    // blue
@@ -19,6 +20,7 @@ interface ChartDataPoint {
 }
 
 export function GoalTimelineChart() {
+  const isMobile = useIsMobile()
   const goals = useProfileStore((s) => s.financialGoals)
   const retirementAge = useProfileStore((s) => s.retirementAge)
 
@@ -74,6 +76,7 @@ export function GoalTimelineChart() {
                 tick={{ fontSize: 11 }}
               />
               <Tooltip
+                trigger={isMobile ? 'click' : undefined}
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null
                   const row = payload[0]?.payload as ChartDataPoint | undefined

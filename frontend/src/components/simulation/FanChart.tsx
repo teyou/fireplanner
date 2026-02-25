@@ -2,6 +2,7 @@ import { Area, AreaChart, CartesianGrid, Line, ResponsiveContainer, Tooltip, XAx
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { PercentileBands } from '@/lib/types'
 import { formatCurrency } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface FanChartProps {
   bands: PercentileBands
@@ -9,6 +10,7 @@ interface FanChartProps {
 }
 
 export function FanChart({ bands, retirementAge }: FanChartProps) {
+  const isMobile = useIsMobile()
   const data = bands.years.map((_, i) => ({
     age: bands.ages[i],
     p5: bands.p5[i],
@@ -49,6 +51,7 @@ export function FanChart({ bands, retirementAge }: FanChartProps) {
               width={90}
             />
             <Tooltip
+              trigger={isMobile ? 'click' : undefined}
               content={({ active, payload, label }) => {
                 if (!active || !payload?.length) return null
                 const row = payload[0]?.payload as Record<string, number> | undefined

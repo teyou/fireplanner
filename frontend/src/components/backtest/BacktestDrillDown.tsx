@@ -16,6 +16,7 @@ import type { DetailedWindowResult, BacktestEngineParams } from '@/lib/simulatio
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import {
   AreaChart,
   Area,
@@ -53,6 +54,7 @@ export function BacktestDrillDown({
   dataset,
   blendRatio,
 }: BacktestDrillDownProps) {
+  const isMobile = useIsMobile()
   const profile = useProfileStore()
   const withdrawal = useWithdrawalStore()
   const analysisPortfolio = useAnalysisPortfolio()
@@ -232,6 +234,7 @@ export function BacktestDrillDown({
                       tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
                     />
                     <RechartsTooltip
+                      trigger={isMobile ? 'click' : undefined}
                       formatter={(value: number) => formatCurrency(value)}
                     />
                     <Legend />
