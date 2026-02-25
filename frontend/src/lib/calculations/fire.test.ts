@@ -13,6 +13,7 @@ import {
   calculateLiquidBridgeGap,
   calculateParentSupportAtAge,
   calculateProjectionFireNumber,
+  normalizeProjectionFireNumber,
 } from './fire'
 import type { ParentSupport } from '@/lib/types'
 
@@ -977,5 +978,78 @@ describe('calculateProjectionFireNumber', () => {
       rentalIncome: 0,
     }, 0)
     expect(result).toBe(0)
+  })
+})
+
+describe('normalizeProjectionFireNumber', () => {
+  // Raw projection number: $1,500,000 in age-46 dollars (age 30 now, inflation 2.5%)
+  const rawProj = 1500000
+  const firstRetiredAge = 46
+  const currentAge = 30
+  const inflation = 0.025
+
+  it('today basis: deflates to today dollars', () => {
+    // basisInflationFactor = 1 (today = no inflation)
+    // projInflationFactor = 1.025^16
+    // normalized = 1500000 * 1 / 1.025^16
+    const projFactor = Math.pow(1.025, 16)
+    const result = normalizeProjectionFireNumber(rawProj, firstRetiredAge, currentAge, inflation, 1)
+    expect(result).toBeCloseTo(rawProj / projFactor, 0)
+  })
+
+  it('retirement basis: adjusts to retirement-year dollars', () => {
+    // retirementAge 45, basisInflationFactor = 1.025^15
+    const basisFactor = Math.pow(1.025, 15)
+    const projFactor = Math.pow(1.025, 16)
+    const result = normalizeProjectionFireNumber(rawProj, firstRetiredAge, currentAge, inflation, basisFactor)
+    expect(result).toBeCloseTo(rawProj * basisFactor / projFactor, 0)
+  })
+
+  it('fireAge basis: adjusts to converged FIRE-year dollars', () => {
+    // converged FIRE age 53 → basisInflationFactor = 1.025^23
+    const basisFactor = Math.pow(1.025, 23)
+    const projFactor = Math.pow(1.025, 16)
+    const result = normalizeProjectionFireNumber(rawProj, firstRetiredAge, currentAge, inflation, basisFactor)
+    expect(result).toBeCloseTo(rawProj * basisFactor / projFactor, 0)
+  })
+
+  it('zero inflation: no normalization applied', () => {
+    const result = normalizeProjectionFireNumber(rawProj, firstRetiredAge, currentAge, 0, 1)
+    expect(result).toBe(rawProj)
+  })
+
+  it('first retired age equals current age: only basis factor applied', () => {
+    // projInflationFactor = 1 (no years elapsed), so result = raw * basisFactor
+    const basisFactor = Math.pow(1.025, 15)
+    const result = normalizeProjectionFireNumber(rawProj, 30, 30, inflation, basisFactor)
+    expect(result).toBeCloseTo(rawProj * basisFactor, 0)
+  })
+
+  it('deviation percentage is identical across all bases', () => {
+    // Simple: $48K expenses, SWR 4% → $1,200,000 in today's dollars
+    const simpleToday = 48000 / 0.04  // 1,200,000
+    // Projection raw: different expenses at age 46
+    const projRaw = (48000 * Math.pow(1.025, 16) + 12000) / 0.04 // mortgage adds $12K
+    const projFactor = Math.pow(1.025, 16)
+
+    // Today basis
+    const normToday = normalizeProjectionFireNumber(projRaw, 46, 30, 0.025, 1)
+    const devToday = (normToday - simpleToday) / simpleToday
+
+    // Retirement basis (age 45)
+    const retFactor = Math.pow(1.025, 15)
+    const simpleRet = simpleToday * retFactor
+    const normRet = normalizeProjectionFireNumber(projRaw, 46, 30, 0.025, retFactor)
+    const devRet = (normRet - simpleRet) / simpleRet
+
+    // FireAge basis (age 53)
+    const fireFactor = Math.pow(1.025, 23)
+    const simpleFire = simpleToday * fireFactor
+    const normFire = normalizeProjectionFireNumber(projRaw, 46, 30, 0.025, fireFactor)
+    const devFire = (normFire - simpleFire) / simpleFire
+
+    // All deviation percentages should be identical
+    expect(devToday).toBeCloseTo(devRet, 10)
+    expect(devToday).toBeCloseTo(devFire, 10)
   })
 })

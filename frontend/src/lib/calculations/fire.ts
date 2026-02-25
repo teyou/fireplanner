@@ -50,6 +50,29 @@ export function calculateProjectionFireNumber(
 }
 
 /**
+ * Normalizes a projection-derived FIRE number from first-retired-year
+ * nominal dollars to the same dollar basis as the simple FIRE number.
+ *
+ * basisInflationFactor = effectiveExpenses / preInflationSubtotal
+ *   where preInflationSubtotal = baseExpenses + parentSupportAnnual + healthcareCashOutlay
+ *   This captures whatever inflation adjustment the simple formula applied
+ *   (none for "today", (1+i)^retYears for "retirement", converged factor for "fireAge").
+ */
+export function normalizeProjectionFireNumber(
+  rawProjFireNumber: number,
+  firstRetiredAge: number,
+  currentAge: number,
+  inflation: number,
+  basisInflationFactor: number,
+): number {
+  const yearsToFirstRetired = Math.max(0, firstRetiredAge - currentAge)
+  const projInflationFactor = yearsToFirstRetired > 0 && inflation > 0
+    ? Math.pow(1 + inflation, yearsToFirstRetired)
+    : 1
+  return rawProjFireNumber * basisInflationFactor / projInflationFactor
+}
+
+/**
  * Years to FIRE using the NPER formula (future value of growing annuity).
  *
  * Formula: ln((savings/r + fireNumber) / (savings/r + currentNW)) / ln(1+r)
