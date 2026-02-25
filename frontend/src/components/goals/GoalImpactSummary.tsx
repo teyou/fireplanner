@@ -61,9 +61,12 @@ export function GoalImpactSummary() {
       fireDelayText = `FIRE delayed from age ${fireAgeWithout} to ${fireAgeWith} (+${delay} year${delay > 1 ? 's' : ''})`
       fireDelayColor = 'text-amber-600 dark:text-amber-400'
     } else {
-      // Goals somehow accelerate FIRE (unlikely but handle)
-      fireDelayText = `FIRE at age ${fireAgeWith} (${Math.abs(delay)} year${Math.abs(delay) > 1 ? 's' : ''} earlier)`
-      fireDelayColor = 'text-green-600 dark:text-green-400'
+      // Negative delay means goals accelerate FIRE — this is mathematically
+      // impossible (goals always cost money). If this fires, it signals a
+      // calculation bug, not an edge case to display gracefully.
+      console.error(`[GoalImpactSummary] Goals appear to accelerate FIRE by ${Math.abs(delay)} years. This indicates a calculation bug.`)
+      fireDelayText = `Unexpected result — goals appear to accelerate FIRE (possible calculation error)`
+      fireDelayColor = 'text-destructive'
     }
   } else {
     fireDelayText = ''
