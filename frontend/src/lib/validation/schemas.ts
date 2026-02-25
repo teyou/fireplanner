@@ -207,6 +207,11 @@ export function validateProfileField(
     cashReserveFixedAmount: z.number().min(0).max(10_000_000),
     cashReserveMonths: z.number().int().min(1).max(60),
     cashReserveReturn: z.number().min(0).max(0.10),
+    // Expense adjustment sub-fields
+    'expenseAdjustment.label': z.string().min(1).max(50),
+    'expenseAdjustment.amount': z.number().min(-1_000_000).max(1_000_000),
+    'expenseAdjustment.startAge': z.number().int().min(18).max(120),
+    'expenseAdjustment.endAge': z.number().int().min(18).max(120).nullable(),
     // Locked asset sub-fields
     'lockedAsset.name': z.string().min(1).max(50),
     'lockedAsset.amount': z.number().gt(0).max(100_000_000),

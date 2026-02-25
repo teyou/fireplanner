@@ -6,7 +6,7 @@ import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
  * Returns a map of field names to error messages.
  */
 export function validateProfileConsistency(
-  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'lifeStage' | 'cpfLifeStartAge' | 'parentSupportEnabled' | 'parentSupport' | 'healthcareConfig' | 'retirementWithdrawals' | 'financialGoals' | 'cpfOaWithdrawals'> & { lockedAssets?: ProfileState['lockedAssets'] }
+  profile: Pick<ProfileState, 'currentAge' | 'retirementAge' | 'lifeExpectancy' | 'lifeStage' | 'cpfLifeStartAge' | 'parentSupportEnabled' | 'parentSupport' | 'healthcareConfig' | 'retirementWithdrawals' | 'financialGoals' | 'cpfOaWithdrawals'> & { lockedAssets?: ProfileState['lockedAssets']; expenseAdjustments?: ProfileState['expenseAdjustments'] }
 ): ValidationErrors {
   const errors: ValidationErrors = {}
 
@@ -88,6 +88,21 @@ export function validateProfileConsistency(
     }
     if (w.amount <= 0) {
       errors[`cpfOaWithdrawal_${w.id}_amount`] = 'Amount must be positive'
+    }
+  }
+
+  // Expense adjustment validation
+  if (profile.expenseAdjustments) {
+    if (profile.expenseAdjustments.length > 10) {
+      errors['expenseAdjustments'] = 'Maximum 10 expense adjustments'
+    }
+    for (const adj of profile.expenseAdjustments) {
+      if (adj.endAge !== null && adj.endAge <= adj.startAge) {
+        errors[`expenseAdjustment_${adj.id}_endAge`] = 'End age must be greater than start age'
+      }
+      if (adj.endAge !== null && adj.endAge > profile.lifeExpectancy) {
+        errors[`expenseAdjustment_${adj.id}_endAge`] = `End age cannot exceed life expectancy (${profile.lifeExpectancy})`
+      }
     }
   }
 

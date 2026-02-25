@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ProfileState, ParentSupport, RetirementWithdrawal, CpfOaWithdrawal, FinancialGoal, LockedAsset, HealthcareConfig, OopCurveVariant, ValidationErrors } from '@/lib/types'
+import type { ProfileState, ParentSupport, RetirementWithdrawal, CpfOaWithdrawal, FinancialGoal, LockedAsset, ExpenseAdjustment, HealthcareConfig, OopCurveVariant, ValidationErrors } from '@/lib/types'
 import { validateProfileField } from '@/lib/validation/schemas'
 import { validateProfileConsistency } from '@/lib/validation/rules'
 import { interpolateOopMultiplier } from '@/lib/data/healthcareOop'
@@ -23,6 +23,9 @@ interface ProfileActions {
   removeFinancialGoal: (id: string) => void
   updateFinancialGoal: (id: string, updates: Partial<Omit<FinancialGoal, 'id'>>) => void
   clearFinancialGoals: () => void
+  addExpenseAdjustment: (adj: ExpenseAdjustment) => void
+  removeExpenseAdjustment: (id: string) => void
+  updateExpenseAdjustment: (id: string, updates: Partial<Omit<ExpenseAdjustment, 'id'>>) => void
   addLockedAsset: (asset: LockedAsset) => void
   removeLockedAsset: (id: string) => void
   updateLockedAsset: (id: string, updates: Partial<Omit<LockedAsset, 'id'>>) => void
@@ -43,6 +46,7 @@ const PROFILE_DATA_KEYS = [
   'parentSupportEnabled', 'parentSupport',
   'healthcareConfig',
   'retirementWithdrawals',
+  'expenseAdjustments',
   'financialGoals',
   'lockedAssets',
   'cashReserveEnabled', 'cashReserveMode', 'cashReserveFixedAmount',
@@ -109,6 +113,7 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   parentSupport: [],
   healthcareConfig: DEFAULT_HEALTHCARE_CONFIG,
   retirementWithdrawals: [],
+  expenseAdjustments: [],
   financialGoals: [],
   lockedAssets: [],
   cashReserveEnabled: false,
@@ -318,6 +323,41 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
           }
         }),
 
+      addExpenseAdjustment: (adj: ExpenseAdjustment) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = { ...stateData, expenseAdjustments: [...stateData.expenseAdjustments, adj] }
+          return {
+            expenseAdjustments: updated.expenseAdjustments,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
+      removeExpenseAdjustment: (id: string) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = { ...stateData, expenseAdjustments: stateData.expenseAdjustments.filter((a) => a.id !== id) }
+          return {
+            expenseAdjustments: updated.expenseAdjustments,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
+      updateExpenseAdjustment: (id: string, updates: Partial<Omit<ExpenseAdjustment, 'id'>>) =>
+        set((state) => {
+          const stateData = extractProfileData(state)
+          const updated = {
+            ...stateData,
+            expenseAdjustments: stateData.expenseAdjustments.map((a) =>
+              a.id === id ? { ...a, ...updates } : a
+            ),
+          }
+          return {
+            expenseAdjustments: updated.expenseAdjustments,
+            validationErrors: computeValidationErrors(updated),
+          }
+        }),
+
       addLockedAsset: (asset: LockedAsset) =>
         set((state) => {
           const stateData = extractProfileData(state)
@@ -361,7 +401,7 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
     }),
     {
       name: 'fireplanner-profile',
-      version: 19,
+      version: 20,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -459,6 +499,9 @@ export const useProfileStore = create<ProfileState & ProfileActions>()(
         }
         if (version < 19) {
           if (state.lockedAssets === undefined) state.lockedAssets = []
+        }
+        if (version < 20) {
+          if (state.expenseAdjustments === undefined) state.expenseAdjustments = []
         }
         return state
       },

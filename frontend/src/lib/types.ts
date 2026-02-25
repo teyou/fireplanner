@@ -114,6 +114,18 @@ export interface CpfOaWithdrawal {
 }
 
 // ============================================================
+// Expense Adjustments (age-based spending changes)
+// ============================================================
+
+export interface ExpenseAdjustment {
+  id: string
+  label: string
+  amount: number        // positive = more spending, negative = less (today's $)
+  startAge: number
+  endAge: number | null // null = ongoing (resolved to lifeExpectancy at computation time)
+}
+
+// ============================================================
 // Age-Gated Locked Assets
 // ============================================================
 
@@ -209,6 +221,9 @@ export interface ProfileState {
 
   // Retirement One-Time Withdrawals
   retirementWithdrawals: RetirementWithdrawal[]
+
+  // Expense Adjustments (age-based spending changes)
+  expenseAdjustments: ExpenseAdjustment[]
 
   // Financial Goals
   financialGoals: FinancialGoal[]
