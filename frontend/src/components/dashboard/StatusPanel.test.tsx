@@ -22,6 +22,10 @@ const fullProps = {
   totalNetWorth: 1100000,
   portfolioDepletedAge: null,
   lifeExpectancy: 90,
+  projectionFireNumber: null,
+  deviationPct: null,
+  showProjectionNumber: false,
+  deviationFactors: [],
 }
 
 describe('StatusPanel', () => {
@@ -49,6 +53,10 @@ describe('StatusPanel', () => {
       totalNetWorth: null,
       portfolioDepletedAge: null,
       lifeExpectancy: 90,
+      projectionFireNumber: null,
+      deviationPct: null,
+      showProjectionNumber: false,
+      deviationFactors: [],
     })
     // Each null value renders as an em dash
     const dashes = screen.getAllByText('—')

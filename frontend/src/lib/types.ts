@@ -928,6 +928,20 @@ export interface ProjectionRow {
   downsizingRentExpense: number   // rent if sell-and-rent scenario, 0 otherwise
   goalExpense: number             // financial goal costs at this age
   retirementWithdrawalExpense: number  // one-time retirement withdrawal costs at this age
+  // SRS lifecycle (pass-through from income engine)
+  srsBalance: number
+  srsContribution: number
+  srsTaxableWithdrawal: number
+  // Locked asset unlock (value of locked assets that become accessible at this age)
+  lockedAssetUnlock: number
+  // Healthcare breakdown (when healthcare enabled, otherwise 0)
+  mediShieldLifePremium: number
+  ispAdditionalPremium: number
+  careShieldLifePremium: number
+  oopExpense: number
+  mediSaveDeductible: number
+  // Allocation weights (N asset classes, for glide path visualization)
+  allocationWeights: number[]
   // Expanded: other
   cumulativeSavings: number
   activeLifeEvents: string[]
@@ -940,6 +954,7 @@ export interface ProjectionSummary {
   terminalLiquidNW: number
   terminalTotalNW: number
   portfolioDepletedAge: number | null
+  mediSaveDepletionAge: number | null
 }
 
 // ============================================================

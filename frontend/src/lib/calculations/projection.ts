@@ -25,7 +25,7 @@ import { getBalaFactor } from '@/lib/data/balaTable'
 import { getEffectiveExpenses } from './expenses'
 import { calculateParentSupportAtAge } from './fire'
 import { calculateBrsFrsErs } from './cpf'
-import { calculateHealthcareCostAtAge } from './healthcare'
+import { calculateHealthcareCostAtAge, projectMediSaveTimeline } from './healthcare'
 import {
   outstandingMortgageAtAge,
   calculateSellAndDownsize,
@@ -315,6 +315,19 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     }
   }
 
+  // Pre-compute MediSave timeline: healthcare premiums deducted from cpfMA
+  let mediSaveAdjustedMA: number[] | null = null
+  let mediSaveDepletionAge: number | null = null
+  if (healthcareConfig?.enabled) {
+    const maBalanceByYear = incomeProjection.map((r) => r.cpfMA)
+    const timeline = projectMediSaveTimeline(
+      healthcareConfig, currentAge, lifeExpectancy, maBalanceByYear,
+      healthcareConfig.mediSaveTopUpAnnual,
+    )
+    mediSaveAdjustedMA = timeline.entries.map((e) => e.endBalance)
+    mediSaveDepletionAge = timeline.depletionAge
+  }
+
   const totalYears = lifeExpectancy - currentAge
 
   for (let i = 0; i <= totalYears; i++) {
@@ -330,6 +343,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
 
     // Weights for this age
     const weights = getWeightsAtAge(age, isRetired, currentWeights, targetWeights, glidePathConfig)
+    const allocationWeights = [...weights]  // defensive copy — getWeightsAtAge may return shared refs
 
     // Return rate (nominal, net of expense ratio)
     let returnRate: number
@@ -347,6 +361,9 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
 
     // CPF OA withdrawal → liquid portfolio
     liquidNW += incomeRow.cpfOaWithdrawal
+
+    // Locked asset unlocks → liquid portfolio (e.g. endowments, bonds maturing)
+    liquidNW += incomeRow.lockedAssetUnlock
 
     const startLiquidNW = liquidNW
     let withdrawalAmount = 0
@@ -368,6 +385,9 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       ? calculateHealthcareCostAtAge(healthcareConfig, age)
       : null
     const healthcareCashOutlay = healthcareCost?.cashOutlay ?? 0
+
+    // Override cpfMA with MediSave-adjusted balance (healthcare premiums deducted)
+    const effectiveCpfMA = mediSaveAdjustedMA?.[i] ?? incomeRow.cpfMA
 
     // Property cashflows depend on whether property has been sold
     let effectiveMortgagePayment = age >= mortgageEndAge ? 0 : annualMortgagePayment
@@ -540,8 +560,8 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       totalIncome = postRetirementIncome
     }
 
-    // CPF and totals
-    const cpfTotal = incomeRow.cpfOA + incomeRow.cpfSA + incomeRow.cpfMA + incomeRow.cpfRA
+    // CPF and totals (cpfMA replaced with healthcare-adjusted balance)
+    const cpfTotal = incomeRow.cpfOA + incomeRow.cpfSA + effectiveCpfMA + incomeRow.cpfRA
     // Retirement balance excludes MA — MediSave cannot fund BRS/FRS/ERS
     const cpfRetirementBalance = incomeRow.cpfOA + incomeRow.cpfSA + incomeRow.cpfRA
     const totalNW = liquidNW + cpfTotal
@@ -642,7 +662,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       totalNet: incomeRow.totalNet,
       cpfOA: incomeRow.cpfOA,
       cpfSA: incomeRow.cpfSA,
-      cpfMA: incomeRow.cpfMA,
+      cpfMA: effectiveCpfMA,
       cpfRA: incomeRow.cpfRA,
       cpfInterest,
       cpfOaHousingDeduction: incomeRow.cpfOaHousingDeduction,
@@ -668,6 +688,16 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       downsizingRentExpense,
       goalExpense: goalDeduction,
       retirementWithdrawalExpense: retirementWithdrawalTotal,
+      srsBalance: incomeRow.srsBalance,
+      srsContribution: incomeRow.srsContribution,
+      srsTaxableWithdrawal: incomeRow.srsTaxableWithdrawal,
+      lockedAssetUnlock: incomeRow.lockedAssetUnlock,
+      mediShieldLifePremium: healthcareCost?.mediShieldLifePremium ?? 0,
+      ispAdditionalPremium: healthcareCost?.ispAdditionalPremium ?? 0,
+      careShieldLifePremium: healthcareCost?.careShieldLifePremium ?? 0,
+      oopExpense: healthcareCost?.oopExpense ?? 0,
+      mediSaveDeductible: healthcareCost?.mediSaveDeductible ?? 0,
+      allocationWeights,
       cumulativeSavings: incomeRow.cumulativeSavings,
       activeLifeEvents: incomeRow.activeLifeEvents,
     })
@@ -681,6 +711,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     terminalLiquidNW: lastRow?.liquidNW ?? 0,
     terminalTotalNW: lastRow?.totalNW ?? 0,
     portfolioDepletedAge,
+    mediSaveDepletionAge,
   }
 
   return { rows, summary }

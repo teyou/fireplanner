@@ -87,7 +87,7 @@ import type { ModeSectionId } from '@/hooks/useEffectiveMode'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { pushUndo } from '@/lib/undo'
 import { formatCurrency } from '@/lib/utils'
-import type { WithdrawalStrategyType, ExpenseAdjustment } from '@/lib/types'
+import type { WithdrawalStrategyType } from '@/lib/types'
 import { getEffectiveExpenses, computeExpensePhases } from '@/lib/calculations/expenses'
 
 const STRATEGY_LABELS: Record<WithdrawalStrategyType, string> = {
