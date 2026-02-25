@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import Markdown, { type Components } from 'react-markdown'
@@ -69,15 +71,26 @@ const GLOSSARY: Record<string, string> = {
 const SORTED_TERMS = Object.keys(GLOSSARY).sort((a, b) => b.length - a.length)
 const GLOSSARY_RE = new RegExp(`(${SORTED_TERMS.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g')
 
-function injectTooltips(text: string): ReactNode[] {
+function injectTooltips(text: string, isMobile: boolean): ReactNode[] {
   const parts = text.split(GLOSSARY_RE)
+  const termClassName = "underline decoration-dotted decoration-muted-foreground/50 underline-offset-2 cursor-help"
   return parts.map((part, i) => {
     const eli5 = GLOSSARY[part]
     if (eli5) {
+      if (isMobile) {
+        return (
+          <Popover key={i}>
+            <PopoverTrigger asChild>
+              <button type="button" className={termClassName}>{part}</button>
+            </PopoverTrigger>
+            <PopoverContent className="max-w-xs p-3 text-sm">{eli5}</PopoverContent>
+          </Popover>
+        )
+      }
       return (
         <Tooltip key={i}>
           <TooltipTrigger asChild>
-            <span className="underline decoration-dotted decoration-muted-foreground/50 underline-offset-2 cursor-help">{part}</span>
+            <span className={termClassName}>{part}</span>
           </TooltipTrigger>
           <TooltipContent className="max-w-xs text-sm">{eli5}</TooltipContent>
         </Tooltip>
@@ -87,25 +100,24 @@ function injectTooltips(text: string): ReactNode[] {
   })
 }
 
-function buildMarkdownComponents(tooltipsEnabled: boolean): Components {
+function buildMarkdownComponents(tooltipsEnabled: boolean, isMobile: boolean): Components {
   if (!tooltipsEnabled) return {}
-  return {
-    p: ({ children }) => <p>{processChildren(children)}</p>,
-    li: ({ children }) => <li>{processChildren(children)}</li>,
-    td: ({ children }) => <td>{processChildren(children)}</td>,
-    th: ({ children }) => <th>{processChildren(children)}</th>,
-    strong: ({ children }) => <strong>{processChildren(children)}</strong>,
-    em: ({ children }) => <em>{processChildren(children)}</em>,
+  const process = (children: ReactNode): ReactNode => {
+    if (typeof children === 'string') return injectTooltips(children, isMobile)
+    if (Array.isArray(children)) return children.map((child, i) => {
+      if (typeof child === 'string') return <span key={i}>{injectTooltips(child, isMobile)}</span>
+      return child
+    })
+    return children
   }
-}
-
-function processChildren(children: ReactNode): ReactNode {
-  if (typeof children === 'string') return injectTooltips(children)
-  if (Array.isArray(children)) return children.map((child, i) => {
-    if (typeof child === 'string') return <span key={i}>{injectTooltips(child)}</span>
-    return child
-  })
-  return children
+  return {
+    p: ({ children }) => <p>{process(children)}</p>,
+    li: ({ children }) => <li>{process(children)}</li>,
+    td: ({ children }) => <td>{process(children)}</td>,
+    th: ({ children }) => <th>{process(children)}</th>,
+    strong: ({ children }) => <strong>{process(children)}</strong>,
+    em: ({ children }) => <em>{process(children)}</em>,
+  }
 }
 
 const SECTIONS = [
@@ -493,10 +505,11 @@ export function ReferencePage() {
   const allIds = [...SECTIONS.map(s => s.id), 'changelog', 'data-sources']
   const validHash = allIds.includes(hashId) ? hashId : null
   const [tooltipsEnabled, setTooltipsEnabled] = useState(true)
+  const isMobile = useIsMobile()
   const lastSeenDataVintage = useUIStore((s) => s.lastSeenDataVintage)
   const hasUnseenEntries = lastSeenDataVintage !== DATA_VINTAGE
 
-  const mdComponents = useMemo(() => buildMarkdownComponents(tooltipsEnabled), [tooltipsEnabled])
+  const mdComponents = useMemo(() => buildMarkdownComponents(tooltipsEnabled, isMobile), [tooltipsEnabled, isMobile])
 
   // Include hash target in initial open set; also open on hash changes via key reset
   const openDefault = validHash
