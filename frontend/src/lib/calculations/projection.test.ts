@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { IncomeProjectionRow, StrategyParamsMap, GlidePathConfig } from '@/lib/types'
+import type { IncomeProjectionRow, StrategyParamsMap, GlidePathConfig, HealthcareConfig } from '@/lib/types'
 import { generateProjection, type ProjectionParams } from './projection'
 
 // ============================================================
@@ -1652,6 +1652,216 @@ describe('generateProjection', () => {
       for (const row of result.rows) {
         expect(row.propertyValue).toBe(0)
         expect(row.mortgageBalance).toBe(0)
+      }
+    })
+  })
+
+  // ============================================================
+  // WS: Projection Gaps
+  // ============================================================
+
+  describe('WS: Projection Gaps', () => {
+    // Shared healthcare config for tests that need it
+    const hcConfig: HealthcareConfig = {
+      enabled: true,
+      mediShieldLifeEnabled: true,
+      ispTier: 'none' as const,
+      careShieldLifeEnabled: false,
+      oopBaseAmount: 500,
+      oopModel: 'fixed' as const,
+      oopInflationRate: 0.03,
+      oopReferenceAge: 30,
+      mediSaveTopUpAnnual: 0,
+    }
+
+    it('SRS fields pass through from income rows', () => {
+      const params = makeParams({
+        currentAge: 30, retirementAge: 33, lifeExpectancy: 34,
+        expectedReturn: 0, initialLiquidNW: 100000,
+      })
+      // Set SRS fields on all income rows
+      params.incomeProjection = params.incomeProjection.map((row) => ({
+        ...row,
+        srsBalance: 50000,
+        srsContribution: 15300,
+        srsTaxableWithdrawal: 5000,
+      }))
+
+      const result = generateProjection(params)
+
+      expect(result.rows[0].srsBalance).toBe(50000)
+      expect(result.rows[0].srsContribution).toBe(15300)
+      expect(result.rows[0].srsTaxableWithdrawal).toBe(5000)
+      // Verify all rows, not just the first
+      for (const row of result.rows) {
+        expect(row.srsBalance).toBe(50000)
+        expect(row.srsContribution).toBe(15300)
+        expect(row.srsTaxableWithdrawal).toBe(5000)
+      }
+    })
+
+    it('lockedAssetUnlock increases liquidNW', () => {
+      const currentAge = 30
+      const retirementAge = 40
+      const lifeExpectancy = 40
+
+      // Control run: no locked asset unlock
+      const controlParams = makeParams({
+        currentAge, retirementAge, lifeExpectancy,
+        expectedReturn: 0, initialLiquidNW: 100000, inflation: 0, expenseRatio: 0,
+      })
+      controlParams.incomeProjection = generateMockIncomeProjection({
+        currentAge, retirementAge, lifeExpectancy, annualSavings: 20000,
+      })
+      const controlResult = generateProjection(controlParams)
+
+      // Test run: locked asset unlock of 50000 at year 5 (age 35)
+      const testParams = makeParams({
+        currentAge, retirementAge, lifeExpectancy,
+        expectedReturn: 0, initialLiquidNW: 100000, inflation: 0, expenseRatio: 0,
+      })
+      testParams.incomeProjection = generateMockIncomeProjection({
+        currentAge, retirementAge, lifeExpectancy, annualSavings: 20000,
+      })
+      testParams.incomeProjection[5] = mockIncomeRow({
+        ...testParams.incomeProjection[5],
+        lockedAssetUnlock: 50000,
+      })
+      const testResult = generateProjection(testParams)
+
+      // At year 5 (age 35), liquidNW should be at least 50000 higher
+      const controlRow5 = controlResult.rows[5]
+      const testRow5 = testResult.rows[5]
+      expect(testRow5.age).toBe(35)
+      expect(testRow5.liquidNW - controlRow5.liquidNW).toBeGreaterThanOrEqual(50000)
+
+      // The lockedAssetUnlock field should be passed through
+      expect(testRow5.lockedAssetUnlock).toBe(50000)
+
+      // Other years should not have lockedAssetUnlock
+      expect(testResult.rows[0].lockedAssetUnlock).toBe(0)
+      expect(testResult.rows[4].lockedAssetUnlock).toBe(0)
+    })
+
+    it('healthcare breakdown populated when enabled', () => {
+      const params = makeParams({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 34,
+        expectedReturn: 0, initialLiquidNW: 500000,
+        healthcareConfig: hcConfig,
+      })
+
+      const result = generateProjection(params)
+
+      // MediShield Life premiums should be > 0 for age 30+
+      expect(result.rows[0].mediShieldLifePremium).toBeGreaterThan(0)
+      // MediSave deductible should be > 0 (premiums are deducted from MediSave)
+      expect(result.rows[0].mediSaveDeductible).toBeGreaterThan(0)
+      // ISP disabled → 0
+      expect(result.rows[0].ispAdditionalPremium).toBe(0)
+      // CareShield disabled → 0
+      expect(result.rows[0].careShieldLifePremium).toBe(0)
+      // OOP is $500 fixed → should appear
+      expect(result.rows[0].oopExpense).toBeGreaterThan(0)
+    })
+
+    it('MediSave depletion reduces cpfMA', () => {
+      const currentAge = 30
+      const retirementAge = 65
+      const lifeExpectancy = 34
+
+      // Run WITHOUT healthcare
+      const paramsNoHC = makeParams({
+        currentAge, retirementAge, lifeExpectancy,
+        expectedReturn: 0, initialLiquidNW: 100000,
+        healthcareConfig: null,
+      })
+      paramsNoHC.incomeProjection = generateMockIncomeProjection({
+        currentAge, retirementAge, lifeExpectancy, annualSavings: 20000, cpfMA: 50000,
+      })
+      const resultNoHC = generateProjection(paramsNoHC)
+
+      // Run WITH healthcare
+      const paramsHC = makeParams({
+        currentAge, retirementAge, lifeExpectancy,
+        expectedReturn: 0, initialLiquidNW: 100000,
+        healthcareConfig: hcConfig,
+      })
+      paramsHC.incomeProjection = generateMockIncomeProjection({
+        currentAge, retirementAge, lifeExpectancy, annualSavings: 20000, cpfMA: 50000,
+      })
+      const resultHC = generateProjection(paramsHC)
+
+      // At least some rows should have lower cpfMA with healthcare enabled
+      let anyLower = false
+      for (let i = 0; i < resultHC.rows.length; i++) {
+        if (resultHC.rows[i].cpfMA < resultNoHC.rows[i].cpfMA) {
+          anyLower = true
+          break
+        }
+      }
+      expect(anyLower).toBe(true)
+    })
+
+    it('mediSaveDepletionAge in summary with low cpfMA', () => {
+      const params = makeParams({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 90,
+        expectedReturn: 0, initialLiquidNW: 100000,
+        healthcareConfig: hcConfig,
+      })
+      // Very low cpfMA so it depletes quickly
+      params.incomeProjection = generateMockIncomeProjection({
+        currentAge: 30, retirementAge: 65, lifeExpectancy: 90, annualSavings: 20000, cpfMA: 1000,
+      })
+
+      const result = generateProjection(params)
+
+      // With only $1000 in MediSave and healthcare premiums, it should deplete
+      expect(result.summary.mediSaveDepletionAge).not.toBeNull()
+      expect(result.summary.mediSaveDepletionAge).toBeGreaterThanOrEqual(30)
+    })
+
+    it('allocation weights stored on each row', () => {
+      const currentWeights = [0.60, 0.40]
+      const params = makeParams({
+        currentAge: 30, retirementAge: 33, lifeExpectancy: 34,
+        expectedReturn: 0, initialLiquidNW: 100000,
+        currentWeights,
+        targetWeights: [0.30, 0.70],
+        glidePathConfig: GLIDE_PATH_DISABLED,
+      })
+
+      const result = generateProjection(params)
+
+      // With glide path disabled, pre-retirement rows use currentWeights,
+      // post-retirement rows use targetWeights
+      for (const row of result.rows) {
+        expect(row.allocationWeights).toBeDefined()
+        expect(row.allocationWeights.length).toBe(2)
+        if (!row.isRetired) {
+          expect(row.allocationWeights[0]).toBeCloseTo(0.60, 5)
+          expect(row.allocationWeights[1]).toBeCloseTo(0.40, 5)
+        } else {
+          expect(row.allocationWeights[0]).toBeCloseTo(0.30, 5)
+          expect(row.allocationWeights[1]).toBeCloseTo(0.70, 5)
+        }
+      }
+    })
+
+    it('healthcare disabled: all breakdown fields are 0', () => {
+      const params = makeParams({
+        currentAge: 30, retirementAge: 33, lifeExpectancy: 34,
+        expectedReturn: 0, initialLiquidNW: 100000,
+        healthcareConfig: null,
+      })
+
+      const result = generateProjection(params)
+
+      for (const row of result.rows) {
+        expect(row.mediShieldLifePremium).toBe(0)
+        expect(row.ispAdditionalPremium).toBe(0)
+        expect(row.careShieldLifePremium).toBe(0)
+        expect(row.oopExpense).toBe(0)
+        expect(row.mediSaveDeductible).toBe(0)
       }
     })
   })
