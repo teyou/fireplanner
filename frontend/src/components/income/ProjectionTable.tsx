@@ -139,13 +139,13 @@ export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
     <div>
       <div className={cn('border rounded-md overflow-auto', expanded && 'max-h-[600px]')}>
         <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-background border-b">
+          <thead className="sticky top-0 bg-background border-b z-20">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th key={header.id} className={cn(
                     "px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap",
-                    header.column.id === 'age' && "sticky left-0 z-30 bg-background"
+                    header.column.id === 'age' && "sticky left-0 z-30 bg-background shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
                   )}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
@@ -175,7 +175,7 @@ export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
                       <td key={cell.id} className={cn(
                         "px-2 py-1.5 whitespace-nowrap tabular-nums",
                         isAgeCol && cn(
-                          "sticky left-0 z-20 font-medium group-hover:bg-muted/50",
+                          "sticky left-0 z-10 font-medium shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] group-hover:bg-muted/50",
                           row.original.isRetired ? 'bg-muted/30'
                             : hasEvents ? 'bg-yellow-50 dark:bg-yellow-900/10'
                             : 'bg-background'

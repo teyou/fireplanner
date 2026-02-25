@@ -600,7 +600,7 @@ export function ProjectionPage() {
   const renderTable = (containerClass: string) => (
     <div className={cn('border rounded-md overflow-auto', containerClass)}>
       <table className="w-full text-sm">
-        <thead className="sticky top-0 bg-background border-b z-10">
+        <thead className="sticky top-0 bg-background border-b z-20">
           {activeGroups.size > 0 && (
             <tr className="border-b bg-muted/30">
               <th colSpan={defaultVisibleCount} className="border-b" />
@@ -623,7 +623,7 @@ export function ProjectionPage() {
                   className={cn(
                     'px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap',
                     groupStartColumns.has(header.id) && 'border-l-2 border-l-border',
-                    header.column.id === 'age' && 'sticky left-0 z-30 bg-background',
+                    header.column.id === 'age' && 'sticky left-0 z-30 bg-background shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]',
                   )}
                 >
                   {header.isPlaceholder
@@ -661,7 +661,7 @@ export function ProjectionPage() {
                         isDepleted && !isAgeCol && 'text-destructive',
                         groupStartColumns.has(cell.column.id) && 'border-l-2 border-l-border',
                         isAgeCol && cn(
-                          'sticky left-0 z-20 font-medium group-hover:bg-muted/50',
+                          'sticky left-0 z-10 font-medium shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] group-hover:bg-muted/50',
                           isFireRow ? 'bg-green-50 dark:bg-green-900/10'
                             : original.isRetired ? 'bg-muted/30'
                             : 'bg-background'
