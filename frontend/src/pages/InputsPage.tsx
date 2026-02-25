@@ -372,7 +372,7 @@ function ExpensesContent() {
                         className="h-9"
                       />
                     </div>
-                    <div>
+                    <div className="relative">
                       {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">Until</Label>}
                       <Input
                         type="number"
@@ -385,9 +385,9 @@ function ExpensesContent() {
                         placeholder="Ongoing"
                         min={18}
                         max={120}
-                        className="h-9"
+                        className={cn("h-9", endAgeErr && "border-destructive")}
                       />
-                      {endAgeErr && <p className="text-destructive text-[11px] mt-0.5">{endAgeErr}</p>}
+                      {endAgeErr && <p className="absolute left-0 top-full text-destructive text-[11px] mt-0.5 whitespace-nowrap">{endAgeErr}</p>}
                     </div>
                     <Button
                       variant="ghost"
