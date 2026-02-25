@@ -228,4 +228,4 @@ export const CHANGELOG: ChangelogEntry[] = [
 ]
 
 /** Bump this string whenever any data file is updated. Triggers the banner for returning users. */
-export const DATA_VINTAGE = '2026-02-24'
+export const DATA_VINTAGE = '2026-02-25'
