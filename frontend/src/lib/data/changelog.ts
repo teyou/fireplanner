@@ -12,6 +12,22 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-25',
     category: 'feature',
+    title: 'Projection-derived FIRE number',
+    description:
+      'Dashboard and FIRE targets now show a projection-derived FIRE number alongside the simple formula when they differ by more than 5%. The projection number accounts for mortgage cash payments, CPF LIFE payouts, and rental income from your year-by-year plan.',
+    affectedSections: ['section-fire-settings'],
+  },
+  {
+    date: '2026-02-25',
+    category: 'fix',
+    title: 'FIRE number dollar-basis normalization',
+    description:
+      'The projection-derived FIRE number is now normalized to the same dollar basis as the simple FIRE number (today, retirement, or FIRE age dollars). Previously the deviation percentage could be inflated by the inflation gap between the projection year and the formula\'s basis year.',
+    affectedSections: ['section-fire-settings'],
+  },
+  {
+    date: '2026-02-25',
+    category: 'feature',
     title: 'Property shortfall impacts projections',
     description:
       'When a downsizing sale doesn\'t cover the outstanding mortgage, the shortfall is now deducted from your portfolio in both the projection table and Monte Carlo simulations instead of being silently absorbed.',
