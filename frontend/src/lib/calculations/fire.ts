@@ -21,6 +21,35 @@ export function calculateFireNumber(annualExpenses: number, swr: number): number
 }
 
 /**
+ * Projection-derived FIRE Number: uses the first retired year's actual cash flows
+ * from the year-by-year projection instead of the simplified expense formula.
+ *
+ * Accounts for:
+ * - Cash mortgage payments (increases target)
+ * - CPF LIFE payouts (decreases target)
+ * - Rental income (decreases target)
+ *
+ * annualExpenses from ProjectionRow already includes: base living expenses,
+ * parent support, healthcare, and downsizing rent.
+ */
+export function calculateProjectionFireNumber(
+  firstRetiredRow: {
+    annualExpenses: number
+    mortgageCashPayment: number
+    cpfLifePayout: number
+    rentalIncome: number
+  },
+  swr: number
+): number {
+  if (swr <= 0) return 0
+  const netAnnualNeed = firstRetiredRow.annualExpenses
+    + firstRetiredRow.mortgageCashPayment
+    - firstRetiredRow.cpfLifePayout
+    - firstRetiredRow.rentalIncome
+  return Math.max(0, netAnnualNeed) / swr
+}
+
+/**
  * Years to FIRE using the NPER formula (future value of growing annuity).
  *
  * Formula: ln((savings/r + fireNumber) / (savings/r + currentNW)) / ln(1+r)

@@ -12,6 +12,7 @@ import {
   projectPortfolioAtRetirement,
   calculateLiquidBridgeGap,
   calculateParentSupportAtAge,
+  calculateProjectionFireNumber,
 } from './fire'
 import type { ParentSupport } from '@/lib/types'
 
@@ -904,5 +905,77 @@ describe('calculateAllFireMetrics with expenseAdjustments', () => {
     // After spending adjustment: 60000 * 0.8 = 48000
     // FIRE number = 48000 / 0.04 = 1,200,000
     expect(m.fireNumber).toBe(1200000)
+  })
+})
+
+describe('calculateProjectionFireNumber', () => {
+  it('equals simple FIRE number when no mortgage or income offsets', () => {
+    const result = calculateProjectionFireNumber({
+      annualExpenses: 48000,
+      mortgageCashPayment: 0,
+      cpfLifePayout: 0,
+      rentalIncome: 0,
+    }, 0.04)
+    expect(result).toBe(1200000)
+  })
+
+  it('increases FIRE number when mortgage cash payment exists', () => {
+    const result = calculateProjectionFireNumber({
+      annualExpenses: 48000,
+      mortgageCashPayment: 12000,
+      cpfLifePayout: 0,
+      rentalIncome: 0,
+    }, 0.04)
+    expect(result).toBe(1500000)
+  })
+
+  it('decreases FIRE number when CPF LIFE payout offsets expenses', () => {
+    const result = calculateProjectionFireNumber({
+      annualExpenses: 48000,
+      mortgageCashPayment: 0,
+      cpfLifePayout: 13400,
+      rentalIncome: 0,
+    }, 0.04)
+    expect(result).toBe(865000)
+  })
+
+  it('decreases FIRE number when rental income offsets expenses', () => {
+    const result = calculateProjectionFireNumber({
+      annualExpenses: 48000,
+      mortgageCashPayment: 0,
+      cpfLifePayout: 0,
+      rentalIncome: 6000,
+    }, 0.04)
+    expect(result).toBe(1050000)
+  })
+
+  it('handles combined mortgage and CPF LIFE offsets', () => {
+    const result = calculateProjectionFireNumber({
+      annualExpenses: 48000,
+      mortgageCashPayment: 18000,
+      cpfLifePayout: 13400,
+      rentalIncome: 0,
+    }, 0.04)
+    expect(result).toBe(1315000)
+  })
+
+  it('returns 0 when income offsets exceed total expenses', () => {
+    const result = calculateProjectionFireNumber({
+      annualExpenses: 20000,
+      mortgageCashPayment: 0,
+      cpfLifePayout: 15000,
+      rentalIncome: 10000,
+    }, 0.04)
+    expect(result).toBe(0)
+  })
+
+  it('returns 0 when SWR is zero', () => {
+    const result = calculateProjectionFireNumber({
+      annualExpenses: 48000,
+      mortgageCashPayment: 0,
+      cpfLifePayout: 0,
+      rentalIncome: 0,
+    }, 0)
+    expect(result).toBe(0)
   })
 })
