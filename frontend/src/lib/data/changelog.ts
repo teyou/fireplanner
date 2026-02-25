@@ -10,6 +10,37 @@ export interface ChangelogEntry {
 /** Newest first. */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-02-25',
+    category: 'fix',
+    title: 'Mobile UX improvements',
+    description:
+      'Informational (i) tooltips now work on mobile via tap-to-open popovers. Chart tooltips respond to tap instead of requiring hover. Number inputs trigger the numeric keyboard on mobile. Scenario delete buttons are always visible on touch devices. Pathway tabs and page layout improved for small screens.',
+  },
+  {
+    date: '2026-02-25',
+    category: 'fix',
+    title: 'Earned income relief adjusts by age',
+    description:
+      'Earned income relief now only applies when salary or business income exists, and adjusts per-year as you cross age 55/60 brackets instead of being frozen at your current age.',
+    affectedSections: ['section-income'],
+  },
+  {
+    date: '2026-02-25',
+    category: 'fix',
+    title: 'SRS withdrawals visible in cash flow chart',
+    description:
+      'Cash flow chart now correctly shows SRS drawdowns as a visible series instead of hardcoding them to zero.',
+    affectedSections: ['section-fire-settings'],
+  },
+  {
+    date: '2026-02-25',
+    category: 'fix',
+    title: 'CPF milestones exclude MediSave',
+    description:
+      'CPF milestone comparisons (BRS/FRS/ERS) now exclude MediSave since MA cannot fund the retirement sum. Milestones trigger at the correct later ages.',
+    affectedSections: ['section-cpf'],
+  },
+  {
     date: '2026-02-24',
     category: 'feature',
     title: 'Locked Assets',
