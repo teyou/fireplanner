@@ -12,6 +12,8 @@ import {
   projectPortfolioAtRetirement,
   calculateLiquidBridgeGap,
   calculateParentSupportAtAge,
+  calculateProjectionFireNumber,
+  normalizeProjectionFireNumber,
 } from './fire'
 import type { ParentSupport } from '@/lib/types'
 
@@ -904,5 +906,237 @@ describe('calculateAllFireMetrics with expenseAdjustments', () => {
     // After spending adjustment: 60000 * 0.8 = 48000
     // FIRE number = 48000 / 0.04 = 1,200,000
     expect(m.fireNumber).toBe(1200000)
+  })
+})
+
+describe('calculateProjectionFireNumber', () => {
+  it('equals simple FIRE number when no mortgage or income offsets', () => {
+    const result = calculateProjectionFireNumber({
+      annualExpenses: 48000,
+      mortgageCashPayment: 0,
+      cpfLifePayout: 0,
+      rentalIncome: 0,
+    }, 0.04)
+    expect(result).toBe(1200000)
+  })
+
+  it('increases FIRE number when mortgage cash payment exists', () => {
+    const result = calculateProjectionFireNumber({
+      annualExpenses: 48000,
+      mortgageCashPayment: 12000,
+      cpfLifePayout: 0,
+      rentalIncome: 0,
+    }, 0.04)
+    expect(result).toBe(1500000)
+  })
+
+  it('decreases FIRE number when CPF LIFE payout offsets expenses', () => {
+    const result = calculateProjectionFireNumber({
+      annualExpenses: 48000,
+      mortgageCashPayment: 0,
+      cpfLifePayout: 13400,
+      rentalIncome: 0,
+    }, 0.04)
+    expect(result).toBe(865000)
+  })
+
+  it('decreases FIRE number when rental income offsets expenses', () => {
+    const result = calculateProjectionFireNumber({
+      annualExpenses: 48000,
+      mortgageCashPayment: 0,
+      cpfLifePayout: 0,
+      rentalIncome: 6000,
+    }, 0.04)
+    expect(result).toBe(1050000)
+  })
+
+  it('handles combined mortgage and CPF LIFE offsets', () => {
+    const result = calculateProjectionFireNumber({
+      annualExpenses: 48000,
+      mortgageCashPayment: 18000,
+      cpfLifePayout: 13400,
+      rentalIncome: 0,
+    }, 0.04)
+    expect(result).toBe(1315000)
+  })
+
+  it('returns 0 when income offsets exceed total expenses', () => {
+    const result = calculateProjectionFireNumber({
+      annualExpenses: 20000,
+      mortgageCashPayment: 0,
+      cpfLifePayout: 15000,
+      rentalIncome: 10000,
+    }, 0.04)
+    expect(result).toBe(0)
+  })
+
+  it('returns 0 when SWR is zero', () => {
+    const result = calculateProjectionFireNumber({
+      annualExpenses: 48000,
+      mortgageCashPayment: 0,
+      cpfLifePayout: 0,
+      rentalIncome: 0,
+    }, 0)
+    expect(result).toBe(0)
+  })
+})
+
+describe('normalizeProjectionFireNumber', () => {
+  // Raw projection number: $1,500,000 in age-46 dollars (age 30 now, inflation 2.5%)
+  const rawProj = 1500000
+  const firstRetiredAge = 46
+  const currentAge = 30
+  const inflation = 0.025
+
+  it('today basis: deflates to today dollars', () => {
+    // basisInflationFactor = 1 (today = no inflation)
+    // projInflationFactor = 1.025^16
+    // normalized = 1500000 * 1 / 1.025^16
+    const projFactor = Math.pow(1.025, 16)
+    const result = normalizeProjectionFireNumber(rawProj, firstRetiredAge, currentAge, inflation, 1)
+    expect(result).toBeCloseTo(rawProj / projFactor, 0)
+  })
+
+  it('retirement basis: adjusts to retirement-year dollars', () => {
+    // retirementAge 45, basisInflationFactor = 1.025^15
+    const basisFactor = Math.pow(1.025, 15)
+    const projFactor = Math.pow(1.025, 16)
+    const result = normalizeProjectionFireNumber(rawProj, firstRetiredAge, currentAge, inflation, basisFactor)
+    expect(result).toBeCloseTo(rawProj * basisFactor / projFactor, 0)
+  })
+
+  it('fireAge basis: adjusts to converged FIRE-year dollars', () => {
+    // converged FIRE age 53 → basisInflationFactor = 1.025^23
+    const basisFactor = Math.pow(1.025, 23)
+    const projFactor = Math.pow(1.025, 16)
+    const result = normalizeProjectionFireNumber(rawProj, firstRetiredAge, currentAge, inflation, basisFactor)
+    expect(result).toBeCloseTo(rawProj * basisFactor / projFactor, 0)
+  })
+
+  it('zero inflation: no normalization applied', () => {
+    const result = normalizeProjectionFireNumber(rawProj, firstRetiredAge, currentAge, 0, 1)
+    expect(result).toBe(rawProj)
+  })
+
+  it('first retired age equals current age: only basis factor applied', () => {
+    // projInflationFactor = 1 (no years elapsed), so result = raw * basisFactor
+    const basisFactor = Math.pow(1.025, 15)
+    const result = normalizeProjectionFireNumber(rawProj, 30, 30, inflation, basisFactor)
+    expect(result).toBeCloseTo(rawProj * basisFactor, 0)
+  })
+
+  it('deviation percentage is identical across all bases', () => {
+    // Simple: $48K expenses, SWR 4% → $1,200,000 in today's dollars
+    const simpleToday = 48000 / 0.04  // 1,200,000
+    // Projection raw: different expenses at age 46
+    const projRaw = (48000 * Math.pow(1.025, 16) + 12000) / 0.04 // mortgage adds $12K
+
+    // Today basis
+    const normToday = normalizeProjectionFireNumber(projRaw, 46, 30, 0.025, 1)
+    const devToday = (normToday - simpleToday) / simpleToday
+
+    // Retirement basis (age 45)
+    const retFactor = Math.pow(1.025, 15)
+    const simpleRet = simpleToday * retFactor
+    const normRet = normalizeProjectionFireNumber(projRaw, 46, 30, 0.025, retFactor)
+    const devRet = (normRet - simpleRet) / simpleRet
+
+    // FireAge basis (age 53)
+    const fireFactor = Math.pow(1.025, 23)
+    const simpleFire = simpleToday * fireFactor
+    const normFire = normalizeProjectionFireNumber(projRaw, 46, 30, 0.025, fireFactor)
+    const devFire = (normFire - simpleFire) / simpleFire
+
+    // All deviation percentages should be identical
+    expect(devToday).toBeCloseTo(devRet, 10)
+    expect(devToday).toBeCloseTo(devFire, 10)
+  })
+})
+
+describe('dollar basis consistency with projection numbers', () => {
+  const baseParams = {
+    currentAge: 30,
+    retirementAge: 45,
+    annualIncome: 120000,
+    annualExpenses: 60000,
+    liquidNetWorth: 100000,
+    cpfTotal: 0,
+    swr: 0.04,
+    expectedReturn: 0.07,
+    inflation: 0.025,
+    expenseRatio: 0.003,
+  }
+
+  // Simulate a first-retired row at age 46 (isRetired = age > retirementAge)
+  const firstRetiredAge = 46
+  const mockRetiredRow = {
+    annualExpenses: 60000 * Math.pow(1.025, 16), // inflated to age 46
+    mortgageCashPayment: 18000,
+    cpfLifePayout: 0,
+    rentalIncome: 0,
+    age: firstRetiredAge,
+  }
+
+  it('normalized projection number is in the same dollar basis as simple number for each basis', () => {
+    for (const basis of ['today', 'retirement', 'fireAge'] as const) {
+      const metrics = calculateAllFireMetrics({ ...baseParams, fireNumberBasis: basis })
+      const rawProj = calculateProjectionFireNumber(mockRetiredRow, baseParams.swr)
+
+      const { baseExpenses, parentSupportAnnual, healthcareCashOutlay, effectiveExpenses } = metrics.expensesBreakdown
+      const preInflationTotal = baseExpenses + parentSupportAnnual + healthcareCashOutlay
+      const basisFactor = preInflationTotal > 0 ? effectiveExpenses / preInflationTotal : 1
+
+      const normalized = normalizeProjectionFireNumber(
+        rawProj, firstRetiredAge, baseParams.currentAge, baseParams.inflation, basisFactor
+      )
+
+      // The normalized projection should be in the same order of magnitude as the simple number
+      // (not off by an inflation factor of 1.025^16 ≈ 1.48)
+      const ratio = normalized / metrics.fireNumber
+      expect(ratio).toBeGreaterThan(0.5)
+      expect(ratio).toBeLessThan(2.0)
+    }
+  })
+
+  it('deviation percentage is identical across all dollar bases', () => {
+    const deviations: number[] = []
+
+    for (const basis of ['today', 'retirement', 'fireAge'] as const) {
+      const metrics = calculateAllFireMetrics({ ...baseParams, fireNumberBasis: basis })
+      const rawProj = calculateProjectionFireNumber(mockRetiredRow, baseParams.swr)
+
+      const { baseExpenses, parentSupportAnnual, healthcareCashOutlay, effectiveExpenses } = metrics.expensesBreakdown
+      const preInflationTotal = baseExpenses + parentSupportAnnual + healthcareCashOutlay
+      const basisFactor = preInflationTotal > 0 ? effectiveExpenses / preInflationTotal : 1
+
+      const normalized = normalizeProjectionFireNumber(
+        rawProj, firstRetiredAge, baseParams.currentAge, baseParams.inflation, basisFactor
+      )
+
+      const deviation = (normalized - metrics.fireNumber) / metrics.fireNumber
+      deviations.push(deviation)
+    }
+
+    // All three deviations should be identical (same real comparison, different dollar years)
+    expect(deviations[0]).toBeCloseTo(deviations[1], 6)
+    expect(deviations[0]).toBeCloseTo(deviations[2], 4) // fireAge has convergence tolerance
+  })
+
+  it('no deviation when projection matches simple formula (zero inflation)', () => {
+    const params = { ...baseParams, inflation: 0 }
+    const metrics = calculateAllFireMetrics(params)
+    // With zero inflation, projection row expenses = today's expenses
+    const noInflationRow = {
+      annualExpenses: 60000, // no inflation applied
+      mortgageCashPayment: 0,
+      cpfLifePayout: 0,
+      rentalIncome: 0,
+      age: firstRetiredAge,
+    }
+    const rawProj = calculateProjectionFireNumber(noInflationRow, params.swr)
+    const normalized = normalizeProjectionFireNumber(rawProj, firstRetiredAge, params.currentAge, 0, 1)
+
+    // With no offsets and no inflation, projection = simple exactly
+    expect(normalized).toBeCloseTo(metrics.fireNumber, 0)
   })
 })

@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useFireCalculations } from '@/hooks/useFireCalculations'
 import { useProjection } from '@/hooks/useProjection'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { useAdjustedFireNumber } from '@/hooks/useAdjustedFireNumber'
 
 interface DashboardMetrics {
   fireNumber: number | null
@@ -14,6 +15,10 @@ interface DashboardMetrics {
   totalNetWorth: number | null
   portfolioDepletedAge: number | null
   lifeExpectancy: number
+  projectionFireNumber: number | null
+  deviationPct: number | null
+  showProjectionNumber: boolean
+  deviationFactors: string[]
 }
 
 /**
@@ -25,6 +30,7 @@ export function useDashboardMetrics(): DashboardMetrics {
   const { metrics } = useFireCalculations()
   const { summary: projSummary } = useProjection()
   const profile = useProfileStore()
+  const adjusted = useAdjustedFireNumber()
 
   return useMemo(() => {
     if (!metrics) {
@@ -39,6 +45,10 @@ export function useDashboardMetrics(): DashboardMetrics {
         totalNetWorth: null,
         portfolioDepletedAge: null,
         lifeExpectancy: profile.lifeExpectancy,
+        projectionFireNumber: null,
+        deviationPct: null,
+        showProjectionNumber: false,
+        deviationFactors: [],
       }
     }
 
@@ -60,6 +70,10 @@ export function useDashboardMetrics(): DashboardMetrics {
       totalNetWorth: profile.liquidNetWorth + profile.cpfOA + profile.cpfSA + profile.cpfMA + profile.cpfRA,
       portfolioDepletedAge: projSummary?.portfolioDepletedAge ?? null,
       lifeExpectancy: profile.lifeExpectancy,
+      projectionFireNumber: adjusted.projectionFireNumber,
+      deviationPct: adjusted.deviationPct,
+      showProjectionNumber: adjusted.showProjectionNumber,
+      deviationFactors: adjusted.deviationFactors,
     }
-  }, [metrics, projSummary, profile.currentAge, profile.lifeExpectancy, profile.liquidNetWorth, profile.cpfOA, profile.cpfSA, profile.cpfMA, profile.cpfRA])
+  }, [metrics, projSummary, adjusted, profile.currentAge, profile.lifeExpectancy, profile.liquidNetWorth, profile.cpfOA, profile.cpfSA, profile.cpfMA, profile.cpfRA])
 }

@@ -4,6 +4,7 @@ import { useProjection } from '@/hooks/useProjection'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useUIStore } from '@/stores/useUIStore'
+import { useAdjustedFireNumber } from '@/hooks/useAdjustedFireNumber'
 import { formatCurrency } from '@/lib/utils'
 import { Settings2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -27,6 +28,7 @@ function useStatsData(): StatChip[] {
   const lifeExpectancy = useProfileStore((s) => s.lifeExpectancy)
   const lastMCSuccessRate = useSimulationStore((s) => s.lastMCSuccessRate)
   const lastBacktestSuccessRate = useSimulationStore((s) => s.lastBacktestSuccessRate)
+  const adjusted = useAdjustedFireNumber()
 
   if (!metrics) {
     return [
@@ -67,7 +69,9 @@ function useStatsData(): StatChip[] {
     },
     {
       label: 'FIRE Number',
-      value: formatCurrency(metrics.fireNumber),
+      value: adjusted.showProjectionNumber && adjusted.projectionFireNumber !== null
+        ? `${formatCurrency(metrics.fireNumber)} (proj: ${formatCurrency(adjusted.projectionFireNumber)})`
+        : formatCurrency(metrics.fireNumber),
     },
     {
       label: 'Progress',

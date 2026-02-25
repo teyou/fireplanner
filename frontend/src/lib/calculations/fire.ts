@@ -21,6 +21,58 @@ export function calculateFireNumber(annualExpenses: number, swr: number): number
 }
 
 /**
+ * Projection-derived FIRE Number: uses the first retired year's actual cash flows
+ * from the year-by-year projection instead of the simplified expense formula.
+ *
+ * Accounts for:
+ * - Cash mortgage payments (increases target)
+ * - CPF LIFE payouts (decreases target)
+ * - Rental income (decreases target)
+ *
+ * annualExpenses from ProjectionRow already includes: base living expenses,
+ * parent support, healthcare, and downsizing rent.
+ */
+export function calculateProjectionFireNumber(
+  firstRetiredRow: {
+    annualExpenses: number
+    mortgageCashPayment: number
+    cpfLifePayout: number
+    rentalIncome: number
+  },
+  swr: number
+): number {
+  if (swr <= 0) return 0
+  const netAnnualNeed = firstRetiredRow.annualExpenses
+    + firstRetiredRow.mortgageCashPayment
+    - firstRetiredRow.cpfLifePayout
+    - firstRetiredRow.rentalIncome
+  return Math.max(0, netAnnualNeed) / swr
+}
+
+/**
+ * Normalizes a projection-derived FIRE number from first-retired-year
+ * nominal dollars to the same dollar basis as the simple FIRE number.
+ *
+ * basisInflationFactor = effectiveExpenses / preInflationSubtotal
+ *   where preInflationSubtotal = baseExpenses + parentSupportAnnual + healthcareCashOutlay
+ *   This captures whatever inflation adjustment the simple formula applied
+ *   (none for "today", (1+i)^retYears for "retirement", converged factor for "fireAge").
+ */
+export function normalizeProjectionFireNumber(
+  rawProjFireNumber: number,
+  firstRetiredAge: number,
+  currentAge: number,
+  inflation: number,
+  basisInflationFactor: number,
+): number {
+  const yearsToFirstRetired = Math.max(0, firstRetiredAge - currentAge)
+  const projInflationFactor = yearsToFirstRetired > 0 && inflation > 0
+    ? Math.pow(1 + inflation, yearsToFirstRetired)
+    : 1
+  return rawProjFireNumber * basisInflationFactor / projInflationFactor
+}
+
+/**
  * Years to FIRE using the NPER formula (future value of growing annuity).
  *
  * Formula: ln((savings/r + fireNumber) / (savings/r + currentNW)) / ln(1+r)
