@@ -14,6 +14,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-25',
     category: 'data-update',
+    title: 'CPF contribution rates corrected to 2026',
+    description:
+      'Senior worker CPF rates updated to reflect the 2023-2027 phased increases. Ages 55-60 now use 34% total (was 29.5%), ages 60-65 use 25% (was 20.5%), ages 65-70 use 16.5% (was 16%). Under-55 allocation now varies by sub-bracket: OA decreases and SA/MA increase as you age from 35 to 55.',
+    affectedSections: ['section-cpf'],
+    insight:
+      'The allocation shift matters for projections: a 50-year-old gets 15% to OA vs 23% for someone under 35, meaning less OA available for housing but faster SA growth at the higher 4% interest rate.',
+  },
+  {
+    date: '2026-02-25',
+    category: 'data-update',
     title: 'Historical returns extended to 2025',
     description:
       'Added 2025 data row to historical returns dataset (now 1928-2025, 98 years). Notable 2025 returns: Gold +66.2% (multi-decade record), STI +28.6%, S&P 500 +17.7%, MSCI World +21.4%, US Bonds +7.8%, REITs +2.3%. SG CPI fell to 0.9%.',

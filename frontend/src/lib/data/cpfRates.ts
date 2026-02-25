@@ -1,15 +1,19 @@
 // CPF Contribution & Retirement Sum Rates — 2026
 // Source: CPF Board (https://www.cpf.gov.sg/employer/employer-obligations/how-much-cpf-contributions-to-pay)
-// Downloaded: 2026-02-24
+// Allocation: https://www.cpf.gov.sg/content/dam/web/employer/employer-obligations/documents/CPFAllocationRatesfromJanuary2026.pdf
+// Downloaded: 2026-02-25
 // License: Public data
+// Note: Under-55 has 4 sub-brackets with different OA/SA/MA allocations
+//       but the same employee/employer/total rates.
+//       Post-55 saRate represents RA (Retirement Account) contributions.
 
 import type { CpfRateEntry } from '@/lib/types'
 
 export const CPF_RATES: CpfRateEntry[] = [
   {
-    ageGroup: '55 and below',
+    ageGroup: '35 and below',
     minAge: 0,
-    maxAge: 55,
+    maxAge: 35,
     employeeRate: 0.20,
     employerRate: 0.17,
     totalRate: 0.37,
@@ -18,37 +22,70 @@ export const CPF_RATES: CpfRateEntry[] = [
     maRate: 0.08,
   },
   {
+    ageGroup: '35-45',
+    minAge: 35,
+    maxAge: 45,
+    employeeRate: 0.20,
+    employerRate: 0.17,
+    totalRate: 0.37,
+    oaRate: 0.21,
+    saRate: 0.07,
+    maRate: 0.09,
+  },
+  {
+    ageGroup: '45-50',
+    minAge: 45,
+    maxAge: 50,
+    employeeRate: 0.20,
+    employerRate: 0.17,
+    totalRate: 0.37,
+    oaRate: 0.19,
+    saRate: 0.08,
+    maRate: 0.10,
+  },
+  {
+    ageGroup: '50-55',
+    minAge: 50,
+    maxAge: 55,
+    employeeRate: 0.20,
+    employerRate: 0.17,
+    totalRate: 0.37,
+    oaRate: 0.15,
+    saRate: 0.115,
+    maRate: 0.105,
+  },
+  {
     ageGroup: '55-60',
     minAge: 55,
     maxAge: 60,
-    employeeRate: 0.15,
-    employerRate: 0.145,
-    totalRate: 0.295,
-    oaRate: 0.115,
-    saRate: 0.045,
-    maRate: 0.135,
+    employeeRate: 0.18,
+    employerRate: 0.16,
+    totalRate: 0.34,
+    oaRate: 0.12,
+    saRate: 0.115, // RA
+    maRate: 0.105,
   },
   {
     ageGroup: '60-65',
     minAge: 60,
     maxAge: 65,
-    employeeRate: 0.095,
-    employerRate: 0.11,
-    totalRate: 0.205,
+    employeeRate: 0.125,
+    employerRate: 0.125,
+    totalRate: 0.25,
     oaRate: 0.035,
-    saRate: 0.03,
-    maRate: 0.14,
+    saRate: 0.11, // RA
+    maRate: 0.105,
   },
   {
     ageGroup: '65-70',
     minAge: 65,
     maxAge: 70,
     employeeRate: 0.075,
-    employerRate: 0.085,
-    totalRate: 0.16,
+    employerRate: 0.09,
+    totalRate: 0.165,
     oaRate: 0.01,
-    saRate: 0.01,
-    maRate: 0.14,
+    saRate: 0.05, // RA
+    maRate: 0.105,
   },
   {
     ageGroup: 'Above 70',
@@ -58,7 +95,7 @@ export const CPF_RATES: CpfRateEntry[] = [
     employerRate: 0.075,
     totalRate: 0.125,
     oaRate: 0.01,
-    saRate: 0.01,
+    saRate: 0.01, // RA
     maRate: 0.105,
   },
 ]

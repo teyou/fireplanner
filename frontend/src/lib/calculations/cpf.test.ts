@@ -36,11 +36,11 @@ describe('calculateCpfContribution', () => {
     expect(result.maAllocation).toBeCloseTo(72000 * 0.08, 0)
   })
 
-  it('age 57 uses 55-60 bracket (29.5% total)', () => {
+  it('age 57 uses 55-60 bracket (34% total)', () => {
     const result = calculateCpfContribution(72000, 57)
-    expect(result.total).toBeCloseTo(72000 * 0.295, 0)
-    expect(result.employee).toBeCloseTo(72000 * 0.15, 0)
-    expect(result.employer).toBeCloseTo(72000 * 0.145, 0)
+    expect(result.total).toBeCloseTo(72000 * 0.34, 0)
+    expect(result.employee).toBeCloseTo(72000 * 0.18, 0)
+    expect(result.employer).toBeCloseTo(72000 * 0.16, 0)
   })
 
   it('OW ceiling: salary above $96,000 is capped', () => {
@@ -62,14 +62,14 @@ describe('calculateCpfContribution', () => {
     expect(result.employee).toBe(0)
   })
 
-  it('age 62 uses 60-65 bracket (20.5%)', () => {
+  it('age 62 uses 60-65 bracket (25%)', () => {
     const result = calculateCpfContribution(60000, 62)
-    expect(result.total).toBeCloseTo(60000 * 0.205, 0)
+    expect(result.total).toBeCloseTo(60000 * 0.25, 0)
   })
 
-  it('age 67 uses 65-70 bracket (16%)', () => {
+  it('age 67 uses 65-70 bracket (16.5%)', () => {
     const result = calculateCpfContribution(60000, 67)
-    expect(result.total).toBeCloseTo(60000 * 0.16, 0)
+    expect(result.total).toBeCloseTo(60000 * 0.165, 0)
   })
 
   it('age 72 uses above 70 bracket (12.5%)', () => {
@@ -83,34 +83,34 @@ describe('calculateCpfContribution', () => {
     expect(result.total).toBeCloseTo(72000 * 0.37, 0)
   })
 
-  it('age 56 switches to "55-60" bracket (29.5%)', () => {
+  it('age 56 switches to "55-60" bracket (34%)', () => {
     const result = calculateCpfContribution(72000, 56)
-    expect(result.total).toBeCloseTo(72000 * 0.295, 0)
+    expect(result.total).toBeCloseTo(72000 * 0.34, 0)
   })
 
-  it('age 60 is still in "55-60" bracket (29.5%)', () => {
+  it('age 60 is still in "55-60" bracket (34%)', () => {
     const result = calculateCpfContribution(72000, 60)
-    expect(result.total).toBeCloseTo(72000 * 0.295, 0)
+    expect(result.total).toBeCloseTo(72000 * 0.34, 0)
   })
 
-  it('age 61 switches to "60-65" bracket (20.5%)', () => {
+  it('age 61 switches to "60-65" bracket (25%)', () => {
     const result = calculateCpfContribution(72000, 61)
-    expect(result.total).toBeCloseTo(72000 * 0.205, 0)
+    expect(result.total).toBeCloseTo(72000 * 0.25, 0)
   })
 
-  it('age 65 is still in "60-65" bracket (20.5%)', () => {
+  it('age 65 is still in "60-65" bracket (25%)', () => {
     const result = calculateCpfContribution(72000, 65)
-    expect(result.total).toBeCloseTo(72000 * 0.205, 0)
+    expect(result.total).toBeCloseTo(72000 * 0.25, 0)
   })
 
-  it('age 66 switches to "65-70" bracket (16%)', () => {
+  it('age 66 switches to "65-70" bracket (16.5%)', () => {
     const result = calculateCpfContribution(72000, 66)
-    expect(result.total).toBeCloseTo(72000 * 0.16, 0)
+    expect(result.total).toBeCloseTo(72000 * 0.165, 0)
   })
 
-  it('age 70 is still in "65-70" bracket (16%)', () => {
+  it('age 70 is still in "65-70" bracket (16.5%)', () => {
     const result = calculateCpfContribution(72000, 70)
-    expect(result.total).toBeCloseTo(72000 * 0.16, 0)
+    expect(result.total).toBeCloseTo(72000 * 0.165, 0)
   })
 
   it('age 71 switches to "above 70" bracket (12.5%)', () => {
@@ -118,11 +118,11 @@ describe('calculateCpfContribution', () => {
     expect(result.total).toBeCloseTo(72000 * 0.125, 0)
   })
 
-  it('rate drops from 37% to 29.5% at the 55/56 boundary', () => {
+  it('rate drops from 37% to 34% at the 55/56 boundary', () => {
     const at55 = calculateCpfContribution(72000, 55)
     const at56 = calculateCpfContribution(72000, 56)
     expect(at55.total).toBeGreaterThan(at56.total)
-    expect(at55.total - at56.total).toBeCloseTo(72000 * (0.37 - 0.295), 0)
+    expect(at55.total - at56.total).toBeCloseTo(72000 * (0.37 - 0.34), 0)
   })
 
   // Property-based: CPF <= salary * max_total_rate (37%)
