@@ -813,3 +813,96 @@ describe('projectPortfolioAtRetirement', () => {
     )
   })
 })
+
+describe('calculateAllFireMetrics with expenseAdjustments', () => {
+  const baseParams = {
+    currentAge: 30,
+    retirementAge: 60,
+    annualIncome: 100000,
+    annualExpenses: 50000,
+    liquidNetWorth: 200000,
+    cpfTotal: 0,
+    swr: 0.04,
+    expectedReturn: 0.07,
+    inflation: 0.025,
+    expenseRatio: 0.003,
+    lifeExpectancy: 90,
+  }
+
+  it('adjustments affect annualSavings (using current age expenses)', () => {
+    // Living with parents at age 30 saves $20K/yr on rent
+    const m = calculateAllFireMetrics({
+      ...baseParams,
+      expenseAdjustments: [
+        { id: '1', label: 'Live with parents', amount: -20000, startAge: 25, endAge: 35 },
+      ],
+    })
+    // Effective expenses at age 30: 50000 - 20000 = 30000
+    // annualSavings = 100000 - 30000 = 70000 (vs 50000 without adjustment)
+    expect(m.annualSavings).toBe(70000)
+    expect(m.savingsRate).toBeCloseTo(0.7, 2)
+  })
+
+  it('adjustments affect FIRE number (using retirement age expenses)', () => {
+    // Higher expenses in retirement due to healthcare helper
+    const m = calculateAllFireMetrics({
+      ...baseParams,
+      expenseAdjustments: [
+        { id: '1', label: 'Helper', amount: 24000, startAge: 55, endAge: null },
+      ],
+    })
+    // Effective expenses at retirement age 60: 50000 + 24000 = 74000
+    // FIRE number = 74000 / 0.04 = 1,850,000
+    expect(m.fireNumber).toBe(1850000)
+  })
+
+  it('adjustment inactive at retirement age does not affect FIRE number', () => {
+    const m = calculateAllFireMetrics({
+      ...baseParams,
+      expenseAdjustments: [
+        { id: '1', label: 'Child school', amount: 20000, startAge: 35, endAge: 50 },
+      ],
+    })
+    // Adjustment ends at 50, retirement is 60 → no effect on FIRE number
+    // FIRE number = 50000 / 0.04 = 1,250,000
+    expect(m.fireNumber).toBe(1250000)
+    // But savings at current age 30 are unaffected too (adjustment starts at 35)
+    expect(m.annualSavings).toBe(50000)
+  })
+
+  it('lean/fat numbers use effective expenses at retirement', () => {
+    const m = calculateAllFireMetrics({
+      ...baseParams,
+      expenseAdjustments: [
+        { id: '1', label: 'Helper', amount: 10000, startAge: 55, endAge: null },
+      ],
+    })
+    // Effective retirement expenses: 50000 + 10000 = 60000
+    // Lean = 60000 * 0.6 / 0.04 = 900,000
+    // Fat = 60000 * 1.5 / 0.04 = 2,250,000
+    expect(m.leanFireNumber).toBe(900000)
+    expect(m.fatFireNumber).toBe(2250000)
+  })
+
+  it('empty adjustments array behaves same as no adjustments', () => {
+    const without = calculateAllFireMetrics(baseParams)
+    const withEmpty = calculateAllFireMetrics({ ...baseParams, expenseAdjustments: [] })
+    expect(withEmpty.fireNumber).toBe(without.fireNumber)
+    expect(withEmpty.annualSavings).toBe(without.annualSavings)
+  })
+
+  it('retirementSpendingAdjustment multiplies effective total', () => {
+    // Design decision: retirementSpendingAdjustment multiplies (base + adjustments)
+    const m = calculateAllFireMetrics({
+      ...baseParams,
+      retirementSpendingAdjustment: 0.8,
+      expenseAdjustments: [
+        { id: '1', label: 'Helper', amount: 10000, startAge: 55, endAge: null },
+      ],
+    })
+    // Effective at retirement: 50000 + 10000 = 60000
+    // After spending adjustment: 60000 * 0.8 = 48000
+    // FIRE number = 48000 / 0.04 = 1,200,000
+    expect(m.fireNumber).toBe(1200000)
+  })
+})

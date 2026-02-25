@@ -1,5 +1,6 @@
-import type { FireMetrics, FireType, FireNumberBasis, ParentSupport, HealthcareConfig, LockedAsset } from '@/lib/types'
+import type { FireMetrics, FireType, FireNumberBasis, ParentSupport, HealthcareConfig, LockedAsset, ExpenseAdjustment } from '@/lib/types'
 import { calculateHealthcareLAE } from './healthcare'
+import { getEffectiveExpenses } from './expenses'
 
 /** Expense multiplier for each FIRE type */
 const FIRE_TYPE_MULTIPLIERS: Record<FireType, number> = {
@@ -253,6 +254,7 @@ export function calculateAllFireMetrics(params: {
   healthcareConfig?: HealthcareConfig | null
   cashReserveOffset?: number
   lockedAssets?: LockedAsset[]
+  expenseAdjustments?: ExpenseAdjustment[]
 }): FireMetrics {
   const {
     currentAge,
@@ -286,7 +288,9 @@ export function calculateAllFireMetrics(params: {
   const lockedAssetsTotal = lockedAssetsArr.reduce((sum, a) => sum + a.amount, 0)
   const accessibleNetWorth = investableLiquid
   const totalNetWorthWithLocked = totalNetWorth + lockedAssetsTotal
-  const annualSavings = annualIncome - annualExpenses
+  const expenseAdjustments = params.expenseAdjustments ?? []
+  const currentExpenses = getEffectiveExpenses(currentAge, annualExpenses, expenseAdjustments, lifeExpectancy)
+  const annualSavings = annualIncome - currentExpenses
   const savingsRate = annualIncome > 0 ? annualSavings / annualIncome : 0
 
   // Net real return = nominal - inflation - expense ratio (computed first — needed by LAE)
@@ -294,7 +298,8 @@ export function calculateAllFireMetrics(params: {
 
   // Apply retirement spending adjustment and FIRE type multiplier to expenses for the FIRE number
   const multiplier = FIRE_TYPE_MULTIPLIERS[fireType]
-  const baseExpenses = annualExpenses * retirementSpendingAdjustment * multiplier
+  const retirementEffectiveExpenses = getEffectiveExpenses(retirementAge, annualExpenses, expenseAdjustments, lifeExpectancy)
+  const baseExpenses = retirementEffectiveExpenses * retirementSpendingAdjustment * multiplier
   let effectiveExpenses = baseExpenses
 
   // Add parent support at retirement age (additive, NOT subject to adjustment/multiplier)
@@ -349,8 +354,8 @@ export function calculateAllFireMetrics(params: {
 
   const fireNumber = calculateFireNumber(effectiveExpenses, swr)
   // Lean/Fat reference values also include retirement adjustment and inflate when using retirement or fireAge basis
-  let leanExpenses = annualExpenses * retirementSpendingAdjustment
-  let fatExpenses = annualExpenses * retirementSpendingAdjustment
+  let leanExpenses = retirementEffectiveExpenses * retirementSpendingAdjustment
+  let fatExpenses = retirementEffectiveExpenses * retirementSpendingAdjustment
   if (fireNumberBasis === 'retirement' && yearsToRetirement > 0 && inflation > 0) {
     const retirementInflationFactor = Math.pow(1 + inflation, yearsToRetirement)
     leanExpenses *= retirementInflationFactor

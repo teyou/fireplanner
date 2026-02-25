@@ -133,6 +133,7 @@ export function useFireCalculations(): FireCalculationsResult {
       healthcareConfig: profile.healthcareConfig?.enabled ? profile.healthcareConfig : null,
       cashReserveOffset,
       lockedAssets: profile.lockedAssets,
+      expenseAdjustments: profile.expenseAdjustments,
     })
 
     return { metrics, hasErrors: false, errors: {} }
@@ -194,5 +195,6 @@ export function useFireCalculations(): FireCalculationsResult {
     profile.cashReserveMonths,
     profile.cashReserveReturn,
     profile.lockedAssets,
+    profile.expenseAdjustments,
   ])
 }
