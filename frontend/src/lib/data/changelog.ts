@@ -11,6 +11,30 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-25',
+    category: 'feature',
+    title: 'Property shortfall impacts projections',
+    description:
+      'When a downsizing sale doesn\'t cover the outstanding mortgage, the shortfall is now deducted from your portfolio in both the projection table and Monte Carlo simulations instead of being silently absorbed.',
+    affectedSections: ['section-property'],
+  },
+  {
+    date: '2026-02-25',
+    category: 'feature',
+    title: 'Property sale shortfall warning',
+    description:
+      'Downsizing analysis now warns when sale proceeds don\'t cover outstanding costs, showing the exact shortfall amount you would need to bring to settlement.',
+    affectedSections: ['section-property'],
+  },
+  {
+    date: '2026-02-25',
+    category: 'feature',
+    title: 'Retirement withdrawal underfunded warning',
+    description:
+      'One-time retirement withdrawals now warn when they exceed your available portfolio at the planned age, showing which ages are affected and the total shortfall.',
+    affectedSections: ['section-fire-settings'],
+  },
+  {
+    date: '2026-02-25',
     category: 'fix',
     title: 'Mobile UX improvements',
     description:
