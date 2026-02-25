@@ -5,10 +5,40 @@ export interface ChangelogEntry {
   category: 'data-update' | 'feature' | 'fix'
   /** Optional section IDs for section-level nudges (e.g., 'section-cpf') */
   affectedSections?: string[]
+  /** Optional deeper explanation of why this change matters */
+  insight?: string
 }
 
 /** Newest first. */
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    date: '2026-02-25',
+    category: 'fix',
+    title: 'MediSave depletion now reduces CPF MA',
+    description:
+      'Healthcare premiums (MediShield Life, ISP, CareShield Life) are now deducted from your MediSave balance in the projection. Previously, cpfMA only grew from contributions and interest but never shrank, overstating your CPF total. The projection summary now also reports MediSave depletion age when applicable.',
+    insight:
+      'The projectMediSaveTimeline() function existed and was fully tested, but was never called by the projection engine. This is a common "dead code" pattern: a feature is implemented in isolation, passes unit tests, but the integration point is missed. The fix was a single import and 8 lines of wiring code.',
+    affectedSections: ['section-cpf'],
+  },
+  {
+    date: '2026-02-25',
+    category: 'fix',
+    title: 'Locked asset unlocks now increase liquid NW',
+    description:
+      'Locked assets (employer RSUs, fixed deposits, endowments) that mature at a specific age now correctly flow into your liquid portfolio. Previously, the unlock value was computed but never added to liquidNW, understating your net worth at the unlock age.',
+    insight:
+      'The income engine computed lockedAssetUnlock per row, but the projection layer (which builds on top of income rows) never included `liquidNW += incomeRow.lockedAssetUnlock`. This meant setting a $100K endowment maturing at age 50 would show the unlock in income breakdowns but leave your portfolio balance unchanged.',
+    affectedSections: ['section-net-worth'],
+  },
+  {
+    date: '2026-02-25',
+    category: 'feature',
+    title: 'SRS and healthcare breakdown in projection table',
+    description:
+      'The year-by-year projection table now shows SRS balance, contributions, and taxable withdrawals under Income Breakdown, and healthcare premium breakdown (MediShield Life, ISP, CareShield Life, out-of-pocket, MediSave deductible) under Expenses Breakdown. Columns auto-hide when the feature is not enabled.',
+    affectedSections: ['section-projection'],
+  },
   {
     date: '2026-02-24',
     category: 'feature',
@@ -197,4 +227,4 @@ export const CHANGELOG: ChangelogEntry[] = [
 ]
 
 /** Bump this string whenever any data file is updated. Triggers the banner for returning users. */
-export const DATA_VINTAGE = '2026-02-24'
+export const DATA_VINTAGE = '2026-02-25'

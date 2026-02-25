@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import Markdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { ExternalLink, RefreshCw, Sparkles, Bug } from 'lucide-react'
+import { ExternalLink, RefreshCw, Sparkles, Bug, ChevronRight, Lightbulb } from 'lucide-react'
 import { DATA_SOURCES } from '@/lib/data/sources'
 import { CHANGELOG, DATA_VINTAGE } from '@/lib/data/changelog'
 import { useUIStore } from '@/stores/useUIStore'
@@ -466,22 +466,35 @@ function ChangelogList() {
   }, [])
 
   return (
-    <div className="space-y-6">
-      {grouped.map(([date, entries]) => (
-        <div key={date}>
-          <h4 className="text-sm font-medium text-foreground mb-2">{date}</h4>
-          <div className="space-y-2">
+    <div className="space-y-1">
+      {grouped.map(([date, entries], dateIdx) => (
+        <details key={date} open={dateIdx === 0} className="group/date">
+          <summary className="flex items-center gap-2 cursor-pointer py-2 select-none list-none [&::-webkit-details-marker]:hidden">
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-open/date:rotate-90" />
+            <span className="text-sm font-medium text-foreground">{date}</span>
+            <span className="text-xs text-muted-foreground">({entries.length} {entries.length === 1 ? 'change' : 'changes'})</span>
+          </summary>
+          <div className="ml-5 space-y-1 pb-2">
             {entries.map((entry) => (
-              <div key={`${entry.date}-${entry.title}`} className="flex gap-2">
-                <CategoryIcon category={entry.category} />
-                <div>
+              <details key={`${entry.date}-${entry.title}`} className="group/entry rounded-md">
+                <summary className="flex items-start gap-2 cursor-pointer py-1.5 select-none list-none [&::-webkit-details-marker]:hidden">
+                  <ChevronRight className="h-3.5 w-3.5 mt-0.5 text-muted-foreground/50 transition-transform group-open/entry:rotate-90 shrink-0" />
+                  <CategoryIcon category={entry.category} />
                   <span className="text-sm font-medium text-foreground">{entry.title}</span>
+                </summary>
+                <div className="ml-9 pb-2 space-y-2">
                   <p className="text-sm text-muted-foreground">{entry.description}</p>
+                  {entry.insight && (
+                    <div className="flex gap-2 rounded-md bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 p-2.5">
+                      <Lightbulb className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-900 dark:text-amber-200/80">{entry.insight}</p>
+                    </div>
+                  )}
                 </div>
-              </div>
+              </details>
             ))}
           </div>
-        </div>
+        </details>
       ))}
     </div>
   )
