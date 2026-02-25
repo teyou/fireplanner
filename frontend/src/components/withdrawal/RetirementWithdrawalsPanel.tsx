@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -6,6 +6,8 @@ import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { useProjection } from '@/hooks/useProjection'
+import { formatCurrency } from '@/lib/utils'
 import type { RetirementWithdrawal } from '@/lib/types'
 
 function generateId(): string {
@@ -19,6 +21,19 @@ export function RetirementWithdrawalsPanel() {
   const addEntry = useProfileStore((s) => s.addRetirementWithdrawal)
   const removeEntry = useProfileStore((s) => s.removeRetirementWithdrawal)
   const updateEntry = useProfileStore((s) => s.updateRetirementWithdrawal)
+  const { rows } = useProjection()
+
+  // Detect underfunded withdrawal years: withdrawal is active but portfolio is depleted
+  const underfundedAges = useMemo(() => {
+    if (!rows || entries.length === 0) return []
+    const ages: number[] = []
+    for (const row of rows) {
+      if (row.retirementWithdrawalExpense > 0 && row.liquidNW === 0) {
+        ages.push(row.age)
+      }
+    }
+    return ages
+  }, [rows, entries.length])
 
   const handleAdd = useCallback(() => {
     const entry: RetirementWithdrawal = {
@@ -110,6 +125,31 @@ export function RetirementWithdrawalsPanel() {
             </div>
           </div>
         ))}
+
+        {underfundedAges.length > 0 && (
+          <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <p className="text-sm font-medium text-destructive">
+              Withdrawals exceed available funds
+            </p>
+            <p className="text-xs text-destructive/80 mt-1">
+              At age{underfundedAges.length > 1 ? 's' : ''}{' '}
+              {underfundedAges.length <= 5
+                ? underfundedAges.join(', ')
+                : `${underfundedAges[0]}–${underfundedAges[underfundedAges.length - 1]}`
+              }, your portfolio is depleted and cannot fully fund these withdrawals.
+              The shortfall of{' '}
+              {formatCurrency(
+                rows!.reduce((sum, r) =>
+                  r.retirementWithdrawalExpense > 0 && r.liquidNW === 0
+                    ? sum + r.retirementWithdrawalExpense
+                    : sum,
+                  0,
+                ),
+              )}{' '}
+              is not financed.
+            </p>
+          </div>
+        )}
 
         <button
           onClick={handleAdd}

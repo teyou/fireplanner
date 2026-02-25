@@ -353,6 +353,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     let savingsOrWithdrawal: number
     let totalIncome: number
     let goalDeduction = 0
+    let retirementWithdrawalTotal = 0
 
     // Parent support at this age (uses its own growth rate, not inflation)
     const parentSupportExpense = parentSupportEnabled
@@ -489,16 +490,17 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       }
 
       // One-time retirement withdrawals at this age (supports durationYears range)
-      let oneTimeWithdrawalTotal = 0
+      retirementWithdrawalTotal = 0
       for (const rw of params.retirementWithdrawals ?? []) {
         const endAge = rw.age + (rw.durationYears ?? 1)
         if (age >= rw.age && age < endAge) {
           const amount = rw.inflationAdjusted
             ? rw.amount * Math.pow(1 + inflation, year)
             : rw.amount
-          oneTimeWithdrawalTotal += amount
+          retirementWithdrawalTotal += amount
         }
       }
+      let oneTimeWithdrawalTotal = retirementWithdrawalTotal
 
       // Financial goals that fall in retirement
       goalDeduction = 0
@@ -662,6 +664,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       mortgageCashPayment: effectiveMortgagePayment,
       downsizingRentExpense,
       goalExpense: goalDeduction,
+      retirementWithdrawalExpense: retirementWithdrawalTotal,
       cumulativeSavings: incomeRow.cumulativeSavings,
       activeLifeEvents: incomeRow.activeLifeEvents,
     })
