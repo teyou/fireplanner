@@ -19,8 +19,10 @@ import type {
   DownsizingConfig,
   HealthcareConfig,
   CpfLifePlan,
+  ExpenseAdjustment,
 } from '@/lib/types'
 import { getBalaFactor } from '@/lib/data/balaTable'
+import { getEffectiveExpenses } from './expenses'
 import { calculateParentSupportAtAge } from './fire'
 import { calculateBrsFrsErs } from './cpf'
 import { calculateHealthcareCostAtAge } from './healthcare'
@@ -84,6 +86,8 @@ export interface ProjectionParams {
   retirementWithdrawals?: RetirementWithdrawal[]
   // Financial goals (pre- and post-retirement)
   financialGoals?: FinancialGoal[]
+  // Expense adjustments (age-based spending changes)
+  expenseAdjustments?: ExpenseAdjustment[]
   // CPF LIFE (for bequest + milestone computation)
   cpfLifeStartAge: number
   cpfLifePlan: CpfLifePlan
@@ -424,7 +428,8 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       }
     }
 
-    const baseExpenses = isRetired ? annualExpenses * retirementSpendingAdjustment : annualExpenses
+    const effectiveBase = getEffectiveExpenses(age, annualExpenses, params.expenseAdjustments ?? [], lifeExpectancy)
+    const baseExpenses = isRetired ? effectiveBase * retirementSpendingAdjustment : effectiveBase
     const inflationAdjustedExpenses = baseExpenses * Math.pow(1 + inflation, year) + parentSupportExpense + downsizingRentExpense + healthcareCashOutlay
 
     if (!isRetired) {
@@ -435,7 +440,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       const extraExpenses = parentSupportExpense + healthcareCashOutlay + downsizingRentExpense
       // When income < base expenses, income projection clamps annualSavings to max(0, ...).
       // The shortfall must still be deducted from the portfolio.
-      const baseExpInflated = annualExpenses * Math.pow(1 + inflation, year)
+      const baseExpInflated = effectiveBase * Math.pow(1 + inflation, year)
       const incomeShortfall = Math.max(0, baseExpInflated - incomeRow.totalNet)
 
       // Financial goals that fall in this year (pre-retirement)

@@ -2527,3 +2527,77 @@ describe('earned income relief', () => {
     expect(expectedChargeable).toBeGreaterThan(0)
   })
 })
+
+describe('generateIncomeProjection with expenseAdjustments', () => {
+  const baseParams = {
+    currentAge: 30,
+    retirementAge: 65,
+    lifeExpectancy: 90,
+    salaryModel: 'simple' as const,
+    annualSalary: 100000,
+    salaryGrowthRate: 0,
+    realisticPhases: [{ label: 'Career', minAge: 22, maxAge: 65, growthRate: 0 }],
+    promotionJumps: [],
+    momEducation: 'degree' as const,
+    momAdjustment: 1.0,
+    employerCpfEnabled: false,
+    incomeStreams: [],
+    lifeEvents: [],
+    lifeEventsEnabled: false,
+    annualExpenses: 50000,
+    inflation: 0,
+    personalReliefs: 0,
+    srsAnnualContribution: 0,
+    initialCpfOA: 0,
+    initialCpfSA: 0,
+    initialCpfMA: 0,
+  }
+
+  it('savings differ by age with adjustment active at some ages', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      expenseAdjustments: [
+        { id: '1', label: 'Rent', amount: 10000, startAge: 35, endAge: 50 },
+      ],
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    const row35 = rows.find(r => r.age === 35)!
+    const row50 = rows.find(r => r.age === 50)!
+
+    // At age 30: no adjustment active → expenses = 50000
+    // At age 35: adjustment active → expenses = 60000
+    // At age 50: adjustment ended → expenses = 50000
+
+    // annualSavings = totalNet - inflationAdjustedExpenses - voluntaryTopUps
+    // With no CPF and no inflation, savings = totalNet - expenses
+    expect(row30.annualSavings).toBeGreaterThan(row35.annualSavings)
+    expect(row35.annualSavings).toBeLessThan(row50.annualSavings)
+  })
+
+  it('null endAge resolves to lifeExpectancy', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      expenseAdjustments: [
+        { id: '1', label: 'Ongoing', amount: 5000, startAge: 40, endAge: null },
+      ],
+    })
+
+    const row39 = rows.find(r => r.age === 39)!
+    const row40 = rows.find(r => r.age === 40)!
+    const row89 = rows.find(r => r.age === 89)!
+
+    // Adjustment inactive at 39, active from 40 onward
+    expect(row39.annualSavings).toBeGreaterThan(row40.annualSavings)
+    // Still active at 89 (lifeExpectancy=90, endAge exclusive)
+    expect(row89.annualSavings).toBeLessThan(row39.annualSavings)
+  })
+
+  it('empty adjustments behaves same as no adjustments', () => {
+    const rowsWithout = generateIncomeProjection(baseParams)
+    const rowsWith = generateIncomeProjection({ ...baseParams, expenseAdjustments: [] })
+
+    expect(rowsWith[0].annualSavings).toBe(rowsWithout[0].annualSavings)
+    expect(rowsWith[5].annualSavings).toBe(rowsWithout[5].annualSavings)
+  })
+})

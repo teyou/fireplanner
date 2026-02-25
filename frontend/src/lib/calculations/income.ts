@@ -12,8 +12,10 @@ import type {
   CpfHousingMode,
   CpfOaWithdrawal,
   LockedAsset,
+  ExpenseAdjustment,
 } from '@/lib/types'
 import { getMomSalary } from '@/lib/data/momSalary'
+import { getEffectiveExpenses } from './expenses'
 import { calculateCpfContribution, calculateCpfExtraInterestWithAge, calculateCpfLifePayoutAtAge, getRetirementSumAmount, performAge55Transfer, allocatePostAge55Contribution, calculateCpfisInterest } from './cpf'
 import { calculateChargeableIncome, calculateProgressiveTax } from './tax'
 import { earnedIncomeReliefForAge, RELIEF_AMOUNTS } from '@/lib/data/taxBrackets'
@@ -273,6 +275,8 @@ export interface IncomeProjectionParams {
   cpfTopUpMA?: number
   // Age-gated locked assets
   lockedAssets?: LockedAsset[]
+  // Expense adjustments (age-based spending changes)
+  expenseAdjustments?: ExpenseAdjustment[]
 }
 
 /**
@@ -610,7 +614,8 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     const totalNet = totalGross - sgTax - cpfEmployee
 
     // Savings
-    const inflationAdjustedExpenses = params.annualExpenses * Math.pow(1 + params.inflation, year)
+    const effectiveBase = getEffectiveExpenses(age, params.annualExpenses, params.expenseAdjustments ?? [], params.lifeExpectancy)
+    const inflationAdjustedExpenses = effectiveBase * Math.pow(1 + params.inflation, year)
     const savingsPaused = isSavingsPaused(age, params.lifeEvents, params.lifeEventsEnabled)
     const voluntaryTopUps = !isRetired
       ? (params.cpfTopUpOA ?? 0) + (params.cpfTopUpSA ?? 0) + (params.cpfTopUpMA ?? 0)
