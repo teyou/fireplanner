@@ -30,6 +30,13 @@ export const CHANGELOG: ChangelogEntry[] = [
   },
   {
     date: '2026-02-25',
+    category: 'feature',
+    title: 'Expandable changelog in Reference Guide',
+    description:
+      'The "What\'s New" section in Reference Guide now groups entries by date, lets you expand each entry for details, and shows insight badges for entries with deeper explanations.',
+  },
+  {
+    date: '2026-02-25',
     category: 'fix',
     title: 'Expense adjustment validation layout',
     description:
