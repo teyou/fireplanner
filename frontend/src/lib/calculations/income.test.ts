@@ -2795,3 +2795,469 @@ describe('CPF MA BHS overflow in projection', () => {
     expect(rows[0].cpfMA).toBeLessThanOrEqual(MEDISAVE_BHS + 1)
   })
 })
+
+// ============================================================
+// taxTreatment: tax-exempt streams excluded from taxable income
+// ============================================================
+
+describe('taxTreatment on income streams', () => {
+  const baseParams = {
+    currentAge: 30,
+    retirementAge: 65,
+    lifeExpectancy: 70,
+    salaryModel: 'simple' as const,
+    annualSalary: 0,
+    salaryGrowthRate: 0,
+    realisticPhases: DEFAULT_CAREER_PHASES,
+    promotionJumps: [],
+    momEducation: 'degree' as const,
+    momAdjustment: 1.0,
+    employerCpfEnabled: false,
+    incomeStreams: [] as IncomeStream[],
+    lifeEvents: [] as LifeEvent[],
+    lifeEventsEnabled: false,
+    annualExpenses: 10000,
+    inflation: 0,
+    personalReliefs: 0,
+    srsAnnualContribution: 0,
+    initialCpfOA: 0,
+    initialCpfSA: 0,
+    initialCpfMA: 0,
+  }
+
+  it('rental stream marked tax-exempt produces zero income tax', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      incomeStreams: [{
+        id: 'r1',
+        name: 'Tax-Free Rental',
+        annualAmount: 50000,
+        startAge: 30,
+        endAge: 65,
+        growthRate: 0,
+        type: 'rental',
+        growthModel: 'none',
+        taxTreatment: 'tax-exempt',
+        isCpfApplicable: false,
+        isActive: true,
+      }],
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    expect(row30.rentalIncome).toBe(50000)
+    expect(row30.totalGross).toBe(50000)
+    expect(row30.sgTax).toBe(0) // tax-exempt should not be taxed
+  })
+
+  it('rental stream marked taxable produces nonzero income tax', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      incomeStreams: [{
+        id: 'r1',
+        name: 'Taxable Rental',
+        annualAmount: 50000,
+        startAge: 30,
+        endAge: 65,
+        growthRate: 0,
+        type: 'rental',
+        growthModel: 'none',
+        taxTreatment: 'taxable',
+        isCpfApplicable: false,
+        isActive: true,
+      }],
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    expect(row30.rentalIncome).toBe(50000)
+    expect(row30.sgTax).toBeGreaterThan(0) // taxable should be taxed
+  })
+
+  it('business stream marked tax-exempt produces zero income tax', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      incomeStreams: [{
+        id: 'b1',
+        name: 'Tax-Free Consulting',
+        annualAmount: 60000,
+        startAge: 30,
+        endAge: 65,
+        growthRate: 0,
+        type: 'business',
+        growthModel: 'none',
+        taxTreatment: 'tax-exempt',
+        isCpfApplicable: false,
+        isActive: true,
+      }],
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    expect(row30.businessIncome).toBe(60000)
+    expect(row30.sgTax).toBe(0)
+  })
+
+  it('employment stream marked tax-exempt produces zero income tax', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      incomeStreams: [{
+        id: 'e1',
+        name: 'Tax-Exempt Employment',
+        annualAmount: 40000,
+        startAge: 30,
+        endAge: 65,
+        growthRate: 0,
+        type: 'employment',
+        growthModel: 'none',
+        taxTreatment: 'tax-exempt',
+        isCpfApplicable: false,
+        isActive: true,
+      }],
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    expect(row30.salary).toBe(40000) // still appears in salary for display
+    expect(row30.sgTax).toBe(0)      // but not taxed
+  })
+
+  it('investment stream marked taxable IS taxed', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      incomeStreams: [{
+        id: 'i1',
+        name: 'Taxable Dividends',
+        annualAmount: 30000,
+        startAge: 30,
+        endAge: 65,
+        growthRate: 0,
+        type: 'investment',
+        growthModel: 'none',
+        taxTreatment: 'taxable',
+        isCpfApplicable: false,
+        isActive: true,
+      }],
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    expect(row30.investmentIncome).toBe(30000)
+    expect(row30.sgTax).toBeGreaterThan(0) // taxable investment should be taxed
+  })
+
+  it('mixed taxable and tax-exempt streams: only taxable portion is taxed', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      annualSalary: 0,
+      incomeStreams: [
+        {
+          id: 'r1',
+          name: 'Exempt Rental',
+          annualAmount: 40000,
+          startAge: 30,
+          endAge: 65,
+          growthRate: 0,
+          type: 'rental',
+          growthModel: 'none',
+          taxTreatment: 'tax-exempt',
+          isCpfApplicable: false,
+          isActive: true,
+        },
+        {
+          id: 'b1',
+          name: 'Taxable Business',
+          annualAmount: 50000,
+          startAge: 30,
+          endAge: 65,
+          growthRate: 0,
+          type: 'business',
+          growthModel: 'none',
+          taxTreatment: 'taxable',
+          isCpfApplicable: false,
+          isActive: true,
+        },
+      ],
+    })
+
+    // Only-business version for comparison
+    const rowsOnlyBusiness = generateIncomeProjection({
+      ...baseParams,
+      annualSalary: 0,
+      incomeStreams: [{
+        id: 'b1',
+        name: 'Taxable Business',
+        annualAmount: 50000,
+        startAge: 30,
+        endAge: 65,
+        growthRate: 0,
+        type: 'business',
+        growthModel: 'none',
+        taxTreatment: 'taxable',
+        isCpfApplicable: false,
+        isActive: true,
+      }],
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    const row30OnlyBiz = rowsOnlyBusiness.find(r => r.age === 30)!
+
+    // Gross should include both streams
+    expect(row30.totalGross).toBe(90000)
+    // Tax should be the same as having only the $50K taxable business stream
+    expect(row30.sgTax).toBeCloseTo(row30OnlyBiz.sgTax, 2)
+  })
+})
+
+// ============================================================
+// isCpfApplicable: per-stream CPF contribution control
+// ============================================================
+
+describe('isCpfApplicable on income streams', () => {
+  const baseParams = {
+    currentAge: 30,
+    retirementAge: 65,
+    lifeExpectancy: 70,
+    salaryModel: 'simple' as const,
+    annualSalary: 0,
+    salaryGrowthRate: 0,
+    realisticPhases: DEFAULT_CAREER_PHASES,
+    promotionJumps: [],
+    momEducation: 'degree' as const,
+    momAdjustment: 1.0,
+    employerCpfEnabled: true,
+    incomeStreams: [] as IncomeStream[],
+    lifeEvents: [] as LifeEvent[],
+    lifeEventsEnabled: false,
+    annualExpenses: 10000,
+    inflation: 0,
+    personalReliefs: 0,
+    srsAnnualContribution: 0,
+    initialCpfOA: 0,
+    initialCpfSA: 0,
+    initialCpfMA: 0,
+  }
+
+  it('employment stream with isCpfApplicable false produces zero CPF', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      incomeStreams: [{
+        id: 'e1',
+        name: 'Freelance Work',
+        annualAmount: 72000,
+        startAge: 30,
+        endAge: 65,
+        growthRate: 0,
+        type: 'employment',
+        growthModel: 'none',
+        taxTreatment: 'taxable',
+        isCpfApplicable: false,
+        isActive: true,
+      }],
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    expect(row30.salary).toBe(72000) // income still counts as salary
+    expect(row30.cpfEmployee).toBe(0) // but no CPF
+    expect(row30.cpfEmployer).toBe(0)
+  })
+
+  it('employment stream with isCpfApplicable true produces CPF', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      incomeStreams: [{
+        id: 'e1',
+        name: 'Regular Job',
+        annualAmount: 72000,
+        startAge: 30,
+        endAge: 65,
+        growthRate: 0,
+        type: 'employment',
+        growthModel: 'none',
+        taxTreatment: 'taxable',
+        isCpfApplicable: true,
+        isActive: true,
+      }],
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    expect(row30.salary).toBe(72000)
+    expect(row30.cpfEmployee).toBeGreaterThan(0) // CPF should be contributed
+    expect(row30.cpfEmployer).toBeGreaterThan(0)
+  })
+
+  it('mixed CPF-applicable and non-CPF streams: CPF only on applicable portion', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      incomeStreams: [
+        {
+          id: 'e1',
+          name: 'Regular Job',
+          annualAmount: 60000,
+          startAge: 30,
+          endAge: 65,
+          growthRate: 0,
+          type: 'employment',
+          growthModel: 'none',
+          taxTreatment: 'taxable',
+          isCpfApplicable: true,
+          isActive: true,
+        },
+        {
+          id: 'e2',
+          name: 'Freelance Side Income',
+          annualAmount: 40000,
+          startAge: 30,
+          endAge: 65,
+          growthRate: 0,
+          type: 'employment',
+          growthModel: 'none',
+          taxTreatment: 'taxable',
+          isCpfApplicable: false,
+          isActive: true,
+        },
+      ],
+    })
+
+    // Compare against CPF on just the $60K stream
+    const rowsOnlyCpf = generateIncomeProjection({
+      ...baseParams,
+      incomeStreams: [{
+        id: 'e1',
+        name: 'Regular Job',
+        annualAmount: 60000,
+        startAge: 30,
+        endAge: 65,
+        growthRate: 0,
+        type: 'employment',
+        growthModel: 'none',
+        taxTreatment: 'taxable',
+        isCpfApplicable: true,
+        isActive: true,
+      }],
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    const row30OnlyCpf = rowsOnlyCpf.find(r => r.age === 30)!
+
+    expect(row30.salary).toBe(100000) // total salary includes both
+    expect(row30.cpfEmployee).toBeCloseTo(row30OnlyCpf.cpfEmployee, 2) // CPF only on $60K
+    expect(row30.cpfEmployer).toBeCloseTo(row30OnlyCpf.cpfEmployer, 2)
+  })
+
+  it('primary salary always generates CPF even with no streams', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      annualSalary: 72000,
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    expect(row30.cpfEmployee).toBeGreaterThan(0)
+    expect(row30.cpfEmployer).toBeGreaterThan(0)
+  })
+})
+
+// ============================================================
+// savingsPause and cpfPause: isolation tests (not masked by zero income)
+// ============================================================
+
+describe('savingsPause and cpfPause isolation', () => {
+  const baseParams = {
+    currentAge: 30,
+    retirementAge: 65,
+    lifeExpectancy: 70,
+    salaryModel: 'simple' as const,
+    annualSalary: 100000,
+    salaryGrowthRate: 0,
+    realisticPhases: DEFAULT_CAREER_PHASES,
+    promotionJumps: [],
+    momEducation: 'degree' as const,
+    momAdjustment: 1.0,
+    employerCpfEnabled: true,
+    incomeStreams: [] as IncomeStream[],
+    lifeEvents: [] as LifeEvent[],
+    lifeEventsEnabled: true,
+    annualExpenses: 30000,
+    inflation: 0,
+    personalReliefs: 0,
+    srsAnnualContribution: 0,
+    initialCpfOA: 0,
+    initialCpfSA: 0,
+    initialCpfMA: 0,
+  }
+
+  it('savingsPause: true with positive income forces savings to zero', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      lifeEvents: [{
+        id: 'sp1',
+        name: 'Sabbatical (reduced pay)',
+        startAge: 35,
+        endAge: 36,
+        incomeImpact: 0.8, // 80% of salary — still positive income
+        affectedStreamIds: [],
+        savingsPause: true,
+        cpfPause: false,
+      }],
+    })
+
+    const row35 = rows.find(r => r.age === 35)!
+    // Salary should be reduced but positive (80% of 100K = 80K)
+    expect(row35.salary).toBeCloseTo(80000, 0)
+    expect(row35.totalNet).toBeGreaterThan(0)
+    // Savings must be zero because savingsPause is true
+    expect(row35.annualSavings).toBe(0)
+
+    // Before and after the pause, savings should be positive
+    const row34 = rows.find(r => r.age === 34)!
+    expect(row34.annualSavings).toBeGreaterThan(0)
+    const row36 = rows.find(r => r.age === 36)!
+    expect(row36.annualSavings).toBeGreaterThan(0)
+  })
+
+  it('cpfPause: true with positive salary forces CPF to zero', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      lifeEvents: [{
+        id: 'cp1',
+        name: 'Self-Employment Phase',
+        startAge: 35,
+        endAge: 36,
+        incomeImpact: 0.8, // 80% of salary — still positive
+        affectedStreamIds: [],
+        savingsPause: false,
+        cpfPause: true,
+      }],
+    })
+
+    const row35 = rows.find(r => r.age === 35)!
+    // Salary should be reduced but positive
+    expect(row35.salary).toBeCloseTo(80000, 0)
+    // CPF must be zero because cpfPause is true
+    expect(row35.cpfEmployee).toBe(0)
+    expect(row35.cpfEmployer).toBe(0)
+
+    // Before and after the pause, CPF should be contributed
+    const row34 = rows.find(r => r.age === 34)!
+    expect(row34.cpfEmployee).toBeGreaterThan(0)
+    const row36 = rows.find(r => r.age === 36)!
+    expect(row36.cpfEmployee).toBeGreaterThan(0)
+  })
+
+  it('both pauses: savings and CPF both zero while income remains', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      lifeEvents: [{
+        id: 'both1',
+        name: 'Career Transition',
+        startAge: 40,
+        endAge: 41,
+        incomeImpact: 0.6, // 60% of salary
+        affectedStreamIds: [],
+        savingsPause: true,
+        cpfPause: true,
+      }],
+    })
+
+    const row40 = rows.find(r => r.age === 40)!
+    expect(row40.salary).toBeCloseTo(60000, 0)
+    expect(row40.annualSavings).toBe(0)
+    expect(row40.cpfEmployee).toBe(0)
+    expect(row40.cpfEmployer).toBe(0)
+  })
+})

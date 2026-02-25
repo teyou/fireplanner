@@ -370,9 +370,18 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     let businessIncome = 0
     let governmentIncome = 0
 
+    // Track taxable stream income separately (respects each stream's taxTreatment)
+    const primarySalary = salary // Primary employment salary (always taxable)
+    let taxableStreamIncome = 0
+    let cpfApplicableSalary = salary // Primary salary is always CPF-applicable
+
     for (const stream of params.incomeStreams) {
       let amount = getStreamAmountAtAge(stream, age, params.inflation)
       amount = applyLifeEvents(amount, age, stream.id, params.lifeEvents, params.lifeEventsEnabled)
+
+      if (amount > 0 && stream.taxTreatment !== 'tax-exempt') {
+        taxableStreamIncome += amount
+      }
 
       switch (stream.type) {
         case 'rental':
@@ -390,6 +399,9 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
         case 'employment':
           // Employment streams add to salary
           salary += amount
+          if (stream.isCpfApplicable) {
+            cpfApplicableSalary += amount
+          }
           break
       }
     }
@@ -457,8 +469,8 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     let raContrib = 0
     const cpfPaused = isCpfPaused(age, params.lifeEvents, params.lifeEventsEnabled)
 
-    if (!isRetired && params.employerCpfEnabled && salary > 0 && !cpfPaused) {
-      const cpf = calculateCpfContribution(salary, age)
+    if (!isRetired && params.employerCpfEnabled && cpfApplicableSalary > 0 && !cpfPaused) {
+      const cpf = calculateCpfContribution(cpfApplicableSalary, age)
       cpfEmployee = cpf.employee
       cpfEmployer = cpf.employer
 
@@ -599,10 +611,9 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       }
     }
 
-    // Tax: only on taxable income
+    // Tax: primary salary is always taxable; streams respect their taxTreatment field.
     // SRS drawdown: only 50% is taxable (srsTaxableWithdrawal = withdrawal * 0.5)
-    const taxableIncome = salary + rentalIncome + businessIncome + srsTaxableWithdrawal
-    // Investment income and CPF LIFE are tax-exempt
+    const taxableIncome = primarySalary + taxableStreamIncome + srsTaxableWithdrawal
 
     // Earned income relief applies only when there is employment or business income,
     // and the amount depends on age (under 55: $1K, 55-59: $6K, 60+: $8K).
