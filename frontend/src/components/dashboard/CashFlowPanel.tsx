@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import {
   AreaChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -29,7 +30,7 @@ interface SeriesConfig {
 }
 
 const SERIES_CONFIG: SeriesConfig[] = [
-  // Income (positive, stackId="1")
+  // Income (positive, stackId="income" — stacks upward from zero)
   { key: 'salary', label: 'Salary', color: '#2563eb', group: 'income' },
   { key: 'rental', label: 'Rental', color: '#0ea5e9', group: 'income' },
   { key: 'investment', label: 'Investment', color: '#8b5cf6', group: 'income' },
@@ -37,7 +38,7 @@ const SERIES_CONFIG: SeriesConfig[] = [
   { key: 'government', label: 'Govt / CPF LIFE', color: '#10b981', group: 'income' },
   { key: 'srsWithdrawal', label: 'SRS Withdrawal', color: '#818cf8', group: 'income' },
   { key: 'portfolioWithdrawal', label: 'Portfolio Withdrawal', color: '#60a5fa', group: 'income' },
-  // Outflows (negative, stackId="1")
+  // Outflows (negative, stackId="outflow" — stacks downward from zero)
   { key: 'tax', label: 'Tax', color: '#f59e0b', group: 'outflow' },
   { key: 'cpf', label: 'CPF', color: '#fbbf24', group: 'outflow' },
   { key: 'living', label: 'Living Expenses', color: '#f87171', group: 'outflow' },
@@ -67,9 +68,11 @@ interface CustomTooltipProps {
 function CashFlowTooltip({ active, payload, label }: CustomTooltipProps) {
   if (!active || !payload || payload.length === 0) return null
 
-  const income = payload.filter((p) => p.value > 0)
-  const outflows = payload.filter((p) => p.value < 0)
-  const netCashFlow = payload.reduce((sum, p) => sum + p.value, 0)
+  // Exclude the net cash flow overlay line from income/outflow breakdown
+  const series = payload.filter((p) => p.dataKey !== 'netCashFlow')
+  const income = series.filter((p) => p.value > 0)
+  const outflows = series.filter((p) => p.value < 0)
+  const netCashFlow = series.reduce((sum, p) => sum + p.value, 0)
 
   return (
     <div className="bg-background border rounded-lg shadow-lg p-3 text-sm max-w-xs">
@@ -217,14 +220,14 @@ export function CashFlowPanel() {
                 />
               )}
 
-              {/* Render active series as stacked Areas */}
+              {/* Income series stack upward from zero, outflow series stack downward */}
               {activeSeries.map((series) => (
                 <Area
                   key={series.key}
                   type="monotone"
                   dataKey={series.key}
                   name={series.label}
-                  stackId="1"
+                  stackId={series.group}
                   stroke={series.color}
                   fill={series.color}
                   fillOpacity={0.6}
@@ -232,6 +235,18 @@ export function CashFlowPanel() {
                   animationDuration={800}
                 />
               ))}
+
+              {/* Net cash flow line overlay */}
+              <Line
+                type="monotone"
+                dataKey="netCashFlow"
+                name="Net Cash Flow"
+                stroke="#334155"
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive
+                animationDuration={800}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </div>
