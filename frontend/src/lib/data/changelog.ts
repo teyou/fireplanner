@@ -14,6 +14,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-25',
     category: 'data-update',
+    title: 'Historical returns extended to 2025',
+    description:
+      'Added 2025 data row to historical returns dataset (now 1928-2025, 98 years). Notable 2025 returns: Gold +66.2% (multi-decade record), STI +28.6%, S&P 500 +17.7%, MSCI World +21.4%, US Bonds +7.8%, REITs +2.3%. SG CPI fell to 0.9%.',
+    affectedSections: ['section-allocation'],
+    insight:
+      'Gold\'s 66% return is the largest single-year gain in the dataset. The previous record was 126.6% in 1979 during the Hunt brothers silver squeeze era. This year\'s surge was driven by central bank buying and geopolitical hedging.',
+  },
+  {
+    date: '2026-02-25',
+    category: 'data-update',
     title: 'MOM salary benchmarks updated to 2025',
     description:
       'Median gross income by age and education updated to 2025 Labour Force Survey (Table C7, including employer CPF). Degree-holder salaries rose 20-45% across age brackets, reflecting strong post-pandemic wage growth.',

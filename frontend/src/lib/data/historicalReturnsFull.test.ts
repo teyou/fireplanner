@@ -11,14 +11,14 @@ import {
 } from './historicalReturnsFull'
 
 describe('historicalReturnsFull — data integrity', () => {
-  it('has exactly 97 rows (1928-2024)', () => {
-    expect(HISTORICAL_RETURNS).toHaveLength(97)
+  it('has exactly 98 rows (1928-2025)', () => {
+    expect(HISTORICAL_RETURNS).toHaveLength(98)
   })
 
-  it('covers years 1928 through 2024 sequentially', () => {
+  it('covers years 1928 through 2025 sequentially', () => {
     const years = HISTORICAL_RETURNS.map((r) => r.year)
     expect(years[0]).toBe(1928)
-    expect(years[years.length - 1]).toBe(2024)
+    expect(years[years.length - 1]).toBe(2025)
     for (let i = 1; i < years.length; i++) {
       expect(years[i]).toBe(years[i - 1] + 1)
     }
@@ -26,7 +26,7 @@ describe('historicalReturnsFull — data integrity', () => {
 
   it('DATA_YEAR_RANGE matches the actual data', () => {
     expect(DATA_YEAR_RANGE.start).toBe(1928)
-    expect(DATA_YEAR_RANGE.end).toBe(2024)
+    expect(DATA_YEAR_RANGE.end).toBe(2025)
   })
 
   it('exports STI_VERIFIED_TOTAL_RETURN_FROM = 2002', () => {
@@ -226,16 +226,16 @@ describe('historicalReturnsFull — spot-check known values', () => {
 describe('historicalReturnsFull — helper functions', () => {
   it('getCompleteRows filters to rows where all specified columns are non-null', () => {
     const rows = getCompleteRows(['usEquities', 'usBonds', 'cash'])
-    expect(rows.length).toBe(97) // all 3 available for all years
+    expect(rows.length).toBe(98) // all 3 available for all years
 
     const withSg = getCompleteRows(['usEquities', 'sgEquities'])
-    expect(withSg.length).toBe(2024 - 1988 + 1) // 37 years
+    expect(withSg.length).toBe(2025 - 1988 + 1) // 38 years
     expect(withSg[0].year).toBe(1988)
   })
 
   it('getColumnValues returns non-null values only', () => {
     const goldVals = getColumnValues('gold')
-    expect(goldVals.length).toBe(2024 - 1968 + 1) // 57 years
+    expect(goldVals.length).toBe(2025 - 1968 + 1) // 58 years
     expect(goldVals.every((v) => typeof v === 'number')).toBe(true)
   })
 

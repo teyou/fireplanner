@@ -1,5 +1,5 @@
 // Historical Returns Dataset for FIRE Planner
-// Last updated: 2026-02-21
+// Last updated: 2026-02-25
 //
 // ========== PRIMARY SOURCES (downloaded Excel files) ==========
 //
@@ -208,6 +208,7 @@ export const HISTORICAL_RETURNS: HistoricalReturnRow[] = [
   { year: 2022, usEquities: -0.1804, sgEquities: 0.0709, intlEquities: -0.1773, usBonds: -0.1783, reits: -0.2495, gold: 0.0055, cash: 0.0202, cpfBlended: 0.03, usCpi: 0.0644, sgCpi: 0.0613, usdSgdChange: 0.0287 },
   { year: 2023, usEquities: 0.2606, sgEquities: 0.0266, intlEquities: 0.2442, usBonds: 0.0388, reits: 0.1136, gold: 0.1326, cash: 0.0507, cpfBlended: 0.03, usCpi: 0.0312, sgCpi: 0.0483, usdSgdChange: -0.0258 },
   { year: 2024, usEquities: 0.2488, sgEquities: 0.1989, intlEquities: 0.1919, usBonds: -0.0164, reits: 0.0492, gold: 0.2596, cash: 0.0518, cpfBlended: 0.03, usCpi: 0.0289, sgCpi: 0.0239, usdSgdChange: -0.0152 },
+  { year: 2025, usEquities: 0.1772, sgEquities: 0.2860, intlEquities: 0.2142, usBonds: 0.0780, reits: 0.0230, gold: 0.6622, cash: 0.0408, cpfBlended: 0.03, usCpi: 0.0274, sgCpi: 0.0090, usdSgdChange: -0.0223 },
 ]
 
 /**
@@ -343,7 +344,7 @@ export const ASSET_KEY_TO_COLUMN: Record<string, keyof HistoricalReturnRow> = {
 }
 
 /** Year range of the full dataset. */
-export const DATA_YEAR_RANGE = { start: 1928, end: 2024 } as const
+export const DATA_YEAR_RANGE = { start: 1928, end: 2025 } as const
 
 /**
  * Get historical returns filtered to rows where all specified asset classes have data.
