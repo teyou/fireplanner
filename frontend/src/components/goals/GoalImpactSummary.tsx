@@ -15,23 +15,23 @@ import { formatCurrency } from '@/lib/utils'
  */
 export function GoalImpactSummary() {
   const profile = useProfileStore()
-  const { summary: withGoalsSummary, params: projectionParams } = useProjection()
+  const { rows: withGoalsRows, summary: withGoalsSummary, params: projectionParams } = useProjection()
 
-  const noGoalsSummary = useMemo(() => {
+  const noGoalsResult = useMemo(() => {
     if (!projectionParams) return null
     if (profile.financialGoals.length === 0) return null
 
-    const { summary } = generateProjection({
+    return generateProjection({
       ...projectionParams,
       financialGoals: [],  // Only difference: no goals
     })
-
-    return summary
   }, [projectionParams, profile.financialGoals])
 
   // Don't show if there are no goals or no data
   if (profile.financialGoals.length === 0) return null
-  if (!withGoalsSummary || !noGoalsSummary) return null
+  if (!withGoalsSummary || !noGoalsResult || !withGoalsRows) return null
+
+  const noGoalsSummary = noGoalsResult.summary
 
   const fireAgeWith = withGoalsSummary.fireAchievedAge
   const fireAgeWithout = noGoalsSummary.fireAchievedAge
@@ -39,6 +39,21 @@ export function GoalImpactSummary() {
   const terminalWithout = noGoalsSummary.terminalLiquidNW
 
   const totalGoalCost = profile.financialGoals.reduce((sum, g) => sum + g.amount, 0)
+
+  // Detect underfunded goal years: goal is active but portfolio is depleted
+  const underfundedAges: number[] = []
+  for (const row of withGoalsRows) {
+    if (row.goalExpense > 0 && row.liquidNW === 0) {
+      underfundedAges.push(row.age)
+    }
+  }
+
+  // Detect if goals cause or accelerate portfolio depletion
+  const depletionWith = withGoalsSummary.portfolioDepletedAge
+  const depletionWithout = noGoalsResult.summary.portfolioDepletedAge
+  const goalsCauseDepletion = depletionWith !== null && depletionWithout === null
+  const goalsAccelerateDepletion = depletionWith !== null && depletionWithout !== null
+    && depletionWith < depletionWithout
 
   // Compute FIRE delay
   let fireDelayText: string
@@ -109,6 +124,46 @@ export function GoalImpactSummary() {
             </span>
           </p>
         </div>
+
+        {/* Warnings */}
+        {underfundedAges.length > 0 && (
+          <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <p className="text-sm font-medium text-destructive">
+              Goal costs exceed available funds
+            </p>
+            <p className="text-xs text-destructive/80 mt-1">
+              At age{underfundedAges.length > 1 ? 's' : ''}{' '}
+              {underfundedAges.length <= 5
+                ? underfundedAges.join(', ')
+                : `${underfundedAges[0]}–${underfundedAges[underfundedAges.length - 1]}`
+              }, your portfolio is depleted and cannot fully fund the goal.
+              The shortfall is not financed — it reduces the effective goal amount.
+            </p>
+          </div>
+        )}
+
+        {goalsCauseDepletion && (
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+              Goals cause portfolio depletion at age {depletionWith}
+            </p>
+            <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">
+              Without goals, your portfolio survives to life expectancy.
+              With goals, it runs out at age {depletionWith}.
+            </p>
+          </div>
+        )}
+
+        {goalsAccelerateDepletion && (
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+              Goals accelerate portfolio depletion by {depletionWithout! - depletionWith!} year{depletionWithout! - depletionWith! > 1 ? 's' : ''}
+            </p>
+            <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">
+              Portfolio depletes at age {depletionWith} vs {depletionWithout} without goals.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
