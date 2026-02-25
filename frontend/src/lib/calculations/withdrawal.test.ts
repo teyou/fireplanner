@@ -627,3 +627,81 @@ describe('computeWithdrawal dispatch', () => {
     expect(() => computeWithdrawal('unknown_strategy', baseCtx)).toThrow('Unknown withdrawal strategy')
   })
 })
+
+// ============================================================
+// Portfolio depletion in deterministic comparison
+// ============================================================
+
+describe('runDeterministicComparison portfolio depletion', () => {
+  it('survived is false when portfolio depletes before lifeExpectancy', () => {
+    const result = runDeterministicComparison({
+      initialPortfolio: 50000,
+      annualExpenses: 80000,
+      retirementAge: 55,
+      lifeExpectancy: 65,
+      expectedReturn: 0,
+      inflation: 0,
+      expenseRatio: 0,
+      swr: 0.04,
+      strategies: ['constant_dollar'],
+      strategyParams: {
+        constant_dollar: { swr: 0.04 },
+      },
+    })
+
+    expect(result.summaries['constant_dollar'].survived).toBe(false)
+  })
+
+  it('remaining years filled with portfolio: 0 and withdrawal: 0 after depletion', () => {
+    const result = runDeterministicComparison({
+      initialPortfolio: 50000,
+      annualExpenses: 80000,
+      retirementAge: 55,
+      lifeExpectancy: 65,
+      expectedReturn: 0,
+      inflation: 0,
+      expenseRatio: 0,
+      swr: 0.04,
+      strategies: ['constant_dollar'],
+      strategyParams: {
+        constant_dollar: { swr: 0.04 },
+      },
+    })
+
+    const years = result.yearResults['constant_dollar']
+
+    // Portfolio of 50K with 80K expenses depletes immediately after year 0
+    // Find first year where portfolio is 0
+    const firstZeroIdx = years.findIndex(yr => yr.portfolio === 0)
+    expect(firstZeroIdx).toBeGreaterThanOrEqual(0)
+
+    // All subsequent years should be zero-filled
+    for (let i = firstZeroIdx; i < years.length; i++) {
+      expect(years[i].portfolio).toBe(0)
+      expect(years[i].withdrawal).toBe(0)
+    }
+  })
+
+  it('total year count equals full duration including zero-fill years', () => {
+    const retirementAge = 55
+    const lifeExpectancy = 65
+    const duration = lifeExpectancy - retirementAge // 10 years
+
+    const result = runDeterministicComparison({
+      initialPortfolio: 50000,
+      annualExpenses: 80000,
+      retirementAge,
+      lifeExpectancy,
+      expectedReturn: 0,
+      inflation: 0,
+      expenseRatio: 0,
+      swr: 0.04,
+      strategies: ['constant_dollar'],
+      strategyParams: {
+        constant_dollar: { swr: 0.04 },
+      },
+    })
+
+    expect(result.yearResults['constant_dollar']).toHaveLength(duration)
+  })
+})
