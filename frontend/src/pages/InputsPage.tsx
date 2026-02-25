@@ -64,7 +64,15 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 // Stores
-import { useProfileStore } from '@/stores/useProfileStore'
+import {
+  useProfileStore,
+  DEFAULT_PERSONAL_FIELDS,
+  DEFAULT_FIRE_SETTINGS_FIELDS,
+  DEFAULT_EXPENSE_FIELDS,
+  DEFAULT_NET_WORTH_FIELDS,
+  DEFAULT_CPF_FIELDS,
+  DEFAULT_HEALTHCARE_FIELDS,
+} from '@/stores/useProfileStore'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
@@ -1181,7 +1189,6 @@ export function InputsPage() {
   const setSectionOrder = useUIStore((s) => s.setField)
   const { sections: sectionCompletion } = useSectionCompletion()
 
-  const resetProfileRaw = useProfileStore((s) => s.reset)
   const resetIncomeRaw = useIncomeStore((s) => s.reset)
   const resetAllocationRaw = useAllocationStore((s) => s.reset)
   const resetWithdrawalRaw = useWithdrawalStore((s) => s.reset)
@@ -1198,11 +1205,31 @@ export function InputsPage() {
     setPendingReset({ label, action, snapshotStore, restoreStore })
   }, [])
 
-  const resetProfile = () => confirmReset('Profile', resetProfileRaw, () => ({ ...useProfileStore.getState() }), (s) => useProfileStore.setState(s))
+  // Targeted per-section resets: only reset the fields that section edits
+  const profileSnap = () => ({ ...useProfileStore.getState() })
+  const profileRestore = (s: Record<string, unknown>) => useProfileStore.setState(s)
+
+  const resetPersonal = () => confirmReset('Personal', () => useProfileStore.setState({ ...DEFAULT_PERSONAL_FIELDS }), profileSnap, profileRestore)
+  const resetFireSettings = () => confirmReset('FIRE Settings', () => useProfileStore.setState({ ...DEFAULT_FIRE_SETTINGS_FIELDS }), profileSnap, profileRestore)
+  const resetNetWorth = () => confirmReset('Net Worth', () => useProfileStore.setState({ ...DEFAULT_NET_WORTH_FIELDS }), profileSnap, profileRestore)
+  const resetCpf = () => confirmReset('CPF', () => useProfileStore.setState({ ...DEFAULT_CPF_FIELDS }), profileSnap, profileRestore)
+  const resetHealthcare = () => confirmReset('Healthcare & Insurance', () => useProfileStore.setState({ ...DEFAULT_HEALTHCARE_FIELDS }), profileSnap, profileRestore)
   const resetIncome = () => confirmReset('Income', resetIncomeRaw, () => ({ ...useIncomeStore.getState() }), (s) => useIncomeStore.setState(s))
-  const resetAllocation = () => confirmReset('Allocation', resetAllocationRaw, () => ({ ...useAllocationStore.getState() }), (s) => useAllocationStore.setState(s))
-  const resetWithdrawal = () => confirmReset('Withdrawal', resetWithdrawalRaw, () => ({ ...useWithdrawalStore.getState() }), (s) => useWithdrawalStore.setState(s))
+  const resetAllocation = () => confirmReset('Asset Allocation', resetAllocationRaw, () => ({ ...useAllocationStore.getState() }), (s) => useAllocationStore.setState(s))
   const resetProperty = () => confirmReset('Property', resetPropertyRaw, () => ({ ...usePropertyStore.getState() }), (s) => usePropertyStore.setState(s))
+  const resetExpensesAndWithdrawal = () => confirmReset(
+    'Expenses & Withdrawal',
+    () => {
+      resetWithdrawalRaw()
+      useProfileStore.setState({ ...DEFAULT_EXPENSE_FIELDS })
+    },
+    () => ({ _p: { ...useProfileStore.getState() }, _w: { ...useWithdrawalStore.getState() } }),
+    (s) => {
+      const snap = s as { _p: Record<string, unknown>; _w: Record<string, unknown> }
+      useProfileStore.setState(snap._p)
+      useWithdrawalStore.setState(snap._w)
+    },
+  )
 
   const location = useLocation()
 
@@ -1258,23 +1285,23 @@ export function InputsPage() {
       id: 'section-personal',
       title: 'Personal',
       description: 'Age, retirement age, life expectancy, and personal status.',
-      resetLabel: 'Reset Profile',
-      onReset: resetProfile,
+      resetLabel: 'Reset Section',
+      onReset: resetPersonal,
       content: <PersonalContent />,
     },
     'section-fire-settings': {
       id: 'section-fire-settings',
       title: 'FIRE Settings',
       description: 'SWR, FIRE type, basis, return and inflation assumptions, and live FIRE metrics.',
-      resetLabel: 'Reset Profile',
-      onReset: resetProfile,
+      resetLabel: 'Reset Section',
+      onReset: resetFireSettings,
       content: <FireSettingsContent />,
     },
     'section-income': {
       id: 'section-income',
       title: 'Income',
       description: 'Salary model, income streams, life events, and income summary.',
-      resetLabel: 'Reset Income',
+      resetLabel: 'Reset Section',
       onReset: resetIncome,
       content: <IncomeContent />,
     },
@@ -1282,47 +1309,47 @@ export function InputsPage() {
       id: 'section-expenses',
       title: 'Expenses & Withdrawal',
       description: 'Annual spending, retirement adjustment, and withdrawal strategy comparison.',
-      resetLabel: 'Reset Withdrawal',
-      onReset: resetWithdrawal,
+      resetLabel: 'Reset Section',
+      onReset: resetExpensesAndWithdrawal,
       content: <ExpensesContent />,
     },
     'section-goals': {
       id: 'section-goals',
       title: 'Financial Goals',
       description: 'Wedding, education, home downpayment, and other milestone expenses.',
-      resetLabel: 'Reset Goals',
-      onReset: () => confirmReset('Goals', () => useProfileStore.getState().clearFinancialGoals(), () => ({ ...useProfileStore.getState() }), (s) => useProfileStore.setState(s)),
+      resetLabel: 'Reset Section',
+      onReset: () => confirmReset('Financial Goals', () => useProfileStore.getState().clearFinancialGoals(), () => ({ ...useProfileStore.getState() }), (s) => useProfileStore.setState(s)),
       content: <GoalsContent />,
     },
     'section-net-worth': {
       id: 'section-net-worth',
       title: 'Net Worth',
       description: 'Liquid net worth, CPF balances, and SRS.',
-      resetLabel: 'Reset Profile',
-      onReset: resetProfile,
+      resetLabel: 'Reset Section',
+      onReset: resetNetWorth,
       content: <NetWorthContent />,
     },
     'section-cpf': {
       id: 'section-cpf',
       title: 'CPF',
       description: 'CPF LIFE, housing deductions, and contribution projections.',
-      resetLabel: 'Reset Profile',
-      onReset: resetProfile,
+      resetLabel: 'Reset Section',
+      onReset: resetCpf,
       content: <CpfContent />,
     },
     'section-healthcare': {
       id: 'section-healthcare',
       title: 'Healthcare & Insurance',
       description: 'MediShield Life, Integrated Shield Plans, CareShield LIFE, and out-of-pocket costs.',
-      resetLabel: 'Reset Profile',
-      onReset: resetProfile,
+      resetLabel: 'Reset Section',
+      onReset: resetHealthcare,
       content: <HealthcareContent />,
     },
     'section-property': {
       id: 'section-property',
       title: 'Property',
       description: 'Existing property tracking and new purchase analysis with BSD/ABSD.',
-      resetLabel: 'Reset Property',
+      resetLabel: 'Reset Section',
       onReset: resetProperty,
       content: <PropertyContent />,
     },
@@ -1330,7 +1357,7 @@ export function InputsPage() {
       id: 'section-allocation',
       title: 'Asset Allocation',
       description: '8-class portfolio builder, templates, portfolio stats, glide path, and correlation heatmap.',
-      resetLabel: 'Reset Allocation',
+      resetLabel: 'Reset Section',
       onReset: resetAllocation,
       content: <AllocationContent />,
     },
@@ -1489,7 +1516,7 @@ export function InputsPage() {
       <ConfirmDialog
         open={pendingReset !== null}
         title={`Reset ${pendingReset?.label ?? ''}`}
-        description={`Reset all ${pendingReset?.label ?? ''} settings to defaults? This cannot be undone.`}
+        description={`Reset all ${pendingReset?.label ?? ''} inputs to defaults? This cannot be undone.`}
         confirmLabel="Reset"
         onConfirm={() => {
           if (pendingReset) {

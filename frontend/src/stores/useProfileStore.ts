@@ -124,6 +124,48 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   retirementMitigation: { type: 'none' as const },
 }
 
+// ============================================================
+// Per-section default field subsets (used by section reset in InputsPage)
+// ============================================================
+
+/** Pick a subset of DEFAULT_PROFILE by keys */
+function pickDefaults<K extends keyof typeof DEFAULT_PROFILE>(keys: K[]): Pick<typeof DEFAULT_PROFILE, K> {
+  const result = {} as Pick<typeof DEFAULT_PROFILE, K>
+  for (const k of keys) result[k] = DEFAULT_PROFILE[k]
+  return result
+}
+
+export const DEFAULT_PERSONAL_FIELDS = pickDefaults([
+  'currentAge', 'retirementAge', 'lifeExpectancy', 'lifeStage', 'maritalStatus', 'residencyStatus',
+])
+
+export const DEFAULT_FIRE_SETTINGS_FIELDS = pickDefaults([
+  'fireType', 'swr', 'fireNumberBasis',
+  'usePortfolioReturn', 'expectedReturn', 'inflation', 'expenseRatio', 'rebalanceFrequency',
+])
+
+export const DEFAULT_EXPENSE_FIELDS = pickDefaults([
+  'annualExpenses', 'expenseAdjustments', 'retirementSpendingAdjustment',
+  'parentSupportEnabled', 'parentSupport', 'retirementWithdrawals',
+])
+
+export const DEFAULT_NET_WORTH_FIELDS = pickDefaults([
+  'liquidNetWorth', 'cpfOA', 'cpfSA', 'cpfMA',
+  'srsBalance', 'srsAnnualContribution', 'srsInvestmentReturn', 'srsDrawdownStartAge',
+  'lockedAssets',
+  'cashReserveEnabled', 'cashReserveMode', 'cashReserveFixedAmount',
+  'cashReserveMonths', 'cashReserveReturn', 'retirementMitigation',
+])
+
+export const DEFAULT_CPF_FIELDS = pickDefaults([
+  'cpfLifeStartAge', 'cpfLifePlan', 'cpfRetirementSum',
+  'cpfLifeActualMonthlyPayout', 'cpfRA',
+  'cpfTopUpSA', 'cpfTopUpMA', 'cpfTopUpOA',
+  'cpfisEnabled', 'cpfisOaReturn', 'cpfisSaReturn', 'cpfOaWithdrawals',
+])
+
+export const DEFAULT_HEALTHCARE_FIELDS = pickDefaults(['healthcareConfig'])
+
 function extractProfileData(state: ProfileState & ProfileActions): Omit<ProfileState, 'validationErrors'> {
   const data: Record<string, unknown> = {}
   for (const key of PROFILE_DATA_KEYS) {
