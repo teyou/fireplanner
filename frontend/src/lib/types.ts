@@ -927,6 +927,7 @@ export interface ProjectionRow {
   mortgageCashPayment: number     // cash portion of mortgage (excl. CPF OA portion), 0 when paid off
   downsizingRentExpense: number   // rent if sell-and-rent scenario, 0 otherwise
   goalExpense: number             // financial goal costs at this age
+  goalShortfall: number           // unfunded portion of goal at this age (0 when fully funded)
   retirementWithdrawalExpense: number  // one-time retirement withdrawal costs at this age
   // SRS lifecycle (pass-through from income engine)
   srsBalance: number
@@ -954,6 +955,7 @@ export interface ProjectionSummary {
   terminalLiquidNW: number
   terminalTotalNW: number
   portfolioDepletedAge: number | null
+  totalGoalShortfall: number
   mediSaveDepletionAge: number | null
 }
 

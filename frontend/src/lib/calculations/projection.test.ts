@@ -2187,4 +2187,112 @@ describe('generateProjection', () => {
       expect(row69.cpfBequest).toBe(120000)
     })
   })
+
+  describe('goal shortfall tracking', () => {
+    it('goalShortfall is 0 when goal is fully funded', () => {
+      // Small goal ($1K) with a large portfolio ($100K) — fully funded
+      const params = makeParams({
+        currentAge: 30, retirementAge: 33, lifeExpectancy: 34,
+        initialLiquidNW: 100000,
+        expectedReturn: 0, inflation: 0, expenseRatio: 0,
+        financialGoals: [{
+          id: 'g1', label: 'Vacation', amount: 1000, targetAge: 31,
+          durationYears: 1, priority: 'nice-to-have', inflationAdjusted: false,
+          category: 'travel',
+        }],
+      })
+      const result = generateProjection(params)
+
+      for (const row of result.rows) {
+        expect(row.goalShortfall).toBe(0)
+      }
+      expect(result.summary.totalGoalShortfall).toBe(0)
+    })
+
+    it('goalShortfall tracks unfunded amount for pre-retirement goal', () => {
+      // Goal of $500K at age 31, but portfolio starts at $10K with $20K savings
+      // After year 0: liquidNW = 10K + 20K = 30K
+      // At age 31: 30K + 20K - 500K = -450K → shortfall = min(500K, 450K) = 450K
+      const params = makeParams({
+        currentAge: 30, retirementAge: 35, lifeExpectancy: 36,
+        initialLiquidNW: 10000,
+        expectedReturn: 0, inflation: 0, expenseRatio: 0,
+        financialGoals: [{
+          id: 'g1', label: 'Property', amount: 500000, targetAge: 31,
+          durationYears: 1, priority: 'essential', inflationAdjusted: false,
+          category: 'housing',
+        }],
+      })
+      const result = generateProjection(params)
+
+      const goalRow = result.rows.find(r => r.age === 31)!
+      expect(goalRow.goalShortfall).toBeGreaterThan(0)
+      expect(goalRow.goalExpense).toBe(500000)
+      expect(goalRow.liquidNW).toBe(0)
+
+      // Non-goal rows should have 0 shortfall
+      const otherRows = result.rows.filter(r => r.age !== 31)
+      for (const row of otherRows) {
+        expect(row.goalShortfall).toBe(0)
+      }
+
+      expect(result.summary.totalGoalShortfall).toBe(goalRow.goalShortfall)
+    })
+
+    it('goalShortfall tracks unfunded amount for post-retirement goal', () => {
+      // Small portfolio ($10K) with a large post-retirement goal ($100K)
+      const params = makeParams({
+        currentAge: 30, retirementAge: 30, lifeExpectancy: 33,
+        initialLiquidNW: 10000,
+        expectedReturn: 0, inflation: 0, expenseRatio: 0,
+        annualExpenses: 0,
+        financialGoals: [{
+          id: 'g1', label: 'Gift', amount: 100000, targetAge: 31,
+          durationYears: 1, priority: 'essential', inflationAdjusted: false,
+          category: 'other',
+        }],
+      })
+      const result = generateProjection(params)
+
+      const goalRow = result.rows.find(r => r.age === 31)!
+      expect(goalRow.goalShortfall).toBeGreaterThan(0)
+      expect(goalRow.liquidNW).toBe(0)
+
+      expect(result.summary.totalGoalShortfall).toBe(goalRow.goalShortfall)
+    })
+  })
+
+  describe('pre-retirement depletion tracking', () => {
+    it('portfolioDepletedAge is set when pre-retirement goal depletes portfolio', () => {
+      // Portfolio starts at $10K, massive goal at age 30 ($1M) depletes immediately
+      const params = makeParams({
+        currentAge: 30, retirementAge: 35, lifeExpectancy: 36,
+        initialLiquidNW: 10000,
+        expectedReturn: 0, inflation: 0, expenseRatio: 0,
+        financialGoals: [{
+          id: 'g1', label: 'Property', amount: 1000000, targetAge: 30,
+          durationYears: 1, priority: 'essential', inflationAdjusted: false,
+          category: 'housing',
+        }],
+      })
+      const result = generateProjection(params)
+
+      expect(result.summary.portfolioDepletedAge).toBe(30)
+      expect(result.rows[0].liquidNW).toBe(0)
+    })
+
+    it('portfolioDepletedAge is null when portfolio survives pre-retirement', () => {
+      // No goals, positive savings — portfolio should not deplete
+      const result = generateProjection(makeParams({
+        currentAge: 30, retirementAge: 33, lifeExpectancy: 34,
+        initialLiquidNW: 100000,
+        expectedReturn: 0, inflation: 0, expenseRatio: 0,
+      }))
+
+      expect(result.summary.portfolioDepletedAge).toBeNull()
+      for (const row of result.rows) {
+        expect(row.liquidNW).toBeGreaterThan(0)
+      }
+    })
+  })
 })

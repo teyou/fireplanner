@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { Link } from 'react-router-dom'
+import { AlertTriangle } from 'lucide-react'
 import { NWChartView } from '@/components/projection/NWChartView'
 import { TableIcon, BarChart3, Maximize2 } from 'lucide-react'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
@@ -162,6 +163,7 @@ export function ProjectionPage() {
         mortgageCashPayment: d(row.mortgageCashPayment),
         downsizingRentExpense: d(row.downsizingRentExpense),
         goalExpense: d(row.goalExpense),
+        goalShortfall: d(row.goalShortfall),
         srsBalance: d(row.srsBalance),
         srsContribution: d(row.srsContribution),
         srsTaxableWithdrawal: d(row.srsTaxableWithdrawal),
@@ -186,6 +188,16 @@ export function ProjectionPage() {
       terminalTotalNW: deflate(summary.terminalTotalNW, rows ? rows.length - 1 : 0),
     }
   }, [summary, dollarBasis, deflate, currentAge, rows])
+
+  // Compute goal shortfall stats from (already-deflated) display rows
+  const goalShortfallInfo = useMemo(() => {
+    if (!displayRows) return null
+    const shortfallRows = displayRows.filter((r) => r.goalShortfall > 0)
+    if (shortfallRows.length === 0) return null
+    const totalShortfall = shortfallRows.reduce((sum, r) => sum + r.goalShortfall, 0)
+    const affectedAges = shortfallRows.map((r) => r.age)
+    return { totalShortfall, affectedAges }
+  }, [displayRows])
 
   useEffect(() => {
     if (mode === 'advanced') {
@@ -353,7 +365,19 @@ export function ProjectionPage() {
     columnHelper.accessor('goalExpense', {
       id: 'goalExpense',
       header: 'Goals',
-      cell: (info) => optionalCurrencyCell(info.getValue()),
+      cell: (info) => {
+        const v = info.getValue()
+        if (v <= 0) return '-'
+        const shortfall = info.row.original.goalShortfall
+        if (shortfall > 0) {
+          return (
+            <span className="text-destructive" title={`${formatCurrency(shortfall)} unfunded`}>
+              {formatCurrency(v)} *
+            </span>
+          )
+        }
+        return formatCurrency(v)
+      },
     }),
     columnHelper.accessor('mediShieldLifePremium', {
       id: 'mediShieldLifePremium',
@@ -639,7 +663,7 @@ export function ProjectionPage() {
             const original = row.original
             const isRetirementRow = original.age === retirementAge
             const isFireRow = original.age === fireAchievedAge
-            const isDepleted = original.isRetired && original.liquidNW <= 0
+            const isDepleted = original.liquidNW <= 0
 
             return (
               <tr
@@ -842,6 +866,18 @@ export function ProjectionPage() {
           </p>
         )
       })()}
+
+      {goalShortfallInfo && (
+        <div className="flex items-start gap-2 rounded-md border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-3">
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+          <div className="text-sm text-amber-800 dark:text-amber-200">
+            <span className="font-medium">{formatCurrency(goalShortfallInfo.totalShortfall)}</span>
+            {' '}of your financial goals could not be funded.
+            Affected age{goalShortfallInfo.affectedAges.length > 1 ? 's' : ''}: {goalShortfallInfo.affectedAges.join(', ')}.
+            Consider reducing goal amounts, delaying goals, or increasing savings.
+          </div>
+        </div>
+      )}
 
       {displayRows && displayRows.length > 0 && (
         <>

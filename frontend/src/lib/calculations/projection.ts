@@ -373,6 +373,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     let savingsOrWithdrawal: number
     let totalIncome: number
     let goalDeduction = 0
+    let goalShortfallAmount = 0
     let retirementWithdrawalTotal = 0
 
     // Parent support at this age (uses its own growth rate, not inflation)
@@ -481,7 +482,11 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
 
       const adjustedSavings = incomeRow.annualSavings + netPropertyCashflow - extraExpenses - incomeShortfall - goalDeduction
       portfolioReturnDollar = startLiquidNW * returnRate
-      liquidNW = Math.max(0, startLiquidNW * (1 + returnRate) + adjustedSavings)
+      const rawLiquidNW = startLiquidNW * (1 + returnRate) + adjustedSavings
+      goalShortfallAmount = rawLiquidNW < 0 && goalDeduction > 0
+        ? Math.min(goalDeduction, -rawLiquidNW)
+        : 0
+      liquidNW = Math.max(0, rawLiquidNW)
       savingsOrWithdrawal = adjustedSavings
       totalIncome = incomeRow.totalNet + effectiveRentalIncome
     } else {
@@ -549,7 +554,11 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       const netPortfolioDraw = actualDraw + oneTimeWithdrawalTotal + effectiveMortgagePayment - surplusIncome
       const afterDraw = startLiquidNW - netPortfolioDraw
       portfolioReturnDollar = afterDraw * returnRate
-      liquidNW = Math.max(0, afterDraw * (1 + returnRate))
+      const rawPostRetLiquidNW = afterDraw * (1 + returnRate)
+      goalShortfallAmount = rawPostRetLiquidNW < 0 && goalDeduction > 0
+        ? Math.min(goalDeduction, -rawPostRetLiquidNW)
+        : 0
+      liquidNW = Math.max(0, rawPostRetLiquidNW)
 
       // Feed uncapped strategy amount back for strategy continuity
       prevWithdrawal = strategyWithdrawal
@@ -580,8 +589,8 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       peakTotalNWAge = age
     }
 
-    // Track depletion
-    if (isRetired && liquidNW <= 0 && portfolioDepletedAge === null) {
+    // Track depletion (pre-retirement depletion from large goals is also tracked)
+    if (liquidNW <= 0 && portfolioDepletedAge === null) {
       portfolioDepletedAge = age
     }
 
@@ -687,6 +696,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       mortgageCashPayment: effectiveMortgagePayment,
       downsizingRentExpense,
       goalExpense: goalDeduction,
+      goalShortfall: goalShortfallAmount,
       retirementWithdrawalExpense: retirementWithdrawalTotal,
       srsBalance: incomeRow.srsBalance,
       srsContribution: incomeRow.srsContribution,
@@ -704,6 +714,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
   }
 
   const lastRow = rows[rows.length - 1]
+  const totalGoalShortfall = rows.reduce((sum, r) => sum + r.goalShortfall, 0)
   const summary: ProjectionSummary = {
     fireAchievedAge,
     peakTotalNW,
@@ -711,6 +722,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     terminalLiquidNW: lastRow?.liquidNW ?? 0,
     terminalTotalNW: lastRow?.totalNW ?? 0,
     portfolioDepletedAge,
+    totalGoalShortfall,
     mediSaveDepletionAge,
   }
 
