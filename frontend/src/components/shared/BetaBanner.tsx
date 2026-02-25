@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X, FlaskConical } from 'lucide-react'
 
 const DISMISS_KEY = 'fireplanner-beta-banner-dismissed'
+const TELEGRAM_URL = 'https://t.me/sgfireplannerann'
 const FEEDBACK_URL =
   'https://www.reddit.com/r/singaporefi/comments/1rcdnl3/i_built_a_free_singapore_fire_calculator_cpf_srs/'
 
@@ -23,8 +24,17 @@ export function BetaBanner() {
       <div className="flex-1 min-w-0">
         <span className="font-medium text-foreground">Beta</span>
         <span className="text-muted-foreground">
-          {' '}· Thanks for trying FIRE Planner! We're actively improving based on user feedback.{' '}
+          {' '}· Thanks for trying FIRE Planner! We're actively improving based on user feedback. Follow updates on{' '}
         </span>
+        <a
+          href={TELEGRAM_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-amber-700 dark:text-amber-400 hover:underline font-medium"
+        >
+          Telegram
+        </a>
+        <span className="text-muted-foreground"> · </span>
         <a
           href={FEEDBACK_URL}
           target="_blank"
