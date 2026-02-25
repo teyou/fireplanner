@@ -90,6 +90,19 @@ export function DownsizingResultsPanel() {
               <Row label="Annual Rent" value={`${formatCurrency(results.annualRent)}/yr`} />
             </>
           )}
+
+          {results.shortfall > 0 && (
+            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg mt-2">
+              <p className="text-sm font-medium text-destructive">
+                Shortfall of {formatCurrency(results.shortfall)}
+              </p>
+              <p className="text-xs text-destructive/80 mt-1">
+                Sale proceeds do not cover outstanding costs. You would need to bring{' '}
+                {formatCurrency(results.shortfall)} in cash to settlement. This amount will be
+                deducted from your portfolio in the projection.
+              </p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

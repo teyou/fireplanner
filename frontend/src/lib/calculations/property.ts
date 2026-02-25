@@ -158,6 +158,7 @@ export interface SellAndDownsizeResult {
   newLoanAmount: number
   newMonthlyPayment: number
   netEquityToPortfolio: number
+  shortfall: number  // amount user must bring to settlement (0 when net equity is positive)
 }
 
 export function calculateSellAndDownsize(params: {
@@ -196,6 +197,7 @@ export function calculateSellAndDownsize(params: {
     newLoanAmount,
     newMonthlyPayment,
     netEquityToPortfolio: Math.max(0, netEquity),
+    shortfall: Math.max(0, -netEquity),
   }
 }
 
@@ -208,6 +210,7 @@ export interface SellAndRentResult {
   outstandingMortgage: number
   netProceedsToPortfolio: number
   annualRent: number
+  shortfall: number  // amount user is underwater (0 when proceeds are positive)
 }
 
 export function calculateSellAndRent(params: {
@@ -217,12 +220,13 @@ export function calculateSellAndRent(params: {
   cpfRefund?: number
 }): SellAndRentResult {
   const { salePrice, outstandingMortgage, monthlyRent, cpfRefund = 0 } = params
-  const netProceeds = Math.max(0, salePrice - outstandingMortgage - cpfRefund)
+  const rawProceeds = salePrice - outstandingMortgage - cpfRefund
   return {
     grossProceeds: salePrice,
     outstandingMortgage,
-    netProceedsToPortfolio: netProceeds,
+    netProceedsToPortfolio: Math.max(0, rawProceeds),
     annualRent: monthlyRent * 12,
+    shortfall: Math.max(0, -rawProceeds),
   }
 }
 

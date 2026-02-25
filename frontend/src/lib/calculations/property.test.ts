@@ -78,7 +78,7 @@ describe('calculateSellAndDownsize', () => {
     expect(result.newMonthlyPayment).toBeGreaterThan(0)
   })
 
-  it('clamps net equity to 0 when costs exceed proceeds', () => {
+  it('clamps net equity to 0 and reports shortfall when costs exceed proceeds', () => {
     const result = calculateSellAndDownsize({
       salePrice: 100000,
       outstandingMortgage: 500000,
@@ -90,6 +90,24 @@ describe('calculateSellAndDownsize', () => {
       propertyCount: 0,
     })
     expect(result.netEquityToPortfolio).toBe(0)
+    // Shortfall = outstanding mortgage + BSD + down payment - sale price
+    const bsd = calculateBSD(800000)
+    const expectedShortfall = 500000 + bsd + 200000 - 100000
+    expect(result.shortfall).toBe(expectedShortfall)
+  })
+
+  it('reports zero shortfall when proceeds exceed costs', () => {
+    const result = calculateSellAndDownsize({
+      salePrice: 1500000,
+      outstandingMortgage: 300000,
+      newPropertyCost: 800000,
+      newLtv: 0.75,
+      newMortgageRate: 0.035,
+      newMortgageTerm: 20,
+      residency: 'citizen',
+      propertyCount: 0,
+    })
+    expect(result.shortfall).toBe(0)
   })
 
   it('includes ABSD for PR buyers', () => {
@@ -121,13 +139,23 @@ describe('calculateSellAndRent', () => {
     expect(result.annualRent).toBe(30000) // 2500 * 12
   })
 
-  it('clamps net proceeds to 0 when mortgage exceeds sale price', () => {
+  it('clamps net proceeds to 0 and reports shortfall when mortgage exceeds sale price', () => {
     const result = calculateSellAndRent({
       salePrice: 300000,
       outstandingMortgage: 500000,
       monthlyRent: 2000,
     })
     expect(result.netProceedsToPortfolio).toBe(0)
+    expect(result.shortfall).toBe(200000) // 500K - 300K
+  })
+
+  it('reports zero shortfall when sale price exceeds mortgage', () => {
+    const result = calculateSellAndRent({
+      salePrice: 1500000,
+      outstandingMortgage: 300000,
+      monthlyRent: 2500,
+    })
+    expect(result.shortfall).toBe(0)
   })
 
   it('deducts CPF refund from net proceeds', () => {
@@ -151,7 +179,7 @@ describe('calculateSellAndRent', () => {
     expect(result.netProceedsToPortfolio).toBe(600000)
   })
 
-  it('clamps to zero when mortgage + CPF refund exceed sale price', () => {
+  it('clamps to zero and reports shortfall when mortgage + CPF refund exceed sale price', () => {
     const result = calculateSellAndRent({
       salePrice: 300000,
       outstandingMortgage: 200000,
@@ -159,6 +187,7 @@ describe('calculateSellAndRent', () => {
       cpfRefund: 200000,
     })
     expect(result.netProceedsToPortfolio).toBe(0)
+    expect(result.shortfall).toBe(100000) // 200K + 200K - 300K
   })
 })
 
