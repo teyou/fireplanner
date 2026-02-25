@@ -18,7 +18,7 @@ import { getMomSalary } from '@/lib/data/momSalary'
 import { getEffectiveExpenses } from './expenses'
 import { calculateCpfContribution, calculateCpfExtraInterestWithAge, calculateCpfLifePayoutAtAge, getRetirementSumAmount, performAge55Transfer, allocatePostAge55Contribution, calculateCpfisInterest, capMaAtBhs } from './cpf'
 import { calculateChargeableIncome, calculateProgressiveTax } from './tax'
-import { earnedIncomeReliefForAge, RELIEF_AMOUNTS } from '@/lib/data/taxBrackets'
+import { earnedIncomeReliefForAge, RELIEF_AMOUNTS, SRS_ANNUAL_CAP, SRS_ANNUAL_CAP_FOREIGNER } from '@/lib/data/taxBrackets'
 import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
 import {
   OA_INTEREST_RATE,
@@ -297,7 +297,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
   const srsReturn = params.srsInvestmentReturn ?? 0.04
   const srsDrawdownStart = params.srsDrawdownStartAge ?? 63
   const srsDrawdownEnd = srsDrawdownStart + 10
-  const srsCap = params.residencyStatus === 'foreigner' ? 35700 : 15300
+  const srsCap = params.residencyStatus === 'foreigner' ? SRS_ANNUAL_CAP_FOREIGNER : SRS_ANNUAL_CAP
 
   // CPF LIFE configuration (defaults for backward compat)
   const cpfLifeStartAge = params.cpfLifeStartAge ?? 65

@@ -3261,3 +3261,117 @@ describe('savingsPause and cpfPause isolation', () => {
     expect(row40.cpfEmployer).toBe(0)
   })
 })
+
+// ============================================================
+// SRS residency status: foreigner and PR cap differences
+// ============================================================
+
+describe('SRS residency status handling', () => {
+  const srsBaseParams = {
+    currentAge: 30,
+    retirementAge: 65,
+    lifeExpectancy: 80,
+    salaryModel: 'simple' as const,
+    annualSalary: 100000,
+    salaryGrowthRate: 0,
+    realisticPhases: DEFAULT_CAREER_PHASES,
+    promotionJumps: [],
+    momEducation: 'degree' as const,
+    momAdjustment: 1.0,
+    employerCpfEnabled: true,
+    incomeStreams: [] as IncomeStream[],
+    lifeEvents: [] as LifeEvent[],
+    lifeEventsEnabled: false,
+    annualExpenses: 30000,
+    inflation: 0,
+    personalReliefs: 0,
+    initialCpfOA: 0,
+    initialCpfSA: 0,
+    initialCpfMA: 0,
+    srsBalance: 0,
+    srsInvestmentReturn: 0.04,
+    srsDrawdownStartAge: 63,
+  }
+
+  it('citizen: SRS contribution capped at $15,300', () => {
+    const rows = generateIncomeProjection({
+      ...srsBaseParams,
+      srsAnnualContribution: 20000, // exceeds citizen cap
+      residencyStatus: 'citizen',
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    expect(row30.srsContribution).toBe(15300) // capped at citizen cap
+  })
+
+  it('PR: SRS contribution capped at $15,300 (same as citizen)', () => {
+    const rows = generateIncomeProjection({
+      ...srsBaseParams,
+      srsAnnualContribution: 20000, // exceeds citizen/PR cap
+      residencyStatus: 'pr',
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    expect(row30.srsContribution).toBe(15300) // PR uses citizen cap
+  })
+
+  it('foreigner: SRS contribution capped at $35,700', () => {
+    const rows = generateIncomeProjection({
+      ...srsBaseParams,
+      srsAnnualContribution: 40000, // exceeds foreigner cap
+      residencyStatus: 'foreigner',
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    expect(row30.srsContribution).toBe(35700) // capped at foreigner cap
+  })
+
+  it('foreigner: SRS under-cap contribution passes through fully', () => {
+    const rows = generateIncomeProjection({
+      ...srsBaseParams,
+      srsAnnualContribution: 20000, // under foreigner cap
+      residencyStatus: 'foreigner',
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    expect(row30.srsContribution).toBe(20000) // no capping needed
+  })
+
+  it('foreigner: higher SRS cap means lower tax via larger deduction', () => {
+    // Same income, same SRS contribution request of $35,700
+    // Citizen gets capped at $15,300 → smaller deduction → more tax
+    // Foreigner gets full $35,700 → larger deduction → less tax
+    const citizenRows = generateIncomeProjection({
+      ...srsBaseParams,
+      srsAnnualContribution: 35700,
+      residencyStatus: 'citizen',
+    })
+    const foreignerRows = generateIncomeProjection({
+      ...srsBaseParams,
+      srsAnnualContribution: 35700,
+      residencyStatus: 'foreigner',
+    })
+
+    const citizenTax = citizenRows.find(r => r.age === 30)!.sgTax
+    const foreignerTax = foreignerRows.find(r => r.age === 30)!.sgTax
+
+    // Both should pay tax (salary is $100K)
+    expect(citizenTax).toBeGreaterThan(0)
+    expect(foreignerTax).toBeGreaterThan(0)
+    // Foreigner should pay LESS tax due to higher SRS deduction
+    expect(foreignerTax).toBeLessThan(citizenTax)
+  })
+
+  it('foreigner: SRS balance grows on full foreigner-capped contribution', () => {
+    const rows = generateIncomeProjection({
+      ...srsBaseParams,
+      srsAnnualContribution: 35700,
+      srsBalance: 100000,
+      residencyStatus: 'foreigner',
+    })
+
+    const row30 = rows.find(r => r.age === 30)!
+    // Balance = (100,000 + 35,700) * 1.04 = $141,128
+    expect(row30.srsBalance).toBeCloseTo((100000 + 35700) * 1.04, 0)
+  })
+})
