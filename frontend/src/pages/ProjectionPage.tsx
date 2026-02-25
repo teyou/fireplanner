@@ -56,7 +56,7 @@ const COLUMN_GROUPS: { key: ColumnGroup; label: string }[] = [
 ]
 
 const GROUP_COLUMNS: Record<ColumnGroup, string[]> = {
-  expensesBreakdown: ['baseInflatedExpenses', 'parentSupportExpense', 'healthcareCashOutlay', 'downsizingRentExpense', 'goalExpense', 'mediShieldLifePremium', 'ispAdditionalPremium', 'careShieldLifePremium', 'oopExpense', 'mediSaveDeductible'],
+  expensesBreakdown: ['baseInflatedExpenses', 'parentSupportExpense', 'healthcareCashOutlay', 'downsizingRentExpense', 'goalExpense', 'retirementWithdrawalExpense', 'mediShieldLifePremium', 'ispAdditionalPremium', 'careShieldLifePremium', 'oopExpense', 'mediSaveDeductible'],
   incomeBreakdown: ['salary', 'rentalIncome', 'investmentIncome', 'businessIncome', 'governmentIncome', 'srsWithdrawal', 'srsBalance', 'srsContribution', 'srsTaxableWithdrawal', 'lockedAssetUnlock', 'totalGross'],
   taxCpf: ['sgTax', 'cpfEmployee', 'cpfEmployer', 'totalNet'],
   cpfBalances: ['cpfOA', 'cpfSA', 'cpfMA', 'cpfRA', 'cpfInterest', 'cpfOaHousingDeduction', 'cpfOaShortfall', 'cpfLifePayout', 'cpfBequest', 'cpfMilestone'],
@@ -164,6 +164,7 @@ export function ProjectionPage() {
         downsizingRentExpense: d(row.downsizingRentExpense),
         goalExpense: d(row.goalExpense),
         goalShortfall: d(row.goalShortfall),
+        retirementWithdrawalExpense: d(row.retirementWithdrawalExpense),
         retirementWithdrawalShortfall: d(row.retirementWithdrawalShortfall),
         srsBalance: d(row.srsBalance),
         srsContribution: d(row.srsContribution),
@@ -196,6 +197,16 @@ export function ProjectionPage() {
     const shortfallRows = displayRows.filter((r) => r.goalShortfall > 0)
     if (shortfallRows.length === 0) return null
     const totalShortfall = shortfallRows.reduce((sum, r) => sum + r.goalShortfall, 0)
+    const affectedAges = shortfallRows.map((r) => r.age)
+    return { totalShortfall, affectedAges }
+  }, [displayRows])
+
+  // Compute retirement withdrawal shortfall stats from (already-deflated) display rows
+  const retirementWithdrawalShortfallInfo = useMemo(() => {
+    if (!displayRows) return null
+    const shortfallRows = displayRows.filter((r) => r.retirementWithdrawalShortfall > 0)
+    if (shortfallRows.length === 0) return null
+    const totalShortfall = shortfallRows.reduce((sum, r) => sum + r.retirementWithdrawalShortfall, 0)
     const affectedAges = shortfallRows.map((r) => r.age)
     return { totalShortfall, affectedAges }
   }, [displayRows])
@@ -370,6 +381,23 @@ export function ProjectionPage() {
         const v = info.getValue()
         if (v <= 0) return '-'
         const shortfall = info.row.original.goalShortfall
+        if (shortfall > 0) {
+          return (
+            <span className="text-destructive" title={`${formatCurrency(shortfall)} unfunded`}>
+              {formatCurrency(v)} *
+            </span>
+          )
+        }
+        return formatCurrency(v)
+      },
+    }),
+    columnHelper.accessor('retirementWithdrawalExpense', {
+      id: 'retirementWithdrawalExpense',
+      header: 'Ret. Wdl.',
+      cell: (info) => {
+        const v = info.getValue()
+        if (v <= 0) return '-'
+        const shortfall = info.row.original.retirementWithdrawalShortfall
         if (shortfall > 0) {
           return (
             <span className="text-destructive" title={`${formatCurrency(shortfall)} unfunded`}>
@@ -876,6 +904,18 @@ export function ProjectionPage() {
             {' '}of your financial goals could not be funded.
             Affected age{goalShortfallInfo.affectedAges.length > 1 ? 's' : ''}: {goalShortfallInfo.affectedAges.join(', ')}.
             Consider reducing goal amounts, delaying goals, or increasing savings.
+          </div>
+        </div>
+      )}
+
+      {retirementWithdrawalShortfallInfo && (
+        <div className="flex items-start gap-2 rounded-md border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-3">
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+          <div className="text-sm text-amber-800 dark:text-amber-200">
+            <span className="font-medium">{formatCurrency(retirementWithdrawalShortfallInfo.totalShortfall)}</span>
+            {' '}of your retirement withdrawals could not be funded.
+            Affected age{retirementWithdrawalShortfallInfo.affectedAges.length > 1 ? 's' : ''}: {retirementWithdrawalShortfallInfo.affectedAges.join(', ')}.
+            Consider reducing withdrawal amounts or increasing retirement savings.
           </div>
         </div>
       )}
