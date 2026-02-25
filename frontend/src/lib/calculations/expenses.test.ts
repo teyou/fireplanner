@@ -145,6 +145,38 @@ describe('computeExpensePhases', () => {
     ])
   })
 
+  it('merges consecutive phases with same delta into one phase', () => {
+    // Two contiguous adjustments with the same amount: ages 30-40 (+10K), ages 40-50 (+10K)
+    // Both produce the same effective amount (48000 + 10000 = 58000), so they should merge
+    const adj: ExpenseAdjustment[] = [
+      { id: '1', label: 'Cost A', amount: 10000, startAge: 30, endAge: 40 },
+      { id: '2', label: 'Cost B', amount: 10000, startAge: 40, endAge: 50 },
+    ]
+    const phases = computeExpensePhases(base, adj, 25, 60, 90)
+    // Expected: 25-30 = 48K, 30-50 = 58K (merged), 50-60 = 48K
+    expect(phases).toEqual([
+      { fromAge: 25, toAge: 30, amount: 48000 },
+      { fromAge: 30, toAge: 50, amount: 58000 },
+      { fromAge: 50, toAge: 60, amount: 48000 },
+    ])
+  })
+
+  it('does NOT merge consecutive phases with different amounts', () => {
+    // Two contiguous adjustments with different amounts
+    const adj: ExpenseAdjustment[] = [
+      { id: '1', label: 'Low', amount: 10000, startAge: 30, endAge: 40 },
+      { id: '2', label: 'High', amount: 20000, startAge: 40, endAge: 50 },
+    ]
+    const phases = computeExpensePhases(base, adj, 25, 60, 90)
+    // Expected: 4 phases (no merging because amounts differ)
+    expect(phases).toEqual([
+      { fromAge: 25, toAge: 30, amount: 48000 },
+      { fromAge: 30, toAge: 40, amount: 58000 },
+      { fromAge: 40, toAge: 50, amount: 68000 },
+      { fromAge: 50, toAge: 60, amount: 48000 },
+    ])
+  })
+
   it('handles negative adjustment floor at zero in phases', () => {
     const adj: ExpenseAdjustment[] = [
       { id: '1', label: 'Huge discount', amount: -60000, startAge: 30, endAge: 40 },

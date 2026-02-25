@@ -110,6 +110,24 @@ describe('calculateSellAndDownsize', () => {
     expect(result.shortfall).toBe(0)
   })
 
+  it('zero mortgage rate: monthly payment = loanAmount / (term * 12)', () => {
+    const result = calculateSellAndDownsize({
+      salePrice: 1500000,
+      outstandingMortgage: 300000,
+      newPropertyCost: 800000,
+      newLtv: 0.75,
+      newMortgageRate: 0,
+      newMortgageTerm: 20,
+      residency: 'citizen',
+      propertyCount: 0,
+    })
+
+    // newLoanAmount = 800K * 0.75 = 600K
+    // monthlyPayment = 600000 / (20 * 12) = 2500
+    expect(result.newLoanAmount).toBe(600000)
+    expect(result.newMonthlyPayment).toBe(2500)
+  })
+
   it('includes ABSD for PR buyers', () => {
     const result = calculateSellAndDownsize({
       salePrice: 1500000,
