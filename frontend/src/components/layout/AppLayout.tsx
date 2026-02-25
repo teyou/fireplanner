@@ -80,7 +80,7 @@ export function AppLayout() {
               showStats && isBottom && 'pb-24 md:pb-10'
             )}
           >
-            <div className="@container container py-6 max-w-6xl">
+            <div className="@container container pt-14 md:pt-6 pb-6 max-w-6xl">
               <BetaBanner />
               <DataUpdateBanner />
               <Outlet />
