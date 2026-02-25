@@ -55,8 +55,8 @@ const COLUMN_GROUPS: { key: ColumnGroup; label: string }[] = [
 ]
 
 const GROUP_COLUMNS: Record<ColumnGroup, string[]> = {
-  expensesBreakdown: ['baseInflatedExpenses', 'parentSupportExpense', 'healthcareCashOutlay', 'downsizingRentExpense', 'goalExpense'],
-  incomeBreakdown: ['salary', 'rentalIncome', 'investmentIncome', 'businessIncome', 'governmentIncome', 'srsWithdrawal', 'totalGross'],
+  expensesBreakdown: ['baseInflatedExpenses', 'parentSupportExpense', 'healthcareCashOutlay', 'downsizingRentExpense', 'goalExpense', 'mediShieldLifePremium', 'ispAdditionalPremium', 'careShieldLifePremium', 'oopExpense', 'mediSaveDeductible'],
+  incomeBreakdown: ['salary', 'rentalIncome', 'investmentIncome', 'businessIncome', 'governmentIncome', 'srsWithdrawal', 'srsBalance', 'srsContribution', 'srsTaxableWithdrawal', 'lockedAssetUnlock', 'totalGross'],
   taxCpf: ['sgTax', 'cpfEmployee', 'cpfEmployer', 'totalNet'],
   cpfBalances: ['cpfOA', 'cpfSA', 'cpfMA', 'cpfRA', 'cpfInterest', 'cpfOaHousingDeduction', 'cpfOaShortfall', 'cpfLifePayout', 'cpfBequest', 'cpfMilestone'],
   portfolio: ['portfolioReturnPct', 'withdrawalAmount', 'maxPermittedWithdrawal', 'withdrawalExcess', 'cumulativeSavings'],
@@ -99,6 +99,8 @@ export function ProjectionPage() {
   const hasMortgageBalance = rows?.some((r) => r.mortgageBalance > 0) ?? false
   const hasPropertyEquity = rows?.some((r) => r.propertyEquity > 0) ?? false
   const hasLifeEvents = rows?.some((r) => r.activeLifeEvents.length > 0) ?? false
+  const hasLockedUnlock = rows?.some((r) => r.lockedAssetUnlock > 0) ?? false
+  const hasHealthcareBreakdown = rows?.some((r) => r.healthcareCashOutlay > 0) ?? false
 
   const [viewMode, setViewMode] = useState<'table' | 'chart'>('table')
   const [activeGroups, setActiveGroups] = useState<Set<ColumnGroup>>(new Set())
@@ -160,6 +162,15 @@ export function ProjectionPage() {
         mortgageCashPayment: d(row.mortgageCashPayment),
         downsizingRentExpense: d(row.downsizingRentExpense),
         goalExpense: d(row.goalExpense),
+        srsBalance: d(row.srsBalance),
+        srsContribution: d(row.srsContribution),
+        srsTaxableWithdrawal: d(row.srsTaxableWithdrawal),
+        lockedAssetUnlock: d(row.lockedAssetUnlock),
+        mediShieldLifePremium: d(row.mediShieldLifePremium),
+        ispAdditionalPremium: d(row.ispAdditionalPremium),
+        careShieldLifePremium: d(row.careShieldLifePremium),
+        oopExpense: d(row.oopExpense),
+        mediSaveDeductible: d(row.mediSaveDeductible),
         cumulativeSavings: d(row.cumulativeSavings),
       }
     })
@@ -218,9 +229,20 @@ export function ProjectionPage() {
         vis[col] = vis[col] || visible
       }
     }
-    // Hide SRS column when user has no SRS balance or contributions
+    // Hide SRS columns when user has no SRS balance or contributions
     if (!hasSrs) {
       vis['srsWithdrawal'] = false
+      vis['srsBalance'] = false
+      vis['srsContribution'] = false
+      vis['srsTaxableWithdrawal'] = false
+    }
+    if (!hasLockedUnlock) vis['lockedAssetUnlock'] = false
+    if (!hasHealthcareBreakdown) {
+      vis['mediShieldLifePremium'] = false
+      vis['ispAdditionalPremium'] = false
+      vis['careShieldLifePremium'] = false
+      vis['oopExpense'] = false
+      vis['mediSaveDeductible'] = false
     }
     // Hide CPF detail columns when no relevant data exists
     if (!hasRa) vis['cpfRA'] = false
@@ -244,7 +266,7 @@ export function ProjectionPage() {
       vis['fireProgress'] = vis['fireProgress'] || false
     }
     return vis
-  }, [activeGroups, isMobile, hasSrs, hasMortgageCash, hasRa, hasOaHousing, hasOaShortfall, hasBequest, hasCpfLife, hasMilestone, hasPropertyEquity, hasLifeEvents])
+  }, [activeGroups, isMobile, hasSrs, hasMortgageCash, hasRa, hasOaHousing, hasOaShortfall, hasBequest, hasCpfLife, hasMilestone, hasPropertyEquity, hasLifeEvents, hasLockedUnlock, hasHealthcareBreakdown])
 
   const defaultVisibleCount = useMemo(() => {
     return DEFAULT_COLUMN_IDS.filter(id => columnVisibility[id] !== false).length
@@ -333,6 +355,31 @@ export function ProjectionPage() {
       header: 'Goals',
       cell: (info) => optionalCurrencyCell(info.getValue()),
     }),
+    columnHelper.accessor('mediShieldLifePremium', {
+      id: 'mediShieldLifePremium',
+      header: 'MSL Prem.',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('ispAdditionalPremium', {
+      id: 'ispAdditionalPremium',
+      header: 'ISP Prem.',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('careShieldLifePremium', {
+      id: 'careShieldLifePremium',
+      header: 'CSL Prem.',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('oopExpense', {
+      id: 'oopExpense',
+      header: 'OOP',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('mediSaveDeductible', {
+      id: 'mediSaveDeductible',
+      header: 'MS Deduct.',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
 
     // Expanded: Income Breakdown
     columnHelper.accessor('salary', {
@@ -363,6 +410,26 @@ export function ProjectionPage() {
     columnHelper.accessor('srsWithdrawal', {
       id: 'srsWithdrawal',
       header: 'SRS',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('srsBalance', {
+      id: 'srsBalance',
+      header: 'SRS Bal.',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('srsContribution', {
+      id: 'srsContribution',
+      header: 'SRS Contrib.',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('srsTaxableWithdrawal', {
+      id: 'srsTaxableWithdrawal',
+      header: 'SRS Taxable',
+      cell: (info) => optionalCurrencyCell(info.getValue()),
+    }),
+    columnHelper.accessor('lockedAssetUnlock', {
+      id: 'lockedAssetUnlock',
+      header: 'Asset Unlock',
       cell: (info) => optionalCurrencyCell(info.getValue()),
     }),
     columnHelper.accessor('totalGross', {
