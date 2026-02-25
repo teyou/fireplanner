@@ -131,7 +131,7 @@ export function ScenarioManager() {
               </button>
               <button
                 onClick={() => handleDelete(s.id, s.name)}
-                className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-opacity"
+                className="p-1 rounded md:opacity-0 md:group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-opacity"
                 title={`Delete "${s.name}"`}
               >
                 <Trash2 className="h-3 w-3" />
