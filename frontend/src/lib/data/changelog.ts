@@ -13,6 +13,16 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-25',
+    category: 'fix',
+    title: 'MediSave BHS overflow enforced on contributions and interest',
+    description:
+      'CPF MediSave (MA) is now capped at the Basic Healthcare Sum ($79,000). Mandatory contributions and interest that would push MA above BHS overflow to SA (pre-55), RA then OA (post-55 pre-LIFE), or OA (post-LIFE), matching CPF Board rules. Previously only voluntary top-ups were capped, causing SA/RA to be underfunded and CPF LIFE payouts underestimated.',
+    affectedSections: ['section-cpf'],
+    insight:
+      'At age 30 with a $120K salary, MA receives ~$9,600/year in contributions. Without the cap, MA would reach $100K+ by age 33 instead of stopping at $79K. The excess now flows to SA at 4% interest instead of sitting in MA at 4%, which doesn\'t change interest earned but does increase the RA transfer at age 55, boosting CPF LIFE payouts.',
+  },
+  {
+    date: '2026-02-25',
     category: 'data-update',
     title: 'CPF contribution rates corrected to 2026',
     description:
