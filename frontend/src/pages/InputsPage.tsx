@@ -338,65 +338,67 @@ function ExpensesContent() {
               {expenseAdjustments.map((adj, i) => {
                 const endAgeErr = validationErrors[`expenseAdjustment_${adj.id}_endAge`]
                 return (
-                  <div key={adj.id} className="grid grid-cols-[1fr_120px_80px_80px_32px] gap-2 items-end">
-                    <div>
-                      {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">Label</Label>}
-                      <Input
-                        value={adj.label}
-                        onChange={(e) => updateExpenseAdjustment(adj.id, { label: e.target.value })}
-                        placeholder="e.g. Rent"
-                        maxLength={50}
-                        className="h-9"
-                      />
-                    </div>
-                    <div>
-                      {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">$/yr</Label>}
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm z-10">$</span>
-                        <NumberInput
-                          value={adj.amount}
-                          onChange={(v) => updateExpenseAdjustment(adj.id, { amount: v })}
-                          integer
-                          formatWithCommas
-                          className="pl-7 border-blue-300 h-9"
+                  <div key={adj.id}>
+                    <div className="grid grid-cols-[1fr_120px_80px_80px_32px] gap-2 items-end">
+                      <div>
+                        {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">Label</Label>}
+                        <Input
+                          value={adj.label}
+                          onChange={(e) => updateExpenseAdjustment(adj.id, { label: e.target.value })}
+                          placeholder="e.g. Rent"
+                          maxLength={50}
+                          className="h-9"
                         />
                       </div>
+                      <div>
+                        {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">$/yr</Label>}
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm z-10">$</span>
+                          <NumberInput
+                            value={adj.amount}
+                            onChange={(v) => updateExpenseAdjustment(adj.id, { amount: v })}
+                            integer
+                            formatWithCommas
+                            className="pl-7 border-blue-300 h-9"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">From</Label>}
+                        <NumberInput
+                          value={adj.startAge}
+                          onChange={(v) => updateExpenseAdjustment(adj.id, { startAge: v })}
+                          min={18}
+                          max={120}
+                          className="h-9"
+                        />
+                      </div>
+                      <div>
+                        {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">Until</Label>}
+                        <Input
+                          type="number"
+                          inputMode="numeric"
+                          value={adj.endAge ?? ''}
+                          onChange={(e) => {
+                            const raw = e.target.value
+                            updateExpenseAdjustment(adj.id, { endAge: raw === '' ? null : parseInt(raw, 10) || null })
+                          }}
+                          placeholder="Ongoing"
+                          min={18}
+                          max={120}
+                          className={cn("h-9", endAgeErr && "border-destructive")}
+                        />
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-9 w-9", i === 0 && "mt-5")}
+                        onClick={() => removeExpenseAdjustment(adj.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <div>
-                      {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">From</Label>}
-                      <NumberInput
-                        value={adj.startAge}
-                        onChange={(v) => updateExpenseAdjustment(adj.id, { startAge: v })}
-                        min={18}
-                        max={120}
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="relative">
-                      {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">Until</Label>}
-                      <Input
-                        type="number"
-                        inputMode="numeric"
-                        value={adj.endAge ?? ''}
-                        onChange={(e) => {
-                          const raw = e.target.value
-                          updateExpenseAdjustment(adj.id, { endAge: raw === '' ? null : parseInt(raw, 10) || null })
-                        }}
-                        placeholder="Ongoing"
-                        min={18}
-                        max={120}
-                        className={cn("h-9", endAgeErr && "border-destructive")}
-                      />
-                      {endAgeErr && <p className="absolute left-0 top-full text-destructive text-[11px] mt-0.5 whitespace-nowrap">{endAgeErr}</p>}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={cn("h-9 w-9", i === 0 && "mt-5")}
-                      onClick={() => removeExpenseAdjustment(adj.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    {endAgeErr && <p className="text-destructive text-xs mt-1">{endAgeErr}</p>}
                   </div>
                 )
               })}
