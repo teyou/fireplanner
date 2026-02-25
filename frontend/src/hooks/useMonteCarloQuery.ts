@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { runMonteCarloWorker, flattenStrategyParams } from '@/lib/simulation/workerClient'
+import { getEffectiveExpenses } from '@/lib/calculations/expenses'
 import type { MonteCarloResult } from '@/lib/types'
 import type { MonteCarloEngineParams } from '@/lib/simulation/monteCarlo'
 import { useProfileStore } from '@/stores/useProfileStore'
@@ -77,6 +78,8 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     cashReserveMonths: profile.cashReserveMonths,
     cashReserveReturn: profile.cashReserveReturn,
     retirementMitigation: profile.retirementMitigation,
+    annualExpenses: profile.annualExpenses,
+    expenseAdjustments: profile.expenseAdjustments,
   }), [
     analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights, analysisPortfolio.skipAccumulation,
     profile.currentAge, profile.retirementAge, profile.lifeExpectancy, profile.expenseRatio, profile.inflation,
@@ -89,6 +92,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     profile.retirementWithdrawals,
     profile.cashReserveEnabled, profile.cashReserveMode, profile.cashReserveFixedAmount,
     profile.cashReserveMonths, profile.cashReserveReturn, profile.retirementMitigation,
+    profile.annualExpenses, profile.expenseAdjustments,
   ])
 
   const mutation = useMutation({
@@ -228,7 +232,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
         inflation: profile.inflation,
         portfolioAdjustments,
         retirementMitigation: profile.retirementMitigation,
-        annualExpensesAtRetirement: profile.annualExpenses * Math.pow(1 + profile.inflation, Math.max(0, profile.retirementAge - profile.currentAge)),
+        annualExpensesAtRetirement: getEffectiveExpenses(profile.retirementAge, profile.annualExpenses, profile.expenseAdjustments, profile.lifeExpectancy) * Math.pow(1 + profile.inflation, Math.max(0, profile.retirementAge - profile.currentAge)),
       }
 
       return runMonteCarloWorker(params)

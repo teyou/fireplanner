@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { runBacktestWorker, flattenStrategyParams } from '@/lib/simulation/workerClient'
+import { getEffectiveExpenses } from '@/lib/calculations/expenses'
 import type { BacktestSummary, PerYearResult, BacktestDataset, WithdrawalStrategyType, HeatmapConfig, HeatmapData } from '@/lib/types'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
@@ -93,11 +94,13 @@ export function useBacktestQuery(): UseBacktestQueryResult {
     strategyParams: withdrawal.strategyParams,
     inflation: profile.inflation,
     retirementWithdrawals: profile.retirementWithdrawals,
+    annualExpenses: profile.annualExpenses,
+    expenseAdjustments: profile.expenseAdjustments,
   }), [
     analysisPortfolio.retirementPortfolio, analysisPortfolio.allocationWeights,
     config.swr, config.retirementDuration, config.dataset, config.blendRatio,
     profile.expenseRatio, strategy, withdrawal.strategyParams, profile.inflation,
-    profile.retirementWithdrawals,
+    profile.retirementWithdrawals, profile.annualExpenses, profile.expenseAdjustments,
   ])
 
   const buildParams = useCallback(() => {
@@ -126,13 +129,13 @@ export function useBacktestQuery(): UseBacktestQueryResult {
       inflation: profile.inflation,
       oneTimeWithdrawals: oneTimeWithdrawals.length > 0 ? oneTimeWithdrawals : undefined,
       retirementMitigation: profile.retirementMitigation,
-      annualExpensesAtRetirement: profile.annualExpenses * Math.pow(1 + profile.inflation, Math.max(0, profile.retirementAge - profile.currentAge)),
+      annualExpensesAtRetirement: getEffectiveExpenses(profile.retirementAge, profile.annualExpenses, profile.expenseAdjustments, profile.lifeExpectancy) * Math.pow(1 + profile.inflation, Math.max(0, profile.retirementAge - profile.currentAge)),
     }
   }, [
     analysisPortfolio.retirementPortfolio, analysisPortfolio.allocationWeights,
     config, profile.expenseRatio, strategy, withdrawal.strategyParams, profile.inflation,
     profile.retirementWithdrawals, profile.retirementAge, profile.retirementMitigation,
-    profile.annualExpenses, profile.currentAge,
+    profile.annualExpenses, profile.currentAge, profile.expenseAdjustments, profile.lifeExpectancy,
   ])
 
   // Base mutation (no heatmap — fast)

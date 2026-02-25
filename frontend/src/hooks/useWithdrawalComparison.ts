@@ -12,6 +12,7 @@ import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 import { validateWithdrawalCrossStoreRules } from '@/lib/validation/rules'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
+import { getEffectiveExpenses } from '@/lib/calculations/expenses'
 
 interface WithdrawalComparisonResult {
   results: DeterministicComparisonResult | null
@@ -74,7 +75,8 @@ export function useWithdrawalComparison(opts?: { initialPortfolioOverride?: numb
       ? (opts?.initialPortfolioOverride ?? profile.liquidNetWorth * (1 + netReturn) ** yearsToRetirement)
       : analysisPortfolio.initialPortfolio
 
-    const retirementExpenses = profile.annualExpenses
+    const effectiveRetirementBase = getEffectiveExpenses(profile.retirementAge, profile.annualExpenses, profile.expenseAdjustments, profile.lifeExpectancy)
+    const retirementExpenses = effectiveRetirementBase
       * (profile.retirementSpendingAdjustment ?? 1)
       * (1 + profile.inflation) ** yearsToRetirement
 
@@ -117,6 +119,7 @@ export function useWithdrawalComparison(opts?: { initialPortfolioOverride?: numb
     activeStrategy,
     analysisPortfolio.initialPortfolio,
     opts?.initialPortfolioOverride,
+    profile.expenseAdjustments,
   ])
 }
 
