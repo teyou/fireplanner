@@ -150,4 +150,58 @@ describe('useRiskAssessment', () => {
     // High OOP base ($15K) + medical inflation → high risk
     expect(healthcare!.level).toBe('high')
   })
+
+  it('healthcare risk medium with moderate OOP base (enabled config)', () => {
+    useProfileStore.setState({
+      ...useProfileStore.getState(),
+      currentAge: 55,
+      retirementAge: 58,
+      lifeExpectancy: 90,
+      healthcareConfig: {
+        enabled: true,
+        mediShieldLifeEnabled: true,
+        ispTier: 'none',
+        careShieldLifeEnabled: false,
+        oopBaseAmount: 5000,
+        oopModel: 'flat' as 'age-curve',
+        oopInflationRate: 0.02,
+        oopReferenceAge: 55,
+        mediSaveTopUpAnnual: 0,
+      },
+      validationErrors: {},
+    })
+    const { result } = renderHook(() => useRiskAssessment())
+    const healthcare = result.current.find((d) => d.id === 'healthcare')
+    // Moderate OOP base ($5K) with low inflation should produce medium risk
+    // (avgAnnualCash between $5K and $10K)
+    expect(healthcare!.level).toBe('medium')
+    expect(healthcare!.recommendation).toMatch(/moderate/i)
+  })
+
+  it('healthcare risk low with small OOP base and MediSave top-up (enabled config)', () => {
+    useProfileStore.setState({
+      ...useProfileStore.getState(),
+      currentAge: 55,
+      retirementAge: 58,
+      lifeExpectancy: 90,
+      healthcareConfig: {
+        enabled: true,
+        mediShieldLifeEnabled: true,
+        ispTier: 'none',
+        careShieldLifeEnabled: false,
+        oopBaseAmount: 1000,
+        oopModel: 'flat' as 'age-curve',
+        oopInflationRate: 0.02,
+        oopReferenceAge: 55,
+        mediSaveTopUpAnnual: 500,
+      },
+      validationErrors: {},
+    })
+    const { result } = renderHook(() => useRiskAssessment())
+    const healthcare = result.current.find((d) => d.id === 'healthcare')
+    // Small OOP base ($1K) with MediSave top-ups should produce low risk
+    // (avgAnnualCash <= $5K)
+    expect(healthcare!.level).toBe('low')
+    expect(healthcare!.recommendation).toMatch(/well covered/i)
+  })
 })
