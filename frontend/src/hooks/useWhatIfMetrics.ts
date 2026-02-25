@@ -7,6 +7,7 @@ import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { usePropertyStore } from '@/stores/usePropertyStore'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
+import { getEffectiveExpenses } from '@/lib/calculations/expenses'
 import type { CpfHousingMode } from '@/lib/types'
 
 export interface WhatIfOverrides {
@@ -70,6 +71,7 @@ export function getBaseInputs(
       lifeEvents: income.lifeEvents,
       lifeEventsEnabled: income.lifeEventsEnabled,
       annualExpenses: profile.annualExpenses,
+      expenseAdjustments: profile.expenseAdjustments,
       inflation: profile.inflation,
       personalReliefs: income.personalReliefs,
       srsAnnualContribution: profile.srsAnnualContribution,
@@ -108,6 +110,7 @@ export function getBaseInputs(
     retirementAge: profile.retirementAge,
     annualIncome: effectiveIncome,
     annualExpenses: profile.annualExpenses,
+    expenseAdjustments: profile.expenseAdjustments,
     liquidNetWorth: profile.liquidNetWorth,
     cpfTotal,
     swr: profile.swr,
@@ -131,7 +134,8 @@ export type WhatIfBaseInputs = ReturnType<typeof getBaseInputs>
 export function computeMetrics(inputs: WhatIfBaseInputs) {
   const metrics = calculateAllFireMetrics(inputs)
   const netRealReturn = inputs.expectedReturn - inputs.inflation - inputs.expenseRatio
-  const annualSavings = inputs.annualIncome - inputs.annualExpenses
+  const currentExpenses = getEffectiveExpenses(inputs.currentAge, inputs.annualExpenses, inputs.expenseAdjustments ?? [], inputs.lifeExpectancy)
+  const annualSavings = inputs.annualIncome - currentExpenses
   const yearsToRetirement = Math.max(0, inputs.retirementAge - inputs.currentAge)
 
   const portfolioAtRetirement = projectPortfolioAtRetirement({

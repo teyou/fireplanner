@@ -7,6 +7,7 @@ import { useFireCalculations } from '@/hooks/useFireCalculations'
 import { projectPortfolioAtRetirement } from '@/lib/calculations/fire'
 import { calculatePortfolioReturn, interpolateGlidePath } from '@/lib/calculations/portfolio'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
+import { getEffectiveExpenses } from '@/lib/calculations/expenses'
 import { formatCurrency } from '@/lib/utils'
 
 interface AnalysisPortfolioResult {
@@ -70,7 +71,8 @@ export function useAnalysisPortfolio(): AnalysisPortfolioResult {
       portfolioReturn = calculatePortfolioReturn(retirementWeights, effectiveReturns)
     }
     const netRealReturn = portfolioReturn - profile.inflation - profile.expenseRatio
-    const annualSavings = profile.annualIncome - profile.annualExpenses
+    const currentExpenses = getEffectiveExpenses(profile.currentAge, profile.annualExpenses, profile.expenseAdjustments, profile.lifeExpectancy)
+    const annualSavings = profile.annualIncome - currentExpenses
 
     const projected = projectPortfolioAtRetirement({
       currentNW: totalNW,
@@ -98,6 +100,8 @@ export function useAnalysisPortfolio(): AnalysisPortfolioResult {
     profile.retirementAge,
     profile.annualIncome,
     profile.annualExpenses,
+    profile.expenseAdjustments,
+    profile.lifeExpectancy,
     profile.expectedReturn,
     profile.usePortfolioReturn,
     profile.inflation,

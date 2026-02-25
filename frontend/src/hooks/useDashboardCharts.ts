@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useFireCalculations } from '@/hooks/useFireCalculations'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { getEffectiveExpenses } from '@/lib/calculations/expenses'
 
 interface ChartDataPoint {
   age: number
@@ -33,11 +34,13 @@ export function useDashboardCharts(): DashboardChartData {
     const data: ChartDataPoint[] = []
     let balance = currentNW
     for (let y = 0; y <= years; y++) {
-      data.push({ age: profile.currentAge + y, value: Math.max(0, balance) })
-      if (profile.currentAge + y < profile.retirementAge) {
+      const age = profile.currentAge + y
+      data.push({ age, value: Math.max(0, balance) })
+      if (age < profile.retirementAge) {
         balance = balance * (1 + realReturn) + annualSavings
       } else {
-        balance = balance * (1 + realReturn) - profile.annualExpenses
+        const expenses = getEffectiveExpenses(age, profile.annualExpenses, profile.expenseAdjustments, profile.lifeExpectancy)
+        balance = balance * (1 + realReturn) - expenses
       }
     }
 
@@ -59,5 +62,6 @@ export function useDashboardCharts(): DashboardChartData {
     profile.inflation,
     profile.expenseRatio,
     profile.annualExpenses,
+    profile.expenseAdjustments,
   ])
 }

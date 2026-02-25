@@ -170,6 +170,7 @@ export function useDisruptionImpact(): DisruptionImpactResult {
         lifeEvents: allEvents,
         lifeEventsEnabled: true, // Force enabled for disruption preview
         annualExpenses: profile.annualExpenses,
+        expenseAdjustments: profile.expenseAdjustments,
         inflation: profile.inflation,
         personalReliefs: income.personalReliefs,
         srsAnnualContribution: profile.srsAnnualContribution,

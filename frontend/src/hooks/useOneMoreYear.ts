@@ -7,6 +7,7 @@ import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { usePropertyStore } from '@/stores/usePropertyStore'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
+import { getEffectiveExpenses } from '@/lib/calculations/expenses'
 import type { CpfHousingMode } from '@/lib/types'
 
 export type RiskLevel = 'safe' | 'marginal' | 'risky'
@@ -70,6 +71,7 @@ export function useOneMoreYear(): OneMoreYearResult {
         lifeEvents: income.lifeEvents,
         lifeEventsEnabled: income.lifeEventsEnabled,
         annualExpenses: profile.annualExpenses,
+        expenseAdjustments: profile.expenseAdjustments,
         inflation: profile.inflation,
         personalReliefs: income.personalReliefs,
         srsAnnualContribution: profile.srsAnnualContribution,
@@ -97,7 +99,8 @@ export function useOneMoreYear(): OneMoreYearResult {
     }
 
     const netRealReturn = expectedReturn - profile.inflation - profile.expenseRatio
-    const annualSavings = effectiveIncome - profile.annualExpenses
+    const currentExpenses = getEffectiveExpenses(profile.currentAge, profile.annualExpenses, profile.expenseAdjustments, profile.lifeExpectancy)
+    const annualSavings = effectiveIncome - currentExpenses
 
     // Clamp max offset so retirementAge + 3 <= lifeExpectancy - 5
     const maxOffset = Math.min(3, profile.lifeExpectancy - 5 - profile.retirementAge)
@@ -117,8 +120,9 @@ export function useOneMoreYear(): OneMoreYearResult {
       })
 
       const sustainableWithdrawal = portfolioAtRetirement * profile.swr
+      const retirementExpenses = getEffectiveExpenses(retirementAge, profile.annualExpenses, profile.expenseAdjustments, profile.lifeExpectancy)
       const effectiveSwr = portfolioAtRetirement > 0
-        ? profile.annualExpenses / portfolioAtRetirement
+        ? retirementExpenses / portfolioAtRetirement
         : Infinity
       const riskLevel = isFinite(effectiveSwr) ? getRiskLevel(effectiveSwr) : 'risky'
 

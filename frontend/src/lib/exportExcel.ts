@@ -6,6 +6,7 @@ import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import { usePropertyStore } from '@/stores/usePropertyStore'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
 import { formatCurrency, formatPercent } from '@/lib/utils'
+import { computeExpensePhases } from '@/lib/calculations/expenses'
 
 type Row = [string, string | number]
 
@@ -33,9 +34,19 @@ export async function exportToExcel(): Promise<void> {
     ['FIRE Type', profile.fireType],
     section('Income & Expenses'),
     ['Annual Income', formatCurrency(profile.annualIncome)],
-    ['Annual Expenses', formatCurrency(profile.annualExpenses)],
+    ['Annual Expenses (base)', formatCurrency(profile.annualExpenses)],
     ['Retirement Spending Adjustment', formatPercent(profile.retirementSpendingAdjustment)],
     ['Inflation', formatPercent(profile.inflation)],
+    ...(profile.expenseAdjustments.length > 0 ? [
+      section('Expense Adjustments'),
+      ...profile.expenseAdjustments.map((adj): Row => [
+        adj.label,
+        `${adj.amount >= 0 ? '+' : ''}${formatCurrency(adj.amount)}/yr, ages ${adj.startAge}–${adj.endAge ?? 'ongoing'}`,
+      ]),
+      section('Effective Spending by Phase'),
+      ...computeExpensePhases(profile.annualExpenses, profile.expenseAdjustments, profile.currentAge, profile.lifeExpectancy, profile.lifeExpectancy)
+        .map((p): Row => [`Age ${p.fromAge}–${p.toAge}`, `${formatCurrency(p.amount)}/yr`]),
+    ] as Row[] : []),
     section('Net Worth'),
     ['Liquid Net Worth', formatCurrency(profile.liquidNetWorth)],
     ['CPF OA', formatCurrency(profile.cpfOA)],
