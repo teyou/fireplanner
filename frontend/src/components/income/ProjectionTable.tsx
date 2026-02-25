@@ -143,7 +143,10 @@ export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">
+                  <th key={header.id} className={cn(
+                    "px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap",
+                    header.column.id === 'age' && "sticky left-0 z-20 bg-background"
+                  )}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
@@ -159,18 +162,29 @@ export function ProjectionTable({ data, retirementAge }: ProjectionTableProps) {
                 <tr
                   key={row.id}
                   className={cn(
-                    'border-b hover:bg-muted/50',
+                    'border-b hover:bg-muted/50 group',
                     row.original.isRetired && 'bg-muted/30',
                     isRetirementRow && 'border-t-2 border-t-orange-400',
                     hasEvents && 'bg-yellow-50 dark:bg-yellow-900/10'
                   )}
                   title={hasEvents ? `Active: ${row.original.activeLifeEvents.join(', ')}` : undefined}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-2 py-1.5 whitespace-nowrap tabular-nums">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const isAgeCol = cell.column.id === 'age'
+                    return (
+                      <td key={cell.id} className={cn(
+                        "px-2 py-1.5 whitespace-nowrap tabular-nums",
+                        isAgeCol && cn(
+                          "sticky left-0 z-10 font-medium group-hover:bg-muted/50",
+                          row.original.isRetired ? 'bg-muted/30'
+                            : hasEvents ? 'bg-yellow-50 dark:bg-yellow-900/10'
+                            : 'bg-background'
+                        )
+                      )}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    )
+                  })}
                 </tr>
               )
             })}

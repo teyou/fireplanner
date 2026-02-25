@@ -172,7 +172,10 @@ export function CpfProjectionTable() {
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  className="px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap"
+                  className={cn(
+                    "px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap",
+                    header.column.id === 'age' && "sticky left-0 z-20 bg-background"
+                  )}
                 >
                   {header.isPlaceholder
                     ? null
@@ -192,7 +195,7 @@ export function CpfProjectionTable() {
               <tr
                 key={row.id}
                 className={cn(
-                  'border-b hover:bg-muted/50',
+                  'border-b hover:bg-muted/50 group',
                   isRetirementRow && 'border-t-2 border-t-orange-400',
                   original.oaShortfall > 0 && 'bg-amber-50 dark:bg-amber-900/10',
                   original.milestone === 'frs' && 'bg-green-50 dark:bg-green-900/10',
@@ -202,14 +205,27 @@ export function CpfProjectionTable() {
                   original.milestone === 'raCreated' && 'bg-purple-50 dark:bg-purple-900/10',
                 )}
               >
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className="px-2 py-1.5 whitespace-nowrap tabular-nums"
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
+                {row.getVisibleCells().map((cell) => {
+                  const isAgeCol = cell.column.id === 'age'
+                  const ageBg = original.oaShortfall > 0 ? 'bg-amber-50 dark:bg-amber-900/10'
+                    : original.milestone === 'frs' ? 'bg-green-50 dark:bg-green-900/10'
+                    : original.milestone === 'brs' ? 'bg-green-50/50 dark:bg-green-900/5'
+                    : original.milestone === 'ers' ? 'bg-green-100 dark:bg-green-900/20'
+                    : original.milestone === 'cpfLifeStart' ? 'bg-blue-50 dark:bg-blue-900/10'
+                    : original.milestone === 'raCreated' ? 'bg-purple-50 dark:bg-purple-900/10'
+                    : 'bg-background'
+                  return (
+                    <td
+                      key={cell.id}
+                      className={cn(
+                        "px-2 py-1.5 whitespace-nowrap tabular-nums",
+                        isAgeCol && cn("sticky left-0 z-10 font-medium group-hover:bg-muted/50", ageBg)
+                      )}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  )
+                })}
                 {isMilestone && (
                   <td className="px-2 py-1.5 text-xs text-muted-foreground whitespace-nowrap">
                     <span className="inline-flex items-center gap-0.5">

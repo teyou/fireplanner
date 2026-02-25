@@ -623,6 +623,7 @@ export function ProjectionPage() {
                   className={cn(
                     'px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap',
                     groupStartColumns.has(header.id) && 'border-l-2 border-l-border',
+                    header.column.id === 'age' && 'sticky left-0 z-20 bg-background',
                   )}
                 >
                   {header.isPlaceholder
@@ -644,24 +645,33 @@ export function ProjectionPage() {
               <tr
                 key={row.id}
                 className={cn(
-                  'border-b hover:bg-muted/50',
+                  'border-b hover:bg-muted/50 group',
                   original.isRetired && 'bg-muted/30',
                   isRetirementRow && 'border-t-2 border-t-orange-400',
                   isFireRow && 'bg-green-50 dark:bg-green-900/10',
                 )}
               >
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className={cn(
-                      'px-2 py-1.5 whitespace-nowrap tabular-nums',
-                      isDepleted && cell.column.id !== 'age' && 'text-destructive',
-                      groupStartColumns.has(cell.column.id) && 'border-l-2 border-l-border',
-                    )}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
+                {row.getVisibleCells().map((cell) => {
+                  const isAgeCol = cell.column.id === 'age'
+                  return (
+                    <td
+                      key={cell.id}
+                      className={cn(
+                        'px-2 py-1.5 whitespace-nowrap tabular-nums',
+                        isDepleted && !isAgeCol && 'text-destructive',
+                        groupStartColumns.has(cell.column.id) && 'border-l-2 border-l-border',
+                        isAgeCol && cn(
+                          'sticky left-0 z-10 font-medium group-hover:bg-muted/50',
+                          isFireRow ? 'bg-green-50 dark:bg-green-900/10'
+                            : original.isRetired ? 'bg-muted/30'
+                            : 'bg-background'
+                        ),
+                      )}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  )
+                })}
               </tr>
             )
           })}
