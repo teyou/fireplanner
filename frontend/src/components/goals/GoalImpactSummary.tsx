@@ -40,11 +40,13 @@ export function GoalImpactSummary() {
 
   const totalGoalCost = profile.financialGoals.reduce((sum, g) => sum + g.amount, 0)
 
-  // Detect underfunded goal years: goal is active but portfolio is depleted
+  // Detect underfunded goal years using engine-computed shortfall field
   const underfundedAges: number[] = []
+  let totalShortfall = 0
   for (const row of withGoalsRows) {
-    if (row.goalExpense > 0 && row.liquidNW === 0) {
+    if (row.goalShortfall > 0) {
       underfundedAges.push(row.age)
+      totalShortfall += row.goalShortfall
     }
   }
 
@@ -136,8 +138,8 @@ export function GoalImpactSummary() {
               {underfundedAges.length <= 5
                 ? underfundedAges.join(', ')
                 : `${underfundedAges[0]}–${underfundedAges[underfundedAges.length - 1]}`
-              }, your portfolio is depleted and cannot fully fund the goal.
-              The shortfall is not financed — it reduces the effective goal amount.
+              }, your portfolio cannot fully fund the goal.
+              The shortfall of {formatCurrency(totalShortfall)} is not financed.
             </p>
           </div>
         )}

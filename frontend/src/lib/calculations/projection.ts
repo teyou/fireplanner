@@ -375,6 +375,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     let goalDeduction = 0
     let goalShortfallAmount = 0
     let retirementWithdrawalTotal = 0
+    let retirementWithdrawalShortfallAmount = 0
 
     // Parent support at this age (uses its own growth rate, not inflation)
     const parentSupportExpense = parentSupportEnabled
@@ -555,9 +556,21 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       const afterDraw = startLiquidNW - netPortfolioDraw
       portfolioReturnDollar = afterDraw * returnRate
       const rawPostRetLiquidNW = afterDraw * (1 + returnRate)
-      goalShortfallAmount = rawPostRetLiquidNW < 0 && goalDeduction > 0
-        ? Math.min(goalDeduction, -rawPostRetLiquidNW)
-        : 0
+
+      // Proportionally attribute deficit to goals and retirement withdrawals
+      if (rawPostRetLiquidNW < 0) {
+        const deficit = -rawPostRetLiquidNW
+        const totalOneTime = goalDeduction + retirementWithdrawalTotal
+        if (totalOneTime > 0) {
+          const oneTimeShare = Math.min(totalOneTime, deficit)
+          goalShortfallAmount = goalDeduction > 0
+            ? oneTimeShare * (goalDeduction / totalOneTime)
+            : 0
+          retirementWithdrawalShortfallAmount = retirementWithdrawalTotal > 0
+            ? oneTimeShare * (retirementWithdrawalTotal / totalOneTime)
+            : 0
+        }
+      }
       liquidNW = Math.max(0, rawPostRetLiquidNW)
 
       // Feed uncapped strategy amount back for strategy continuity
@@ -698,6 +711,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       goalExpense: goalDeduction,
       goalShortfall: goalShortfallAmount,
       retirementWithdrawalExpense: retirementWithdrawalTotal,
+      retirementWithdrawalShortfall: retirementWithdrawalShortfallAmount,
       srsBalance: incomeRow.srsBalance,
       srsContribution: incomeRow.srsContribution,
       srsTaxableWithdrawal: incomeRow.srsTaxableWithdrawal,
@@ -715,6 +729,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
 
   const lastRow = rows[rows.length - 1]
   const totalGoalShortfall = rows.reduce((sum, r) => sum + r.goalShortfall, 0)
+  const totalRetirementWithdrawalShortfall = rows.reduce((sum, r) => sum + r.retirementWithdrawalShortfall, 0)
   const summary: ProjectionSummary = {
     fireAchievedAge,
     peakTotalNW,
@@ -723,6 +738,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
     terminalTotalNW: lastRow?.totalNW ?? 0,
     portfolioDepletedAge,
     totalGoalShortfall,
+    totalRetirementWithdrawalShortfall,
     mediSaveDepletionAge,
   }
 

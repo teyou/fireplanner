@@ -164,6 +164,7 @@ export function ProjectionPage() {
         downsizingRentExpense: d(row.downsizingRentExpense),
         goalExpense: d(row.goalExpense),
         goalShortfall: d(row.goalShortfall),
+        retirementWithdrawalShortfall: d(row.retirementWithdrawalShortfall),
         srsBalance: d(row.srsBalance),
         srsContribution: d(row.srsContribution),
         srsTaxableWithdrawal: d(row.srsTaxableWithdrawal),

@@ -2295,4 +2295,75 @@ describe('generateProjection', () => {
       }
     })
   })
+
+  describe('retirement withdrawal shortfall tracking', () => {
+    it('retirementWithdrawalShortfall is 0 when withdrawal is fully funded', () => {
+      const params = makeParams({
+        currentAge: 30, retirementAge: 30, lifeExpectancy: 33,
+        initialLiquidNW: 500000,
+        expectedReturn: 0, inflation: 0, expenseRatio: 0,
+        annualExpenses: 0,
+        retirementWithdrawals: [{
+          id: 'rw1', label: 'Renovation', amount: 10000, age: 31,
+          durationYears: 1, inflationAdjusted: false,
+        }],
+      })
+      const result = generateProjection(params)
+
+      for (const row of result.rows) {
+        expect(row.retirementWithdrawalShortfall).toBe(0)
+      }
+      expect(result.summary.totalRetirementWithdrawalShortfall).toBe(0)
+    })
+
+    it('retirementWithdrawalShortfall tracks unfunded withdrawal amount', () => {
+      // Small portfolio ($10K), large withdrawal ($200K) at age 31
+      const params = makeParams({
+        currentAge: 30, retirementAge: 30, lifeExpectancy: 33,
+        initialLiquidNW: 10000,
+        expectedReturn: 0, inflation: 0, expenseRatio: 0,
+        annualExpenses: 0,
+        retirementWithdrawals: [{
+          id: 'rw1', label: 'Big Purchase', amount: 200000, age: 31,
+          durationYears: 1, inflationAdjusted: false,
+        }],
+      })
+      const result = generateProjection(params)
+
+      const rwRow = result.rows.find(r => r.age === 31)!
+      expect(rwRow.retirementWithdrawalShortfall).toBeGreaterThan(0)
+      expect(rwRow.retirementWithdrawalExpense).toBe(200000)
+      expect(rwRow.liquidNW).toBe(0)
+
+      expect(result.summary.totalRetirementWithdrawalShortfall).toBe(rwRow.retirementWithdrawalShortfall)
+    })
+
+    it('proportionally attributes shortfall when both goals and withdrawals deplete portfolio', () => {
+      // Portfolio $10K, goal $100K and withdrawal $100K both at age 31
+      // Both should get proportional share of the deficit
+      const params = makeParams({
+        currentAge: 30, retirementAge: 30, lifeExpectancy: 33,
+        initialLiquidNW: 10000,
+        expectedReturn: 0, inflation: 0, expenseRatio: 0,
+        annualExpenses: 0,
+        financialGoals: [{
+          id: 'g1', label: 'Goal', amount: 100000, targetAge: 31,
+          durationYears: 1, priority: 'essential', inflationAdjusted: false,
+          category: 'other',
+        }],
+        retirementWithdrawals: [{
+          id: 'rw1', label: 'Withdrawal', amount: 100000, age: 31,
+          durationYears: 1, inflationAdjusted: false,
+        }],
+      })
+      const result = generateProjection(params)
+
+      const row31 = result.rows.find(r => r.age === 31)!
+      // Both are equal amounts, so shortfall should be split roughly equally
+      expect(row31.goalShortfall).toBeGreaterThan(0)
+      expect(row31.retirementWithdrawalShortfall).toBeGreaterThan(0)
+      expect(row31.goalShortfall).toBeCloseTo(row31.retirementWithdrawalShortfall, 2)
+      expect(row31.liquidNW).toBe(0)
+    })
+  })
 })

@@ -929,6 +929,7 @@ export interface ProjectionRow {
   goalExpense: number             // financial goal costs at this age
   goalShortfall: number           // unfunded portion of goal at this age (0 when fully funded)
   retirementWithdrawalExpense: number  // one-time retirement withdrawal costs at this age
+  retirementWithdrawalShortfall: number  // unfunded portion of retirement withdrawal (0 when fully funded)
   // SRS lifecycle (pass-through from income engine)
   srsBalance: number
   srsContribution: number
@@ -956,6 +957,7 @@ export interface ProjectionSummary {
   terminalTotalNW: number
   portfolioDepletedAge: number | null
   totalGoalShortfall: number
+  totalRetirementWithdrawalShortfall: number
   mediSaveDepletionAge: number | null
 }
 

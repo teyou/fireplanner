@@ -23,16 +23,18 @@ export function RetirementWithdrawalsPanel() {
   const updateEntry = useProfileStore((s) => s.updateRetirementWithdrawal)
   const { rows } = useProjection()
 
-  // Detect underfunded withdrawal years: withdrawal is active but portfolio is depleted
-  const underfundedAges = useMemo(() => {
-    if (!rows || entries.length === 0) return []
+  // Detect underfunded withdrawal years using engine-computed shortfall field
+  const { underfundedAges, totalShortfall } = useMemo(() => {
+    if (!rows || entries.length === 0) return { underfundedAges: [] as number[], totalShortfall: 0 }
     const ages: number[] = []
+    let shortfall = 0
     for (const row of rows) {
-      if (row.retirementWithdrawalExpense > 0 && row.liquidNW === 0) {
+      if (row.retirementWithdrawalShortfall > 0) {
         ages.push(row.age)
+        shortfall += row.retirementWithdrawalShortfall
       }
     }
-    return ages
+    return { underfundedAges: ages, totalShortfall: shortfall }
   }, [rows, entries.length])
 
   const handleAdd = useCallback(() => {
@@ -136,17 +138,8 @@ export function RetirementWithdrawalsPanel() {
               {underfundedAges.length <= 5
                 ? underfundedAges.join(', ')
                 : `${underfundedAges[0]}–${underfundedAges[underfundedAges.length - 1]}`
-              }, your portfolio is depleted and cannot fully fund these withdrawals.
-              The shortfall of{' '}
-              {formatCurrency(
-                rows!.reduce((sum, r) =>
-                  r.retirementWithdrawalExpense > 0 && r.liquidNW === 0
-                    ? sum + r.retirementWithdrawalExpense
-                    : sum,
-                  0,
-                ),
-              )}{' '}
-              is not financed.
+              }, your portfolio cannot fully fund these withdrawals.
+              The shortfall of {formatCurrency(totalShortfall)} is not financed.
             </p>
           </div>
         )}
