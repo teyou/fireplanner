@@ -60,6 +60,7 @@ import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { PercentInput } from '@/components/shared/PercentInput'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 // Stores
@@ -86,7 +87,8 @@ import type { ModeSectionId } from '@/hooks/useEffectiveMode'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { pushUndo } from '@/lib/undo'
 import { formatCurrency } from '@/lib/utils'
-import type { WithdrawalStrategyType } from '@/lib/types'
+import type { WithdrawalStrategyType, ExpenseAdjustment } from '@/lib/types'
+import { getEffectiveExpenses, computeExpensePhases } from '@/lib/calculations/expenses'
 
 const STRATEGY_LABELS: Record<WithdrawalStrategyType, string> = {
   constant_dollar: 'Constant Dollar (4% Rule)',
@@ -271,12 +273,20 @@ function ExpensesContent() {
   const inflation = useProfileStore((s) => s.inflation)
   const currentAge = useProfileStore((s) => s.currentAge)
   const retirementAge = useProfileStore((s) => s.retirementAge)
+  const lifeExpectancy = useProfileStore((s) => s.lifeExpectancy)
+  const expenseAdjustments = useProfileStore((s) => s.expenseAdjustments)
+  const addExpenseAdjustment = useProfileStore((s) => s.addExpenseAdjustment)
+  const removeExpenseAdjustment = useProfileStore((s) => s.removeExpenseAdjustment)
+  const updateExpenseAdjustment = useProfileStore((s) => s.updateExpenseAdjustment)
   const setProfileField = useProfileStore((s) => s.setField)
   const expensesError = useProfileStore((s) => s.validationErrors.annualExpenses)
   const adjustmentError = useProfileStore((s) => s.validationErrors.retirementSpendingAdjustment)
+  const validationErrors = useProfileStore((s) => s.validationErrors)
   const mode = useEffectiveMode('section-expenses')
 
-  const retirementExpenses = annualExpenses * retirementSpendingAdjustment
+  const effectiveRetirement = getEffectiveExpenses(retirementAge, annualExpenses, expenseAdjustments, lifeExpectancy)
+  const retirementExpenses = effectiveRetirement * retirementSpendingAdjustment
+  const phases = computeExpensePhases(annualExpenses, expenseAdjustments, currentAge, lifeExpectancy, lifeExpectancy)
 
   const activeStrategy = useSimulationStore((s) => s.selectedStrategy)
   const setSimField = useSimulationStore((s) => s.setField)
@@ -318,6 +328,118 @@ function ExpensesContent() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center">
+            Expense Adjustments
+            <InfoTooltip text="Model how your spending changes over time. Add adjustments for periods when expenses differ from your base (e.g. living with parents, childcare costs, or a helper in retirement). Amounts are in today's dollars." />
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {expenseAdjustments.length > 0 && (
+            <div className="space-y-2">
+              {expenseAdjustments.map((adj, i) => {
+                const endAgeErr = validationErrors[`expenseAdjustment_${adj.id}_endAge`]
+                return (
+                  <div key={adj.id} className="grid grid-cols-[1fr_120px_80px_80px_32px] gap-2 items-end">
+                    <div>
+                      {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">Label</Label>}
+                      <Input
+                        value={adj.label}
+                        onChange={(e) => updateExpenseAdjustment(adj.id, { label: e.target.value })}
+                        placeholder="e.g. Rent"
+                        maxLength={50}
+                        className="h-9"
+                      />
+                    </div>
+                    <div>
+                      {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">$/yr</Label>}
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm z-10">$</span>
+                        <NumberInput
+                          value={adj.amount}
+                          onChange={(v) => updateExpenseAdjustment(adj.id, { amount: v })}
+                          integer
+                          formatWithCommas
+                          className="pl-7 border-blue-300 h-9"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">From</Label>}
+                      <NumberInput
+                        value={adj.startAge}
+                        onChange={(v) => updateExpenseAdjustment(adj.id, { startAge: v })}
+                        min={18}
+                        max={120}
+                        className="h-9"
+                      />
+                    </div>
+                    <div>
+                      {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">Until</Label>}
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        value={adj.endAge ?? ''}
+                        onChange={(e) => {
+                          const raw = e.target.value
+                          updateExpenseAdjustment(adj.id, { endAge: raw === '' ? null : parseInt(raw, 10) || null })
+                        }}
+                        placeholder="Ongoing"
+                        min={18}
+                        max={120}
+                        className="h-9"
+                      />
+                      {endAgeErr && <p className="text-destructive text-[11px] mt-0.5">{endAgeErr}</p>}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn("h-9 w-9", i === 0 && "mt-5")}
+                      onClick={() => removeExpenseAdjustment(adj.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+          {validationErrors.expenseAdjustments && (
+            <p className="text-destructive text-sm">{validationErrors.expenseAdjustments}</p>
+          )}
+          {expenseAdjustments.length < 10 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => addExpenseAdjustment({
+                id: crypto.randomUUID(),
+                label: '',
+                amount: 0,
+                startAge: currentAge,
+                endAge: null,
+              })}
+            >
+              + Add Adjustment
+            </Button>
+          )}
+          {/* Computed phases preview */}
+          {phases.length > 1 && (
+            <div className="mt-3 p-3 bg-muted/50 rounded space-y-1">
+              <p className="text-xs font-medium text-muted-foreground mb-1">Effective Spending by Phase</p>
+              {phases.map((phase, i) => (
+                <div key={i} className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Age {phase.fromAge}–{phase.toAge}
+                  </span>
+                  <span className="font-medium">{formatCurrency(phase.amount)}/yr</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
             Retirement Spending
             <InfoTooltip text="Adjust how much of your current spending you expect in retirement. Many retirees spend less (no commute, paid-off mortgage) — a common estimate is 70-80% of working expenses." />
           </CardTitle>
@@ -336,7 +458,7 @@ function ExpensesContent() {
             <span className="text-muted-foreground">Retirement expenses: </span>
             <span className="font-semibold">{formatCurrency(retirementExpenses)}/yr</span>
             <span className="text-muted-foreground">
-              {' '}({(retirementSpendingAdjustment * 100).toFixed(0)}% of {formatCurrency(annualExpenses)})
+              {' '}({(retirementSpendingAdjustment * 100).toFixed(0)}% of {formatCurrency(effectiveRetirement)}{effectiveRetirement !== annualExpenses ? ' effective at retirement' : ''})
             </span>
           </div>
         </CardContent>
