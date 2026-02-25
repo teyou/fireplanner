@@ -24,7 +24,7 @@ export function BetaBanner() {
       <div className="flex-1 min-w-0">
         <span className="font-medium text-foreground">Beta</span>
         <span className="text-muted-foreground">
-          {' '}· Thanks for trying FIRE Planner! We're actively improving based on user feedback. Follow updates on{' '}
+          {' '}· Thanks for trying FIRE Planner! We're actively improving based on user feedback.{' '}
         </span>
         <a
           href={TELEGRAM_URL}
@@ -32,7 +32,7 @@ export function BetaBanner() {
           rel="noopener noreferrer"
           className="text-amber-700 dark:text-amber-400 hover:underline font-medium"
         >
-          Telegram
+          Follow updates on Telegram
         </a>
         <span className="text-muted-foreground"> · </span>
         <a
