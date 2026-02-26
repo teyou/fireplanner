@@ -282,6 +282,46 @@ describe('runDeterministicComparison', () => {
       }
     }
   })
+
+  it('falls back to portfolio * swr when annualExpenses is 0', () => {
+    const result = runDeterministicComparison({
+      initialPortfolio: 2_000_000,
+      annualExpenses: 0,
+      retirementAge: 65,
+      lifeExpectancy: 90,
+      expectedReturn: 0.07,
+      inflation: 0.025,
+      expenseRatio: 0.003,
+      swr: 0.04,
+      strategies: ['constant_dollar'],
+      strategyParams: { constant_dollar: { swr: 0.04 } },
+    })
+    const years = result.yearResults['constant_dollar']
+    // initialW should be portfolio * swr = 2M * 0.04 = 80K
+    expect(years[0].withdrawal).toBeCloseTo(80000, -2)
+    expect(result.summaries['constant_dollar'].survived).toBe(true)
+  })
+
+  it('handles zero initial portfolio gracefully', () => {
+    const result = runDeterministicComparison({
+      initialPortfolio: 0,
+      annualExpenses: 80000,
+      retirementAge: 65,
+      lifeExpectancy: 90,
+      expectedReturn: 0.07,
+      inflation: 0.025,
+      expenseRatio: 0.003,
+      swr: 0.04,
+      strategies: ['constant_dollar'],
+      strategyParams: { constant_dollar: { swr: 0.04 } },
+    })
+    const summary = result.summaries['constant_dollar']
+    expect(summary.avgWithdrawal).toBe(0)
+    expect(summary.minWithdrawal).toBe(0)
+    expect(summary.maxWithdrawal).toBe(0)
+    expect(summary.stdDevWithdrawal).toBe(0)
+    expect(summary.survived).toBe(false)
+  })
 })
 
 // ============================================================
