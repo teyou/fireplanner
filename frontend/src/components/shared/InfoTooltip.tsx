@@ -43,7 +43,7 @@ function InfoContent({ text, formula, source, sourceUrl }: InfoTooltipProps) {
 
 const baseTriggerClassName = "inline-flex items-center justify-center rounded-full text-xs cursor-help ml-1"
 const desktopTriggerClassName = `${baseTriggerClassName} w-5 h-5 bg-muted text-muted-foreground`
-const mobileTriggerClassName = `${baseTriggerClassName} min-w-[44px] min-h-[44px] bg-muted text-muted-foreground ring-1 ring-border`
+const mobileTriggerClassName = `${baseTriggerClassName} w-5 h-5 bg-muted text-muted-foreground relative before:absolute before:content-[''] before:-inset-3`
 
 export function InfoTooltip(props: InfoTooltipProps) {
   const isMobile = useIsMobile()
