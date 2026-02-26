@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useState, useId } from 'react'
 import { Label } from '@/components/ui/label'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
@@ -24,13 +24,15 @@ export function CurrencyInput({
   disabled,
 }: CurrencyInputProps) {
   const inputId = useId()
+  const [touched, setTouched] = useState(false)
+  const errorId = `${inputId}-error`
   return (
     <div className={cn('flex flex-col gap-1', className)}>
       <Label htmlFor={inputId} className="text-sm flex items-center gap-1">
         {label}
         {tooltip && <InfoTooltip text={tooltip} />}
       </Label>
-      <div className="relative mt-auto">
+      <div className="relative mt-auto" onBlur={() => setTouched(true)}>
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
           $
         </span>
@@ -42,12 +44,12 @@ export function CurrencyInput({
           formatWithCommas
           className={cn(
             'pl-7 border-blue-300',
-            error && 'border-destructive'
+            touched && error && 'border-destructive'
           )}
           disabled={disabled}
         />
       </div>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {touched && error && <p id={errorId} className="text-xs text-destructive">{error}</p>}
     </div>
   )
 }

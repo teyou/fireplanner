@@ -6,6 +6,7 @@ import { NumberInput } from '@/components/shared/NumberInput'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { Plus, Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
@@ -99,15 +100,15 @@ export function FinancialSection() {
           )}
 
           {store.srsAnnualContribution > 0 && (
-            <div className="flex items-center pb-1">
-              <label className="flex items-center gap-1.5 text-sm">
-                <input
-                  type="checkbox"
-                  checked={store.srsPostFireEnabled}
-                  onChange={(e) => store.setField('srsPostFireEnabled', e.target.checked)}
-                />
+            <div className="flex items-center gap-3 pb-1">
+              <Switch
+                id="srs-post-fire-toggle"
+                checked={store.srsPostFireEnabled}
+                onCheckedChange={(checked) => store.setField('srsPostFireEnabled', checked)}
+              />
+              <Label htmlFor="srs-post-fire-toggle" className="text-sm cursor-pointer">
                 Continue SRS during post-FIRE employment
-              </label>
+              </Label>
               <InfoTooltip text="Enable SRS contributions during Barista FIRE years when you have employment income streams active after your FIRE age. Off by default since barista income is typically lower." />
             </div>
           )}

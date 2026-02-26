@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { PercentInput } from '@/components/shared/PercentInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { useIncomeStore } from '@/stores/useIncomeStore'
@@ -133,14 +134,14 @@ export function LifeEventsSection() {
             Life Events
             <InfoTooltip text="Career breaks, part-time periods, or other income disruptions" />
           </CardTitle>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="life-events-enabled"
               checked={income.lifeEventsEnabled}
-              onChange={(e) => income.setField('lifeEventsEnabled', e.target.checked)}
+              onCheckedChange={(checked) => income.setField('lifeEventsEnabled', checked === true)}
             />
-            Enable
-          </label>
+            <Label htmlFor="life-events-enabled" className="text-sm cursor-pointer">Enable</Label>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -267,23 +268,23 @@ function EventRow({
           step={5}
         />
 
-        <div className="flex flex-col gap-1 justify-end">
-          <label className="flex items-center gap-1 text-sm">
-            <input
-              type="checkbox"
+        <div className="flex flex-col gap-1.5 justify-end">
+          <div className="flex items-center gap-1.5">
+            <Checkbox
+              id={`${prefix}-pause-savings`}
               checked={event.savingsPause}
-              onChange={(e) => onUpdate({ savingsPause: e.target.checked })}
+              onCheckedChange={(checked) => onUpdate({ savingsPause: checked === true })}
             />
-            Pause Savings
-          </label>
-          <label className="flex items-center gap-1 text-sm">
-            <input
-              type="checkbox"
+            <Label htmlFor={`${prefix}-pause-savings`} className="text-sm cursor-pointer">Pause Savings</Label>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Checkbox
+              id={`${prefix}-pause-cpf`}
               checked={event.cpfPause}
-              onChange={(e) => onUpdate({ cpfPause: e.target.checked })}
+              onCheckedChange={(checked) => onUpdate({ cpfPause: checked === true })}
             />
-            Pause CPF
-          </label>
+            <Label htmlFor={`${prefix}-pause-cpf`} className="text-sm cursor-pointer">Pause CPF</Label>
+          </div>
         </div>
       </div>
 
@@ -294,14 +295,14 @@ function EventRow({
           </Label>
           <div className="flex gap-2 flex-wrap">
             {streamNames.map(({ id, name }) => (
-              <label key={id} className="flex items-center gap-1 text-sm">
-                <input
-                  type="checkbox"
+              <div key={id} className="flex items-center gap-1.5">
+                <Checkbox
+                  id={`${prefix}-stream-${id}`}
                   checked={event.affectedStreamIds.includes(id)}
-                  onChange={() => toggleStream(id)}
+                  onCheckedChange={() => toggleStream(id)}
                 />
-                {name}
-              </label>
+                <Label htmlFor={`${prefix}-stream-${id}`} className="text-sm cursor-pointer">{name}</Label>
+              </div>
             ))}
           </div>
         </div>
