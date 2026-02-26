@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { tryUndo } from '@/lib/undo'
 import { BetaBanner } from '@/components/shared/BetaBanner'
 import { DataUpdateBanner } from '@/components/shared/DataUpdateBanner'
+import { MobileShareFab } from '@/components/shared/MobileShareFab'
 
 // Pages that show the stats strip (inputs and analysis pages, not start/reference)
 const STATS_ROUTES = ['/inputs', '/projection', '/withdrawal', '/stress-test', '/dashboard']
@@ -103,23 +104,26 @@ export function AppLayout() {
         {showStats && isBottom && <FireStatsStrip position="bottom" />}
       </div>
 
-      {/* Mobile help button + bottom sheet */}
+      {/* Mobile FABs: Share + Help */}
       {!isDesktop && (
-        <div className="fixed bottom-16 right-4 z-40 md:hidden">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button size="icon" className="rounded-full shadow-lg h-10 w-10">
-                <HelpCircle className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="h-[70vh] overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle>Help</SheetTitle>
-              </SheetHeader>
-              <HelpPanel mobile />
-            </SheetContent>
-          </Sheet>
-        </div>
+        <>
+          <MobileShareFab />
+          <div className="fixed bottom-16 right-4 z-40 md:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button size="icon" className="rounded-full shadow-lg h-10 w-10">
+                  <HelpCircle className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[70vh] overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>Help</SheetTitle>
+                </SheetHeader>
+                <HelpPanel mobile />
+              </SheetContent>
+            </Sheet>
+          </div>
+        </>
       )}
     </div>
   )
