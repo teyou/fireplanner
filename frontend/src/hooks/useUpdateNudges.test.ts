@@ -53,7 +53,8 @@ describe('useUpdateNudges', () => {
     )
     if (!cpfEntry) return // skip if no matching entry
 
-    const nudgeId = `changelog-${cpfEntry.date}-section-cpf`
+    const slug = cpfEntry.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)
+    const nudgeId = `changelog-${cpfEntry.date}-section-cpf-${slug}`
     useUIStore.setState({ dismissedNudges: [nudgeId] })
 
     const { result } = renderHook(() => useUpdateNudges('section-cpf'))

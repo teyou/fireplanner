@@ -41,7 +41,8 @@ export function useUpdateNudges(sectionId: string): UpdateNudge[] {
           (!lastSeenDate || e.date >= lastSeenDate)
       )
       for (const entry of unseenForSection) {
-        const nudgeId = `changelog-${entry.date}-${sectionId}`
+        const slug = entry.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)
+        const nudgeId = `changelog-${entry.date}-${sectionId}-${slug}`
         if (!dismissedNudges.includes(nudgeId)) {
           nudges.push({
             id: nudgeId,
