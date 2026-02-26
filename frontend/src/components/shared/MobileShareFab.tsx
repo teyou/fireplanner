@@ -15,12 +15,9 @@ export function MobileShareFab() {
   const nudgeId = 'share-fab-tooltip'
   const alreadyDismissed = dismissedNudges.includes(nudgeId)
 
-  // Show tooltip once for returning users
+  // Show tooltip once on first encounter
   useEffect(() => {
     if (alreadyDismissed) return
-
-    const hasProfile = localStorage.getItem('fireplanner-profile') !== null
-    if (!hasProfile) return
 
     setTooltipOpen(true)
     timerRef.current = setTimeout(() => {
