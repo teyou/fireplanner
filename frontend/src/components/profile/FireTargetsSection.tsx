@@ -186,7 +186,7 @@ export function FireTargetsSection() {
                   </div>
                 )}
                 {/* Basis toggle */}
-                <div className="flex items-center gap-0.5 mt-1.5 rounded-md bg-background border p-0.5">
+                <div role="radiogroup" aria-label="FIRE number dollar basis" className="flex items-center gap-0.5 mt-1.5 rounded-md bg-background border p-0.5">
                   {([
                     { value: 'today', label: "Today's $" },
                     { value: 'fireAge', label: 'FIRE Age' },
@@ -194,6 +194,8 @@ export function FireTargetsSection() {
                   ] as const).map((opt) => (
                     <button
                       key={opt.value}
+                      role="radio"
+                      aria-checked={fireNumberBasis === opt.value}
                       onClick={() => setField('fireNumberBasis', opt.value as FireNumberBasis)}
                       className={`px-1.5 py-0.5 rounded text-[10px] transition-colors flex-1 ${
                         fireNumberBasis === opt.value

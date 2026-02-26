@@ -7,7 +7,7 @@ import { NumberInput } from '@/components/shared/NumberInput'
 import { cn } from '@/lib/utils'
 
 export function PersonalSection() {
-  const { currentAge, retirementAge, lifeExpectancy, lifeStage, maritalStatus, setField, validationErrors } =
+  const { currentAge, retirementAge, lifeExpectancy, lifeStage, maritalStatus, residencyStatus, setField, validationErrors } =
     useProfileStore()
 
   return (
@@ -93,7 +93,10 @@ export function PersonalSection() {
           </div>
 
           <div className="space-y-1">
-            <Label className="text-sm">Marital Status</Label>
+            <Label className="text-sm flex items-center">
+              Marital Status
+              <InfoTooltip text="Affects eligibility for Spouse Relief and Working Mother's Child Relief tax deductions." />
+            </Label>
             <Select
               value={maritalStatus}
               onValueChange={(v) => setField('maritalStatus', v as 'single' | 'married')}
@@ -104,6 +107,26 @@ export function PersonalSection() {
               <SelectContent>
                 <SelectItem value="single">Single</SelectItem>
                 <SelectItem value="married">Married</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-sm flex items-center">
+              Residency Status
+              <InfoTooltip text="Sets your residency for CPF contribution rates, SRS caps, and tax calculations. For ABSD on property purchases, residency is set separately in the Property section." />
+            </Label>
+            <Select
+              value={residencyStatus}
+              onValueChange={(v) => setField('residencyStatus', v as 'citizen' | 'pr' | 'foreigner')}
+            >
+              <SelectTrigger className="border-blue-300">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="citizen">Singapore Citizen</SelectItem>
+                <SelectItem value="pr">Permanent Resident</SelectItem>
+                <SelectItem value="foreigner">Foreigner</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -26,9 +26,9 @@ export function ComparisonTable({ results }: ComparisonTableProps) {
                 <th className="text-left py-2 pr-4 font-medium">Strategy</th>
                 <th className="text-right py-2 px-2 font-medium">Avg Withdrawal</th>
                 <th className="text-right py-2 px-2 font-medium">Min</th>
-                <th className="text-right py-2 px-2 font-medium">Max</th>
-                <th className="text-right py-2 px-2 font-medium">Std Dev</th>
-                <th className="text-right py-2 px-2 font-medium">Total Withdrawn</th>
+                <th className="text-right py-2 px-2 font-medium hidden md:table-cell">Max</th>
+                <th className="text-right py-2 px-2 font-medium hidden md:table-cell">Std Dev</th>
+                <th className="text-right py-2 px-2 font-medium hidden md:table-cell">Total Withdrawn</th>
                 <th className="text-right py-2 px-2 font-medium">Terminal Portfolio</th>
                 <th className="text-right py-2 pl-2 font-medium">Survived</th>
               </tr>
@@ -41,9 +41,9 @@ export function ComparisonTable({ results }: ComparisonTableProps) {
                     <td className="py-2 pr-4 font-medium">{getStrategyLabel(strategy)}</td>
                     <td className="text-right py-2 px-2">{formatCurrency(s.avgWithdrawal)}</td>
                     <td className="text-right py-2 px-2">{formatCurrency(s.minWithdrawal)}</td>
-                    <td className="text-right py-2 px-2">{formatCurrency(s.maxWithdrawal)}</td>
-                    <td className="text-right py-2 px-2">{formatCurrency(s.stdDevWithdrawal)}</td>
-                    <td className="text-right py-2 px-2">{formatCurrency(s.totalWithdrawn)}</td>
+                    <td className="text-right py-2 px-2 hidden md:table-cell">{formatCurrency(s.maxWithdrawal)}</td>
+                    <td className="text-right py-2 px-2 hidden md:table-cell">{formatCurrency(s.stdDevWithdrawal)}</td>
+                    <td className="text-right py-2 px-2 hidden md:table-cell">{formatCurrency(s.totalWithdrawn)}</td>
                     <td className="text-right py-2 px-2">{formatCurrency(s.terminalPortfolio)}</td>
                     <td className="text-right py-2 pl-2">
                       <span className={s.survived ? 'text-green-600' : 'text-destructive'}>

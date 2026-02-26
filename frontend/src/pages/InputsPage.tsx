@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import { Slider } from '@/components/ui/slider'
 import { Link, useLocation } from 'react-router-dom'
 import { ChevronDown, ChevronUp, CheckCircle2, Circle, ArrowRight, HelpCircle, RefreshCw, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -245,15 +246,15 @@ function IncomeContent() {
 
       <SalaryModelSection />
 
-      <div className="flex items-center pb-1">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={income.employerCpfEnabled}
-            onChange={(e) => income.setField('employerCpfEnabled', e.target.checked)}
-          />
+      <div className="flex items-center gap-3 pb-1">
+        <Switch
+          id="employer-cpf-toggle"
+          checked={income.employerCpfEnabled}
+          onCheckedChange={(checked) => income.setField('employerCpfEnabled', checked)}
+        />
+        <Label htmlFor="employer-cpf-toggle" className="text-sm cursor-pointer">
           Employer CPF Contributions
-        </label>
+        </Label>
       </div>
 
       {mode === 'advanced' && <TaxReliefSection />}
@@ -350,7 +351,8 @@ function ExpensesContent() {
                 const endAgeErr = validationErrors[`expenseAdjustment_${adj.id}_endAge`]
                 return (
                   <div key={adj.id}>
-                    <div className="grid grid-cols-[1fr_120px_80px_80px_32px] gap-2 items-end">
+                    {/* Desktop row */}
+                    <div className="hidden md:grid grid-cols-[1fr_120px_80px_80px_32px] gap-2 items-end">
                       <div>
                         {i === 0 && <Label className="text-xs text-muted-foreground mb-1 block">Label</Label>}
                         <Input
@@ -409,7 +411,69 @@ function ExpensesContent() {
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-                    {endAgeErr && <p className="text-destructive text-xs mt-1">{endAgeErr}</p>}
+                    {/* Mobile card */}
+                    <div className="md:hidden border rounded-lg p-3 mb-2 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Input
+                          value={adj.label}
+                          onChange={(e) => updateExpenseAdjustment(adj.id, { label: e.target.value })}
+                          placeholder="e.g. Rent"
+                          maxLength={50}
+                          className="h-9 flex-1 mr-2"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 shrink-0"
+                          onClick={() => removeExpenseAdjustment(adj.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">$/yr</Label>
+                          <div className="relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs z-10">$</span>
+                            <NumberInput
+                              value={adj.amount}
+                              onChange={(v) => updateExpenseAdjustment(adj.id, { amount: v })}
+                              integer
+                              formatWithCommas
+                              className="pl-5 border-blue-300 h-9 text-sm"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">From</Label>
+                          <NumberInput
+                            value={adj.startAge}
+                            onChange={(v) => updateExpenseAdjustment(adj.id, { startAge: v })}
+                            min={18}
+                            max={120}
+                            className="h-9 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Until</Label>
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            value={adj.endAge ?? ''}
+                            onChange={(e) => {
+                              const raw = e.target.value
+                              updateExpenseAdjustment(adj.id, { endAge: raw === '' ? null : parseInt(raw, 10) || null })
+                            }}
+                            placeholder="Ongoing"
+                            min={18}
+                            max={120}
+                            className={cn("h-9 text-sm", endAgeErr && "border-destructive")}
+                          />
+                        </div>
+                      </div>
+                      {endAgeErr && <p className="text-destructive text-xs">{endAgeErr}</p>}
+                    </div>
+                    {endAgeErr && <p className="text-destructive text-xs mt-1 hidden md:block">{endAgeErr}</p>}
                   </div>
                 )
               })}
@@ -723,7 +787,8 @@ function PropertyContent() {
   const [propertyStatus, setPropertyStatus] = useState<PropertyStatus>(() =>
     derivePropertyStatus(ownsProperty, existingMortgageBalance, existingMonthlyPayment)
   )
-  const [showNewPurchase, setShowNewPurchase] = useState(false)
+  const showNewPurchase = useUIStore((s) => s.showNewPurchase)
+  const setShowNewPurchase = useUIStore((s) => s.setShowNewPurchase)
 
   const handleStatusChange = (status: PropertyStatus) => {
     setPropertyStatus(status)
@@ -757,12 +822,14 @@ function PropertyContent() {
           <CardTitle className="text-lg">Existing Property</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-1 p-1 bg-muted rounded-lg w-fit">
+          <div role="radiogroup" aria-label="Property status" className="flex items-center gap-1 p-1 bg-muted rounded-lg w-fit">
             {STATUS_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
+                role="radio"
+                aria-checked={propertyStatus === opt.value}
                 onClick={() => handleStatusChange(opt.value)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                className={`px-3 py-2.5 md:py-1.5 text-xs font-medium rounded-md transition-colors ${
                   propertyStatus === opt.value
                     ? 'bg-background shadow-sm text-foreground'
                     : 'text-muted-foreground hover:text-foreground'
@@ -793,17 +860,18 @@ function PropertyContent() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm text-muted-foreground flex items-center gap-1">
+                <Label htmlFor="ownership-percent" className="text-sm text-muted-foreground flex items-center gap-1">
                   Your Ownership Share
                   <InfoTooltip text="For co-owned property, enter your percentage share. All property values (equity, mortgage, rental) will be scaled to your portion." />
-                </label>
+                </Label>
                 <div className="flex items-center gap-3">
-                  <input
-                    type="range"
+                  <Slider
+                    id="ownership-percent"
                     min={1}
                     max={100}
-                    value={Math.round((ownershipPercent ?? 1) * 100)}
-                    onChange={(e) => setField('ownershipPercent', Number(e.target.value) / 100)}
+                    step={1}
+                    value={[Math.round((ownershipPercent ?? 1) * 100)]}
+                    onValueChange={([v]) => setField('ownershipPercent', v / 100)}
                     className="flex-1"
                   />
                   <span className="text-sm font-medium w-12 text-right">{Math.round((ownershipPercent ?? 1) * 100)}%</span>
@@ -1191,6 +1259,8 @@ export function InputsPage() {
   const cpfEnabled = useUIStore((s) => s.cpfEnabled)
   const propertyEnabled = useUIStore((s) => s.propertyEnabled)
   const setSectionOrder = useUIStore((s) => s.setField)
+  const collapsedSectionsArr = useUIStore((s) => s.collapsedSections)
+  const toggleSection = useUIStore((s) => s.toggleSection)
   const { sections: sectionCompletion } = useSectionCompletion()
 
   const resetIncomeRaw = useIncomeStore((s) => s.reset)
@@ -1238,24 +1308,30 @@ export function InputsPage() {
 
   const location = useLocation()
 
-  const [collapsedSections, setCollapsedSections] = useState<Set<SectionId>>(() => {
-    if (sectionOrder === 'already-fire') {
-      return new Set(['section-fire-settings'])
+  const collapsedSections = useMemo(() => new Set(collapsedSectionsArr as SectionId[]), [collapsedSectionsArr])
+
+  // One-time effect: collapse all sections for new users on first visit
+  useEffect(() => {
+    const state = useUIStore.getState()
+    const isFirstVisit = state.lastSeenChangelogDate === null && state.collapsedSections.length === 0
+    if (isFirstVisit) {
+      const allCollapsible: string[] = [
+        'section-income', 'section-expenses', 'section-goals',
+        'section-net-worth', 'section-cpf', 'section-healthcare',
+        'section-property', 'section-allocation'
+      ]
+      useUIStore.setState({ collapsedSections: allCollapsible })
     }
-    return new Set()
-  })
+  }, [])
 
   // Scroll to hash target (e.g., /inputs#section-cpf) and expand if collapsed
   useEffect(() => {
     const hashId = location.hash.slice(1)
     if (!hashId) return
     // Expand the section if collapsed
-    setCollapsedSections((prev) => {
-      if (!prev.has(hashId as SectionId)) return prev
-      const next = new Set(prev)
-      next.delete(hashId as SectionId)
-      return next
-    })
+    if (collapsedSections.has(hashId as SectionId)) {
+      toggleSection(hashId)
+    }
     // Retry scroll until element is visible (handles lazy rendering)
     let attempts = 0
     let timerId: ReturnType<typeof setTimeout> | undefined
@@ -1272,18 +1348,6 @@ export function InputsPage() {
     requestAnimationFrame(tryScroll)
     return () => { if (timerId) clearTimeout(timerId) }
   }, [location.hash])
-
-  const toggleSection = (id: SectionId) => {
-    setCollapsedSections((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-      return next
-    })
-  }
 
   const sections: Record<SectionId, SectionDef> = {
     'section-personal': {
@@ -1405,8 +1469,10 @@ export function InputsPage() {
             <Progress value={(completedCount / totalSections) * 100} className="h-2" />
           </div>
         </div>
-        <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+        <div role="radiogroup" aria-label="Section ordering" className="flex items-center gap-1 p-1 bg-muted rounded-lg">
           <button
+            role="radio"
+            aria-checked={sectionOrder === 'goal-first'}
             onClick={() => setSectionOrder('sectionOrder', 'goal-first')}
             className={`flex-1 px-2 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
               sectionOrder === 'goal-first'
@@ -1417,6 +1483,8 @@ export function InputsPage() {
             Goal first
           </button>
           <button
+            role="radio"
+            aria-checked={sectionOrder === 'story-first'}
             onClick={() => setSectionOrder('sectionOrder', 'story-first')}
             className={`flex-1 px-2 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
               sectionOrder === 'story-first'
@@ -1427,6 +1495,8 @@ export function InputsPage() {
             Story first
           </button>
           <button
+            role="radio"
+            aria-checked={sectionOrder === 'already-fire'}
             onClick={() => setSectionOrder('sectionOrder', 'already-fire')}
             className={`flex-1 px-2 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
               sectionOrder === 'already-fire'
