@@ -176,6 +176,30 @@ Based on William Bengen's 1994 study of US stock/bond returns from 1926-1992. Th
 2. **Historical Bootstrap**: Randomly samples actual historical return years with replacement
 3. **Fat-Tail (Student-t)**: Uses Student-t distribution (df=5) to better model extreme market events
 
+### How Expected Returns and Standard Deviations Work
+
+Every asset class has two key numbers: **expected return** (the average annual gain) and **Standard Deviation** (how much returns swing around that average). These drive the simulation differently depending on the method:
+
+**Parametric method** models all 8 asset classes as correlated random variables:
+1. The standard deviations and the 8x8 correlation matrix are combined into a covariance matrix: \`cov[i][j] = stdDev[i] x stdDev[j] x correlation[i][j]\`
+2. Cholesky decomposition factors this into a lower-triangular matrix L, which converts independent random numbers into correlated ones
+3. For each year of each simulation: 8 independent random draws are multiplied by L, then shifted by each asset's expected return to produce correlated per-asset returns
+4. The portfolio return is the weighted sum across all 8 assets
+
+The expected return is the *centre* of the distribution (what you'd get on average), and the standard deviation controls the *width* (how much any given year can deviate). The correlation matrix adds the third dimension: how assets move together, which is why a diversified portfolio can have lower overall volatility than any single asset.
+
+**Historical Bootstrap** ignores both parameters entirely. It randomly picks real historical year rows (1928-2025) and replays them in shuffled order, preserving real-world correlations and fat tails naturally.
+
+**Fat-Tail (Student-t)** operates at the portfolio level. It computes a single portfolio mean and standard deviation from the weighted asset parameters, then draws from a Student-t distribution with 5 degrees of freedom. This produces the same average return and spread, but with heavier tails: extreme years (crashes and booms) occur more frequently than a normal bell curve predicts.
+
+### Two-Phase Simulation
+
+Each simulation path has two phases:
+- **Accumulation** (working years): Portfolio grows by the random return, minus expense ratio, plus annual savings
+- **Decumulation** (retirement years): Portfolio grows by the random return, minus expense ratio, minus net withdrawal (strategy withdrawal minus post-retirement income)
+
+The same return sequence applies to both phases, so a simulation that starts with bad years carries that damage through to retirement.
+
 **Interpreting results:**
 - **Success rate > 95%**: Very comfortable margin
 - **Success rate 80-95%**: Reasonable, consider flexibility
