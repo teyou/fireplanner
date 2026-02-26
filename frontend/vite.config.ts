@@ -16,9 +16,14 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          recharts: ['recharts'],
-          d3: ['d3'],
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (id.includes('recharts')) return 'recharts'
+          if (id.includes('/d3') || id.includes('/d3-')) return 'd3'
+          if (id.includes('react-dom') || id.includes('/react/')) return 'react-vendor'
+          if (id.includes('react-router')) return 'react-vendor'
+          if (id.includes('@radix-ui')) return 'radix-ui'
+          if (id.includes('lucide-react')) return 'lucide'
         },
       },
     },
