@@ -469,7 +469,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     let raContrib = 0
     const cpfPaused = isCpfPaused(age, params.lifeEvents, params.lifeEventsEnabled)
 
-    if (!isRetired && params.employerCpfEnabled && cpfApplicableSalary > 0 && !cpfPaused) {
+    if (params.employerCpfEnabled && cpfApplicableSalary > 0 && !cpfPaused) {
       const cpf = calculateCpfContribution(cpfApplicableSalary, age)
       cpfEmployee = cpf.employee
       cpfEmployer = cpf.employer

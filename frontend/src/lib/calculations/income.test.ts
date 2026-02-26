@@ -3140,6 +3140,45 @@ describe('isCpfApplicable on income streams', () => {
     expect(row30.cpfEmployer).toBeCloseTo(row30OnlyCpf.cpfEmployer, 2)
   })
 
+  it('post-retirement employment stream with isCpfApplicable true produces CPF (Barista FIRE)', () => {
+    const rows = generateIncomeProjection({
+      ...baseParams,
+      retirementAge: 40,
+      lifeExpectancy: 70,
+      incomeStreams: [{
+        id: 'barista',
+        name: 'Barista FIRE Job',
+        annualAmount: 36000,
+        startAge: 45,
+        endAge: 55,
+        growthRate: 0,
+        type: 'employment',
+        growthModel: 'none',
+        taxTreatment: 'taxable',
+        isCpfApplicable: true,
+        isActive: true,
+      }],
+    })
+
+    // Ages 41-44: no income, no CPF
+    const row42 = rows.find(r => r.age === 42)!
+    expect(row42.salary).toBe(0)
+    expect(row42.cpfEmployee).toBe(0)
+    expect(row42.cpfEmployer).toBe(0)
+
+    // Ages 45-55: barista job should generate CPF contributions
+    const row45 = rows.find(r => r.age === 45)!
+    expect(row45.salary).toBe(36000)
+    expect(row45.cpfEmployee).toBeGreaterThan(0)
+    expect(row45.cpfEmployer).toBeGreaterThan(0)
+
+    // Age 56: stream ended, no more CPF
+    const row56 = rows.find(r => r.age === 56)!
+    expect(row56.salary).toBe(0)
+    expect(row56.cpfEmployee).toBe(0)
+    expect(row56.cpfEmployer).toBe(0)
+  })
+
   it('primary salary always generates CPF even with no streams', () => {
     const rows = generateIncomeProjection({
       ...baseParams,
