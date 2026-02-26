@@ -13,6 +13,16 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-26',
+    category: 'fix',
+    title: 'HDB subletting income now included in Monte Carlo and stress tests',
+    description:
+      'HDB subletting rental income was missing from Monte Carlo survival rate calculations and sequence risk stress tests, making results pessimistic for users with room rentals. All simulation engines now include this income, and rental income correctly stops after a downsizing sale.',
+    affectedSections: ['section-property'],
+    insight:
+      'Three separate files were independently summing post-retirement income components. When HDB subletting was added to the projection engine, the simulation hooks were never updated. We extracted a shared helper to prevent this class of bug from recurring.',
+  },
+  {
+    date: '2026-02-26',
     category: 'feature',
     title: 'Privacy-friendly analytics added',
     description:
