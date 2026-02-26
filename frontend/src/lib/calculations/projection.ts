@@ -503,7 +503,8 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       }
 
       // Post-retirement income from active streams + existing property rental + SRS drawdown
-      const postRetirementIncome = incomeRow.rentalIncome + incomeRow.investmentIncome +
+      // salary is included for Barista FIRE: employment income streams active after FIRE age
+      const postRetirementIncome = incomeRow.salary + incomeRow.rentalIncome + incomeRow.investmentIncome +
         incomeRow.businessIncome + incomeRow.governmentIncome + incomeRow.srsWithdrawal + effectiveRentalIncome
 
       // Compute max permitted withdrawal from strategy

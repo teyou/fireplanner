@@ -112,9 +112,10 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
           if (!row.isRetired) {
             annualSavings.push(row.annualSavings)
           } else {
-            // Post-retirement income: rental + investment + government (CPF LIFE etc.)
+            // Post-retirement income: salary (Barista FIRE) + rental + investment + business + government + SRS
             postRetirementIncome.push(
-              row.rentalIncome + row.investmentIncome + row.governmentIncome
+              row.salary + row.rentalIncome + row.investmentIncome +
+              row.businessIncome + row.governmentIncome + row.srsWithdrawal
             )
           }
         }

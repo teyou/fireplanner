@@ -2366,4 +2366,65 @@ describe('generateProjection', () => {
       expect(row31.liquidNW).toBe(0)
     })
   })
+
+  // ============================================================
+  // Barista FIRE: post-retirement employment income reduces portfolio withdrawal
+  // ============================================================
+
+  describe('Barista FIRE post-retirement employment income', () => {
+    it('employment salary in retired years reduces expense gap and portfolio withdrawal', () => {
+      const currentAge = 30
+      const retirementAge = 32
+      const lifeExpectancy = 37
+      const baristaStartAge = 34
+      const baristaEndAge = 36
+      const baristaSalary = 30000
+      const annualExpenses = 50000
+
+      // Build income rows: salary=0 for retired years, except barista years get salary
+      const incomeRows: IncomeProjectionRow[] = []
+      for (let age = currentAge; age <= lifeExpectancy; age++) {
+        const year = age - currentAge
+        const isRetired = age > retirementAge
+        const hasBaristaJob = age >= baristaStartAge && age <= baristaEndAge
+        const salary = !isRetired ? 72000 : (hasBaristaJob ? baristaSalary : 0)
+
+        incomeRows.push(mockIncomeRow({
+          year,
+          age,
+          salary,
+          totalGross: salary,
+          sgTax: !isRetired ? 3000 : 0,
+          cpfEmployee: !isRetired ? 14400 : (hasBaristaJob ? 6000 : 0),
+          cpfEmployer: !isRetired ? 12240 : (hasBaristaJob ? 5100 : 0),
+          totalNet: !isRetired ? 54600 : salary,
+          annualSavings: !isRetired ? 20000 : 0,
+          cumulativeSavings: !isRetired ? 20000 * (year + 1) : 20000 * (retirementAge - currentAge),
+          isRetired,
+        }))
+      }
+
+      const result = generateProjection(makeParams({
+        currentAge,
+        retirementAge,
+        lifeExpectancy,
+        annualExpenses,
+        initialLiquidNW: 500000,
+        incomeProjection: incomeRows,
+        expectedReturn: 0, // zero return to isolate the income effect
+        inflation: 0,
+      }))
+
+      // During barista years (34-36), the $30K salary should reduce
+      // the expense gap from $50K to $20K
+      const baristaRow = result.rows.find(r => r.age === 34)!
+      const noBaristaRow = result.rows.find(r => r.age === 33)! // no barista income
+
+      // Without barista income, full $50K expenses come from portfolio
+      expect(noBaristaRow.withdrawalAmount).toBeCloseTo(50000, 0)
+
+      // With barista income, only $20K gap comes from portfolio
+      expect(baristaRow.withdrawalAmount).toBeCloseTo(20000, 0)
+    })
+  })
 })

@@ -22,6 +22,16 @@ export const CHANGELOG: ChangelogEntry[] = [
       'The retirement age in FIRE Planner is your FIRE age, not when you stop working entirely. If you return to work after FIRE, your employment income stream should generate CPF just like any job would.',
   },
   {
+    date: '2026-02-26',
+    category: 'fix',
+    title: 'Post-FIRE employment income now reduces portfolio withdrawals',
+    description:
+      'Employment income from Barista FIRE jobs was being ignored by the projection engine, Monte Carlo simulations, and sequence risk stress tests. Your portfolio was withdrawing the full expense amount instead of only the gap after employment income. All three engines now correctly account for salary from post-FIRE income streams.',
+    affectedSections: ['section-income'],
+    insight:
+      'This also fixes missing business income and SRS withdrawals in Monte Carlo and sequence risk simulations, which were only counting rental, investment, and government income.',
+  },
+  {
     date: '2026-02-25',
     category: 'feature',
     title: 'Goal and withdrawal shortfall tracking in projection engine',

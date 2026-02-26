@@ -78,8 +78,10 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
         const projection = generateIncomeProjection(projectionParams)
         for (const row of projection) {
           if (row.isRetired) {
+            // salary included for Barista FIRE; all income types for consistency with projection engine
             postRetirementIncome.push(
-              row.rentalIncome + row.investmentIncome + row.governmentIncome
+              row.salary + row.rentalIncome + row.investmentIncome +
+              row.businessIncome + row.governmentIncome + row.srsWithdrawal
             )
           }
         }
