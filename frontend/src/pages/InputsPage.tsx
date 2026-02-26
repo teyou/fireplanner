@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -720,7 +720,8 @@ function PropertyContent() {
   const [propertyStatus, setPropertyStatus] = useState<PropertyStatus>(() =>
     derivePropertyStatus(ownsProperty, existingMortgageBalance, existingMonthlyPayment)
   )
-  const [showNewPurchase, setShowNewPurchase] = useState(false)
+  const showNewPurchase = useUIStore((s) => s.showNewPurchase)
+  const setShowNewPurchase = useUIStore((s) => s.setShowNewPurchase)
 
   const handleStatusChange = (status: PropertyStatus) => {
     setPropertyStatus(status)
@@ -1187,6 +1188,8 @@ export function InputsPage() {
   const cpfEnabled = useUIStore((s) => s.cpfEnabled)
   const propertyEnabled = useUIStore((s) => s.propertyEnabled)
   const setSectionOrder = useUIStore((s) => s.setField)
+  const collapsedSectionsArr = useUIStore((s) => s.collapsedSections)
+  const toggleSection = useUIStore((s) => s.toggleSection)
   const { sections: sectionCompletion } = useSectionCompletion()
 
   const resetIncomeRaw = useIncomeStore((s) => s.reset)
@@ -1233,24 +1236,30 @@ export function InputsPage() {
 
   const location = useLocation()
 
-  const [collapsedSections, setCollapsedSections] = useState<Set<SectionId>>(() => {
-    if (sectionOrder === 'already-fire') {
-      return new Set(['section-fire-settings'])
+  const collapsedSections = useMemo(() => new Set(collapsedSectionsArr as SectionId[]), [collapsedSectionsArr])
+
+  // One-time effect: collapse all sections for new users on first visit
+  useEffect(() => {
+    const state = useUIStore.getState()
+    const isFirstVisit = state.lastSeenChangelogDate === null && state.collapsedSections.length === 0
+    if (isFirstVisit) {
+      const allCollapsible: string[] = [
+        'section-income', 'section-expenses', 'section-goals',
+        'section-net-worth', 'section-cpf', 'section-healthcare',
+        'section-property', 'section-allocation'
+      ]
+      useUIStore.setState({ collapsedSections: allCollapsible })
     }
-    return new Set()
-  })
+  }, [])
 
   // Scroll to hash target (e.g., /inputs#section-cpf) and expand if collapsed
   useEffect(() => {
     const hashId = location.hash.slice(1)
     if (!hashId) return
     // Expand the section if collapsed
-    setCollapsedSections((prev) => {
-      if (!prev.has(hashId as SectionId)) return prev
-      const next = new Set(prev)
-      next.delete(hashId as SectionId)
-      return next
-    })
+    if (collapsedSections.has(hashId as SectionId)) {
+      toggleSection(hashId)
+    }
     // Retry scroll until element is visible (handles lazy rendering)
     let attempts = 0
     let timerId: ReturnType<typeof setTimeout> | undefined
@@ -1267,18 +1276,6 @@ export function InputsPage() {
     requestAnimationFrame(tryScroll)
     return () => { if (timerId) clearTimeout(timerId) }
   }, [location.hash])
-
-  const toggleSection = (id: SectionId) => {
-    setCollapsedSections((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-      return next
-    })
-  }
 
   const sections: Record<SectionId, SectionDef> = {
     'section-personal': {
