@@ -1,0 +1,13 @@
+Thanks for giving it a try
+
+Some context on what the app is trying to do — I originally built this as a personal Excel sheet for my own FIRE planning, then figured it might be useful for others too. The app is structured in 3 layers, each going a level deeper:
+
+1. The first page is meant to be the "aha moment." You punch in a few numbers — age, income, expenses, savings — and it immediately tells you when you could realistically stop working. A lot of people I've spoken to either think early retirement is completely out of reach, or that it's so far away there's no point thinking about it. The quick calculator is meant to challenge both assumptions.
+
+2. The inputs section lets you get more realistic. Once you're curious, you can layer in CPF, property, income growth, healthcare, goals — all the Singapore-specific details that make your projection less "back of napkin" and more "actual plan."
+
+3. The analysis section is where the SWR stuff lives — and it's really about answering "but will my money actually last?" Once you have a FIRE number and a plan to get there, the natural next question is whether a 4% (or 3.5%, or whatever) withdrawal rate will actually survive 30+ years of real market conditions. So it runs your plan through 10,000 random market scenarios (Monte Carlo), tests it against every historical period since 1928 (backtest), and stress-tests it against specific crashes like the GFC or Asian Financial Crisis. The goal is to give you confidence — or a reality check — on whether your drawdown strategy holds up.
+
+I think the issue is that if you jump straight into the SWR/stress test section without the context of sections 1 and 2, it's not obvious what it's optimizing for or why. That's a UX problem on my end — I need to do a better job guiding people through the flow and explaining what each analysis is telling them.
+
+Would love to hear what specifically felt confusing — whether it's the inputs it's asking for, the outputs it's showing, or the "so what" of the results. Happy to improve it.
