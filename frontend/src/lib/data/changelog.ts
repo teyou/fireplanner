@@ -14,6 +14,22 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-26',
     category: 'fix',
+    title: 'Share links now work correctly',
+    description:
+      'Shared plan URLs containing certain characters were silently failing to import, showing no error or import dialog. The share link feature now reliably decodes all plan data.',
+    insight:
+      'The compression library uses + as a literal character in its output, but the URL parser was decoding + as a space (per the HTML form encoding spec), corrupting the data before decompression.',
+  },
+  {
+    date: '2026-02-26',
+    category: 'feature',
+    title: 'Mobile share button',
+    description:
+      'A floating Share button now appears on mobile devices, giving one-tap access to the native share sheet (AirDrop, iMessage, email, copy link). A tooltip explains the feature on your first visit.',
+  },
+  {
+    date: '2026-02-26',
+    category: 'fix',
     title: 'Share button tooltip now appears reliably on first visit',
     description:
       'The share button onboarding tooltip could occasionally fail to display due to a rendering timing issue. It now initializes correctly on the first page load.',
