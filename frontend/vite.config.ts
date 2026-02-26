@@ -32,6 +32,11 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/lib/**', 'src/stores/**', 'src/hooks/**'],
       exclude: ['src/lib/data/**'],
+      thresholds: {
+        'src/lib/calculations/**': { statements: 95, branches: 85 },
+        'src/lib/math/**': { statements: 95, branches: 90 },
+        'src/lib/validation/**': { statements: 95, branches: 90 },
+      },
     },
   },
 })
