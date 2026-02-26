@@ -757,12 +757,14 @@ function PropertyContent() {
           <CardTitle className="text-lg">Existing Property</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-1 p-1 bg-muted rounded-lg w-fit">
+          <div role="radiogroup" aria-label="Property status" className="flex items-center gap-1 p-1 bg-muted rounded-lg w-fit">
             {STATUS_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
+                role="radio"
+                aria-checked={propertyStatus === opt.value}
                 onClick={() => handleStatusChange(opt.value)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                className={`px-3 py-2.5 md:py-1.5 text-xs font-medium rounded-md transition-colors ${
                   propertyStatus === opt.value
                     ? 'bg-background shadow-sm text-foreground'
                     : 'text-muted-foreground hover:text-foreground'
@@ -1405,8 +1407,10 @@ export function InputsPage() {
             <Progress value={(completedCount / totalSections) * 100} className="h-2" />
           </div>
         </div>
-        <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+        <div role="radiogroup" aria-label="Section ordering" className="flex items-center gap-1 p-1 bg-muted rounded-lg">
           <button
+            role="radio"
+            aria-checked={sectionOrder === 'goal-first'}
             onClick={() => setSectionOrder('sectionOrder', 'goal-first')}
             className={`flex-1 px-2 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
               sectionOrder === 'goal-first'
@@ -1417,6 +1421,8 @@ export function InputsPage() {
             Goal first
           </button>
           <button
+            role="radio"
+            aria-checked={sectionOrder === 'story-first'}
             onClick={() => setSectionOrder('sectionOrder', 'story-first')}
             className={`flex-1 px-2 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
               sectionOrder === 'story-first'
@@ -1427,6 +1433,8 @@ export function InputsPage() {
             Story first
           </button>
           <button
+            role="radio"
+            aria-checked={sectionOrder === 'already-fire'}
             onClick={() => setSectionOrder('sectionOrder', 'already-fire')}
             className={`flex-1 px-2 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
               sectionOrder === 'already-fire'

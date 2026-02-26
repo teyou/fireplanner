@@ -113,10 +113,10 @@ function PositionPicker() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="p-1.5 rounded hover:bg-accent/50 text-muted-foreground hover:text-foreground transition-colors"
+        className="p-2.5 rounded hover:bg-accent/50 text-muted-foreground hover:text-foreground transition-colors"
         aria-label="Change stats position"
       >
-        <Settings2 className="h-3.5 w-3.5" />
+        <Settings2 className="h-4 w-4" />
       </button>
       {open && (
         <div className={cn(
@@ -131,7 +131,7 @@ function PositionPicker() {
                 setOpen(false)
               }}
               className={cn(
-                'w-full text-left px-3 py-1.5 text-xs transition-colors',
+                'w-full text-left px-3 py-2 text-xs transition-colors',
                 statsPosition === opt.value
                   ? 'bg-accent font-medium'
                   : 'hover:bg-accent/50'
