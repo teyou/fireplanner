@@ -13,6 +13,15 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-26',
+    category: 'feature',
+    title: 'Usage analytics for feature insights',
+    description:
+      'Added anonymous event tracking across 22 interaction points using Umami. Tracks onboarding flow, simulation usage, feature toggles, data import/export, sharing, and strategy selection to understand which features people use and where they get stuck.',
+    insight:
+      'No new dependencies or data collection. Uses the existing Umami script tag already in index.html. Events are no-ops when Umami is blocked or unavailable.',
+  },
+  {
+    date: '2026-02-26',
     category: 'fix',
     title: 'Share links now work correctly',
     description:
