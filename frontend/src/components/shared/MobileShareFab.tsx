@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 import { generateShareUrl } from '@/lib/shareUrl'
 import { useUIStore } from '@/stores/useUIStore'
+import { trackEvent } from '@/lib/analytics'
 
 export function MobileShareFab() {
   const dismissedNudges = useUIStore((s) => s.dismissedNudges)
@@ -33,6 +34,7 @@ export function MobileShareFab() {
     if (navigator.share) {
       try {
         await navigator.share({ url, title: 'My FIRE Plan' })
+        trackEvent('plan_shared', { method: 'native-share' })
         return
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return
@@ -44,6 +46,7 @@ export function MobileShareFab() {
     try {
       await navigator.clipboard.writeText(url)
       toast.success('Share link copied to clipboard')
+      trackEvent('plan_shared', { method: 'clipboard' })
     } catch {
       const textarea = document.createElement('textarea')
       textarea.value = url

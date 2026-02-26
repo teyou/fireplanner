@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { trackEvent } from '@/lib/analytics'
 import {
   getCheckedItems,
   toggleItem,
@@ -32,6 +33,7 @@ export function ChecklistPage() {
   const handleToggle = useCallback((id: string) => {
     toggleItem(id)
     setChecked(getCheckedItems())
+    trackEvent('checklist_item_toggled')
   }, [])
 
   const handleReset = useCallback(() => {

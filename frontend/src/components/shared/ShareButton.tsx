@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Share2, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { generateShareUrl } from '@/lib/shareUrl'
+import { trackEvent } from '@/lib/analytics'
 
 export function ShareButton() {
   const [copied, setCopied] = useState(false)
@@ -19,6 +20,7 @@ export function ShareButton() {
       await navigator.clipboard.writeText(url)
       setCopied(true)
       toast.success('Share link copied to clipboard')
+      trackEvent('plan_shared', { method: 'clipboard' })
       setTimeout(() => setCopied(false), 2000)
     } catch {
       // Fallback: select+copy via a temporary textarea

@@ -18,6 +18,7 @@ import { ASSET_CLASSES, CORRELATION_MATRIX } from '@/lib/data/historicalReturns'
 import { buildProjectionParams } from '@/hooks/useIncomeProjection'
 import { useIncomeStore } from '@/stores/useIncomeStore'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
+import { trackEvent } from '@/lib/analytics'
 
 interface UseSequenceRiskQueryResult {
   mutate: (crisis: CrisisScenario) => void
@@ -93,6 +94,8 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
   ])
 
   const mutation = useMutation({
+    onSuccess: (data) => { trackEvent('simulation_completed', { type: 'sequence-risk', degradation: data.success_degradation }) },
+    onError: (err) => { trackEvent('simulation_failed', { type: 'sequence-risk', error: err.message }) },
     mutationFn: async (crisis: CrisisScenario) => {
       // Include crisis id in the snapshot so switching crisis also triggers stale
       setLastRunParams(JSON.stringify({

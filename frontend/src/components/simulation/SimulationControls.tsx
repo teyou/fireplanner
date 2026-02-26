@@ -9,6 +9,7 @@ import type { MonteCarloMethod, WithdrawalStrategyType } from '@/lib/types'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
+import { trackEvent } from '@/lib/analytics'
 
 const MC_METHODS: { value: MonteCarloMethod; label: string }[] = [
   { value: 'parametric', label: 'Parametric (Cholesky)' },
@@ -77,7 +78,7 @@ export function SimulationControls({ onRun, isPending, canRun, validationErrors 
             </Label>
             <Select
               value={simulation.selectedStrategy}
-              onValueChange={(v) => simulation.setField('selectedStrategy', v as WithdrawalStrategyType)}
+              onValueChange={(v) => { simulation.setField('selectedStrategy', v as WithdrawalStrategyType); trackEvent('strategy_selected', { strategy: v, context: 'monte-carlo' }) }}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -111,7 +112,7 @@ export function SimulationControls({ onRun, isPending, canRun, validationErrors 
 
         <div className="flex items-center gap-3">
           <Button
-            onClick={onRun}
+            onClick={() => { trackEvent('simulation_run', { type: 'monte-carlo', method: simulation.mcMethod, strategy: simulation.selectedStrategy }); onRun() }}
             disabled={!canRun || isPending}
             className="min-w-[160px]"
           >

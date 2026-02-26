@@ -13,6 +13,7 @@ import { calculateSimpleSalary, calculateRealisticSalary, calculateDataDrivenSal
 import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import type { SalaryModel, CareerPhase, PromotionJump } from '@/lib/types'
+import { trackEvent } from '@/lib/analytics'
 
 export function SalaryModelSection() {
   const income = useIncomeStore()
@@ -34,7 +35,7 @@ export function SalaryModelSection() {
             <Label className="text-sm">Model</Label>
             <Select
               value={income.salaryModel}
-              onValueChange={(v) => income.setField('salaryModel', v as SalaryModel)}
+              onValueChange={(v) => { income.setField('salaryModel', v as SalaryModel); trackEvent('salary_model_changed', { model: v }) }}
             >
               <SelectTrigger className="border-blue-300">
                 <SelectValue />

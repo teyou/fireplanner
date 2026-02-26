@@ -7,6 +7,7 @@ import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import type { BacktestDataset, HeatmapConfig, WithdrawalStrategyType } from '@/lib/types'
 import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
+import { trackEvent } from '@/lib/analytics'
 
 const ALL_STRATEGIES: WithdrawalStrategyType[] = [
   'constant_dollar', 'vpw', 'guardrails', 'vanguard_dynamic', 'cape_based', 'floor_ceiling',
@@ -64,7 +65,7 @@ export function BacktestControls({ config, setConfig, isPending, canRun, validat
             </Label>
             <Select
               value={config.withdrawalStrategy}
-              onValueChange={(v) => setConfig({ withdrawalStrategy: v as WithdrawalStrategyType })}
+              onValueChange={(v) => { setConfig({ withdrawalStrategy: v as WithdrawalStrategyType }); trackEvent('strategy_selected', { strategy: v, context: 'backtest' }) }}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -161,7 +162,7 @@ export function BacktestControls({ config, setConfig, isPending, canRun, validat
             <Label className="text-sm font-medium">SWR x Duration Heatmap</Label>
             <Button
               size="sm"
-              onClick={onRunHeatmap}
+              onClick={() => { trackEvent('simulation_run', { type: 'backtest-heatmap' }); onRunHeatmap() }}
               disabled={!canRun || isHeatmapPending}
             >
               {isHeatmapPending ? 'Generating...' : heatmapStale ? 'Regenerate Heatmap' : 'Generate Heatmap'}

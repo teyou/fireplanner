@@ -14,6 +14,7 @@ import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { useUIStore } from '@/stores/useUIStore'
 import { cn } from '@/lib/utils'
 import type { WithdrawalStrategyType } from '@/lib/types'
+import { trackEvent } from '@/lib/analytics'
 
 export function WithdrawalPage() {
   const retirementAge = useProfileStore((s) => s.retirementAge)
@@ -75,7 +76,7 @@ export function WithdrawalPage() {
       <div className="space-y-6">
         <AnalysisModeToggle portfolioLabel={portfolioLabel} />
 
-        <StrategyParamsSection onGuideOpen={() => setGuideOpen(true)} />
+        <StrategyParamsSection onGuideOpen={() => { setGuideOpen(true); trackEvent('strategy_guide_opened', { context: 'withdrawal' }) }} />
 
         {hasErrors && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">

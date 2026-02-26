@@ -9,6 +9,7 @@ import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import { usePropertyStore } from '@/stores/usePropertyStore'
 import type { ScenarioMetadata } from '@/lib/scenarios'
+import { trackEvent } from '@/lib/analytics'
 
 function rehydrateAllStores() {
   // Zustand persist stores expose .persist.rehydrate() on the store object
@@ -45,6 +46,7 @@ export function ScenarioManager() {
     try {
       saveScenario(name)
       toast.success(`Scenario "${name}" saved`)
+      trackEvent('scenario_saved')
       setSaveName('')
       refresh()
     } catch (e) {
@@ -55,6 +57,7 @@ export function ScenarioManager() {
   const handleLoad = (id: string, name: string) => {
     loadScenario(id, rehydrateAllStores)
     toast.success(`Loaded "${name}"`)
+    trackEvent('scenario_loaded')
     setOpen(false)
   }
 

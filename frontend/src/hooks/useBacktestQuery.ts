@@ -7,6 +7,7 @@ import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
+import { trackEvent } from '@/lib/analytics'
 
 export interface BacktestConfig {
   swr: number
@@ -144,7 +145,9 @@ export function useBacktestQuery(): UseBacktestQueryResult {
       const params = buildParams()
       return runBacktestWorker(params, false)
     },
+    onError: (err) => { trackEvent('simulation_failed', { type: 'backtest', error: err.message }) },
     onSuccess: (result) => {
+      trackEvent('simulation_completed', { type: 'backtest', success_rate: result.summary.success_rate })
       setBaseData({
         results: result.results,
         summary: result.summary,

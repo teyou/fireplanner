@@ -9,6 +9,7 @@ import { exportToJson, importFromJson } from '@/lib/exportImport'
 import { ShareButton } from '@/components/shared/ShareButton'
 import { ScenarioManager } from './ScenarioManager'
 import { ThemeToggle } from './ThemeToggle'
+import { trackEvent } from '@/lib/analytics'
 import {
   User,
   DollarSign,
@@ -265,6 +266,7 @@ function DataActions() {
   const handleExport = () => {
     exportToJson()
     toast.success('Data exported')
+    trackEvent('data_exported', { format: 'json' })
   }
 
   const handleExcelExport = async () => {
@@ -272,6 +274,7 @@ function DataActions() {
       const { exportToExcel } = await import('@/lib/exportExcel')
       await exportToExcel()
       toast.success('Excel exported')
+      trackEvent('data_exported', { format: 'excel' })
     } catch {
       toast.error('Excel export failed')
     }
@@ -293,6 +296,7 @@ function DataActions() {
       } else {
         toast.success(`Imported ${storeCount} sections successfully`)
       }
+      trackEvent('data_imported', { stores: storeCount })
     }
     // Reset so the same file can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -364,7 +368,7 @@ function ModeToggle() {
   return (
     <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-muted text-xs">
       <button
-        onClick={() => setField('mode', 'simple')}
+        onClick={() => { setField('mode', 'simple'); trackEvent('mode_changed', { mode: 'simple' }) }}
         className={cn(
           'flex-1 px-3 py-1 rounded-md transition-colors',
           mode === 'simple'
@@ -375,7 +379,7 @@ function ModeToggle() {
         Simple
       </button>
       <button
-        onClick={() => setField('mode', 'advanced')}
+        onClick={() => { setField('mode', 'advanced'); trackEvent('mode_changed', { mode: 'advanced' }) }}
         className={cn(
           'flex-1 px-3 py-1 rounded-md transition-colors',
           mode === 'advanced'

@@ -14,6 +14,7 @@ import { ASSET_CLASSES, TEMPLATE_LABELS } from '@/lib/data/historicalReturns'
 import type { AllocationTemplate } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { formatPercent } from '@/lib/utils'
+import { trackEvent } from '@/lib/analytics'
 
 export function AllocationBuilder() {
   const {
@@ -51,11 +52,13 @@ export function AllocationBuilder() {
   function handleTemplateChange(value: string) {
     if (value === 'custom') return
     applyTemplate(value as Exclude<AllocationTemplate, 'custom'>)
+    trackEvent('allocation_template_applied', { template: value, target: 'current' })
   }
 
   function handleTargetTemplateChange(value: string) {
     if (value === 'custom') return
     applyTemplate(value as Exclude<AllocationTemplate, 'custom'>, 'target')
+    trackEvent('allocation_template_applied', { template: value, target: 'target' })
   }
 
   const allTemplates: AllocationTemplate[] = [

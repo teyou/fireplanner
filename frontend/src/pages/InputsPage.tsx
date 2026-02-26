@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch'
 import { Link, useLocation } from 'react-router-dom'
 import { ChevronDown, ChevronUp, CheckCircle2, Circle, ArrowRight, HelpCircle, RefreshCw, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { trackEvent } from '@/lib/analytics'
 
 // Profile sections
 import { PersonalSection } from '@/components/profile/PersonalSection'
@@ -312,6 +313,7 @@ function ExpensesContent() {
 
   const handleActiveStrategyChange = (value: string) => {
     setSimField('selectedStrategy', value as WithdrawalStrategyType)
+    trackEvent('strategy_selected', { strategy: value, context: 'inputs' })
   }
 
   return (
@@ -510,7 +512,7 @@ function ExpensesContent() {
             </p>
           </div>
           <button
-            onClick={() => setStrategyGuideOpen(true)}
+            onClick={() => { setStrategyGuideOpen(true); trackEvent('strategy_guide_opened', { context: 'inputs' }) }}
             className="mt-2 flex items-center gap-1 text-xs text-primary hover:underline"
           >
             <HelpCircle className="h-3.5 w-3.5" />
@@ -1203,6 +1205,7 @@ export function InputsPage() {
     restoreStore: (snapshot: Record<string, unknown>) => void,
   ) => {
     setPendingReset({ label, action, snapshotStore, restoreStore })
+    trackEvent('section_reset', { section: label })
   }, [])
 
   // Targeted per-section resets: only reset the fields that section edits

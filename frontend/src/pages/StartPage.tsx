@@ -13,6 +13,7 @@ import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { Label } from '@/components/ui/label'
 import type { RetirementPhase } from '@/lib/types'
+import { trackEvent } from '@/lib/analytics'
 
 type ActivePathway = 'goal-first' | 'story-first' | 'already-fire' | null
 
@@ -117,6 +118,7 @@ export function StartPage() {
       return
     }
     setActivePathway(pathway)
+    if (pathway) trackEvent('onboarding_pathway_selected', { pathway })
     // Reset drafts to current store values
     setDraftAge(profileStore.currentAge)
     setDraftRetirementAge(profileStore.retirementAge)
@@ -134,6 +136,7 @@ export function StartPage() {
     profileStore.setField('lifeStage', 'pre-fire')
     incomeStore.setField('annualSalary', draftIncome)
     setUIField('sectionOrder', 'goal-first')
+    trackEvent('onboarding_continue', { pathway: 'goal-first' })
     navigate('/inputs')
   }
 
@@ -145,6 +148,7 @@ export function StartPage() {
     profileStore.setField('lifeStage', 'pre-fire')
     incomeStore.setField('annualSalary', draftIncome)
     setUIField('sectionOrder', 'story-first')
+    trackEvent('onboarding_continue', { pathway: 'story-first' })
     navigate('/inputs')
   }
 
@@ -157,6 +161,7 @@ export function StartPage() {
     profileStore.setField('lifeStage', 'post-fire')
     profileStore.setField('retirementPhase', phase)
     setUIField('sectionOrder', 'already-fire')
+    trackEvent('onboarding_continue', { pathway: 'already-fire', phase })
     navigate('/inputs')
   }
 
@@ -203,7 +208,7 @@ export function StartPage() {
         </div>
         <Switch
           checked={cpfEnabled}
-          onCheckedChange={(v) => setUIField('cpfEnabled', v)}
+          onCheckedChange={(v) => { setUIField('cpfEnabled', v); trackEvent('feature_toggle', { feature: 'cpf', enabled: v }) }}
         />
       </div>
       {cpfEnabled && (
@@ -217,7 +222,7 @@ export function StartPage() {
           </div>
           <Switch
             checked={healthcareEnabled}
-            onCheckedChange={(v) => setUIField('healthcareEnabled', v)}
+            onCheckedChange={(v) => { setUIField('healthcareEnabled', v); trackEvent('feature_toggle', { feature: 'healthcare', enabled: v }) }}
           />
         </div>
       )}
@@ -231,7 +236,7 @@ export function StartPage() {
         </div>
         <Switch
           checked={propertyEnabled}
-          onCheckedChange={(v) => setUIField('propertyEnabled', v)}
+          onCheckedChange={(v) => { setUIField('propertyEnabled', v); trackEvent('feature_toggle', { feature: 'property', enabled: v }) }}
         />
       </div>
     </div>

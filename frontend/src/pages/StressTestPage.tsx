@@ -41,6 +41,7 @@ import { useSequenceRiskQuery } from '@/hooks/useSequenceRiskQuery'
 import { CRISIS_SCENARIOS } from '@/lib/data/crisisScenarios'
 import { formatPercent } from '@/lib/utils'
 import type { CrisisScenario } from '@/lib/types'
+import { trackEvent } from '@/lib/analytics'
 
 function InterpretationCallout({ level, message }: { level: 'success' | 'warning' | 'danger'; message: string }) {
   const styles = {
@@ -451,7 +452,7 @@ function SequenceRiskTab() {
 
           <div className="flex items-center gap-3">
             <Button
-              onClick={() => mutate(selectedCrisis)}
+              onClick={() => { trackEvent('simulation_run', { type: 'sequence-risk', crisis: selectedCrisis.id }); mutate(selectedCrisis) }}
               disabled={!canRun || isPending}
               className="min-w-[180px]"
             >
@@ -591,7 +592,7 @@ export function StressTestPage() {
 
       <AnalysisModeToggle portfolioLabel={portfolioLabel} />
 
-      <Tabs defaultValue="monte-carlo">
+      <Tabs defaultValue="monte-carlo" onValueChange={(tab) => trackEvent('stress_test_tab_changed', { tab })}>
         <TabsList className={`grid w-full ${isStressAdvanced ? 'grid-cols-3' : 'grid-cols-1'}`}>
           <TabsTrigger value="monte-carlo">Monte Carlo</TabsTrigger>
           {isStressAdvanced && <TabsTrigger value="backtest">Historical Backtest</TabsTrigger>}

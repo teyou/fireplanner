@@ -22,6 +22,7 @@ import {
   calculateSellAndRent,
 } from '@/lib/calculations/property'
 import { computeCashReservePlan, computeCashReserveOffset } from '@/lib/calculations/cashReserve'
+import { trackEvent } from '@/lib/analytics'
 
 interface UseMonteCarloQueryResult {
   mutate: () => void
@@ -114,6 +115,8 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
   ])
 
   const mutation = useMutation({
+    onSuccess: (data) => { trackEvent('simulation_completed', { type: 'monte-carlo', success_rate: data.success_rate }) },
+    onError: (err) => { trackEvent('simulation_failed', { type: 'monte-carlo', error: err.message }) },
     mutationFn: async () => {
       setLastRunParams(currentParamsSig)
 

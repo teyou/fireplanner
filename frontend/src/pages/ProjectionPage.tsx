@@ -26,6 +26,7 @@ import { useUIStore } from '@/stores/useUIStore'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { StrategyParamCard } from '@/components/withdrawal/StrategyParamsSection'
 import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
+import { trackEvent } from '@/lib/analytics'
 
 const STRATEGY_SHORT_LABELS: Record<WithdrawalStrategyType, string> = {
   constant_dollar: '4% Rule',
@@ -947,7 +948,7 @@ export function ProjectionPage() {
             </div>
             <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
               <button
-                onClick={() => setUIField('dollarBasis', 'real')}
+                onClick={() => { setUIField('dollarBasis', 'real'); trackEvent('dollar_basis_changed', { basis: 'real' }) }}
                 className={cn(
                   'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
                   dollarBasis === 'real'
@@ -959,7 +960,7 @@ export function ProjectionPage() {
                 Real $
               </button>
               <button
-                onClick={() => setUIField('dollarBasis', 'nominal')}
+                onClick={() => { setUIField('dollarBasis', 'nominal'); trackEvent('dollar_basis_changed', { basis: 'nominal' }) }}
                 className={cn(
                   'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
                   dollarBasis === 'nominal'

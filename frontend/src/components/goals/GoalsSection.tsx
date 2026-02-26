@@ -9,6 +9,7 @@ import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { GOAL_TEMPLATES } from '@/lib/data/goalTemplates'
 import type { FinancialGoal, GoalCategory } from '@/lib/types'
+import { trackEvent } from '@/lib/analytics'
 
 const MAX_GOALS = 10
 
@@ -58,6 +59,7 @@ export function GoalsSection() {
       category: template.category,
     }
     addGoal(goal)
+    trackEvent('goal_added', { category, source: 'template' })
   }, [goals.length, currentAge, lifeExpectancy, addGoal])
 
   const handleAddCustom = useCallback(() => {
@@ -73,6 +75,7 @@ export function GoalsSection() {
       category: 'other',
     }
     addGoal(goal)
+    trackEvent('goal_added', { category: 'other', source: 'custom' })
   }, [goals.length, currentAge, lifeExpectancy, addGoal])
 
   return (
