@@ -119,18 +119,24 @@ describe('useAdjustedFireNumber', () => {
       lifeExpectancy: 90,
       annualExpenses: 80000,
       liquidNetWorth: 2000000,
+      cpfOA: 0,
+      cpfSA: 0,
+      cpfMA: 0,
+      cpfRA: 0,
+      cpfLifeStartAge: 100,
       swr: 0.04,
       usePortfolioReturn: false,
       expectedReturn: 0.07,
       inflation: 0.025,
       expenseRatio: 0.003,
+      parentSupportEnabled: false,
+      parentSupport: [],
       healthcareConfig: { ...useProfileStore.getState().healthcareConfig, enabled: false },
       validationErrors: {},
     })
     const { result } = renderHook(() => useAdjustedFireNumber())
-    if (result.current.showProjectionNumber) {
-      expect(result.current.deviationFactors).toContain('mortgage cash payments')
-    }
+    // $3K/mo all-cash mortgage creates significant deviation from simple FIRE number
+    expect(result.current.deviationFactors).toContain('mortgage cash payments')
   })
 
   it('deviationFactors is empty array when no special cash flows', () => {
@@ -177,9 +183,10 @@ describe('useAdjustedFireNumber', () => {
     const { result } = renderHook(() => useAdjustedFireNumber())
     const simple = result.current.simpleFireNumber!
     const proj = result.current.projectionFireNumber!
-    if (result.current.deviationPct !== null) {
-      expect(Math.abs(result.current.deviationPct)).toBeLessThan(0.25)
-    }
+    expect(result.current.deviationPct).not.toBeNull()
+    // If normalization works, deviation should be much less than the raw
+    // inflation gap (10 years at 2.5% = ~28%). Tight bound confirms same basis.
+    expect(Math.abs(result.current.deviationPct!)).toBeLessThan(0.25)
     expect(simple).toBeGreaterThan(0)
     expect(proj).toBeGreaterThan(0)
   })
