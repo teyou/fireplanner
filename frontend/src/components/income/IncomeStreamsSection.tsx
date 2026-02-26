@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
@@ -99,14 +100,14 @@ function StreamRow({
             placeholder="Stream name"
             className="w-48 border-blue-300"
           />
-          <label className="flex items-center gap-1 text-sm">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-1.5">
+            <Checkbox
+              id={`stream-active-${stream.id}`}
               checked={stream.isActive}
-              onChange={(e) => onUpdate({ isActive: e.target.checked })}
+              onCheckedChange={(checked) => onUpdate({ isActive: checked === true })}
             />
-            Active
-          </label>
+            <Label htmlFor={`stream-active-${stream.id}`} className="text-sm cursor-pointer">Active</Label>
+          </div>
         </div>
         <Button variant="ghost" size="sm" onClick={onRemove}>Remove</Button>
       </div>
@@ -211,14 +212,14 @@ function StreamRow({
         </div>
 
         <div className="flex items-end pb-1">
-          <label className="flex items-center gap-1 text-sm">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-1.5">
+            <Checkbox
+              id={`stream-cpf-${stream.id}`}
               checked={stream.isCpfApplicable}
-              onChange={(e) => onUpdate({ isCpfApplicable: e.target.checked })}
+              onCheckedChange={(checked) => onUpdate({ isCpfApplicable: checked === true })}
             />
-            CPF Applicable
-          </label>
+            <Label htmlFor={`stream-cpf-${stream.id}`} className="text-sm cursor-pointer">CPF Applicable</Label>
+          </div>
         </div>
       </div>
     </div>
