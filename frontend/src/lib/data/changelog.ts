@@ -14,6 +14,13 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-26',
     category: 'fix',
+    title: 'Share button tooltip now appears reliably on first visit',
+    description:
+      'The share button onboarding tooltip could occasionally fail to display due to a rendering timing issue. It now initializes correctly on the first page load.',
+  },
+  {
+    date: '2026-02-26',
+    category: 'fix',
     title: 'Monte Carlo and Sequence Risk simulations now match projection accuracy',
     description:
       'MC accumulation previously used raw annualSavings, missing 10 financial components (mortgage payments, parent support, healthcare, income shortfalls, financial goals, CPF OA shortfalls, downsizing rent, CPF OA withdrawals, locked asset unlocks, and HDB rental income scaling by ownership %). Sequence Risk was missing post-retirement mortgage deductions and downsizing equity injections. Both engines now mirror projection.ts calculations exactly.',
