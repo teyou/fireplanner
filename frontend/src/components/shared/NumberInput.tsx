@@ -53,12 +53,15 @@ export function NumberInput({
   const [localValue, setLocalValue] = useState(() => format(value))
   const [prevValue, setPrevValue] = useState(value)
   const [isFocused, setIsFocused] = useState(false)
+  const [touched, setTouched] = useState(false)
+  const errorId = `${inputId}-error`
 
   // Sync from props when NOT focused (handles resets, rehydration, external changes)
   if (value !== prevValue) {
     setPrevValue(value)
     if (!isFocused) {
       setLocalValue(format(value))
+      setTouched(false)
     }
   }
 
@@ -91,6 +94,7 @@ export function NumberInput({
   }, [formatWithCommas])
 
   const handleBlur = useCallback(() => {
+    setTouched(true)
     setIsFocused(false)
     const stripped = formatWithCommas ? localValue.replace(/,/g, '') : localValue
     const parsed = effectiveInteger ? parseInt(stripped, 10) : parseFloat(stripped)
@@ -129,6 +133,7 @@ export function NumberInput({
       step={formatWithCommas ? undefined : step}
       className={className}
       disabled={disabled}
+      aria-describedby={touched && error ? errorId : undefined}
     />
   )
 
@@ -141,7 +146,7 @@ export function NumberInput({
         {tooltip && <InfoTooltip text={tooltip} />}
       </Label>
       <div className="mt-auto">{input}</div>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {touched && error && <p id={errorId} className="text-xs text-destructive">{error}</p>}
     </div>
   )
 }
