@@ -35,7 +35,7 @@ interface ProfileActions {
 const PROFILE_DATA_KEYS = [
   'currentAge', 'retirementAge', 'lifeExpectancy', 'lifeStage', 'maritalStatus',
   'residencyStatus', 'annualIncome', 'annualExpenses', 'liquidNetWorth',
-  'cpfOA', 'cpfSA', 'cpfMA', 'cpfRA', 'srsBalance', 'srsAnnualContribution', 'srsInvestmentReturn', 'srsDrawdownStartAge',
+  'cpfOA', 'cpfSA', 'cpfMA', 'cpfRA', 'srsBalance', 'srsAnnualContribution', 'srsInvestmentReturn', 'srsDrawdownStartAge', 'srsPostFireEnabled',
   'cpfTopUpOA', 'cpfTopUpSA', 'cpfTopUpMA',
   'fireType', 'swr', 'fireNumberBasis', 'retirementSpendingAdjustment',
   'expectedReturn', 'usePortfolioReturn', 'inflation', 'expenseRatio', 'rebalanceFrequency',
@@ -87,6 +87,7 @@ const DEFAULT_PROFILE: Omit<ProfileState, 'validationErrors'> = {
   srsAnnualContribution: 0,
   srsInvestmentReturn: 0.04,
   srsDrawdownStartAge: 63,
+  srsPostFireEnabled: false,
   fireType: 'regular',
   swr: 0.036,
   fireNumberBasis: 'fireAge',

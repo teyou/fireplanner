@@ -98,6 +98,20 @@ export function FinancialSection() {
             />
           )}
 
+          {store.srsAnnualContribution > 0 && (
+            <div className="flex items-center pb-1">
+              <label className="flex items-center gap-1.5 text-sm">
+                <input
+                  type="checkbox"
+                  checked={store.srsPostFireEnabled}
+                  onChange={(e) => store.setField('srsPostFireEnabled', e.target.checked)}
+                />
+                Continue SRS during post-FIRE employment
+              </label>
+              <InfoTooltip text="Enable SRS contributions during Barista FIRE years when you have employment income streams active after your FIRE age. Off by default since barista income is typically lower." />
+            </div>
+          )}
+
           {/* Locked Assets */}
           <div className="col-span-full mt-4">
             <div className="flex items-center gap-2 mb-3">

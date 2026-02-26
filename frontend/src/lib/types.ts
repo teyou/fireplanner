@@ -168,6 +168,7 @@ export interface ProfileState {
   srsAnnualContribution: number
   srsInvestmentReturn: number
   srsDrawdownStartAge: number
+  srsPostFireEnabled: boolean
 
   // Cash Reserve / Emergency Fund
   cashReserveEnabled: boolean

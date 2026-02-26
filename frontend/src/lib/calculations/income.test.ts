@@ -3449,4 +3449,49 @@ describe('SRS residency status handling', () => {
     // Balance = (100,000 + 35,700) * 1.04 = $141,128
     expect(row30.srsBalance).toBeCloseTo((100000 + 35700) * 1.04, 0)
   })
+
+  it('Barista FIRE: SRS contributions resume post-FIRE only when srsPostFireEnabled is true', () => {
+    const baristaStream = {
+      id: 'barista',
+      name: 'Barista Job',
+      annualAmount: 36000,
+      startAge: 43,
+      endAge: 48,
+      growthRate: 0,
+      type: 'employment' as const,
+      growthModel: 'none' as const,
+      taxTreatment: 'taxable' as const,
+      isCpfApplicable: true,
+      isActive: true,
+    }
+    const base = {
+      ...srsBaseParams,
+      currentAge: 40,
+      retirementAge: 39,
+      lifeExpectancy: 50,
+      annualSalary: 0,
+      srsAnnualContribution: 15300,
+      srsBalance: 100000,
+      srsDrawdownStartAge: 63,
+      incomeStreams: [baristaStream],
+    }
+
+    // Without toggle: no SRS contributions post-FIRE
+    const withoutToggle = generateIncomeProjection({ ...base, srsPostFireEnabled: false })
+    // With toggle: SRS contributions during barista years
+    const withToggle = generateIncomeProjection({ ...base, srsPostFireEnabled: true })
+
+    // Age 42: no employment income — both should be the same
+    expect(withToggle.find(r => r.age === 42)!.srsBalance)
+      .toBeCloseTo(withoutToggle.find(r => r.age === 42)!.srsBalance, 0)
+    expect(withToggle.find(r => r.age === 42)!.srsContribution).toBe(0)
+
+    // Age 44: barista active + toggle on — SRS should contribute
+    expect(withToggle.find(r => r.age === 44)!.srsContribution).toBe(15300)
+    expect(withoutToggle.find(r => r.age === 44)!.srsContribution).toBe(0)
+
+    // SRS balance should be higher with toggle by age 48
+    expect(withToggle.find(r => r.age === 48)!.srsBalance)
+      .toBeGreaterThan(withoutToggle.find(r => r.age === 48)!.srsBalance)
+  })
 })

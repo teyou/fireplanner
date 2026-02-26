@@ -269,10 +269,12 @@ export interface IncomeProjectionParams {
   cpfisEnabled?: boolean
   cpfisOaReturn?: number
   cpfisSaReturn?: number
-  // Voluntary CPF top-ups (pre-retirement only)
+  // Voluntary CPF top-ups (applied when earning employment income)
   cpfTopUpOA?: number
   cpfTopUpSA?: number
   cpfTopUpMA?: number
+  // SRS contributions during post-FIRE employment (Barista FIRE)
+  srsPostFireEnabled?: boolean
   // Age-gated locked assets
   lockedAssets?: LockedAsset[]
   // Expense adjustments (age-based spending changes)
@@ -445,7 +447,9 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     let srsTaxableWithdrawal = 0
     if (age < srsDrawdownStart) {
       // Accumulation: contribute + earn returns
-      srsContribution = !isRetired ? Math.min(params.srsAnnualContribution, srsCap) : 0
+      // Pre-retirement: always contribute. Post-retirement: only if barista FIRE opt-in and has salary.
+      const canContributeSrs = !isRetired || (salary > 0 && (params.srsPostFireEnabled ?? false))
+      srsContribution = canContributeSrs ? Math.min(params.srsAnnualContribution, srsCap) : 0
       srsBalance = (srsBalance + srsContribution) * (1 + srsReturn)
     } else if (age >= srsDrawdownStart && age < srsDrawdownEnd && srsBalance > 0) {
       // Drawdown: spread evenly over remaining drawdown years
