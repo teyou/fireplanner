@@ -34,12 +34,15 @@ export function PercentInput({
   const [localValue, setLocalValue] = useState(() => toDisplay(value))
   const [prevValue, setPrevValue] = useState(value)
   const [isFocused, setIsFocused] = useState(false)
+  const [touched, setTouched] = useState(false)
+  const errorId = `${inputId}-error`
 
   // Sync from props during render when NOT focused (handles resets, rehydration, external changes)
   if (value !== prevValue) {
     setPrevValue(value)
     if (!isFocused) {
       setLocalValue(toDisplay(value))
+      setTouched(false)
     }
   }
 
@@ -61,6 +64,7 @@ export function PercentInput({
   }, [])
 
   const handleBlur = useCallback(() => {
+    setTouched(true)
     setIsFocused(false)
     const pct = parseFloat(localValue)
     if (isNaN(pct) || localValue.trim() === '') {
@@ -102,15 +106,16 @@ export function PercentInput({
           step={step}
           className={cn(
             'pr-7 border-blue-300',
-            error && 'border-destructive'
+            touched && error && 'border-destructive'
           )}
           disabled={disabled}
+          aria-describedby={touched && error ? errorId : undefined}
         />
         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
           %
         </span>
       </div>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {touched && error && <p id={errorId} className="text-xs text-destructive">{error}</p>}
     </div>
   )
 }
