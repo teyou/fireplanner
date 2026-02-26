@@ -13,6 +13,23 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-26',
+    category: 'feature',
+    title: 'Privacy-friendly analytics added',
+    description:
+      'Added self-hosted Umami analytics to understand which features people actually use. No cookies, no personal data, no third-party tracking. The analytics server runs on our own infrastructure and all data stays under our control.',
+    insight:
+      'We chose Umami over Google Analytics specifically to keep our privacy-first promise. The tracking script loads from our own subdomain, so it is not blocked by ad blockers like third-party analytics scripts would be.',
+  },
+  {
+    date: '2026-02-26',
+    category: 'feature',
+    title: 'Barista FIRE support: CPF top-ups and SRS during post-FIRE employment',
+    description:
+      'Voluntary CPF top-ups now continue automatically during post-FIRE working years (when you have employment income). SRS contributions during Barista FIRE are opt-in via a new toggle in the Net Worth section, since lower barista income may make SRS impractical.',
+    affectedSections: ['section-net-worth'],
+  },
+  {
+    date: '2026-02-26',
     category: 'fix',
     title: 'CPF contributions now work for Barista FIRE income streams',
     description:
