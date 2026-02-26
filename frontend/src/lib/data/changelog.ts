@@ -14,6 +14,46 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-26',
     category: 'feature',
+    title: 'SEO and social sharing previews',
+    description:
+      'Link previews now show the correct page title and description when shared on Facebook, Slack, WhatsApp, and Twitter/X. Each route has its own canonical URL, Open Graph tags, and Twitter Card tags. Added robots.txt, sitemap.xml, and structured data for search engines.',
+    insight:
+      'Social bots don\'t execute JavaScript, so client-side meta tag updates were invisible to them. A build-time pre-rendering step now generates a static index.html per route with the correct tags baked in. No SSR needed.',
+  },
+  {
+    date: '2026-02-26',
+    category: 'fix',
+    title: 'Accessibility and input UX improvements',
+    description:
+      'Touch targets enlarged to 44px minimum across tooltips, dialog close buttons, gear menus, and pill buttons. ARIA roles added to tab-like controls. Number, currency, and percentage inputs now show validation errors only after you leave the field, not while typing. Feature toggles upgraded to proper switch controls, checkboxes to shadcn components, and the ownership percentage slider to a proper slider control.',
+    insight:
+      'The 44px minimum comes from WCAG 2.5.8 (Target Size). Blur-only validation prevents the frustrating pattern where an error flashes while you\'re still typing a valid number.',
+  },
+  {
+    date: '2026-02-26',
+    category: 'fix',
+    title: 'Mobile layout and navigation fixes',
+    description:
+      'Bottom navigation now shows Withdrawal instead of Guide for faster access to a key page. Comparison table hides less-useful columns (Max, Std Dev, Total Withdrawn) on small screens. SWR heatmap scrolls horizontally. Income and life event name inputs use full width. Expense adjustments and locked assets grids switch to card layout on mobile.',
+  },
+  {
+    date: '2026-02-26',
+    category: 'feature',
+    title: 'Residency status for tax calculations',
+    description:
+      'Added a residency status field (Citizen, PR, Foreigner) to the Personal section. A tooltip on marital status explains how it affects tax reliefs.',
+    affectedSections: ['section-personal'],
+  },
+  {
+    date: '2026-02-26',
+    category: 'fix',
+    title: 'Input page state now persists across sessions',
+    description:
+      'Collapsed sections and the "add new property" panel state are now saved to localStorage, so the Inputs page remembers your layout when you return.',
+  },
+  {
+    date: '2026-02-26',
+    category: 'feature',
     title: 'Usage analytics for feature insights',
     description:
       'Added anonymous event tracking across 22 interaction points using Umami. Tracks onboarding flow, simulation usage, feature toggles, data import/export, sharing, and strategy selection to understand which features people use and where they get stuck.',
