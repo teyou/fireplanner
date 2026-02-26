@@ -121,7 +121,7 @@ export function FireTargetsSection() {
 
             {/* Headline metrics */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              <div className="p-3 rounded-md bg-muted/50">
+              <div className="col-span-2 md:col-span-1 p-3 rounded-md bg-muted/50">
                 <div className="text-xs text-muted-foreground flex items-center">
                   FIRE Number
                   <InfoTooltip text={
