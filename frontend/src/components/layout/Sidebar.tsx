@@ -467,7 +467,7 @@ export function Sidebar() {
           { label: 'Plan', path: '/projection', icon: <TableProperties className="h-5 w-5" /> },
           { label: 'Test', path: '/stress-test', icon: <ShieldAlert className="h-5 w-5" /> },
           { label: 'Dash', path: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
-          { label: 'Guide', path: '/reference', icon: <BookOpen className="h-5 w-5" /> },
+          { label: 'Withdraw', path: '/withdrawal', icon: <Banknote className="h-5 w-5" /> },
         ].map((item) => (
           <NavLink
             key={item.path}
