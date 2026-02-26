@@ -14,6 +14,7 @@ import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { useSectionNudge } from '@/hooks/useSectionNudge'
 import { SectionNudge } from '@/components/shared/SectionNudge'
 import { useUIStore } from '@/stores/useUIStore'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 // Monte Carlo imports
 import { SimulationControls } from '@/components/simulation/SimulationControls'
@@ -538,6 +539,7 @@ function SequenceRiskTab() {
 }
 
 export function StressTestPage() {
+  usePageMeta({ title: 'Stress Test — SG FIRE Planner', description: 'Monte Carlo simulation, historical backtesting, and sequence risk analysis for your Singapore retirement plan.' })
   const { portfolioLabel } = useAnalysisPortfolio()
   const stressMode = useEffectiveMode('section-stress-test')
   const stressNudge = useSectionNudge('section-stress-test')

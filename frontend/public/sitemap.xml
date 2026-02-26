@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.w3.org/2000/sitemaps/schemas/sitemap/0.9">
+  <url><loc>https://sgfireplanner.com/</loc><changefreq>monthly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://sgfireplanner.com/reference</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sgfireplanner.com/inputs</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://sgfireplanner.com/projection</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://sgfireplanner.com/withdrawal</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://sgfireplanner.com/stress-test</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://sgfireplanner.com/dashboard</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://sgfireplanner.com/checklist</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
+</urlset>

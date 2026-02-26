@@ -36,6 +36,7 @@ FIRE_WEBAPP_ARCHITECTURE.md
 # Dev screenshots (not for repo — curated ones live in docs/screenshots/)
 *.png
 !docs/screenshots/*.png
+!frontend/public/og-image.png
 
 # Draft docs and internal planning
 reddit-post.md

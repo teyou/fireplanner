@@ -13,6 +13,7 @@ import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { Label } from '@/components/ui/label'
 import type { RetirementPhase } from '@/lib/types'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 type ActivePathway = 'goal-first' | 'story-first' | 'already-fire' | null
 
@@ -44,6 +45,7 @@ const PHASE_CARDS: { phase: RetirementPhase; label: string; description: string;
 ]
 
 export function StartPage() {
+  usePageMeta({ title: 'SG FIRE Planner — Singapore Retirement Calculator', description: 'Free Singapore FIRE calculator with CPF, tax, Monte Carlo simulation, and 12 withdrawal strategies for retirement planning.' })
   const profileStore = useProfileStore()
   const incomeStore = useIncomeStore()
   const setUIField = useUIStore((s) => s.setField)

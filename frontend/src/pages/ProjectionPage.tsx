@@ -26,6 +26,7 @@ import { useUIStore } from '@/stores/useUIStore'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { StrategyParamCard } from '@/components/withdrawal/StrategyParamsSection'
 import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 const STRATEGY_SHORT_LABELS: Record<WithdrawalStrategyType, string> = {
   constant_dollar: '4% Rule',
@@ -75,6 +76,7 @@ function optionalCurrencyCell(value: number): string {
 }
 
 export function ProjectionPage() {
+  usePageMeta({ title: 'Projection — SG FIRE Planner', description: 'Year-by-year financial projection with net worth trajectory, CPF balances, and retirement milestones.' })
   const { rows, summary, hasErrors } = useProjection()
   const retirementAge = useProfileStore((s) => s.retirementAge)
   const currentAge = useProfileStore((s) => s.currentAge)

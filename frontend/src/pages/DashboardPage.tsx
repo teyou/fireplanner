@@ -11,6 +11,7 @@ import { StrategyCard } from '@/components/dashboard/StrategyCard'
 import { PassiveIncomePanel } from '@/components/dashboard/PassiveIncomePanel'
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics'
 import { useSectionCompletion, type SectionId } from '@/hooks/useSectionCompletion'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 const KEY_SECTIONS: { id: SectionId; label: string }[] = [
   { id: 'section-personal', label: 'Personal Details' },
@@ -20,6 +21,7 @@ const KEY_SECTIONS: { id: SectionId; label: string }[] = [
 ]
 
 export function DashboardPage() {
+  usePageMeta({ title: 'Dashboard — SG FIRE Planner', description: 'Your FIRE dashboard with key metrics, risk assessment, and retirement readiness overview.' })
   const metrics = useDashboardMetrics()
   const isEmpty = metrics.fireNumber === null
   const { sections } = useSectionCompletion()

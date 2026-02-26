@@ -12,6 +12,7 @@ import { ExternalLink, RefreshCw, Sparkles, Bug, ChevronRight, Lightbulb } from 
 import { DATA_SOURCES } from '@/lib/data/sources'
 import { CHANGELOG, DATA_VINTAGE } from '@/lib/data/changelog'
 import { useUIStore } from '@/stores/useUIStore'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 // ── ELI5 glossary ──────────────────────────────────────────────────────
 const GLOSSARY: Record<string, string> = {
@@ -543,6 +544,7 @@ function ChangelogList() {
 }
 
 export function ReferencePage() {
+  usePageMeta({ title: 'Reference Guide — SG FIRE Planner', description: 'Comprehensive guide to Singapore retirement planning: CPF, tax, withdrawal strategies, Monte Carlo methods, and data sources.' })
   const location = useLocation()
   const hashId = location.hash.slice(1)
   const allIds = [...SECTIONS.map(s => s.id), 'changelog', 'data-sources']
