@@ -544,7 +544,7 @@ function ChangelogList() {
 }
 
 export function ReferencePage() {
-  usePageMeta({ title: 'Reference Guide — SG FIRE Planner', description: 'Comprehensive guide to Singapore retirement planning: CPF, tax, withdrawal strategies, Monte Carlo methods, and data sources.' })
+  usePageMeta({ title: 'Reference Guide — SG FIRE Planner', description: 'Comprehensive guide to Singapore retirement planning: CPF, tax, withdrawal strategies, Monte Carlo methods, and data sources.', path: '/reference' })
   const location = useLocation()
   const hashId = location.hash.slice(1)
   const allIds = [...SECTIONS.map(s => s.id), 'changelog', 'data-sources']

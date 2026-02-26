@@ -540,7 +540,7 @@ function SequenceRiskTab() {
 }
 
 export function StressTestPage() {
-  usePageMeta({ title: 'Stress Test — SG FIRE Planner', description: 'Monte Carlo simulation, historical backtesting, and sequence risk analysis for your Singapore retirement plan.' })
+  usePageMeta({ title: 'Stress Test — SG FIRE Planner', description: 'Monte Carlo simulation, historical backtesting, and sequence risk analysis for your Singapore retirement plan.', path: '/stress-test' })
   const { portfolioLabel } = useAnalysisPortfolio()
   const stressMode = useEffectiveMode('section-stress-test')
   const stressNudge = useSectionNudge('section-stress-test')

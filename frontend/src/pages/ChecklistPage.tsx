@@ -26,7 +26,7 @@ import {
 import { usePageMeta } from '@/hooks/usePageMeta'
 
 export function ChecklistPage() {
-  usePageMeta({ title: 'FIRE Checklist — SG FIRE Planner', description: 'Track your progress toward financial independence with this Singapore-specific FIRE checklist.' })
+  usePageMeta({ title: 'FIRE Checklist — SG FIRE Planner', description: 'Track your progress toward financial independence with this Singapore-specific FIRE checklist.', path: '/checklist' })
   const [checked, setChecked] = useState<Record<string, boolean>>(getCheckedItems)
   const progress = getProgress()
   const categories = getCategories()

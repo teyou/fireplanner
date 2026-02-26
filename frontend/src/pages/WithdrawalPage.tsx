@@ -18,7 +18,7 @@ import { trackEvent } from '@/lib/analytics'
 import { usePageMeta } from '@/hooks/usePageMeta'
 
 export function WithdrawalPage() {
-  usePageMeta({ title: 'Withdrawal Strategies — SG FIRE Planner', description: 'Compare 12 retirement withdrawal strategies including the 4% rule, VPW, guardrails, and CAPE-based approaches.' })
+  usePageMeta({ title: 'Withdrawal Strategies — SG FIRE Planner', description: 'Compare 12 retirement withdrawal strategies including the 4% rule, VPW, guardrails, and CAPE-based approaches.', path: '/withdrawal' })
   const retirementAge = useProfileStore((s) => s.retirementAge)
   const { portfolioLabel } = useAnalysisPortfolio()
   const selectedStrategies = useWithdrawalStore((s) => s.selectedStrategies)

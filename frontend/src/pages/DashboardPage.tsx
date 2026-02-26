@@ -21,7 +21,7 @@ const KEY_SECTIONS: { id: SectionId; label: string }[] = [
 ]
 
 export function DashboardPage() {
-  usePageMeta({ title: 'Dashboard — SG FIRE Planner', description: 'Your FIRE dashboard with key metrics, risk assessment, and retirement readiness overview.' })
+  usePageMeta({ title: 'Dashboard — SG FIRE Planner', description: 'Your FIRE dashboard with key metrics, risk assessment, and retirement readiness overview.', path: '/dashboard' })
   const metrics = useDashboardMetrics()
   const isEmpty = metrics.fireNumber === null
   const { sections } = useSectionCompletion()

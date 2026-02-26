@@ -77,7 +77,7 @@ function optionalCurrencyCell(value: number): string {
 }
 
 export function ProjectionPage() {
-  usePageMeta({ title: 'Projection — SG FIRE Planner', description: 'Year-by-year financial projection with net worth trajectory, CPF balances, and retirement milestones.' })
+  usePageMeta({ title: 'Projection — SG FIRE Planner', description: 'Year-by-year financial projection with net worth trajectory, CPF balances, and retirement milestones.', path: '/projection' })
   const { rows, summary, hasErrors } = useProjection()
   const retirementAge = useProfileStore((s) => s.retirementAge)
   const currentAge = useProfileStore((s) => s.currentAge)

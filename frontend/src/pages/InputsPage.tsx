@@ -1186,7 +1186,7 @@ function SectionNudgeWrapper({ sectionId }: { sectionId: SectionId }) {
 // --- Main page component ---
 
 export function InputsPage() {
-  usePageMeta({ title: 'Plan Inputs — SG FIRE Planner', description: 'Configure your income, expenses, CPF, investments, and retirement assumptions for Singapore FIRE planning.' })
+  usePageMeta({ title: 'Plan Inputs — SG FIRE Planner', description: 'Configure your income, expenses, CPF, investments, and retirement assumptions for Singapore FIRE planning.', path: '/inputs' })
   const sectionOrder = useUIStore((s) => s.sectionOrder)
   const cpfEnabled = useUIStore((s) => s.cpfEnabled)
   const propertyEnabled = useUIStore((s) => s.propertyEnabled)

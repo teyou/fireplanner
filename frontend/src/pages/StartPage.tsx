@@ -46,7 +46,7 @@ const PHASE_CARDS: { phase: RetirementPhase; label: string; description: string;
 ]
 
 export function StartPage() {
-  usePageMeta({ title: 'SG FIRE Planner — Singapore Retirement Calculator', description: 'Free Singapore FIRE calculator with CPF, tax, Monte Carlo simulation, and 12 withdrawal strategies for retirement planning.' })
+  usePageMeta({ title: 'SG FIRE Planner — Singapore Retirement Calculator', description: 'Free Singapore FIRE calculator with CPF, tax, Monte Carlo simulation, and 12 withdrawal strategies for retirement planning.', path: '/' })
   const profileStore = useProfileStore()
   const incomeStore = useIncomeStore()
   const setUIField = useUIStore((s) => s.setField)
