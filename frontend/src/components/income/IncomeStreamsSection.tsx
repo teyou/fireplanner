@@ -98,7 +98,7 @@ function StreamRow({
             value={stream.name}
             onChange={(e) => onUpdate({ name: e.target.value })}
             placeholder="Stream name"
-            className="w-48 border-blue-300"
+            className="w-full md:w-48 border-blue-300"
           />
           <div className="flex items-center gap-1.5">
             <Checkbox

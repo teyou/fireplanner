@@ -163,7 +163,7 @@ export function SwrHeatmap({ data, onCellClick }: SwrHeatmapProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div ref={containerRef} className="relative">
+        <div ref={containerRef} className="relative overflow-x-auto">
           <svg ref={svgRef} />
         </div>
       </CardContent>
