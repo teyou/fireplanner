@@ -14,6 +14,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-26',
     category: 'fix',
+    title: 'Monte Carlo and Sequence Risk simulations now match projection accuracy',
+    description:
+      'MC accumulation previously used raw annualSavings, missing 10 financial components (mortgage payments, parent support, healthcare, income shortfalls, financial goals, CPF OA shortfalls, downsizing rent, CPF OA withdrawals, locked asset unlocks, and HDB rental income scaling by ownership %). Sequence Risk was missing post-retirement mortgage deductions and downsizing equity injections. Both engines now mirror projection.ts calculations exactly.',
+    affectedSections: ['section-property'],
+    insight:
+      'For users with mortgages, the old MC would overestimate the retirement portfolio by ignoring cash mortgage payments during accumulation. For co-owned HDB properties, rental income was counted at 100% instead of the ownership share. A double-counting warning now appears if both HDB subletting and a rental income stream are active.',
+  },
+  {
+    date: '2026-02-26',
+    category: 'fix',
     title: 'MediSave BHS now grows annually and freezes at age 65',
     description:
       'The Basic Healthcare Sum (MediSave cap) was frozen at $79,000 for all projection years. BHS now grows at 4.5% per year (based on 2013-2026 historical CAGR of ~4.7%) and permanently freezes at each member\'s age 65 cohort value, matching CPF Board policy.',
