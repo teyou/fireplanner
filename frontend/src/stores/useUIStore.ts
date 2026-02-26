@@ -20,6 +20,8 @@ interface UIState {
   dollarBasis: DollarBasis
   lastSeenChangelogDate: string | null
   lastSeenDataVintage: string | null
+  showNewPurchase: boolean
+  collapsedSections: string[]
 }
 
 interface UIActions {
@@ -29,6 +31,8 @@ interface UIActions {
   dismissNudge: (nudgeId: string) => void
   toggleHelpPanel: () => void
   markChangelogSeen: () => void
+  setShowNewPurchase: (value: boolean) => void
+  toggleSection: (sectionId: string) => void
 }
 
 const DEFAULT_UI: UIState = {
@@ -44,6 +48,8 @@ const DEFAULT_UI: UIState = {
   dollarBasis: 'nominal',
   lastSeenChangelogDate: null,
   lastSeenDataVintage: null,
+  showNewPurchase: false,
+  collapsedSections: [],
 }
 
 export const useUIStore = create<UIState & UIActions>()(
@@ -88,10 +94,24 @@ export const useUIStore = create<UIState & UIActions>()(
             dismissedNudges: prunedNudges,
           }
         }),
+
+      setShowNewPurchase: (value) => set({ showNewPurchase: value }),
+
+      toggleSection: (sectionId) =>
+        set((state) => {
+          const sections = [...state.collapsedSections]
+          const idx = sections.indexOf(sectionId)
+          if (idx >= 0) {
+            sections.splice(idx, 1)
+          } else {
+            sections.push(sectionId)
+          }
+          return { collapsedSections: sections }
+        }),
     }),
     {
       name: 'fireplanner-ui',
-      version: 8,
+      version: 9,
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>
         if (version < 2) {
@@ -124,6 +144,10 @@ export const useUIStore = create<UIState & UIActions>()(
         if (version < 8) {
           state.lastSeenChangelogDate = state.lastSeenChangelogDate ?? null
           state.lastSeenDataVintage = state.lastSeenDataVintage ?? null
+        }
+        if (version < 9) {
+          state.showNewPurchase = false
+          state.collapsedSections = []
         }
         return state
       },
