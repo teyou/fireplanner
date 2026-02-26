@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import { Slider } from '@/components/ui/slider'
 import { Link, useLocation } from 'react-router-dom'
 import { ChevronDown, ChevronUp, CheckCircle2, Circle, ArrowRight, HelpCircle, RefreshCw, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -790,17 +791,18 @@ function PropertyContent() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm text-muted-foreground flex items-center gap-1">
+                <Label htmlFor="ownership-percent" className="text-sm text-muted-foreground flex items-center gap-1">
                   Your Ownership Share
                   <InfoTooltip text="For co-owned property, enter your percentage share. All property values (equity, mortgage, rental) will be scaled to your portion." />
-                </label>
+                </Label>
                 <div className="flex items-center gap-3">
-                  <input
-                    type="range"
+                  <Slider
+                    id="ownership-percent"
                     min={1}
                     max={100}
-                    value={Math.round((ownershipPercent ?? 1) * 100)}
-                    onChange={(e) => setField('ownershipPercent', Number(e.target.value) / 100)}
+                    step={1}
+                    value={[Math.round((ownershipPercent ?? 1) * 100)]}
+                    onValueChange={([v]) => setField('ownershipPercent', v / 100)}
                     className="flex-1"
                   />
                   <span className="text-sm font-medium w-12 text-right">{Math.round((ownershipPercent ?? 1) * 100)}%</span>
