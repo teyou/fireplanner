@@ -97,7 +97,7 @@ function StreamRow({
             value={stream.name}
             onChange={(e) => onUpdate({ name: e.target.value })}
             placeholder="Stream name"
-            className="w-48 border-blue-300"
+            className="w-full md:w-48 border-blue-300"
           />
           <label className="flex items-center gap-1 text-sm">
             <input

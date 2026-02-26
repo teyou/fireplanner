@@ -224,7 +224,7 @@ function EventRow({
           value={event.name}
           onChange={(e) => onUpdate({ name: e.target.value })}
           placeholder="Event name"
-          className="w-48 border-blue-300"
+          className="w-full md:w-48 border-blue-300"
         />
         <Button variant="ghost" size="sm" onClick={onRemove}>Remove</Button>
       </div>
