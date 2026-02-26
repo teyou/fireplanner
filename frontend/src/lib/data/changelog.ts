@@ -12,6 +12,16 @@ export interface ChangelogEntry {
 /** Newest first. */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-02-26',
+    category: 'fix',
+    title: 'CPF contributions now work for Barista FIRE income streams',
+    description:
+      'Employment income streams added after your retirement age (e.g., a lower-paying job from 45-55 in a Barista FIRE plan) were not generating CPF contributions even with "CPF Applicable" checked. CPF now correctly populates for any active employment stream regardless of your FIRE age.',
+    affectedSections: ['section-income'],
+    insight:
+      'The retirement age in FIRE Planner is your FIRE age, not when you stop working entirely. If you return to work after FIRE, your employment income stream should generate CPF just like any job would.',
+  },
+  {
     date: '2026-02-25',
     category: 'feature',
     title: 'Goal and withdrawal shortfall tracking in projection engine',
