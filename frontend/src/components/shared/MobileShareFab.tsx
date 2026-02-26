@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -9,16 +9,10 @@ import { useUIStore } from '@/stores/useUIStore'
 export function MobileShareFab() {
   const dismissedNudges = useUIStore((s) => s.dismissedNudges)
   const dismissNudge = useUIStore((s) => s.dismissNudge)
-  const [tooltipOpen, setTooltipOpen] = useState(false)
 
   const nudgeId = 'share-fab-tooltip'
   const alreadyDismissed = dismissedNudges.includes(nudgeId)
-
-  // Show tooltip on mount until user actively dismisses (tap outside or tap share)
-  useEffect(() => {
-    if (alreadyDismissed) return
-    setTooltipOpen(true)
-  }, [alreadyDismissed])
+  const [tooltipOpen, setTooltipOpen] = useState(!alreadyDismissed)
 
   const handleDismiss = () => {
     setTooltipOpen(false)
