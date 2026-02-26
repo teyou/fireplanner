@@ -243,15 +243,15 @@ function IncomeContent() {
 
       <SalaryModelSection />
 
-      <div className="flex items-center pb-1">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={income.employerCpfEnabled}
-            onChange={(e) => income.setField('employerCpfEnabled', e.target.checked)}
-          />
+      <div className="flex items-center gap-3 pb-1">
+        <Switch
+          id="employer-cpf-toggle"
+          checked={income.employerCpfEnabled}
+          onCheckedChange={(checked) => income.setField('employerCpfEnabled', checked)}
+        />
+        <Label htmlFor="employer-cpf-toggle" className="text-sm cursor-pointer">
           Employer CPF Contributions
-        </label>
+        </Label>
       </div>
 
       {mode === 'advanced' && <TaxReliefSection />}
