@@ -104,7 +104,7 @@ function StreamRow({
             <Checkbox
               id={`stream-active-${stream.id}`}
               checked={stream.isActive}
-              onCheckedChange={(checked) => onUpdate({ isActive: checked === true })}
+              onCheckedChange={(checked: boolean | 'indeterminate') => onUpdate({ isActive: checked === true })}
             />
             <Label htmlFor={`stream-active-${stream.id}`} className="text-sm cursor-pointer">Active</Label>
           </div>
@@ -216,7 +216,7 @@ function StreamRow({
             <Checkbox
               id={`stream-cpf-${stream.id}`}
               checked={stream.isCpfApplicable}
-              onCheckedChange={(checked) => onUpdate({ isCpfApplicable: checked === true })}
+              onCheckedChange={(checked: boolean | 'indeterminate') => onUpdate({ isCpfApplicable: checked === true })}
             />
             <Label htmlFor={`stream-cpf-${stream.id}`} className="text-sm cursor-pointer">CPF Applicable</Label>
           </div>

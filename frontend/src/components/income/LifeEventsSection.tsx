@@ -138,7 +138,7 @@ export function LifeEventsSection() {
             <Checkbox
               id="life-events-enabled"
               checked={income.lifeEventsEnabled}
-              onCheckedChange={(checked) => income.setField('lifeEventsEnabled', checked === true)}
+              onCheckedChange={(checked: boolean | 'indeterminate') => income.setField('lifeEventsEnabled', checked === true)}
             />
             <Label htmlFor="life-events-enabled" className="text-sm cursor-pointer">Enable</Label>
           </div>
@@ -273,7 +273,7 @@ function EventRow({
             <Checkbox
               id={`${prefix}-pause-savings`}
               checked={event.savingsPause}
-              onCheckedChange={(checked) => onUpdate({ savingsPause: checked === true })}
+              onCheckedChange={(checked: boolean | 'indeterminate') => onUpdate({ savingsPause: checked === true })}
             />
             <Label htmlFor={`${prefix}-pause-savings`} className="text-sm cursor-pointer">Pause Savings</Label>
           </div>
@@ -281,7 +281,7 @@ function EventRow({
             <Checkbox
               id={`${prefix}-pause-cpf`}
               checked={event.cpfPause}
-              onCheckedChange={(checked) => onUpdate({ cpfPause: checked === true })}
+              onCheckedChange={(checked: boolean | 'indeterminate') => onUpdate({ cpfPause: checked === true })}
             />
             <Label htmlFor={`${prefix}-pause-cpf`} className="text-sm cursor-pointer">Pause CPF</Label>
           </div>
