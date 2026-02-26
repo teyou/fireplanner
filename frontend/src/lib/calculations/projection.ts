@@ -22,6 +22,7 @@ import type {
   ExpenseAdjustment,
 } from '@/lib/types'
 import { getBalaFactor } from '@/lib/data/balaTable'
+import { sumPostRetirementIncome } from './income'
 import { getEffectiveExpenses } from './expenses'
 import { calculateParentSupportAtAge } from './fire'
 import { calculateBrsFrsErs } from './cpf'
@@ -504,8 +505,7 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
 
       // Post-retirement income from active streams + existing property rental + SRS drawdown
       // salary is included for Barista FIRE: employment income streams active after FIRE age
-      const postRetirementIncome = incomeRow.salary + incomeRow.rentalIncome + incomeRow.investmentIncome +
-        incomeRow.businessIncome + incomeRow.governmentIncome + incomeRow.srsWithdrawal + effectiveRentalIncome
+      const postRetirementIncome = sumPostRetirementIncome(incomeRow, effectiveRentalIncome)
 
       // Compute max permitted withdrawal from strategy
       let strategyWithdrawal = 0

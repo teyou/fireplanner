@@ -9,6 +9,7 @@ import {
   applyLifeEvents,
   generateIncomeProjection,
   calculateIncomeSummary,
+  sumPostRetirementIncome,
   DEFAULT_CAREER_PHASES,
 } from './income'
 import type {
@@ -3493,5 +3494,55 @@ describe('SRS residency status handling', () => {
     // SRS balance should be higher with toggle by age 48
     expect(withToggle.find(r => r.age === 48)!.srsBalance)
       .toBeGreaterThan(withoutToggle.find(r => r.age === 48)!.srsBalance)
+  })
+})
+
+// ============================================================
+// sumPostRetirementIncome — aggregation completeness
+// ============================================================
+
+describe('sumPostRetirementIncome', () => {
+  // Minimal IncomeProjectionRow with only the fields sumPostRetirementIncome reads
+  const makeRow = (overrides: Partial<IncomeProjectionRow> = {}): IncomeProjectionRow => ({
+    year: 0, age: 65, salary: 0, rentalIncome: 0, investmentIncome: 0,
+    businessIncome: 0, governmentIncome: 0, totalGross: 0, sgTax: 0,
+    cpfEmployee: 0, cpfEmployer: 0, totalNet: 0, annualSavings: 0,
+    cumulativeSavings: 0, cpfOA: 0, cpfSA: 0, cpfMA: 0, cpfRA: 0,
+    isRetired: true, activeLifeEvents: [], cpfLifePayout: 0,
+    cpfOaHousingDeduction: 0, cpfOaShortfall: 0, cpfLifeAnnuityPremium: 0,
+    cpfOaWithdrawal: 0, cpfisOA: 0, cpfisSA: 0, cpfisReturn: 0,
+    srsBalance: 0, srsContribution: 0, srsWithdrawal: 0, srsTaxableWithdrawal: 0,
+    lockedAssetUnlock: 0, cashReserveTarget: 0, cashReserveBalance: 0, investedSavings: 0,
+    ...overrides,
+  })
+
+  it('sums all 7 components with distinct non-zero values', () => {
+    // Each component has a distinct value so any missing field is detectable
+    const row = makeRow({
+      salary: 1000,
+      rentalIncome: 2000,
+      investmentIncome: 3000,
+      businessIncome: 4000,
+      governmentIncome: 5000,
+      srsWithdrawal: 6000,
+    })
+    const propertyRentalIncome = 7000
+    expect(sumPostRetirementIncome(row, propertyRentalIncome)).toBe(28000)
+  })
+
+  it('sums 6 components when propertyRentalIncome defaults to 0', () => {
+    const row = makeRow({
+      salary: 1000,
+      rentalIncome: 2000,
+      investmentIncome: 3000,
+      businessIncome: 4000,
+      governmentIncome: 5000,
+      srsWithdrawal: 6000,
+    })
+    expect(sumPostRetirementIncome(row)).toBe(21000)
+  })
+
+  it('returns 0 for a zero-income row', () => {
+    expect(sumPostRetirementIncome(makeRow())).toBe(0)
   })
 })

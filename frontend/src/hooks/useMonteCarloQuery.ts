@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { runMonteCarloWorker, flattenStrategyParams } from '@/lib/simulation/workerClient'
 import { getEffectiveExpenses } from '@/lib/calculations/expenses'
+import { sumPostRetirementIncome } from '@/lib/calculations/income'
+import { getPropertyRentalIncome } from '@/lib/calculations/hdb'
 import type { MonteCarloResult } from '@/lib/types'
 import type { MonteCarloEngineParams } from '@/lib/simulation/monteCarlo'
 import { useProfileStore } from '@/stores/useProfileStore'
@@ -70,6 +72,10 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     parentSupport: profile.parentSupport,
     downsizing: propertyStore.downsizing,
     ownsProperty: propertyStore.ownsProperty,
+    propertyType: propertyStore.propertyType,
+    hdbMonetizationStrategy: propertyStore.hdbMonetizationStrategy,
+    hdbSublettingRooms: propertyStore.hdbSublettingRooms,
+    hdbSublettingRate: propertyStore.hdbSublettingRate,
     healthcareConfig: profile.healthcareConfig,
     retirementWithdrawals: profile.retirementWithdrawals,
     cashReserveEnabled: profile.cashReserveEnabled,
@@ -88,6 +94,8 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     income.annualSalary, income.salaryModel, income.incomeStreams,
     profile.parentSupportEnabled, profile.parentSupport,
     propertyStore.downsizing, propertyStore.ownsProperty,
+    propertyStore.propertyType, propertyStore.hdbMonetizationStrategy,
+    propertyStore.hdbSublettingRooms, propertyStore.hdbSublettingRate,
     profile.healthcareConfig,
     profile.retirementWithdrawals,
     profile.cashReserveEnabled, profile.cashReserveMode, profile.cashReserveFixedAmount,
@@ -108,15 +116,15 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
       if (projectionParams) {
         const { generateIncomeProjection } = await import('@/lib/calculations/income')
         const projection = generateIncomeProjection(projectionParams)
+        const annualRentalIncome = getPropertyRentalIncome(propertyStore)
+        const dsSellAge = propertyStore.downsizing?.scenario !== 'none' && propertyStore.ownsProperty
+          ? propertyStore.downsizing.sellAge : null
         for (const row of projection) {
           if (!row.isRetired) {
             annualSavings.push(row.annualSavings)
           } else {
-            // Post-retirement income: salary (Barista FIRE) + rental + investment + business + government + SRS
-            postRetirementIncome.push(
-              row.salary + row.rentalIncome + row.investmentIncome +
-              row.businessIncome + row.governmentIncome + row.srsWithdrawal
-            )
+            const rentalForYear = (dsSellAge !== null && row.age >= dsSellAge) ? 0 : annualRentalIncome
+            postRetirementIncome.push(sumPostRetirementIncome(row, rentalForYear))
           }
         }
       }

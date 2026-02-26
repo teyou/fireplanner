@@ -3,9 +3,12 @@ import { useMutation } from '@tanstack/react-query'
 import { runSequenceRiskWorker, flattenStrategyParams } from '@/lib/simulation/workerClient'
 import { getEffectiveExpenses } from '@/lib/calculations/expenses'
 import type { CrisisScenario, SequenceRiskResult } from '@/lib/types'
+import { sumPostRetirementIncome } from '@/lib/calculations/income'
+import { getPropertyRentalIncome } from '@/lib/calculations/hdb'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
+import { usePropertyStore } from '@/stores/usePropertyStore'
 import { ASSET_CLASSES, CORRELATION_MATRIX } from '@/lib/data/historicalReturns'
 import { buildProjectionParams } from '@/hooks/useIncomeProjection'
 import { useIncomeStore } from '@/stores/useIncomeStore'
@@ -27,6 +30,7 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
   const income = useIncomeStore()
   const allocation = useAllocationStore()
   const withdrawal = useWithdrawalStore()
+  const propertyStore = usePropertyStore()
   const analysisPortfolio = useAnalysisPortfolio()
 
   const profileErrors = profile.validationErrors
@@ -54,12 +58,21 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
     retirementWithdrawals: profile.retirementWithdrawals,
     annualExpenses: profile.annualExpenses,
     expenseAdjustments: profile.expenseAdjustments,
+    ownsProperty: propertyStore.ownsProperty,
+    propertyType: propertyStore.propertyType,
+    hdbMonetizationStrategy: propertyStore.hdbMonetizationStrategy,
+    hdbSublettingRooms: propertyStore.hdbSublettingRooms,
+    hdbSublettingRate: propertyStore.hdbSublettingRate,
+    downsizing: propertyStore.downsizing,
   }), [
     analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights,
     profile.retirementAge, profile.lifeExpectancy, profile.expenseRatio, profile.inflation,
     allocation.returnOverrides, allocation.stdDevOverrides,
     strategy, withdrawal.strategyParams,
     profile.retirementWithdrawals, profile.annualExpenses, profile.expenseAdjustments,
+    propertyStore.ownsProperty, propertyStore.propertyType,
+    propertyStore.hdbMonetizationStrategy, propertyStore.hdbSublettingRooms,
+    propertyStore.hdbSublettingRate, propertyStore.downsizing,
   ])
 
   const mutation = useMutation({
@@ -76,13 +89,13 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
       if (projectionParams) {
         const { generateIncomeProjection } = await import('@/lib/calculations/income')
         const projection = generateIncomeProjection(projectionParams)
+        const annualRentalIncome = getPropertyRentalIncome(propertyStore)
+        const dsSellAge = propertyStore.downsizing?.scenario !== 'none' && propertyStore.ownsProperty
+          ? propertyStore.downsizing.sellAge : null
         for (const row of projection) {
           if (row.isRetired) {
-            // salary included for Barista FIRE; all income types for consistency with projection engine
-            postRetirementIncome.push(
-              row.salary + row.rentalIncome + row.investmentIncome +
-              row.businessIncome + row.governmentIncome + row.srsWithdrawal
-            )
+            const rentalForYear = (dsSellAge !== null && row.age >= dsSellAge) ? 0 : annualRentalIncome
+            postRetirementIncome.push(sumPostRetirementIncome(row, rentalForYear))
           }
         }
       }

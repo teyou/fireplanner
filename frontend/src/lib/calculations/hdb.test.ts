@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeHdbCpfRefund, computeHdbSublettingIncome, computeLbsProceeds } from './hdb'
+import { computeHdbCpfRefund, computeHdbSublettingIncome, computeLbsProceeds, getPropertyRentalIncome } from './hdb'
 
 describe('computeHdbCpfRefund', () => {
   it('calculates refund with accrued interest', () => {
@@ -149,5 +149,35 @@ describe('computeLbsProceeds', () => {
     })
     // Boost = cpfRaTopUp * 0.063 / 12 (monthly)
     expect(result.estimatedMonthlyLifeBoost).toBeCloseTo(113000 * 0.063 / 12, 0)
+  })
+})
+
+// ============================================================
+// getPropertyRentalIncome — convenience wrapper
+// ============================================================
+
+describe('getPropertyRentalIncome', () => {
+  const hdbSubletProperty = {
+    ownsProperty: true,
+    propertyType: 'hdb',
+    hdbMonetizationStrategy: 'sublet',
+    hdbSublettingRooms: 2,
+    hdbSublettingRate: 1000,
+  }
+
+  it('returns rooms * monthlyRate * 12 when HDB subletting is active', () => {
+    expect(getPropertyRentalIncome(hdbSubletProperty)).toBe(24000)
+  })
+
+  it('returns 0 when ownsProperty is false', () => {
+    expect(getPropertyRentalIncome({ ...hdbSubletProperty, ownsProperty: false })).toBe(0)
+  })
+
+  it('returns 0 when propertyType is not hdb', () => {
+    expect(getPropertyRentalIncome({ ...hdbSubletProperty, propertyType: 'condo' })).toBe(0)
+  })
+
+  it('returns 0 when strategy is not sublet', () => {
+    expect(getPropertyRentalIncome({ ...hdbSubletProperty, hdbMonetizationStrategy: 'lbs' })).toBe(0)
   })
 })

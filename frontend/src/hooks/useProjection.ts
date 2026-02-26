@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { ProjectionRow, ProjectionSummary } from '@/lib/types'
 import { generateProjection, type ProjectionParams } from '@/lib/calculations/projection'
 import { calculatePortfolioReturn } from '@/lib/calculations/portfolio'
-import { computeHdbSublettingIncome, computeLbsProceeds } from '@/lib/calculations/hdb'
+import { getPropertyRentalIncome, computeLbsProceeds } from '@/lib/calculations/hdb'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useSimulationStore } from '@/stores/useSimulationStore'
@@ -98,13 +98,7 @@ export function useProjection(): ProjectionResult {
       annualMortgagePayment: property.ownsProperty
         ? (property.existingMonthlyPayment - property.mortgageCpfMonthly) * 12 * ownershipPct
         : 0,
-      annualRentalIncome: property.ownsProperty
-        && property.propertyType === 'hdb' && property.hdbMonetizationStrategy === 'sublet'
-          ? computeHdbSublettingIncome({
-              rooms: property.hdbSublettingRooms,
-              monthlyRate: property.hdbSublettingRate,
-            }).annualGross
-          : 0,
+      annualRentalIncome: getPropertyRentalIncome(property),
       existingPropertyValue: property.ownsProperty
         ? property.existingPropertyValue * ownershipPct
         : 0,

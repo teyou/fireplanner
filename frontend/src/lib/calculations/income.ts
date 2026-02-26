@@ -30,6 +30,21 @@ import {
   CPFIS_SA_RETENTION,
 } from '@/lib/data/cpfRates'
 
+/**
+ * Sum all post-retirement income components from an IncomeProjectionRow,
+ * plus optional property rental income (HDB subletting) from the property store.
+ *
+ * This is the single source of truth for post-retirement income aggregation.
+ * Used by projection.ts, useMonteCarloQuery, and useSequenceRiskQuery.
+ */
+export function sumPostRetirementIncome(
+  row: IncomeProjectionRow,
+  propertyRentalIncome = 0,
+): number {
+  return row.salary + row.rentalIncome + row.investmentIncome +
+    row.businessIncome + row.governmentIncome + row.srsWithdrawal + propertyRentalIncome
+}
+
 export const DEFAULT_CAREER_PHASES: CareerPhase[] = [
   { label: 'Early Career', minAge: 22, maxAge: 30, growthRate: 0.08 },
   { label: 'Mid Career', minAge: 30, maxAge: 40, growthRate: 0.05 },

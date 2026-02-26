@@ -60,6 +60,29 @@ export function computeHdbSublettingIncome(params: SublettingParams): Subletting
   }
 }
 
+/**
+ * Compute the annual HDB subletting rental income from property store fields.
+ * Returns 0 if the user doesn't own an HDB or isn't subletting.
+ *
+ * This is the single source of truth for property rental income calculation.
+ * Used by useProjection, useMonteCarloQuery, and useSequenceRiskQuery.
+ */
+export function getPropertyRentalIncome(property: {
+  ownsProperty: boolean
+  propertyType: string
+  hdbMonetizationStrategy: string
+  hdbSublettingRooms: number
+  hdbSublettingRate: number
+}): number {
+  if (!property.ownsProperty || property.propertyType !== 'hdb' || property.hdbMonetizationStrategy !== 'sublet') {
+    return 0
+  }
+  return computeHdbSublettingIncome({
+    rooms: property.hdbSublettingRooms,
+    monthlyRate: property.hdbSublettingRate,
+  }).annualGross
+}
+
 // ============================================================
 // Lease Buyback Scheme (LBS)
 // ============================================================
