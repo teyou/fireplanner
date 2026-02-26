@@ -60,22 +60,27 @@ export function AppLayout() {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
+  // Scroll to top on route change (needed for mobile body scroll)
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
+
   const showStats = STATS_ROUTES.includes(location.pathname)
   const isBottom = statsPosition === 'bottom'
   const isTop = statsPosition === 'top'
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex min-h-dvh md:h-screen md:overflow-hidden">
       <Toaster position="bottom-right" />
       <SaveIndicator />
       <PlanUrlHandler />
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 min-h-0">
+      <div className="flex-1 flex flex-col min-w-0 md:min-h-0">
         {showStats && isTop && <FireStatsStrip position="top" />}
-        <div className="flex flex-1 min-h-0 relative">
+        <div className="flex flex-1 md:min-h-0 relative">
           <main
             className={cn(
-              'flex-1 min-w-0 h-full overflow-auto',
+              'flex-1 min-w-0 md:h-full md:overflow-auto',
               'pb-14 md:pb-0',
               showStats && isBottom && 'pb-24 md:pb-10'
             )}
