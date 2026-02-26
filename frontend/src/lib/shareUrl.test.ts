@@ -77,6 +77,73 @@ describe('decodeStoresFromUrl', () => {
     expect(decoded!['fireplanner-profile']).toEqual(profileData)
     expect(decoded!['fireplanner-income']).toEqual(incomeData)
   })
+
+  it('round-trip: full pipeline with realistic data survives URL parsing', () => {
+    // Realistic Zustand persist format data across all 6 stores
+    const testStores = {
+      'fireplanner-profile': {
+        state: {
+          currentAge: 32, retirementAge: 55, lifeExpectancy: 90,
+          annualExpenses: 42000, inflation: 0.025, netWorth: 150000,
+          swr: 0.035, fireType: 'lean', citizenshipStatus: 'citizen',
+          gender: 'male',
+          financialGoals: [{ id: 'g1', name: 'Wedding', amount: 30000, age: 33 }],
+          parentSupport: { enabled: true, monthlyAmount: 500, untilAge: 80 },
+        },
+        version: 19,
+      },
+      'fireplanner-income': {
+        state: {
+          salaryModel: 'realistic', annualSalary: 96000, salaryGrowth: 0.03,
+          employerCpf: true,
+          careerPhases: [
+            { fromAge: 32, toAge: 40, growthRate: 0.05 },
+            { fromAge: 40, toAge: 55, growthRate: 0.02 },
+          ],
+          srsContributions: { enabled: true, annualAmount: 15300 },
+        },
+        version: 14,
+      },
+      'fireplanner-allocation': {
+        state: { weights: [0.40, 0.10, 0.10, 0.20, 0.10, 0.05, 0.05, 0] },
+        version: 7,
+      },
+      'fireplanner-simulation': {
+        state: { method: 'parametric', numSimulations: 10000, confidenceLevel: 0.95, seed: 42 },
+        version: 4,
+      },
+      'fireplanner-withdrawal': {
+        state: { strategy: 'guardrails', strategyParams: { guardrails: { ceiling: 0.05, floor: 0.04 } } },
+        version: 5,
+      },
+      'fireplanner-property': {
+        state: { properties: [{ id: 'p1', name: 'HDB 4-room', purchasePrice: 500000, currentValue: 550000 }] },
+        version: 5,
+      },
+    }
+
+    for (const [key, value] of Object.entries(testStores)) {
+      localStorage.setItem(key, JSON.stringify(value))
+    }
+
+    // Encode
+    const encoded = encodeStoresForUrl()
+
+    // Simulate URL round-trip: build URL, then extract plan param the same way getPlanFromUrl does
+    const fullUrl = `https://example.com/?plan=${encoded}`
+    const match = fullUrl.match(/[?&]plan=([^&]*)/)
+    const extractedParam = match ? match[1] : null
+    expect(extractedParam).toBeTruthy()
+
+    // Decode
+    const decoded = decodeStoresFromUrl(extractedParam!)
+    expect(decoded).not.toBeNull()
+
+    // Verify each store matches
+    for (const [key, value] of Object.entries(testStores)) {
+      expect(decoded![key]).toEqual(value)
+    }
+  })
 })
 
 describe('generateShareUrl', () => {
@@ -151,6 +218,24 @@ describe('getPlanFromUrl', () => {
   it('returns value when plan param present', () => {
     Object.defineProperty(window, 'location', {
       value: { search: '?plan=abc123' },
+      writable: true,
+      configurable: true,
+    })
+    expect(getPlanFromUrl()).toBe('abc123')
+  })
+
+  it('preserves + characters in plan param (lz-string uses + in its alphabet)', () => {
+    Object.defineProperty(window, 'location', {
+      value: { search: '?plan=abc+def+ghi' },
+      writable: true,
+      configurable: true,
+    })
+    expect(getPlanFromUrl()).toBe('abc+def+ghi')
+  })
+
+  it('returns plan when other params exist', () => {
+    Object.defineProperty(window, 'location', {
+      value: { search: '?foo=bar&plan=abc123&baz=qux' },
       writable: true,
       configurable: true,
     })

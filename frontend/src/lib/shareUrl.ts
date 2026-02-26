@@ -62,10 +62,15 @@ export function applyStoreData(stores: Record<string, unknown>): void {
   }
 }
 
-/** Check if the current URL has a ?plan= parameter. */
+/** Check if the current URL has a ?plan= parameter.
+ *  Uses manual parsing instead of URLSearchParams because lz-string's
+ *  compressToEncodedURIComponent output contains literal `+` characters,
+ *  and URLSearchParams decodes `+` as space (per application/x-www-form-urlencoded),
+ *  which corrupts the compressed data.
+ */
 export function getPlanFromUrl(): string | null {
-  const params = new URLSearchParams(window.location.search)
-  return params.get('plan')
+  const match = window.location.search.match(/[?&]plan=([^&]*)/)
+  return match ? match[1] : null
 }
 
 /** Strip the ?plan= parameter from the URL without triggering navigation. */
