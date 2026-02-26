@@ -505,12 +505,12 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       }
     }
 
-    // Voluntary CPF top-ups (pre-retirement only)
+    // Voluntary CPF top-ups (when earning employment income)
     let topUpOAActual = 0
     let topUpSAActual = 0
     let topUpMAActual = 0
     let _topUpRAActual = 0
-    if (!isRetired) {
+    if (salary > 0) {
       const topUpOA = params.cpfTopUpOA ?? 0
       const topUpSA = params.cpfTopUpSA ?? 0
       const topUpMA = params.cpfTopUpMA ?? 0
@@ -632,7 +632,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       srsContribution,
       applicableReliefs,
       params.residencyStatus,
-      (!isRetired ? (params.cpfTopUpSA ?? 0) : 0)
+      (salary > 0 ? (params.cpfTopUpSA ?? 0) : 0)
     )
     const taxResult = calculateProgressiveTax(chargeableIncome)
     const sgTax = taxResult.taxPayable
@@ -644,7 +644,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     const effectiveBase = getEffectiveExpenses(age, params.annualExpenses, params.expenseAdjustments ?? [], params.lifeExpectancy)
     const inflationAdjustedExpenses = effectiveBase * Math.pow(1 + params.inflation, year)
     const savingsPaused = isSavingsPaused(age, params.lifeEvents, params.lifeEventsEnabled)
-    const voluntaryTopUps = !isRetired
+    const voluntaryTopUps = salary > 0
       ? (params.cpfTopUpOA ?? 0) + (params.cpfTopUpSA ?? 0) + (params.cpfTopUpMA ?? 0)
       : 0
     const annualSavings = savingsPaused ? 0 : Math.max(0, totalNet - inflationAdjustedExpenses - voluntaryTopUps)

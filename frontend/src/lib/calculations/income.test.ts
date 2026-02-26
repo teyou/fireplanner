@@ -2289,7 +2289,7 @@ describe('voluntary CPF top-ups in projection', () => {
     expect(rows[0].cpfMA).toBeLessThanOrEqual(85000)
   })
 
-  it('no top-ups applied after retirement', () => {
+  it('no top-ups applied after retirement when no employment income', () => {
     const params = {
       ...topUpBaseParams,
       currentAge: 60,
@@ -2309,6 +2309,42 @@ describe('voluntary CPF top-ups in projection', () => {
       const raDiff = retiredRow.cpfRA - preRetiredRow.cpfRA
       expect(Math.abs(raDiff)).toBeLessThan(8000)
     }
+  })
+
+  it('top-ups continue during Barista FIRE when employment income stream is active', () => {
+    const baristaStream = {
+      id: 'barista',
+      name: 'Barista Job',
+      annualAmount: 36000,
+      startAge: 43,
+      endAge: 48,
+      growthRate: 0,
+      type: 'employment' as const,
+      growthModel: 'none' as const,
+      taxTreatment: 'taxable' as const,
+      isCpfApplicable: true,
+      isActive: true,
+    }
+    // Start at retirement age so both scenarios have identical initial balances
+    const baseParams = {
+      ...topUpBaseParams,
+      currentAge: 40,
+      retirementAge: 39, // already FIRE'd — all years are post-retirement
+      lifeExpectancy: 50,
+      annualSalary: 0,
+      initialCpfSA: 200000,
+      incomeStreams: [baristaStream],
+    }
+    const withTopUp = generateIncomeProjection({ ...baseParams, cpfTopUpSA: 8000 })
+    const withoutTopUp = generateIncomeProjection({ ...baseParams, cpfTopUpSA: 0 })
+
+    // Age 42: retired, no employment income — SA should be identical (no top-up)
+    expect(withTopUp.find(r => r.age === 42)!.cpfSA)
+      .toBeCloseTo(withoutTopUp.find(r => r.age === 42)!.cpfSA, 0)
+
+    // Age 45: barista job active — top-up should apply, SA should diverge
+    expect(withTopUp.find(r => r.age === 45)!.cpfSA)
+      .toBeGreaterThan(withoutTopUp.find(r => r.age === 45)!.cpfSA + 7000)
   })
 })
 
