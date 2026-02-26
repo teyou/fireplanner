@@ -18,6 +18,7 @@ import type {
   IncomeProjectionRow,
 } from '@/lib/types'
 import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
+import { getBhsAtAge } from './cpf'
 
 // ============================================================
 // Simple salary model
@@ -2682,10 +2683,11 @@ describe('CPF MA BHS overflow in projection', () => {
     // Year 0: room = $4,000. $9,600 - $4,000 = $5,600 overflow to SA
     // After year 0: MA should be near BHS (interest may push slightly over, then Point B caps)
 
-    // Check MA never significantly exceeds BHS across all years
+    // Check MA never significantly exceeds the year-appropriate BHS
     for (const row of rows) {
-      // MA may transiently hit BHS + some rounding, but overflow brings it back
-      expect(row.cpfMA).toBeLessThanOrEqual(MEDISAVE_BHS + 1)
+      // BHS grows at 4.5% p.a. until age 65, then freezes
+      const bhsForYear = getBhsAtAge(row.age, 30)
+      expect(row.cpfMA).toBeLessThanOrEqual(bhsForYear + 1)
     }
 
     // Compare with a run starting at MA=0 to verify SA gets the overflow
@@ -2713,9 +2715,10 @@ describe('CPF MA BHS overflow in projection', () => {
     }
     const rows = generateIncomeProjection(params)
 
-    // MA should stay at/below BHS (interest overflow redirected)
+    // MA should stay at/below the year-appropriate BHS (interest overflow redirected)
     for (const row of rows.filter(r => !r.isRetired)) {
-      expect(row.cpfMA).toBeLessThanOrEqual(MEDISAVE_BHS + 1)
+      const bhsForYear = getBhsAtAge(row.age, 56)
+      expect(row.cpfMA).toBeLessThanOrEqual(bhsForYear + 1)
     }
 
     // RA and/or OA should receive the overflow
@@ -2726,12 +2729,14 @@ describe('CPF MA BHS overflow in projection', () => {
   })
 
   it('post-LIFE: overflow goes to OA, not RA', () => {
+    // Use the cohort BHS for a 66-year-old (frozen at age 65)
+    const cohortBhs = getBhsAtAge(66, 66)
     const params = {
       ...bhsBaseParams,
       currentAge: 66,
       retirementAge: 62,
       lifeExpectancy: 70,
-      initialCpfMA: MEDISAVE_BHS,
+      initialCpfMA: cohortBhs,
       initialCpfOA: 50000,
       initialCpfSA: 0,
       initialCpfRA: 0, // annuitized at 65
@@ -2740,12 +2745,11 @@ describe('CPF MA BHS overflow in projection', () => {
     }
     const rows = generateIncomeProjection(params)
 
-    // Interest on MA at BHS: $79K * 4% = $3,160
-    // This should overflow to OA, not RA
+    // Interest on MA at cohort BHS pushes above frozen cap → overflow to OA
     const row66 = rows[0]
 
-    // MA stays at BHS
-    expect(row66.cpfMA).toBeLessThanOrEqual(MEDISAVE_BHS + 1)
+    // MA stays at cohort BHS (frozen post-65)
+    expect(row66.cpfMA).toBeLessThanOrEqual(cohortBhs + 1)
 
     // RA should remain 0 (annuitized, no overflow to RA)
     expect(row66.cpfRA).toBe(0)
@@ -2755,7 +2759,9 @@ describe('CPF MA BHS overflow in projection', () => {
   })
 
   it('interest on MA at BHS does not accumulate above BHS, excess goes to OA', () => {
-    // Even with no salary, interest alone on $79K MA should be capped
+    // Even with no salary, interest alone on $79K MA should be capped at the
+    // year-appropriate BHS. With BHS growing at 4.5% and MA interest at 4%,
+    // overflow only occurs in the first year (BHS outgrows interest thereafter).
     const params = {
       ...bhsBaseParams,
       currentAge: 60,
@@ -2769,14 +2775,15 @@ describe('CPF MA BHS overflow in projection', () => {
     }
     const rows = generateIncomeProjection(params)
 
-    // Over 5 years with no contributions, MA should stay at BHS
+    // Over 5 years with no contributions, MA should stay at the year-appropriate BHS
     for (const row of rows) {
-      expect(row.cpfMA).toBeLessThanOrEqual(MEDISAVE_BHS + 1)
+      const bhsForYear = getBhsAtAge(row.age, 60)
+      expect(row.cpfMA).toBeLessThanOrEqual(bhsForYear + 1)
     }
 
-    // OA should grow from interest overflow (~$3,160/yr from MA interest alone)
+    // OA should grow from at least 1 year of MA interest overflow plus OA's own interest
     const lastRow = rows[rows.length - 1]
-    expect(lastRow.cpfOA).toBeGreaterThan(10000 + 3000 * 3) // at least 3 years of overflow
+    expect(lastRow.cpfOA).toBeGreaterThan(10000)
   })
 
   it('retired with no salary: MA interest still capped at BHS', () => {
@@ -2793,9 +2800,10 @@ describe('CPF MA BHS overflow in projection', () => {
     }
     const rows = generateIncomeProjection(params)
 
-    // MA should never exceed BHS even with years of interest
+    // MA should never exceed the year-appropriate BHS even with years of interest
     for (const row of rows) {
-      expect(row.cpfMA).toBeLessThanOrEqual(MEDISAVE_BHS + 1)
+      const bhsForYear = getBhsAtAge(row.age, 56)
+      expect(row.cpfMA).toBeLessThanOrEqual(bhsForYear + 1)
     }
   })
 
@@ -2829,7 +2837,8 @@ describe('CPF MA BHS overflow in projection', () => {
     }
     const rows = generateIncomeProjection(params)
     // MA should not exceed BHS (voluntary top-up is capped, then mandatory also capped)
-    expect(rows[0].cpfMA).toBeLessThanOrEqual(MEDISAVE_BHS + 1)
+    const bhsYear0 = getBhsAtAge(30, 30)
+    expect(rows[0].cpfMA).toBeLessThanOrEqual(bhsYear0 + 1)
   })
 })
 

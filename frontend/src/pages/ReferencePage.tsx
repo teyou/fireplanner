@@ -311,6 +311,12 @@ The fan chart shows percentile bands (p5 to p95) of portfolio paths over time.`,
 - MediSave has withdrawal limits for different treatments
 - Typical depletion risk: heavy claims or long hospitalisation can exhaust MA, especially post-75
 
+### Basic Healthcare Sum (BHS)
+- The BHS is the maximum MediSave balance. Once MA reaches the BHS, further contributions and interest overflow to SA (pre-55), RA (post-55), or OA
+- CPF Board sets a new BHS each January. For 2026, the BHS is $79,000
+- **H65 freeze:** Your personal BHS grows annually until you turn 65, then freezes permanently at that year's value. Your cohort's BHS never changes after 65, even if younger cohorts get higher limits
+- **Projection rate:** This planner grows BHS at 4.5% per year, a slightly conservative estimate based on the historical CAGR of ~4.7% from 2013 ($43,500) to 2026 ($79,000). BHS tracks healthcare cost inflation, which runs higher than the 3.5% rate used for retirement sums (BRS/FRS/ERS)
+
 ### Budgeting for Healthcare in Retirement
 - Out-of-pocket costs rise significantly with age (roughly doubling every 15 years after 50)
 - Consider: chronic condition management, dental, vision, specialist visits

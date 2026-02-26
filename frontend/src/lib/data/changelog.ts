@@ -14,6 +14,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-02-26',
     category: 'fix',
+    title: 'MediSave BHS now grows annually and freezes at age 65',
+    description:
+      'The Basic Healthcare Sum (MediSave cap) was frozen at $79,000 for all projection years. BHS now grows at 4.5% per year (based on 2013-2026 historical CAGR of ~4.7%) and permanently freezes at each member\'s age 65 cohort value, matching CPF Board policy.',
+    affectedSections: ['section-cpf'],
+    insight:
+      'With a static $79K cap, overflow to SA/RA/OA started too early in multi-decade projections, overstating retirement account balances. The growing BHS also means MA interest (4%) no longer overflows for under-65 members since BHS growth (4.5%) outpaces the interest rate.',
+  },
+  {
+    date: '2026-02-26',
+    category: 'fix',
     title: 'HDB subletting income now included in Monte Carlo and stress tests',
     description:
       'HDB subletting rental income was missing from Monte Carlo survival rate calculations and sequence risk stress tests, making results pessimistic for users with room rentals. All simulation engines now include this income, and rental income correctly stops after a downsizing sale.',

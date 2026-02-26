@@ -1,4 +1,5 @@
 import type { CpfContribution, CpfProjection, CpfLifePlan, CpfRetirementSum } from '@/lib/types'
+import { MEDISAVE_BHS, BHS_BASE_YEAR, BHS_GROWTH_RATE } from '@/lib/data/healthcarePremiums'
 import {
   getCpfRatesForAge,
   OW_CEILING_ANNUAL,
@@ -341,6 +342,29 @@ export function calculateBrsFrsErs(
     frs: FRS_BASE * growthFactor,
     ers: ERS_BASE * growthFactor,
   }
+}
+
+/**
+ * Project BHS to the calendar year when the member reaches a given age.
+ *
+ * CPF policy: BHS grows annually (historically ~4.5% p.a., tracking healthcare
+ * cost inflation) until the member turns 65, then freezes permanently at that
+ * cohort's value.
+ *
+ * @param age - the projection age
+ * @param currentAge - the member's current age
+ * @param currentYear - calendar year (injectable for testing; defaults to now)
+ */
+export function getBhsAtAge(
+  age: number,
+  currentAge: number,
+  currentYear: number = new Date().getFullYear()
+): number {
+  const targetYear = currentYear + (age - currentAge)
+  const freezeYear = currentYear + (65 - currentAge)
+  const effectiveYear = Math.min(targetYear, freezeYear)
+  const yearsFromBase = effectiveYear - BHS_BASE_YEAR
+  return Math.round(MEDISAVE_BHS * Math.pow(1 + BHS_GROWTH_RATE, yearsFromBase))
 }
 
 /**

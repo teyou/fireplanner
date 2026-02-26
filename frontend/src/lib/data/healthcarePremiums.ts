@@ -31,6 +31,20 @@ export const HEALTHCARE_DATA_YEAR = 2025
  */
 export const MEDISAVE_BHS = 79000
 
+/** Base year for BHS projection (matches MEDISAVE_BHS value above) */
+export const BHS_BASE_YEAR = 2026
+
+/**
+ * BHS annual growth rate for projections.
+ * Historical CAGR 2013-2026: ~4.7%. Using 4.5% as a slightly conservative estimate.
+ * BHS tracks healthcare cost inflation, which runs higher than general inflation
+ * and the 3.5% rate used for BRS/FRS/ERS retirement sums.
+ *
+ * CPF policy: BHS grows annually until the member turns 65, then freezes
+ * permanently at that cohort's value.
+ */
+export const BHS_GROWTH_RATE = 0.045
+
 /**
  * MediShield Life annual premiums by age bracket.
  * These are the base premiums before any subsidies.

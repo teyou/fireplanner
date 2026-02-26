@@ -14,6 +14,7 @@ import {
   performAge55Transfer,
   allocatePostAge55Contribution,
   capMaAtBhs,
+  getBhsAtAge,
 } from './cpf'
 import {
   OA_INTEREST_RATE,
@@ -21,7 +22,7 @@ import {
   CPFIS_OA_RETENTION,
   CPFIS_SA_RETENTION,
 } from '@/lib/data/cpfRates'
-import { MEDISAVE_BHS } from '@/lib/data/healthcarePremiums'
+import { MEDISAVE_BHS, BHS_GROWTH_RATE, BHS_BASE_YEAR } from '@/lib/data/healthcarePremiums'
 
 describe('calculateCpfContribution', () => {
   it('age 30, $72K salary → 37% total rate', () => {
@@ -665,6 +666,83 @@ describe('capMaAtBhs', () => {
         }
       ),
       { numRuns: 500 }
+    )
+  })
+})
+
+// ============================================================
+// getBhsAtAge — BHS projection with H65 freeze
+// ============================================================
+
+describe('getBhsAtAge', () => {
+  const BASE_YEAR = BHS_BASE_YEAR // 2026
+  const BASE_BHS = MEDISAVE_BHS   // 79,000
+  const RATE = BHS_GROWTH_RATE     // 0.045
+
+  it('returns base BHS for current age in the base year', () => {
+    const result = getBhsAtAge(30, 30, BASE_YEAR)
+    expect(result).toBe(BASE_BHS)
+  })
+
+  it('grows at 4.5% per year before age 65', () => {
+    // User age 30, projecting to age 31 → 1 year of growth
+    const at31 = getBhsAtAge(31, 30, BASE_YEAR)
+    expect(at31).toBe(Math.round(BASE_BHS * Math.pow(1 + RATE, 1)))
+
+    // User age 30, projecting to age 40 → 10 years of growth
+    const at40 = getBhsAtAge(40, 30, BASE_YEAR)
+    expect(at40).toBe(Math.round(BASE_BHS * Math.pow(1 + RATE, 10)))
+  })
+
+  it('freezes BHS at age 65', () => {
+    // User age 30 in 2026 → turns 65 in 2061 → 35 years of growth
+    const expectedBhsAt65 = Math.round(BASE_BHS * Math.pow(1 + RATE, 35))
+    const at65 = getBhsAtAge(65, 30, BASE_YEAR)
+    expect(at65).toBe(expectedBhsAt65)
+
+    // At 66, 70, 80: same frozen value as at 65
+    expect(getBhsAtAge(66, 30, BASE_YEAR)).toBe(expectedBhsAt65)
+    expect(getBhsAtAge(70, 30, BASE_YEAR)).toBe(expectedBhsAt65)
+    expect(getBhsAtAge(80, 30, BASE_YEAR)).toBe(expectedBhsAt65)
+  })
+
+  it('user already 65+: BHS frozen at their cohort value', () => {
+    // User age 70 in 2026 → turned 65 in 2021 → BHS grew from base year backwards
+    // yearsFromBase = (2026 + (65 - 70)) - 2026 = -5
+    const expectedBhs = Math.round(BASE_BHS * Math.pow(1 + RATE, -5))
+    const result = getBhsAtAge(70, 70, BASE_YEAR)
+    expect(result).toBe(expectedBhs)
+    // Should be ~$63,396 — close to historical $63,000
+    expect(result).toBeGreaterThan(60000)
+    expect(result).toBeLessThan(66000)
+  })
+
+  it('user exactly 65: gets current year BHS', () => {
+    // Turns 65 in the base year → freeze year = base year
+    const result = getBhsAtAge(65, 65, BASE_YEAR)
+    expect(result).toBe(BASE_BHS)
+  })
+
+  it('accounts for calendar year offset from base year', () => {
+    // Same age 30, but it's 2028 (2 years after base year)
+    // Projecting to age 30 (same year): BHS has grown 2 years from base
+    const result = getBhsAtAge(30, 30, BASE_YEAR + 2)
+    expect(result).toBe(Math.round(BASE_BHS * Math.pow(1 + RATE, 2)))
+  })
+
+  it('result is always a rounded integer', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 18, max: 100 }),  // age
+        fc.integer({ min: 18, max: 100 }),  // currentAge
+        fc.integer({ min: 2020, max: 2060 }), // currentYear
+        (age, currentAge, currentYear) => {
+          if (age < currentAge) return true // skip invalid
+          const result = getBhsAtAge(age, currentAge, currentYear)
+          return Number.isInteger(result) && result > 0
+        }
+      ),
+      { numRuns: 200 }
     )
   })
 })
