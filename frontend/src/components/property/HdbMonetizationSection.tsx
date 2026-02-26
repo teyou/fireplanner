@@ -4,7 +4,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CurrencyInput } from '@/components/shared/CurrencyInput'
 import { NumberInput } from '@/components/shared/NumberInput'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { AlertTriangle } from 'lucide-react'
 import { usePropertyStore } from '@/stores/usePropertyStore'
+import { useIncomeStore } from '@/stores/useIncomeStore'
 import { computeHdbSublettingIncome, computeLbsProceeds } from '@/lib/calculations/hdb'
 import { SUBLETTING_RATE_SUGGESTIONS, LBS_RETAINED_LEASE_OPTIONS } from '@/lib/data/hdbRates'
 import { formatCurrency } from '@/lib/utils'
@@ -17,6 +19,9 @@ export function HdbMonetizationSection() {
   const strategy = store.hdbMonetizationStrategy
   const flatType = store.hdbFlatType
   const suggestion = SUBLETTING_RATE_SUGGESTIONS[flatType]
+  const hasRentalStream = useIncomeStore(s =>
+    s.incomeStreams.some(stream => stream.type === 'rental' && stream.isActive)
+  )
 
   return (
     <Card>
@@ -76,6 +81,17 @@ export function HdbMonetizationSection() {
             onRoomsChange={(v) => store.setField('hdbSublettingRooms', v)}
             onRateChange={(v) => store.setField('hdbSublettingRate', v)}
           />
+        )}
+
+        {strategy === 'sublet' && hasRentalStream && (
+          <div className="flex gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-700 dark:text-amber-400">
+              You have both HDB subletting and a rental income stream active. Both contribute
+              to your portfolio independently. If they refer to the same property, this
+              double-counts that rental income.
+            </p>
+          </div>
         )}
 
         {strategy === 'lbs' && (

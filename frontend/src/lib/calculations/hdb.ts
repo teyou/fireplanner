@@ -73,14 +73,16 @@ export function getPropertyRentalIncome(property: {
   hdbMonetizationStrategy: string
   hdbSublettingRooms: number
   hdbSublettingRate: number
+  ownershipPercent?: number
 }): number {
   if (!property.ownsProperty || property.propertyType !== 'hdb' || property.hdbMonetizationStrategy !== 'sublet') {
     return 0
   }
-  return computeHdbSublettingIncome({
+  const gross = computeHdbSublettingIncome({
     rooms: property.hdbSublettingRooms,
     monthlyRate: property.hdbSublettingRate,
   }).annualGross
+  return gross * (property.ownershipPercent ?? 1)
 }
 
 // ============================================================

@@ -4,6 +4,8 @@ import { runMonteCarloWorker, flattenStrategyParams } from '@/lib/simulation/wor
 import { getEffectiveExpenses } from '@/lib/calculations/expenses'
 import { sumPostRetirementIncome } from '@/lib/calculations/income'
 import { getPropertyRentalIncome } from '@/lib/calculations/hdb'
+import { calculateParentSupportAtAge } from '@/lib/calculations/fire'
+import { calculateHealthcareCostAtAge } from '@/lib/calculations/healthcare'
 import type { MonteCarloResult } from '@/lib/types'
 import type { MonteCarloEngineParams } from '@/lib/simulation/monteCarlo'
 import { useProfileStore } from '@/stores/useProfileStore'
@@ -86,6 +88,11 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     retirementMitigation: profile.retirementMitigation,
     annualExpenses: profile.annualExpenses,
     expenseAdjustments: profile.expenseAdjustments,
+    financialGoals: profile.financialGoals,
+    existingMonthlyPayment: propertyStore.existingMonthlyPayment,
+    existingMortgageRemainingYears: propertyStore.existingMortgageRemainingYears,
+    mortgageCpfMonthly: propertyStore.mortgageCpfMonthly,
+    ownershipPercent: propertyStore.ownershipPercent,
   }), [
     analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights, analysisPortfolio.skipAccumulation,
     profile.currentAge, profile.retirementAge, profile.lifeExpectancy, profile.expenseRatio, profile.inflation,
@@ -101,6 +108,9 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     profile.cashReserveEnabled, profile.cashReserveMode, profile.cashReserveFixedAmount,
     profile.cashReserveMonths, profile.cashReserveReturn, profile.retirementMitigation,
     profile.annualExpenses, profile.expenseAdjustments,
+    profile.financialGoals,
+    propertyStore.existingMonthlyPayment, propertyStore.existingMortgageRemainingYears,
+    propertyStore.mortgageCpfMonthly, propertyStore.ownershipPercent,
   ])
 
   const mutation = useMutation({
@@ -113,18 +123,182 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
       const annualSavings: number[] = []
       const postRetirementIncome: number[] = []
 
+      // Compute effectiveStartAge once (used for downsizing equity + lump-sum injections)
+      const effectiveStartAge = analysisPortfolio.skipAccumulation
+        ? profile.retirementAge : profile.currentAge
+
+      // Property mortgage (cash portion only, mirrors projection.ts lines 98-99)
+      const ownershipPct = propertyStore.ownershipPercent ?? 1
+      const annualMortgagePayment = propertyStore.ownsProperty
+        ? (propertyStore.existingMonthlyPayment - propertyStore.mortgageCpfMonthly) * 12 * ownershipPct
+        : 0
+      const mortgageEndAge = propertyStore.ownsProperty
+        ? profile.currentAge + Math.ceil(propertyStore.existingMortgageRemainingYears)
+        : 0
+
+      // Compute downsizing equity injection for MC
+      const portfolioAdjustments: { year: number; amount: number }[] = []
+      const ds = propertyStore.downsizing
+      const dsSellAge = ds?.scenario !== 'none' && propertyStore.ownsProperty
+        ? ds.sellAge : null
+
+      // Downsizing ongoing cashflow values (captured from sell/downsize/rent calculations)
+      let dsNewMonthlyPayment = 0
+      let dsAnnualRent = 0
+
+      if (ds && ds.scenario !== 'none' && propertyStore.ownsProperty) {
+        const mcYear = ds.sellAge - effectiveStartAge
+        const nYearsTotal = profile.lifeExpectancy - effectiveStartAge
+        if (mcYear >= 0 && mcYear < nYearsTotal) {
+          const yearsToSell = ds.sellAge - profile.currentAge
+          const outstandingAtSell = outstandingMortgageAtAge(
+            propertyStore.existingMortgageBalance,
+            propertyStore.existingMonthlyPayment,
+            propertyStore.existingMortgageRate,
+            Math.max(0, yearsToSell),
+          )
+
+          let netEquity = 0
+          let shortfall = 0
+          if (ds.scenario === 'sell-and-downsize') {
+            const result = calculateSellAndDownsize({
+              salePrice: ds.expectedSalePrice,
+              outstandingMortgage: outstandingAtSell,
+              newPropertyCost: ds.newPropertyCost,
+              newLtv: ds.newLtv,
+              newMortgageRate: ds.newMortgageRate,
+              newMortgageTerm: ds.newMortgageTerm,
+              residency: propertyStore.residencyForAbsd,
+              propertyCount: 0,
+            })
+            netEquity = result.netEquityToPortfolio
+            shortfall = result.shortfall
+            dsNewMonthlyPayment = result.newMonthlyPayment
+          } else if (ds.scenario === 'sell-and-rent') {
+            const result = calculateSellAndRent({
+              salePrice: ds.expectedSalePrice,
+              outstandingMortgage: outstandingAtSell,
+              monthlyRent: ds.monthlyRent,
+            })
+            netEquity = result.netProceedsToPortfolio
+            shortfall = result.shortfall
+            dsAnnualRent = result.annualRent
+          }
+
+          // Inject net equity or deduct shortfall from portfolio
+          const netAdjustment = netEquity - shortfall
+          if (netAdjustment !== 0) {
+            portfolioAdjustments.push({ year: mcYear, amount: netAdjustment })
+          }
+        }
+      }
+
       if (projectionParams) {
         const { generateIncomeProjection } = await import('@/lib/calculations/income')
         const projection = generateIncomeProjection(projectionParams)
         const annualRentalIncome = getPropertyRentalIncome(propertyStore)
-        const dsSellAge = propertyStore.downsizing?.scenario !== 'none' && propertyStore.ownsProperty
-          ? propertyStore.downsizing.sellAge : null
         for (const row of projection) {
           if (!row.isRetired) {
-            annualSavings.push(row.annualSavings)
+            const year = row.age - profile.currentAge
+            const isSold = dsSellAge !== null && row.age >= dsSellAge
+
+            // Property cashflow (mirrors projection.ts:396-398, 430-456, 464)
+            // CRITICAL: After property sale, cpfOaShortfall must be zeroed because the
+            // income engine continues producing phantom shortfalls for a mortgage that
+            // no longer exists.
+            let mortgageForYear: number
+            let rentalForYear: number
+            let cpfOaShortfallForYear: number
+            let downsizingRentForYear = 0
+
+            if (isSold) {
+              rentalForYear = 0
+              cpfOaShortfallForYear = 0
+              if (ds?.scenario === 'sell-and-downsize') {
+                mortgageForYear = dsNewMonthlyPayment * 12
+              } else if (ds?.scenario === 'sell-and-rent') {
+                mortgageForYear = 0
+                const yearsSinceSell = row.age - dsSellAge!
+                downsizingRentForYear = dsAnnualRent * Math.pow(1 + (ds.rentGrowthRate ?? 0.03), yearsSinceSell)
+              } else {
+                mortgageForYear = 0
+              }
+            } else {
+              rentalForYear = annualRentalIncome
+              mortgageForYear = row.age >= mortgageEndAge ? 0 : annualMortgagePayment
+              cpfOaShortfallForYear = row.cpfOaShortfall
+            }
+
+            const netPropertyCashflow = rentalForYear - mortgageForYear - cpfOaShortfallForYear
+
+            // Extra expenses (mirrors projection.ts:467)
+            const parentSupportExpense = profile.parentSupportEnabled
+              ? calculateParentSupportAtAge(profile.parentSupport, row.age) : 0
+            const healthcareCashOutlay = profile.healthcareConfig?.enabled
+              ? (calculateHealthcareCostAtAge(profile.healthcareConfig, row.age)?.cashOutlay ?? 0) : 0
+            const extraExpenses = parentSupportExpense + healthcareCashOutlay + downsizingRentForYear
+
+            // Income shortfall correction (mirrors projection.ts:470-471)
+            const effectiveBase = getEffectiveExpenses(
+              row.age, profile.annualExpenses, profile.expenseAdjustments ?? [], profile.lifeExpectancy
+            )
+            const baseExpInflated = effectiveBase * Math.pow(1 + profile.inflation, year)
+            const incomeShortfall = Math.max(0, baseExpInflated - row.totalNet)
+
+            // Financial goal deductions (mirrors projection.ts:474-483)
+            let goalDeduction = 0
+            for (const goal of profile.financialGoals ?? []) {
+              const endAge = goal.targetAge + goal.durationYears
+              if (row.age >= goal.targetAge && row.age < endAge) {
+                goalDeduction += goal.inflationAdjusted
+                  ? (goal.amount / goal.durationYears) * Math.pow(1 + profile.inflation, year)
+                  : goal.amount / goal.durationYears
+              }
+            }
+
+            // Adjusted savings (mirrors projection.ts:485)
+            const adjustedSavings = row.annualSavings + netPropertyCashflow
+              - extraExpenses - incomeShortfall - goalDeduction
+            annualSavings.push(adjustedSavings)
+
+            // Lump-sum injections: CPF OA withdrawals + locked asset unlocks (mirrors projection.ts:364-367)
+            if (row.cpfOaWithdrawal > 0 || row.lockedAssetUnlock > 0) {
+              const mcYear = row.age - effectiveStartAge
+              portfolioAdjustments.push({ year: mcYear, amount: row.cpfOaWithdrawal + row.lockedAssetUnlock })
+            }
           } else {
-            const rentalForYear = (dsSellAge !== null && row.age >= dsSellAge) ? 0 : annualRentalIncome
-            postRetirementIncome.push(sumPostRetirementIncome(row, rentalForYear))
+            // Post-retirement: mirrors projection.ts post-retirement handling
+            const isSoldPostRet = dsSellAge !== null && row.age >= dsSellAge
+
+            let rentalForYear: number
+            let mortgageForYear: number
+            let cpfOaShortfallForYear: number
+
+            let downsizingRentForYear = 0
+
+            if (isSoldPostRet) {
+              rentalForYear = 0
+              cpfOaShortfallForYear = 0
+              if (ds?.scenario === 'sell-and-downsize') {
+                mortgageForYear = dsNewMonthlyPayment * 12
+              } else if (ds?.scenario === 'sell-and-rent') {
+                mortgageForYear = 0
+                const yearsSinceSell = row.age - dsSellAge!
+                downsizingRentForYear = dsAnnualRent * Math.pow(1 + (ds.rentGrowthRate ?? 0.03), yearsSinceSell)
+              } else {
+                mortgageForYear = 0
+              }
+            } else {
+              rentalForYear = annualRentalIncome
+              mortgageForYear = row.age >= mortgageEndAge ? 0 : annualMortgagePayment
+              cpfOaShortfallForYear = row.cpfOaShortfall
+            }
+
+            // Subtract mortgage/rent from income — this increases the net withdrawal
+            // from the portfolio, matching projection.ts line 556 behavior
+            const netIncome = sumPostRetirementIncome(row, rentalForYear)
+              - mortgageForYear - cpfOaShortfallForYear - downsizingRentForYear
+            postRetirementIncome.push(netIncome)
           }
         }
       }
@@ -161,60 +335,8 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
         allocation.stdDevOverrides[i] ?? ac.stdDev
       )
 
-      // Compute downsizing equity injection for MC
-      const portfolioAdjustments: { year: number; amount: number }[] = []
-      const ds = propertyStore.downsizing
-      if (ds && ds.scenario !== 'none' && propertyStore.ownsProperty) {
-        const effectiveStartAge = analysisPortfolio.skipAccumulation
-          ? profile.retirementAge : profile.currentAge
-        const mcYear = ds.sellAge - effectiveStartAge
-        const nYearsTotal = profile.lifeExpectancy - effectiveStartAge
-        if (mcYear >= 0 && mcYear < nYearsTotal) {
-          const yearsToSell = ds.sellAge - profile.currentAge
-          const outstandingAtSell = outstandingMortgageAtAge(
-            propertyStore.existingMortgageBalance,
-            propertyStore.existingMonthlyPayment,
-            propertyStore.existingMortgageRate,
-            Math.max(0, yearsToSell),
-          )
-
-          let netEquity = 0
-          let shortfall = 0
-          if (ds.scenario === 'sell-and-downsize') {
-            const result = calculateSellAndDownsize({
-              salePrice: ds.expectedSalePrice,
-              outstandingMortgage: outstandingAtSell,
-              newPropertyCost: ds.newPropertyCost,
-              newLtv: ds.newLtv,
-              newMortgageRate: ds.newMortgageRate,
-              newMortgageTerm: ds.newMortgageTerm,
-              residency: propertyStore.residencyForAbsd,
-              propertyCount: 0,
-            })
-            netEquity = result.netEquityToPortfolio
-            shortfall = result.shortfall
-          } else if (ds.scenario === 'sell-and-rent') {
-            const result = calculateSellAndRent({
-              salePrice: ds.expectedSalePrice,
-              outstandingMortgage: outstandingAtSell,
-              monthlyRent: ds.monthlyRent,
-            })
-            netEquity = result.netProceedsToPortfolio
-            shortfall = result.shortfall
-          }
-
-          // Inject net equity or deduct shortfall from portfolio
-          const netAdjustment = netEquity - shortfall
-          if (netAdjustment !== 0) {
-            portfolioAdjustments.push({ year: mcYear, amount: netAdjustment })
-          }
-        }
-      }
-
       // Convert retirement withdrawals to negative portfolio adjustments
       // Expand durationYears > 1 into multiple year entries
-      const effectiveStartAge = analysisPortfolio.skipAccumulation
-        ? profile.retirementAge : profile.currentAge
       const nYearsTotal = profile.lifeExpectancy - effectiveStartAge
       for (const rw of profile.retirementWithdrawals) {
         for (let d = 0; d < (rw.durationYears ?? 1); d++) {

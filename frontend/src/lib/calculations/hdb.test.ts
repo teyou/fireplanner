@@ -180,4 +180,12 @@ describe('getPropertyRentalIncome', () => {
   it('returns 0 when strategy is not sublet', () => {
     expect(getPropertyRentalIncome({ ...hdbSubletProperty, hdbMonetizationStrategy: 'lbs' })).toBe(0)
   })
+
+  it('applies ownershipPercent to scale rental income', () => {
+    expect(getPropertyRentalIncome({ ...hdbSubletProperty, ownershipPercent: 0.5 })).toBe(12000)
+  })
+
+  it('defaults ownershipPercent to 1 when not provided', () => {
+    expect(getPropertyRentalIncome(hdbSubletProperty)).toBe(24000)
+  })
 })
