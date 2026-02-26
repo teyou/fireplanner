@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -10,33 +10,23 @@ export function MobileShareFab() {
   const dismissedNudges = useUIStore((s) => s.dismissedNudges)
   const dismissNudge = useUIStore((s) => s.dismissNudge)
   const [tooltipOpen, setTooltipOpen] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const nudgeId = 'share-fab-tooltip'
   const alreadyDismissed = dismissedNudges.includes(nudgeId)
 
-  // Show tooltip once on first encounter
+  // Show tooltip on mount until user actively dismisses (tap outside or tap share)
   useEffect(() => {
     if (alreadyDismissed) return
-
     setTooltipOpen(true)
-    timerRef.current = setTimeout(() => {
-      setTooltipOpen(false)
-      dismissNudge(nudgeId)
-    }, 8000)
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [alreadyDismissed, dismissNudge])
+  }, [alreadyDismissed])
 
   const handleDismiss = () => {
     setTooltipOpen(false)
     dismissNudge(nudgeId)
-    if (timerRef.current) clearTimeout(timerRef.current)
   }
 
   const handleShare = async () => {
+    handleDismiss()
     const { url, tooLong } = generateShareUrl()
 
     if (tooLong) {
