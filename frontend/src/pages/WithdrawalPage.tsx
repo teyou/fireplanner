@@ -15,8 +15,10 @@ import { useUIStore } from '@/stores/useUIStore'
 import { cn } from '@/lib/utils'
 import type { WithdrawalStrategyType } from '@/lib/types'
 import { trackEvent } from '@/lib/analytics'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 export function WithdrawalPage() {
+  usePageMeta({ title: 'Withdrawal Strategies — SG FIRE Planner', description: 'Compare 12 retirement withdrawal strategies including the 4% rule, VPW, guardrails, and CAPE-based approaches.' })
   const retirementAge = useProfileStore((s) => s.retirementAge)
   const { portfolioLabel } = useAnalysisPortfolio()
   const selectedStrategies = useWithdrawalStore((s) => s.selectedStrategies)

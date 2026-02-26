@@ -9,6 +9,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { ChevronDown, ChevronUp, CheckCircle2, Circle, ArrowRight, HelpCircle, RefreshCw, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { trackEvent } from '@/lib/analytics'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 // Profile sections
 import { PersonalSection } from '@/components/profile/PersonalSection'
@@ -1185,6 +1186,7 @@ function SectionNudgeWrapper({ sectionId }: { sectionId: SectionId }) {
 // --- Main page component ---
 
 export function InputsPage() {
+  usePageMeta({ title: 'Plan Inputs — SG FIRE Planner', description: 'Configure your income, expenses, CPF, investments, and retirement assumptions for Singapore FIRE planning.' })
   const sectionOrder = useUIStore((s) => s.sectionOrder)
   const cpfEnabled = useUIStore((s) => s.cpfEnabled)
   const propertyEnabled = useUIStore((s) => s.propertyEnabled)
