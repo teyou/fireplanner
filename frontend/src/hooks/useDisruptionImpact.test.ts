@@ -85,8 +85,8 @@ describe('useDisruptionImpact', () => {
     expect(result.current.disruptedMetrics).toBeNull()
   })
 
-  it('DISRUPTION_TEMPLATES has 5 templates', () => {
-    expect(DISRUPTION_TEMPLATES).toHaveLength(5)
+  it('DISRUPTION_TEMPLATES has 8 templates', () => {
+    expect(DISRUPTION_TEMPLATES).toHaveLength(8)
   })
 
   it('each template has required fields', () => {

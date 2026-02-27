@@ -252,10 +252,28 @@ export function useDisruptionImpact(): DisruptionImpactResult {
       }
     }
 
-    // Compute disrupted metrics with modified income
+    // Compute expense impact from template
+    // IMPORTANT (Codex fix #3): Apply lifestyle reduction FIRST (to base expenses only),
+    // THEN add event-specific costs. Otherwise the reduction incorrectly discounts medical costs.
+    let disruptedExpenses = baseInputs.annualExpenses
+    let liquidNWAdjustment = 0
+
+    if (template.expenseReductionPercent) {
+      disruptedExpenses *= (1 - template.expenseReductionPercent)
+    }
+    if (template.additionalAnnualExpense) {
+      disruptedExpenses += template.additionalAnnualExpense
+    }
+    if (template.lumpSumCost) {
+      liquidNWAdjustment -= template.lumpSumCost
+    }
+
+    // Compute disrupted metrics with modified income AND expenses
     const disruptedInputs = {
       ...baseInputs,
       annualIncome: disruptedIncome,
+      annualExpenses: disruptedExpenses,
+      liquidNetWorth: baseInputs.liquidNetWorth + liquidNWAdjustment,
     }
     const disruptedMetrics = computeMetrics(disruptedInputs)
 
