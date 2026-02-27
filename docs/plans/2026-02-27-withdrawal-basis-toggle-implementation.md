@@ -315,11 +315,20 @@ through to the initial withdrawal computation."
 - Modify: `frontend/src/hooks/useProjection.ts:92-93,124,153`
 - Test: `frontend/src/lib/calculations/projection.test.ts`
 
-**Step 1: Write the failing test**
+**Step 1: Write the failing tests**
 
-Add test in `frontend/src/lib/calculations/projection.test.ts` that passes `withdrawalBasis: 'rate'` in ProjectionParams and verifies that:
-- Terminal NW differs from expense-driven mode
-- The `withdrawalAmount` in retirement rows uses the strategy withdrawal, not the expense gap
+Add tests in `frontend/src/lib/calculations/projection.test.ts` that pass `withdrawalBasis: 'rate'` in ProjectionParams:
+
+Test A — Basic rate-driven behavior:
+- Verifies Terminal NW differs from expense-driven mode
+- Verifies `withdrawalAmount` in retirement rows uses the strategy withdrawal, not the expense gap
+
+Test B — High income, low expense scenario in rate mode:
+- Set postRetirementIncome significantly higher than expenses (e.g. $60K income, $30K expenses)
+- In expense mode: surplus $30K would be reinvested, growing the portfolio
+- In rate mode: surplus income is ignored, portfolio draws only the strategy amount
+- Verify that rate-mode Terminal NW is lower than expense-mode Terminal NW for this scenario (because surplus income is not reinvested)
+- This validates that `surplusIncome = 0` in rate mode works correctly
 
 **Step 2: Run test to verify it fails**
 
