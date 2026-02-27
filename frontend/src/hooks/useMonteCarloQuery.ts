@@ -95,6 +95,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     mortgageCpfMonthly: propertyStore.mortgageCpfMonthly,
     ownershipPercent: propertyStore.ownershipPercent,
     withdrawalBasis: simulation.withdrawalBasis,
+    deterministicAccumulation: simulation.deterministicAccumulation,
   }), [
     analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights, analysisPortfolio.skipAccumulation,
     profile.currentAge, profile.retirementAge, profile.lifeExpectancy, profile.expenseRatio, profile.inflation,
@@ -113,7 +114,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     profile.financialGoals,
     propertyStore.existingMonthlyPayment, propertyStore.existingMortgageRemainingYears,
     propertyStore.mortgageCpfMonthly, propertyStore.ownershipPercent,
-    simulation.withdrawalBasis,
+    simulation.withdrawalBasis, simulation.deterministicAccumulation,
   ])
 
   const mutation = useMutation({
@@ -376,6 +377,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
         annualExpensesAtRetirement: getEffectiveExpenses(profile.retirementAge, profile.annualExpenses, profile.expenseAdjustments, profile.lifeExpectancy) * Math.pow(1 + profile.inflation, Math.max(0, profile.retirementAge - profile.currentAge)),
         withdrawalBasis: simulation.withdrawalBasis,
         extractPaths: true,  // Enable representative path extraction for projection table
+        deterministicAccumulation: simulation.deterministicAccumulation,
       }
 
       return runMonteCarloWorker(params)
