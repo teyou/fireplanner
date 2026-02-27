@@ -253,17 +253,42 @@ export function useDisruptionImpact(): DisruptionImpactResult {
     }
 
     // Compute expense impact from template
-    // IMPORTANT (Codex fix #3): Apply lifestyle reduction FIRST (to base expenses only),
-    // THEN add event-specific costs. Otherwise the reduction incorrectly discounts medical costs.
+    // Distinguish permanent vs temporary events using durationYears (not event timing):
+    // - Permanent (durationYears >= 90, e.g. Death of Spouse, Permanent Disability):
+    //   modify annualExpenses → changes FIRE Number + savings rate
+    // - Temporary (durationYears < 90, e.g. Critical Illness 2yr):
+    //   model total cost as wealth shock → FIRE Number unchanged
+    // Using durationYears ensures a 2-year illness at age 64 isn't wrongly treated
+    // as permanent just because it overlaps retirement at 65.
+    const PERMANENT_DURATION_THRESHOLD = 90
+    const clampedEndAge = Math.min(profile.lifeExpectancy, clampedStartAge + template.durationYears)
+    const isPermanentExpenseChange = template.durationYears >= PERMANENT_DURATION_THRESHOLD
+
     let disruptedExpenses = baseInputs.annualExpenses
     let liquidNWAdjustment = 0
 
-    if (template.expenseReductionPercent) {
-      disruptedExpenses *= (1 - template.expenseReductionPercent)
+    if (isPermanentExpenseChange) {
+      // Permanent: modify annualExpenses directly (correctly changes savings rate AND FIRE number)
+      // IMPORTANT (Codex fix #3): Apply lifestyle reduction FIRST (to base expenses only),
+      // THEN add event-specific costs. Otherwise the reduction incorrectly discounts medical costs.
+      if (template.expenseReductionPercent) {
+        disruptedExpenses *= (1 - template.expenseReductionPercent)
+      }
+      if (template.additionalAnnualExpense) {
+        disruptedExpenses += template.additionalAnnualExpense
+      }
+    } else {
+      // Temporary: model total event cost as a wealth shock to liquidNetWorth
+      const eventDuration = clampedEndAge - clampedStartAge
+      if (template.additionalAnnualExpense) {
+        liquidNWAdjustment -= template.additionalAnnualExpense * eventDuration
+      }
+      if (template.expenseReductionPercent) {
+        // Temporary expense reduction = net savings during event period
+        liquidNWAdjustment += baseInputs.annualExpenses * template.expenseReductionPercent * eventDuration
+      }
     }
-    if (template.additionalAnnualExpense) {
-      disruptedExpenses += template.additionalAnnualExpense
-    }
+    // Lump sum is always an immediate wealth shock regardless of duration
     if (template.lumpSumCost) {
       liquidNWAdjustment -= template.lumpSumCost
     }
