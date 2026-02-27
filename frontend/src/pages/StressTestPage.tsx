@@ -71,16 +71,22 @@ function TabIntro({ children }: { children: React.ReactNode }) {
   )
 }
 
-function MonteCarloTab({ isAdvanced }: { isAdvanced: boolean }) {
-  const { mutate, data, isPending, error, canRun, validationErrors, isStale } = useMonteCarloQuery()
+interface MonteCarloTabProps {
+  isAdvanced: boolean
+  mutate: () => void
+  data: import('@/lib/types').MonteCarloResult | undefined
+  isPending: boolean
+  error: Error | null
+  canRun: boolean
+  validationErrors: Record<string, string>
+  isStale: boolean
+}
+
+function MonteCarloTab({
+  isAdvanced, mutate, data, isPending, error, canRun, validationErrors, isStale,
+}: MonteCarloTabProps) {
   const retirementAge = useProfileStore((s) => s.retirementAge)
   const selectedStrategy = useSimulationStore((s) => s.selectedStrategy)
-  const setSimField = useSimulationStore((s) => s.setField)
-
-  // Persist last MC success rate
-  useEffect(() => {
-    if (data) setSimField('lastMCSuccessRate', data.success_rate)
-  }, [data, setSimField])
 
   const mcInterpretation = data ? (() => {
     const rate = data.success_rate
@@ -549,6 +555,13 @@ export function StressTestPage() {
   const stressNudge = useSectionNudge('section-stress-test')
   const setSectionMode = useUIStore((s) => s.setSectionMode)
   const isStressAdvanced = stressMode === 'advanced'
+  const mc = useMonteCarloQuery()
+  const setSimField = useSimulationStore((s) => s.setField)
+
+  // Persist last MC success rate (lifted from MonteCarloTab so it updates even when tab is inactive)
+  useEffect(() => {
+    if (mc.data) setSimField('lastMCSuccessRate', mc.data.success_rate)
+  }, [mc.data, setSimField])
 
   return (
     <div className="space-y-6">
@@ -605,7 +618,16 @@ export function StressTestPage() {
         </TabsList>
 
         <TabsContent value="monte-carlo">
-          <MonteCarloTab isAdvanced={isStressAdvanced} />
+          <MonteCarloTab
+            isAdvanced={isStressAdvanced}
+            mutate={mc.mutate}
+            data={mc.data}
+            isPending={mc.isPending}
+            error={mc.error}
+            canRun={mc.canRun}
+            validationErrors={mc.validationErrors}
+            isStale={mc.isStale}
+          />
         </TabsContent>
 
         {isStressAdvanced && (
