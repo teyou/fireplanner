@@ -145,7 +145,7 @@ function MonteCarloTab({ isAdvanced }: { isAdvanced: boolean }) {
           )}
           <ResultsSummary result={data} />
           {data.spending_metrics && (
-            <SpendingMetricsPanel metrics={data.spending_metrics} nSimulations={data.n_simulations} />
+            <SpendingMetricsPanel metrics={data.spending_metrics} nSimulations={data.n_simulations} strategy={selectedStrategy} />
           )}
           <FanChart bands={data.percentile_bands} retirementAge={retirementAge} />
           {isAdvanced && data.histogram_snapshots && data.histogram_snapshots.length > 0 && (

@@ -3,9 +3,13 @@ import { InfoTooltip } from '@/components/shared/InfoTooltip'
 import type { SpendingMetrics } from '@/lib/types'
 import { formatPercent } from '@/lib/utils'
 
+/** Strategies with fixed (inflation-only) spending where volatility metrics are meaningless. */
+const FIXED_SPENDING_STRATEGIES = new Set(['constant_dollar'])
+
 interface SpendingMetricsPanelProps {
   metrics: SpendingMetrics
   nSimulations: number
+  strategy?: string
 }
 
 function metricColor(value: number, invert = false): string {
@@ -15,31 +19,39 @@ function metricColor(value: number, invert = false): string {
   return 'text-red-600'
 }
 
-export function SpendingMetricsPanel({ metrics, nSimulations }: SpendingMetricsPanelProps) {
+export function SpendingMetricsPanel({ metrics, nSimulations, strategy }: SpendingMetricsPanelProps) {
   const count = (frac: number) => Math.round(frac * nSimulations).toLocaleString()
+  const isFixedSpending = FIXED_SPENDING_STRATEGIES.has(strategy ?? '')
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          Spending & Portfolio Metrics
-          <InfoTooltip text="Additional insights from the simulation: how stable is your spending, and how does your portfolio end up across scenarios?" />
+          {isFixedSpending ? 'Portfolio Metrics' : 'Spending & Portfolio Metrics'}
+          <InfoTooltip text={isFixedSpending
+            ? 'How does your portfolio end up across scenarios?'
+            : 'Additional insights from the simulation: how stable is your spending, and how does your portfolio end up across scenarios?'
+          } />
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <MetricCard
-            label="Volatile Spending"
-            value={formatPercent(metrics.volatileSpending, 1)}
-            color={metricColor(metrics.volatileSpending)}
-            description={`${count(metrics.volatileSpending)} of ${nSimulations.toLocaleString()} sims had a year with >25% spending change`}
-          />
-          <MetricCard
-            label="Low Spending Risk"
-            value={formatPercent(metrics.smallSpending, 1)}
-            color={metricColor(metrics.smallSpending)}
-            description={`${count(metrics.smallSpending)} sims had spending drop below 50% of initial`}
-          />
+        <div className={`grid grid-cols-2 ${isFixedSpending ? '' : 'md:grid-cols-4'} gap-4`}>
+          {!isFixedSpending && (
+            <>
+              <MetricCard
+                label="Volatile Spending"
+                value={formatPercent(metrics.volatileSpending, 1)}
+                color={metricColor(metrics.volatileSpending)}
+                description={`${count(metrics.volatileSpending)} of ${nSimulations.toLocaleString()} sims had a year with >25% spending change`}
+              />
+              <MetricCard
+                label="Low Spending Risk"
+                value={formatPercent(metrics.smallSpending, 1)}
+                color={metricColor(metrics.smallSpending)}
+                description={`${count(metrics.smallSpending)} sims had spending drop below 50% of initial`}
+              />
+            </>
+          )}
           <MetricCard
             label="Large End Portfolio"
             value={formatPercent(metrics.largeEndPortfolio, 1)}
