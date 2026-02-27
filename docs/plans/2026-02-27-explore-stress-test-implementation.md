@@ -277,24 +277,34 @@ Change `version: 5` to `version: 6` and add migration case:
 
 ### Step 3: Add migration test
 
-If `src/stores/useSimulationStore.test.ts` exists, add a test verifying the v5→v6 migration:
+If `src/stores/useSimulationStore.test.ts` exists, add a test verifying the v5→v6 migration. The store's `migrate` function is not directly exported, so test via the store's rehydration behavior:
 
 ```typescript
 it('v5 → v6 migration adds deterministicAccumulation: false', () => {
-  const v5State = {
-    mcMethod: 'parametric',
-    selectedStrategy: 'constant_dollar',
-    strategyParams: DEFAULT_STRATEGY_PARAMS,
-    nSimulations: 10000,
-    analysisMode: 'myPlan',
-    withdrawalBasis: 'expenses',
-    lastMCSuccessRate: null,
-    lastBacktestSuccessRate: null,
+  // Simulate v5 persisted state (no deterministicAccumulation field)
+  // Note: DEFAULT_STRATEGY_PARAMS is file-local; use inline or get from store defaults
+  const v5Persisted = {
+    state: {
+      mcMethod: 'parametric',
+      selectedStrategy: 'constant_dollar',
+      strategyParams: { constant_dollar: { swr: 0.04 } },
+      nSimulations: 10000,
+      analysisMode: 'myPlan',
+      withdrawalBasis: 'expenses',
+      lastMCSuccessRate: null,
+      lastBacktestSuccessRate: null,
+    },
+    version: 5,
   }
-  // Simulate migration by calling the migrate function with version 5
-  // The store's migrate function should add deterministicAccumulation
-  expect(v5State).not.toHaveProperty('deterministicAccumulation')
-  // After store hydration, the field should default to false
+  // Write v5 state to localStorage as if it were persisted
+  localStorage.setItem('fireplanner-simulation', JSON.stringify(v5Persisted))
+
+  // Re-import store to trigger rehydration + migration
+  // (or call useSimulationStore.persist.rehydrate() if available)
+  useSimulationStore.persist.rehydrate()
+
+  // After migration, deterministicAccumulation should be false
+  expect(useSimulationStore.getState().deterministicAccumulation).toBe(false)
 })
 ```
 
@@ -662,7 +672,15 @@ In `src/components/simulation/SimulationControls.tsx`, add a new toggle in the s
 </div>
 ```
 
-Import `ToggleGroup` and `ToggleGroupItem` from `@/components/ui/toggle-group`. Import `Info` from lucide-react. Read profile from `useProfileStore()`.
+**Required imports:**
+- `ToggleGroup`, `ToggleGroupItem` from `@/components/ui/toggle-group`
+- `Tooltip`, `TooltipTrigger`, `TooltipContent` from `@/components/ui/tooltip`
+- `Label` from `@/components/ui/label`
+- `Info` from `lucide-react`
+- `useProfileStore` from `@/stores/useProfileStore`
+- `useSimulationStore` from `@/stores/useSimulationStore`
+
+Check which of these are already imported in `SimulationControls.tsx` before adding duplicates.
 
 ### Step 3: Add cross-link to Explore in MC results area
 
@@ -748,10 +766,14 @@ export function useExplorePortfolio(): ExplorePortfolioResult {
   return useMemo(() => {
     if (balanceMode === 'fireTarget') {
       const fireNumber = metrics?.fireNumber ?? 0
-      // Guard: fireAge can be Infinity when savings rate is insufficient
-      // (yearsToFire = Infinity → fireAge = currentAge + Infinity). Fall back to retirementAge.
+      // Guard: fireAge can be Infinity (insufficient savings) or fractional (yearsToFire
+      // is a float). MC engine needs integer ages for array lengths.
+      // Clamp to [currentAge, lifeExpectancy] to prevent negative array lengths or
+      // "simulation starts in the past" behavior.
       const rawFireAge = metrics?.fireAge ?? profile.retirementAge
-      const fireAge = isFinite(rawFireAge) ? rawFireAge : profile.retirementAge
+      const fireAge = isFinite(rawFireAge)
+        ? Math.min(profile.lifeExpectancy, Math.max(profile.currentAge, Math.round(rawFireAge)))
+        : profile.retirementAge
 
       // Use retirement-age weights for decumulation
       const retirementWeights = getExploreWeights(allocation, profile.retirementAge)
@@ -835,7 +857,7 @@ Import `X` from lucide-react.
 
 **MC Simulation tab content** — Wire `useExplorePortfolio` for the balance toggle, run decumulation-only MC, render result components (success rate, fan chart, failure distribution).
 
-**Important: MC param building is complex.** The current `useMonteCarloQuery` (lines 125-381) handles ~15 concerns: income projection, property downsizing, mortgage cashflows, cash reserve, retirement withdrawals, goal deductions, CPF OA withdrawals, post-retirement income, etc. The Explore MC needs a subset of this (post-retirement income, retirement withdrawals, goal deductions during retirement) but NOT pre-retirement concerns (savings, mortgage, income).
+**Important: Explore MC uses simplified params.** The Stress Test `useMonteCarloQuery` (lines 125-381) handles ~15 concerns (income projection, property, mortgage, cash reserve, etc.). The Explore MC intentionally skips ALL of these. It is a pure decumulation test: portfolio + expenses + strategy + market returns. No income streams, no property cashflows, no goals, no retirement withdrawals. The educational banner sets this expectation.
 
 **Required outputs** (per design doc Section 2):
 1. Success rate, median/5th/95th terminal wealth
@@ -846,24 +868,49 @@ Import `X` from lucide-react.
 
 All of these are already produced by `runMonteCarlo` and displayed on the Stress Test page. Reuse the same result display components.
 
-**Approach:** Extract the post-retirement param-building logic from `useMonteCarloQuery` into a shared helper `buildPostRetirementParams()` that both pages can call. The Explore MC tab calls it with `startAge` from `useExplorePortfolio`, zero annual savings, and the shared post-retirement income/adjustments.
+**Approach: Build simple decumulation-only params directly.** The Explore MC does NOT reuse `useMonteCarloQuery` — that hook's ~250-line param builder is deeply coupled to `profile.retirementAge` for income projection, mortgage cashflows, expense inflation, and post-retirement income partitioning. Overriding a few fields isn't sufficient when `fireAge !== retirementAge`.
 
-Alternatively, for the initial implementation: the Explore MC can call `useMonteCarloQuery` but override `currentAge = startAge`, `initialPortfolio`, `annualSavings = []`, and `skipAccumulation = true` via the `useExplorePortfolio` result. This works because `useMonteCarloQuery` already supports `skipAccumulation` mode (it was the old FIRE Target behavior). **This is the recommended approach** since it reuses all existing param logic without extraction.
-
-To make this work: add an optional `portfolioOverride` param to `useMonteCarloQuery`:
+Instead, the Explore MC tab builds its own minimal `MonteCarloEngineParams` and calls `runMonteCarloWorker` directly via `useMutation`. This matches the design intent: "simplified decumulation-only model."
 
 ```typescript
-interface MCQueryOverrides {
-  initialPortfolio: number
-  allocationWeights: number[]
-  startAge: number        // overrides currentAge when skipAccumulation is true
-  skipAccumulation: true
+// In the Explore MC tab component
+const explore = useExplorePortfolio()
+const simulation = useSimulationStore()
+const profile = useProfileStore()
+const allocation = useAllocationStore()
+
+const params: MonteCarloEngineParams = {
+  initialPortfolio: explore.initialPortfolio,
+  allocationWeights: explore.allocationWeights,
+  expectedReturns: ASSET_CLASSES.map((ac, i) => allocation.returnOverrides[i] ?? ac.expectedReturn),
+  stdDevs: ASSET_CLASSES.map((ac, i) => allocation.stdDevOverrides[i] ?? ac.stdDev),
+  correlationMatrix: CORRELATION_MATRIX,
+  currentAge: explore.startAge,          // same as retirementAge → nYearsAccum = 0
+  retirementAge: explore.startAge,       // forces pure decumulation
+  lifeExpectancy: profile.lifeExpectancy,
+  annualSavings: [],                     // no accumulation
+  postRetirementIncome: Array(profile.lifeExpectancy - explore.startAge).fill(0),
+  method: simulation.mcMethod,
+  nSimulations: simulation.nSimulations,
+  withdrawalStrategy: simulation.selectedStrategy,
+  strategyParams: flattenStrategyParams(simulation.selectedStrategy, simulation.strategyParams),
+  expenseRatio: profile.expenseRatio,
+  inflation: profile.inflation,
+  annualExpensesAtRetirement: getEffectiveExpenses(
+    explore.startAge, profile.annualExpenses, profile.expenseAdjustments, profile.lifeExpectancy
+  ) * Math.pow(1 + profile.inflation, Math.max(0, explore.startAge - profile.currentAge)),
+  withdrawalBasis: simulation.withdrawalBasis,
+  extractPaths: true,
 }
 ```
 
-When `overrides` is provided, the hook uses `overrides.initialPortfolio` instead of `analysisPortfolio.initialPortfolio`, `overrides.startAge` instead of `profile.retirementAge` for the skip-accumulation start age (line 362), and `overrides.allocationWeights` for allocation. This is critical for the FIRE Target scenario on Explore, where `startAge = fireAge` which may differ from `retirementAge`.
+Key differences from Stress Test MC:
+- No income projection, no property downsizing, no mortgage cashflows, no cash reserve
+- `postRetirementIncome` is zero (no income streams in simplified model)
+- `annualExpensesAtRetirement` inflated to `startAge` (not `retirementAge`)
+- No `portfolioAdjustments` (no CPF, goals, or retirement withdrawals)
 
-The Explore page calls: `useMonteCarloQuery({ initialPortfolio, allocationWeights, startAge, skipAccumulation: true })` with values from `useExplorePortfolio()`.
+The Explore MC manages its own staleness by comparing a JSON signature of `explore.initialPortfolio`, `explore.startAge`, `explore.balanceMode`, plus the shared simulation settings.
 
 ### Step 3: Remove AnalysisModeToggle from WithdrawalPage
 
@@ -927,7 +974,8 @@ After all tasks are complete:
 | `fireAge` can be `Infinity` when savings rate is insufficient | `useExplorePortfolio` guards with `isFinite()`, falls back to `retirementAge` |
 | `useAnalysisPortfolio.test.ts` has fireTarget tests that will fail | Task 5 Step 3 removes/rewrites these tests |
 | `useWithdrawalComparison.test.ts` has fireTarget test that will fail | Task 5b Step 2 rewrites the test |
-| Explore MC may drift from Stress Test MC param logic | Task 8 reuses `useMonteCarloQuery` with portfolio override instead of building params from scratch |
+| Explore MC results differ from Stress Test for same inputs | By design: Explore uses simplified decumulation-only params (no income, property, mortgage). Stress Test uses full lifecycle. Educational banner explains this. |
+| `fireAge` is fractional | `useExplorePortfolio` applies `Math.round()` after `isFinite()` guard |
 
 ## Codex Review Findings (Addressed)
 
@@ -943,3 +991,18 @@ All 10 findings from the Codex implementation review have been incorporated:
 8. Line number mismatch: corrected Task 3 file range to include migration lines 118-148
 9. Missing test updates: added test update steps to Tasks 3, 5, and 5b
 10. Parallelism: Task 6 now independent; Task 5b added as dependency for Task 8
+
+### Round 3 fixes (4 additional)
+11. Override both `currentAge` AND `retirementAge` for Explore MC to force `nYearsAccum=0`
+12. Rewrite migration test to actually call `persist.rehydrate()` and assert output
+13. Include override fields in staleness signature for Explore page
+14. List all required imports (Tooltip, Label, etc.) for Task 7 toggle snippet
+
+### Round 4 fixes (3 additional)
+15. `fireAge` can be fractional: added `Math.round()` in `useExplorePortfolio`
+16. Explore MC builds simple params directly instead of reusing `useMonteCarloQuery` (deep coupling to `profile.retirementAge` makes overrides insufficient)
+17. Migration test uses inline strategy params instead of non-exported `DEFAULT_STRATEGY_PARAMS`
+
+### Round 5 fixes (2 additional)
+18. Clamp `fireAge` to `[currentAge, lifeExpectancy]` after rounding to prevent negative array lengths
+19. Remove contradictory text about Explore MC needing post-retirement income/goals (it's pure decumulation)
