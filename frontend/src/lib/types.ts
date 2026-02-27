@@ -10,6 +10,7 @@ export type SalaryModel = 'simple' | 'realistic' | 'data-driven'
 export type RebalanceFrequency = 'annual' | 'semi-annual' | 'quarterly'
 export type FireNumberBasis = 'today' | 'retirement' | 'fireAge'
 export type AnalysisMode = 'myPlan' | 'fireTarget'
+export type WithdrawalBasis = 'expenses' | 'rate'
 export type IncomeStreamType = 'employment' | 'rental' | 'investment' | 'business' | 'government'
 export type GrowthModel = 'fixed' | 'inflation-linked' | 'none'
 export type TaxTreatment = 'taxable' | 'tax-exempt' | 'cpf' | 'srs'
@@ -674,6 +675,7 @@ export interface SimulationState {
   strategyParams: StrategyParamsMap
   nSimulations: number
   analysisMode: AnalysisMode
+  withdrawalBasis: WithdrawalBasis
   lastMCSuccessRate: number | null
   lastBacktestSuccessRate: number | null
   validationErrors: ValidationErrors

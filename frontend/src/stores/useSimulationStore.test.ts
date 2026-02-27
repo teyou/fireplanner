@@ -133,5 +133,36 @@ describe('useSimulationStore', () => {
       expect(params.percent_of_portfolio).toEqual({ rate: 0.04 })
       expect(params.endowment).toEqual({ swr: 0.04, smoothingWeight: 0.70 })
     })
+
+    it('v4→v5: adds withdrawalBasis field defaulting to expenses', () => {
+      const { migrate } = useSimulationStore.persist.getOptions()
+      const oldState: Record<string, unknown> = {
+        mcMethod: 'parametric',
+        selectedStrategy: 'constant_dollar',
+        strategyParams: { constant_dollar: { swr: 0.04 } },
+        nSimulations: 10000,
+        analysisMode: 'myPlan',
+        lastMCSuccessRate: null,
+        lastBacktestSuccessRate: null,
+      }
+      const migrated = migrate!(oldState, 4) as unknown as Record<string, unknown>
+      expect(migrated.withdrawalBasis).toBe('expenses')
+    })
+
+    it('v4→v5: preserves existing withdrawalBasis if already set', () => {
+      const { migrate } = useSimulationStore.persist.getOptions()
+      const oldState: Record<string, unknown> = {
+        mcMethod: 'parametric',
+        selectedStrategy: 'constant_dollar',
+        strategyParams: { constant_dollar: { swr: 0.04 } },
+        nSimulations: 10000,
+        analysisMode: 'myPlan',
+        lastMCSuccessRate: null,
+        lastBacktestSuccessRate: null,
+        withdrawalBasis: 'rate',
+      }
+      const migrated = migrate!(oldState, 4) as unknown as Record<string, unknown>
+      expect(migrated.withdrawalBasis).toBe('rate')
+    })
   })
 })
