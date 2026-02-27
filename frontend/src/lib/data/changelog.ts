@@ -16,8 +16,10 @@ export const CHANGELOG: ChangelogEntry[] = [
     category: 'feature' as const,
     title: 'Withdrawal Basis Toggle',
     description:
-      'New toggle on all simulation and projection pages: choose between "My Expenses" (withdrawals match your planned spending) or "Custom Rate" (withdrawals based on portfolio × strategy rate, e.g. the 4% rule). Previously, changing SWR had no effect on results when expenses were set.',
+      'New toggle on all simulation and projection pages: choose between "My Expenses" (withdrawals match your planned spending) or "Custom Rate" (withdrawals based on portfolio × strategy rate, e.g. the 4% rule). Previously, changing SWR had no effect on results when expenses were set. A contextual hint nudges you to switch modes when adjusting rate-based strategy parameters in expense mode.',
     affectedSections: ['section-stress-test', 'section-projection'],
+    insight:
+      'In "Custom Rate" mode, a 3.9% SWR on a $5M portfolio withdraws ~$201K/year. In "My Expenses" mode, your actual planned spending (e.g. ~$99K/year) drives the withdrawal. The same portfolio can show 93.8% vs 100% success rate depending on which basis you use.',
   },
   {
     date: '2026-02-27',
