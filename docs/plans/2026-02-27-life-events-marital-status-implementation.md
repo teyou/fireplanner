@@ -10,6 +10,8 @@
 
 **Design doc:** `docs/plans/2026-02-27-life-events-marital-status-design.md`
 
+**Codex review:** Applied 2026-02-27. Fixed: endAge clamping for permanent events (#1 Critical), expense operation order (#3 High), Zod schema parity (#5 Medium), explicit category field (#6 Low), unused imports (#7 Low), citation names (#8 Medium). Known limitations documented: single-year snapshot for disruption math (#2 High), lump sum timing (#4 Medium).
+
 ---
 
 ## Task 1: Expand MaritalStatus type and UI
@@ -138,11 +140,12 @@ export interface LifeEvent {
 
 **Step 4: Extend DisruptionTemplate interface**
 
-In `frontend/src/hooks/useDisruptionImpact.ts:14-19`, add probability and expense fields:
+In `frontend/src/hooks/useDisruptionImpact.ts:14-19`, add probability, expense, and category fields:
 
 ```typescript
 export interface DisruptionTemplate {
   label: string
+  category: 'career' | 'health' | 'family'
   event: Omit<LifeEvent, 'id' | 'startAge' | 'endAge' | 'affectedStreamIds'>
   defaultAgeOffset: number
   durationYears: number
@@ -155,6 +158,16 @@ export interface DisruptionTemplate {
   lumpSumCost?: number
   expenseReductionPercent?: number
 }
+```
+
+**Step 4b: Update Zod schema for LifeEvent expense fields**
+
+In `frontend/src/lib/validation/schemas.ts`, find the existing `lifeEventSchema` and add optional expense fields:
+
+```typescript
+additionalAnnualExpense: z.number().min(0).optional(),
+lumpSumCost: z.number().min(0).optional(),
+expenseReductionPercent: z.number().min(0).max(1).optional(),
 ```
 
 **Step 5: Run test to verify it passes**
@@ -194,63 +207,76 @@ In `frontend/src/hooks/useDisruptionImpact.ts`, add after the existing 5 templat
 ```typescript
 {
   label: 'Death of Spouse',
+  category: 'family',
   defaultAgeOffset: 15,
-  durationYears: 99, // permanent — endAge will be clamped to lifeExpectancy
+  durationYears: 99, // permanent — endAge MUST be clamped to lifeExpectancy (see Codex fix #1)
   event: { name: 'Death of Spouse', incomeImpact: 0.5, savingsPause: false, cpfPause: false },
   probability: 0.03,
   probabilityByAge: 55,
-  probabilitySource: 'Singapore DOS Life Tables 2023',
+  probabilitySource: 'SingStat Complete Life Tables 2023',
   additionalAnnualExpense: 0,
   lumpSumCost: 15000,
   expenseReductionPercent: 0.15,
 },
 {
   label: 'Critical Illness',
+  category: 'health',
   defaultAgeOffset: 15,
   durationYears: 2,
   event: { name: 'Critical Illness', incomeImpact: 0, savingsPause: true, cpfPause: true },
   probability: 0.25,
   probabilityByAge: 65,
-  probabilitySource: 'Singapore Life Insurance Association',
+  probabilitySource: 'LIA Singapore Protection Gap Study 2022',
   additionalAnnualExpense: 50000,
   lumpSumCost: 20000,
   expenseReductionPercent: 0,
 },
 {
   label: 'Permanent Disability',
+  category: 'health',
   defaultAgeOffset: 15,
-  durationYears: 99, // permanent
+  durationYears: 99, // permanent — endAge MUST be clamped to lifeExpectancy
   event: { name: 'Permanent Disability', incomeImpact: 0, savingsPause: true, cpfPause: true },
   probability: 0.05,
   probabilityByAge: 65,
-  probabilitySource: 'MOH disability prevalence data',
+  probabilitySource: 'MOH Principal Causes of Death & Disability Reports',
   additionalAnnualExpense: 30000,
   lumpSumCost: 0,
   expenseReductionPercent: 0,
 },
 ```
 
-Note: `durationYears: 99` for permanent events. The hook clamps `endAge = clampedStartAge + template.durationYears` but this is fine because the projection engine stops at `lifeExpectancy`.
+**IMPORTANT (Codex fix #1 — Critical):** `durationYears: 99` for permanent events causes `endAge > lifeExpectancy`, which cross-store validation in `rules.ts` rejects. The `handleAddToPlan` function and the hook's event creation MUST clamp: `endAge = Math.min(lifeExpectancy, startAge + durationYears)`. See Task 5 for the clamped implementation.
 
-**Step 2: Add probability metadata to existing templates**
+**Step 2: Add category and probability metadata to existing templates**
 
-Update the 5 existing templates to include probability where applicable:
+Add `category` field to ALL existing templates (Codex fix #6), and probability where applicable:
 
 ```typescript
-// Recession Pay Cut — add:
-probability: 0.15,
-probabilityByAge: 0, // "per recession" not "by age X"
-probabilitySource: 'MOM Labour Market Report',
-```
-
-For Job Loss (6 months) and Job Loss (12 months):
-```typescript
+// Job Loss (6 months) — add:
+category: 'career',
 probability: 0.15,
 probabilityByAge: 0,
-probabilitySource: 'MOM retrenchment statistics',
-```
+probabilitySource: 'MOM Retrenchment Statistics 2024',
 
-Leave Parent Care and Partial Disability without probability (already defined as custom scenarios).
+// Job Loss (12 months) — add:
+category: 'career',
+probability: 0.15,
+probabilityByAge: 0,
+probabilitySource: 'MOM Retrenchment Statistics 2024',
+
+// Partial Disability — add:
+category: 'health',
+
+// Parent Care — add:
+category: 'career',
+
+// Recession Pay Cut — add:
+category: 'career',
+probability: 0.15,
+probabilityByAge: 0,
+probabilitySource: 'MOM Labour Market Report 2024',
+```
 
 **Step 3: Run type-check**
 
@@ -282,14 +308,16 @@ In the `useMemo` block of `useDisruptionImpact`, after computing `disruptedIncom
 // After the existing disruptedIncome computation (around line 192-197):
 
 // Compute expense impact from template
+// IMPORTANT (Codex fix #3): Apply lifestyle reduction FIRST (to base expenses only),
+// THEN add event-specific costs. Otherwise the reduction incorrectly discounts medical costs.
 let disruptedExpenses = baseInputs.annualExpenses
 let liquidNWAdjustment = 0
 
-if (template.additionalAnnualExpense) {
-  disruptedExpenses += template.additionalAnnualExpense
-}
 if (template.expenseReductionPercent) {
   disruptedExpenses *= (1 - template.expenseReductionPercent)
+}
+if (template.additionalAnnualExpense) {
+  disruptedExpenses += template.additionalAnnualExpense
 }
 if (template.lumpSumCost) {
   liquidNWAdjustment -= template.lumpSumCost
@@ -335,7 +363,6 @@ git commit -m "feat: compute expense and lump sum impacts in disruption analysis
 Create `frontend/src/components/stressTest/LifeEventsTab.tsx`:
 
 ```tsx
-import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
@@ -377,15 +404,9 @@ function ProbabilityBadge({ probability, byAge }: { probability?: number; byAge?
   )
 }
 
+// Codex fix #6: Use explicit category field from DisruptionTemplate instead of brittle string matching
 const CATEGORY_ORDER = ['career', 'health', 'family'] as const
 type Category = typeof CATEGORY_ORDER[number]
-
-function getCategory(label: string): Category {
-  if (['Job Loss', 'Recession', 'Parent Care'].some(k => label.includes(k))) return 'career'
-  if (['Illness', 'Disability', 'Partial'].some(k => label.includes(k))) return 'health'
-  if (['Spouse', 'Death'].some(k => label.includes(k))) return 'family'
-  return 'career'
-}
 
 const CATEGORY_LABELS: Record<Category, string> = {
   career: 'Career & Income',
@@ -414,10 +435,13 @@ export function LifeEventsTab() {
   const atEventLimit = lifeEventsCount >= MAX_EVENTS
   const selectedTemplate = selectedIndex !== null ? DISRUPTION_TEMPLATES[selectedIndex] : null
 
+  // Codex fix #1 (Critical): Clamp endAge to lifeExpectancy to pass cross-store validation
+  const lifeExpectancy = profile.lifeExpectancy
+
   const handleAddToPlan = () => {
     if (!selectedTemplate || atEventLimit) return
     const clampedStartAge = Math.max(currentAge + 1, startAge)
-    const endAge = clampedStartAge + selectedTemplate.durationYears
+    const endAge = Math.min(lifeExpectancy, clampedStartAge + selectedTemplate.durationYears)
     const id = `event-${crypto.randomUUID()}`
 
     income.addLifeEvent({
@@ -444,7 +468,7 @@ export function LifeEventsTab() {
   const grouped = CATEGORY_ORDER.map(cat => ({
     category: cat,
     label: CATEGORY_LABELS[cat],
-    templates: DISRUPTION_TEMPLATES.map((t, i) => ({ ...t, index: i })).filter(t => getCategory(t.label) === cat),
+    templates: DISRUPTION_TEMPLATES.map((t, i) => ({ ...t, index: i })).filter(t => t.category === cat),
   })).filter(g => g.templates.length > 0)
 
   return (
@@ -687,9 +711,10 @@ git commit -m "feat: add Life Events stress test tab with 8 scenarios and probab
 ## What Could Break
 
 1. **Store migration**: MaritalStatus expansion is backward-compatible (existing 'single'/'married' values remain valid). No store version bump needed.
-2. **Expense impact accuracy**: The `computeMetrics` approach uses a simplified single-year snapshot. Lump sum costs are approximated as immediate portfolio reductions. This is directionally correct but not as precise as running a full multi-year projection. Acceptable for stress test context.
-3. **Permanent events** (durationYears: 99): The `endAge` will be `startAge + 99` which exceeds lifeExpectancy. The projection engine naturally stops at lifeExpectancy, so this works. Verify in smoke test.
+2. **Expense impact accuracy** (Codex #2 High, #4 Medium — accepted limitation): The `computeMetrics` approach uses a simplified single-year snapshot. Disruption trigger age timing and lump sum timing are approximated. This matches the existing WhatIfPanel behavior and is directionally correct for stress test context. Full multi-year projection comparison is a future enhancement.
+3. **Permanent events** (durationYears: 99): Fixed per Codex #1 Critical. `endAge` is now clamped to `Math.min(lifeExpectancy, startAge + durationYears)` to pass cross-store validation in `rules.ts`.
 4. **DeltaBadge shared component**: Both WhatIfPanel and LifeEventsTab define their own DeltaBadge. Consider extracting to shared component if a third consumer appears (YAGNI for now).
+5. **Zod schema parity** (Codex #5 Medium): New optional LifeEvent fields must be added to the Zod schema in schemas.ts to maintain runtime validation parity with the TypeScript interface.
 
 ## Future Enhancements (Not In Scope)
 
