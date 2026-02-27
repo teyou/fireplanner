@@ -263,11 +263,17 @@ const simulation = useSimulationStore()
 const buildParams = useCallback((): BacktestEngineParams => ({
   // ... existing fields ...
   withdrawalBasis: simulation.withdrawalBasis,
+  annualExpensesAtRetirement: getEffectiveExpenses(
+    profile.retirementAge, profile.annualExpenses,
+    profile.expenseAdjustments, profile.lifeExpectancy,
+  ) * Math.pow(1 + profile.inflation, Math.max(0, profile.retirementAge - profile.currentAge)),
 }), [/* ... existing deps ..., simulation.withdrawalBasis */])
 ```
 
-Import `useSimulationStore` if not already imported. Without this, drill-down charts won't
-match base backtest results after toggle changes.
+Import `useSimulationStore`, `getEffectiveExpenses`, and ensure `profile` fields are in deps.
+Both `withdrawalBasis` AND `annualExpensesAtRetirement` must be present: without the latter,
+expense-mode drill-down uses the `portfolio * swr` fallback (expenses = 0) while the base
+backtest uses actual expenses, producing divergent results.
 
 **Step 6: Address heatmap semantics**
 
@@ -628,14 +634,21 @@ In `SimulationControls.tsx`, in the `StrategyParams` component, detect when the 
 const withdrawalBasis = useSimulationStore((s) => s.withdrawalBasis)
 const [showHint, setShowHint] = useState(false)
 
-// Only show hint for strategies where the toggle has a meaningful effect.
-// Dynamic strategies (VPW, one_over_n, hebeler_autopilot) compute withdrawals
-// from portfolio size / remaining years, so the toggle has little/no impact.
-const EXPENSE_ANCHORED_FIELDS = new Set(['swr', 'initialRate', 'targetRate', 'rate', 'baseRate'])
+// Only show hint for strategy + field combos where the toggle materially changes behavior.
+// These are strategies whose initial withdrawal amount is set by portfolio × rate:
+//   constant_dollar.swr, guardrails.initialRate, vanguard_dynamic.swr
+// Other strategies (VPW, floor_ceiling, cape_based, etc.) compute withdrawals dynamically
+// from portfolio size, remaining years, or CAPE ratio — the toggle has minimal effect.
+const HINT_TRIGGER: Record<string, Set<string>> = {
+  constant_dollar: new Set(['swr']),
+  guardrails: new Set(['initialRate']),
+  vanguard_dynamic: new Set(['swr']),
+}
 
 const setParam = (field: string, value: number) => {
   // existing logic...
-  if (withdrawalBasis === 'expenses' && EXPENSE_ANCHORED_FIELDS.has(field)) {
+  const triggers = HINT_TRIGGER[strategy]
+  if (withdrawalBasis === 'expenses' && triggers?.has(field)) {
     setShowHint(true)
   }
 }
