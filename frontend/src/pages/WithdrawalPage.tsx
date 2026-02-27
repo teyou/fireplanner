@@ -88,10 +88,11 @@ export function WithdrawalPage() {
     stdDevOverrides: allocation.stdDevOverrides,
     withdrawalBasis: simulation.withdrawalBasis,
     balanceMode: explore.balanceMode,
+    expenseAdjustments: profile.expenseAdjustments,
   }), [
     explore.initialPortfolio, explore.startAge, explore.allocationWeights,
     explore.balanceMode, profile.lifeExpectancy, profile.expenseRatio,
-    profile.inflation, profile.annualExpenses,
+    profile.inflation, profile.annualExpenses, profile.expenseAdjustments,
     simulation.mcMethod, simulation.nSimulations, simulation.selectedStrategy,
     simulation.strategyParams, simulation.withdrawalBasis,
     allocation.returnOverrides, allocation.stdDevOverrides,
