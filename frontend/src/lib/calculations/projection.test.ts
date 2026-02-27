@@ -167,6 +167,7 @@ function makeParams(overrides: Partial<ProjectionParams> = {}): ProjectionParams
     healthcareConfig: null,
     cpfLifeStartAge: 65,
     cpfLifePlan: 'standard' as const,
+    withdrawalBasis: 'expenses' as const,
     ...overrides,
   }
 }
@@ -2425,6 +2426,100 @@ describe('generateProjection', () => {
 
       // With barista income, only $20K gap comes from portfolio
       expect(baristaRow.withdrawalAmount).toBeCloseTo(20000, 0)
+    })
+  })
+
+  describe('withdrawalBasis', () => {
+    it('rate mode: Terminal NW differs from expense mode', () => {
+      // retirementAge: 54 → currentAge 55 is already retired (55 > 54)
+      // 0% return, $1M portfolio: rate mode draws $40K/yr, expense mode draws $48K/yr
+      // After 5 years: rate=$800K remaining, expense=$760K remaining
+      const base = makeParams({
+        currentAge: 55,
+        retirementAge: 54,
+        lifeExpectancy: 59,  // short enough that neither depletes
+        initialLiquidNW: 1_000_000,
+        annualExpenses: 48000,
+        swr: 0.04,
+        withdrawalStrategy: 'constant_dollar',
+        inflation: 0,
+        expectedReturn: 0,
+      })
+      base.incomeProjection = generateMockIncomeProjection({
+        currentAge: 55, retirementAge: 54, lifeExpectancy: 59,
+      })
+      base.strategyParams = { ...DEFAULT_STRATEGY_PARAMS, constant_dollar: { swr: 0.04 } }
+
+      const expenseResult = generateProjection({ ...base, withdrawalBasis: 'expenses' })
+      const rateResult = generateProjection({ ...base, withdrawalBasis: 'rate' })
+
+      // Rate-driven: $1M × 4% = $40K, Expense-driven: $48K
+      // Different withdrawals → different terminal NW
+      expect(rateResult.summary.terminalLiquidNW).not.toBeCloseTo(expenseResult.summary.terminalLiquidNW, 0)
+      // Rate draws less ($40K vs $48K) → higher terminal NW
+      expect(rateResult.summary.terminalLiquidNW).toBeGreaterThan(expenseResult.summary.terminalLiquidNW)
+    })
+
+    it('rate mode: high income offsets strategy withdrawal correctly', () => {
+      // $60K income, $30K expenses, 5% SWR on $1M = $50K withdrawal
+      // Rate mode: net draw = max(0, $50K - $60K) = $0, surplus $10K reinvested
+      // Expense mode: expense gap = max(0, $30K - $60K) = $0, surplus $30K reinvested
+      // retirementAge: 54 → currentAge 55 is already retired
+      const base = makeParams({
+        currentAge: 55,
+        retirementAge: 54,
+        lifeExpectancy: 60,
+        initialLiquidNW: 1_000_000,
+        annualExpenses: 30000,
+        swr: 0.05,
+        withdrawalStrategy: 'constant_dollar',
+        inflation: 0,
+        expectedReturn: 0,
+      })
+      base.strategyParams = { ...DEFAULT_STRATEGY_PARAMS, constant_dollar: { swr: 0.05 } }
+
+      // Override income projection to have post-retirement income of $60K
+      const incomeRows = generateMockIncomeProjection({
+        currentAge: 55, retirementAge: 54, lifeExpectancy: 60,
+        rentalIncome: 60000,
+      })
+
+      const expenseResult = generateProjection({ ...base, incomeProjection: incomeRows, withdrawalBasis: 'expenses' })
+      const rateResult = generateProjection({ ...base, incomeProjection: incomeRows, withdrawalBasis: 'rate' })
+
+      // In expense mode: surplus = $30K reinvested each year
+      // In rate mode: surplus = $10K reinvested each year (income - withdrawal = 60K - 50K)
+      // So expense mode has higher terminal NW (more surplus reinvested)
+      expect(expenseResult.summary.terminalLiquidNW).toBeGreaterThan(rateResult.summary.terminalLiquidNW)
+    })
+
+    it('rate mode: first retirement row withdrawal matches portfolio × swr - income', () => {
+      // retirementAge: 54 → age 55 is retired (55 > 54)
+      const base = makeParams({
+        currentAge: 55,
+        retirementAge: 54,
+        lifeExpectancy: 60,
+        initialLiquidNW: 1_000_000,
+        annualExpenses: 48000,
+        swr: 0.04,
+        withdrawalStrategy: 'constant_dollar',
+        inflation: 0,
+        expectedReturn: 0,
+        withdrawalBasis: 'rate',
+      })
+      base.strategyParams = { ...DEFAULT_STRATEGY_PARAMS, constant_dollar: { swr: 0.04 } }
+
+      // Add some post-retirement income
+      const incomeRows = generateMockIncomeProjection({
+        currentAge: 55, retirementAge: 54, lifeExpectancy: 60,
+        rentalIncome: 10000,
+      })
+
+      const result = generateProjection({ ...base, incomeProjection: incomeRows })
+      const firstRetiredRow = result.rows.find(r => r.age === 55)!
+
+      // Expected: net draw = max(0, 1M × 0.04 - 10K) = max(0, 40K - 10K) = $30K
+      expect(firstRetiredRow.withdrawalAmount).toBeCloseTo(30000, 0)
     })
   })
 })

@@ -92,6 +92,7 @@ export interface ProjectionParams {
   // CPF LIFE (for bequest + milestone computation)
   cpfLifeStartAge: number
   cpfLifePlan: CpfLifePlan
+  withdrawalBasis: 'expenses' | 'rate'
 }
 
 export interface ProjectionResult {
@@ -545,11 +546,24 @@ export function generateProjection(params: ProjectionParams): ProjectionResult {
       }
       oneTimeWithdrawalTotal += goalDeduction
 
-      // Actual draw = expense gap after passive income (always fund expenses from portfolio).
-      // maxPermittedWithdrawal (strategy-based) is advisory — shown alongside for comparison.
+      // Expense gap is always computed (for display in both modes)
       const expenseGap = Math.max(0, inflationAdjustedExpenses - postRetirementIncome)
-      const actualDraw = Math.min(expenseGap, startLiquidNW)
-      const surplusIncome = Math.max(0, postRetirementIncome - inflationAdjustedExpenses)
+      let actualDraw: number
+      let surplusIncome: number
+
+      if (params.withdrawalBasis === 'rate') {
+        // Rate-driven: income offsets strategy withdrawal (matching MC/SR engines).
+        // MC: netWithdrawal = max(0, withdrawal - income)  (monteCarlo.ts:444)
+        // SR: netWithdrawal = max(0, (withdrawal + oneTime) - income)  (sequenceRisk.ts:201)
+        // Projection mirrors this: draw = max(0, strategyWithdrawal - income).
+        const netStrategyDraw = Math.max(0, strategyWithdrawal - postRetirementIncome)
+        actualDraw = Math.min(netStrategyDraw, startLiquidNW)
+        surplusIncome = Math.max(0, postRetirementIncome - strategyWithdrawal)
+      } else {
+        // Expense-driven (default): withdraw what you need to spend
+        actualDraw = Math.min(expenseGap, startLiquidNW)
+        surplusIncome = Math.max(0, postRetirementIncome - inflationAdjustedExpenses)
+      }
 
       // Portfolio: loses actual draw + one-time withdrawals + mortgage, gains surplus passive income.
       // Mortgage is deducted here (property rental already reduces expenseGap via postRetirementIncome).

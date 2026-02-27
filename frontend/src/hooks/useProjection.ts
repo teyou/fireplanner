@@ -91,6 +91,7 @@ export function useProjection(): ProjectionResult {
       glidePathConfig: allocation.glidePathConfig,
       withdrawalStrategy: simulation.selectedStrategy,
       strategyParams: simulation.strategyParams,
+      withdrawalBasis: simulation.withdrawalBasis,
       propertyEquity: property.ownsProperty
         ? Math.max(0, property.existingPropertyValue - property.existingMortgageBalance) * ownershipPct
         : 0,
@@ -151,6 +152,7 @@ export function useProjection(): ProjectionResult {
     allocation.validationErrors,
     simulation.selectedStrategy,
     simulation.strategyParams,
+    simulation.withdrawalBasis,
     property.ownsProperty,
     property.existingPropertyValue,
     property.existingMortgageBalance,
