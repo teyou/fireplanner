@@ -1026,3 +1026,35 @@ describe('representative paths', () => {
     expect(p10.retirementBalance).toBeLessThan(p90.retirementBalance)
   })
 })
+
+describe('representative paths edge cases', () => {
+  it('works when already retired (nYearsAccum = 0) — selects by terminal balance', () => {
+    const params = makeDefaultParams({
+      currentAge: 55,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      annualSavings: [],
+      postRetirementIncome: Array(35).fill(0),
+      nSimulations: 500,
+      extractPaths: true,
+    })
+    const result = runMonteCarlo(params as MonteCarloEngineParams)
+    expect(result.representative_paths).toHaveLength(5)
+    for (const path of result.representative_paths!) {
+      expect(path.yearlyReturns).toHaveLength(35) // 90 - 55
+    }
+    expect(result.representative_paths_start_age).toBe(55)
+    // In fireTarget mode (nYearsAccum=0), paths should be distinct
+    // because selection is by terminal balance, not collapsed initial balance
+    const p10 = result.representative_paths!.find(p => p.percentile === 10)!
+    const p90 = result.representative_paths!.find(p => p.percentile === 90)!
+    expect(p10.simIndex).not.toBe(p90.simIndex)
+  })
+
+  it('returns undefined paths when extractPaths is not set', () => {
+    const params = makeDefaultParams({ nSimulations: 100 })
+    const result = runMonteCarlo(params as MonteCarloEngineParams)
+    expect(result.representative_paths).toBeUndefined()
+    expect(result.representative_paths_start_age).toBeUndefined()
+  })
+})
