@@ -535,6 +535,17 @@ describe('annualExpensesAtRetirement', () => {
     expect(rateResult.summary.success_rate).toBeGreaterThan(expenseResult.summary.success_rate)
   })
 
+  it('runDetailedWindow respects withdrawalBasis - expense vs rate produces different withdrawals', () => {
+    const expenseParams = { ...PARAMS, annualExpensesAtRetirement: 48_000, withdrawalBasis: 'expenses' as const }
+    const rateParams = { ...PARAMS, annualExpensesAtRetirement: 48_000, withdrawalBasis: 'rate' as const }
+
+    const expDetail = runDetailedWindow(expenseParams, 1950)
+    const rateDetail = runDetailedWindow(rateParams, 1950)
+
+    // Rate-based: $1M × 4% = $40K, expense-based: $48K — first withdrawal must differ
+    expect(expDetail.yearlyWithdrawals[0]).not.toBeCloseTo(rateDetail.yearlyWithdrawals[0], 0)
+  })
+
   it('generateHeatmap ignores annualExpensesAtRetirement so SWR axis varies', () => {
     // If expenses leaked through, every cell in the SWR axis would produce
     // identical success rates because the withdrawal is fixed at the expense amount.

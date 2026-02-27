@@ -85,6 +85,7 @@ export function BacktestDrillDown({
       profile.retirementAge, profile.annualExpenses,
       profile.expenseAdjustments, profile.lifeExpectancy,
     ) * Math.pow(1 + profile.inflation, Math.max(0, profile.retirementAge - profile.currentAge)),
+    retirementMitigation: profile.retirementMitigation,
   }), [analysisPortfolio, swr, duration, dataset, blendRatio, profile, strategy, withdrawal.strategyParams, simulation.withdrawalBasis])
 
   // Load backtest data + worst trajectory on open
