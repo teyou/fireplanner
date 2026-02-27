@@ -4,7 +4,11 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Info } from 'lucide-react'
 import { useSimulationStore } from '@/stores/useSimulationStore'
+import { useProfileStore } from '@/stores/useProfileStore'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import type { MonteCarloMethod, WithdrawalStrategyType } from '@/lib/types'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
@@ -38,6 +42,8 @@ interface SimulationControlsProps {
 
 export function SimulationControls({ onRun, isPending, canRun, validationErrors }: SimulationControlsProps) {
   const simulation = useSimulationStore()
+  const currentAge = useProfileStore((s) => s.currentAge)
+  const retirementAge = useProfileStore((s) => s.retirementAge)
   const mode = useEffectiveMode('section-stress-test')
   const strategies = mode === 'advanced' ? ALL_STRATEGIES : SIMPLE_STRATEGIES
 
@@ -108,6 +114,49 @@ export function SimulationControls({ onRun, isPending, canRun, validationErrors 
               onChange={(e) => simulation.setField('nSimulations', Number(e.target.value))}
             />
           </div>
+
+          {/* Pre-retirement returns toggle */}
+          <TooltipProvider delayDuration={200}>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium flex items-center gap-1">
+                Pre-retirement returns
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p><strong>Expected Returns:</strong> All simulations use the same average return during accumulation. Tests: &ldquo;If savings go as planned, does retirement survive?&rdquo;</p>
+                    <p className="mt-1"><strong>Stochastic:</strong> Each simulation gets random returns from today. Captures pre-retirement sequence risk.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </Label>
+              {currentAge >= retirementAge ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <ToggleGroup type="single" value="stochastic" disabled className="w-full">
+                        <ToggleGroupItem value="expected" className="flex-1 text-xs">Expected</ToggleGroupItem>
+                        <ToggleGroupItem value="stochastic" className="flex-1 text-xs">Stochastic</ToggleGroupItem>
+                      </ToggleGroup>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>Not applicable: you are already in retirement</TooltipContent>
+                </Tooltip>
+              ) : (
+                <ToggleGroup
+                  type="single"
+                  value={simulation.deterministicAccumulation ? 'expected' : 'stochastic'}
+                  onValueChange={(val) => {
+                    if (val) simulation.setField('deterministicAccumulation', val === 'expected')
+                  }}
+                  className="w-full"
+                >
+                  <ToggleGroupItem value="expected" className="flex-1 text-xs">Expected</ToggleGroupItem>
+                  <ToggleGroupItem value="stochastic" className="flex-1 text-xs">Stochastic</ToggleGroupItem>
+                </ToggleGroup>
+              )}
+            </div>
+          </TooltipProvider>
         </div>
 
         <StrategyParams />

@@ -6,9 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, ChevronDown, ChevronRight, CheckCircle2, Info, ShieldAlert } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AnalysisModeToggle } from '@/components/shared/AnalysisModeToggle'
 import { WithdrawalBasisToggle } from '@/components/shared/WithdrawalBasisToggle'
-import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 import { formatCurrency, cn } from '@/lib/utils'
 import type { PercentileBands } from '@/lib/types'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
@@ -551,7 +549,6 @@ function SequenceRiskTab() {
 
 export function StressTestPage() {
   usePageMeta({ title: 'Stress Test — SG FIRE Planner', description: 'Monte Carlo simulation, historical backtesting, and sequence risk analysis for your Singapore retirement plan.', path: '/stress-test' })
-  const { portfolioLabel } = useAnalysisPortfolio()
   const stressMode = useEffectiveMode('section-stress-test')
   const stressNudge = useSectionNudge('section-stress-test')
   const setSectionMode = useUIStore((s) => s.setSectionMode)
@@ -609,8 +606,6 @@ export function StressTestPage() {
         />
       )}
 
-      <AnalysisModeToggle portfolioLabel={portfolioLabel} />
-
       <Tabs defaultValue="monte-carlo" onValueChange={(tab) => trackEvent('stress_test_tab_changed', { tab })}>
         {(() => {
           // Static Tailwind class mapping — dynamic template literals get purged
@@ -663,6 +658,13 @@ export function StressTestPage() {
           </TabsContent>
         )}
       </Tabs>
+
+      <p className="text-xs text-muted-foreground mt-4">
+        Want to explore withdrawal strategies in isolation?{' '}
+        <Link to="/withdrawal" className="text-primary hover:underline">
+          Withdrawal Strategies &rarr;
+        </Link>
+      </p>
     </div>
   )
 }
