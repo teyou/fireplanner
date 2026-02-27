@@ -47,6 +47,7 @@ export interface MonteCarloEngineParams {
   portfolioAdjustments?: { year: number; amount: number }[]  // sparse one-time equity injections
   retirementMitigation?: RetirementMitigationConfig
   annualExpensesAtRetirement?: number  // needed to compute bucket target
+  withdrawalBasis: 'expenses' | 'rate'
 }
 
 export type MonteCarloEngineResult = Omit<
@@ -388,10 +389,11 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
       const decumYear = t - nYearsAccum
 
       if (decumYear === 0) {
-        // Use user's actual retirement expenses when available;
-        // fall back to portfolio × SWR rate when no expenses are specified.
+        // Use user's actual retirement expenses when available and withdrawalBasis is 'expenses';
+        // fall back to portfolio × SWR rate when no expenses are specified OR when the user
+        // has explicitly chosen rate-driven withdrawal (withdrawalBasis === 'rate').
         // This matches the deterministic comparison logic in withdrawal.ts.
-        if (annualExpensesAtRetirement > 0) {
+        if (annualExpensesAtRetirement > 0 && params.withdrawalBasis !== 'rate') {
           initialWithdrawalAmount = annualExpensesAtRetirement
         } else {
           const retirementBalances = balances.map((b) => b[t])

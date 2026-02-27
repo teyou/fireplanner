@@ -23,6 +23,7 @@ function makeDefaultParams(overrides: Record<string, unknown> = {}) {
     strategyParams: { swr: 0.04 },
     expenseRatio: 0.003,
     inflation: 0.025,
+    withdrawalBasis: 'expenses' as const,
     ...overrides,
   }
 }
@@ -171,6 +172,34 @@ describe('runMonteCarlo', () => {
     const result = runMonteCarlo(makeDefaultParams())
     const sumCounts = result.failure_distribution.counts.reduce((a, b) => a + b, 0)
     expect(sumCounts).toBe(result.failure_distribution.total_failures)
+  })
+
+  it('uses portfolio × SWR when withdrawalBasis is rate', () => {
+    // Use a pure decumulation scenario (currentAge == retirementAge, $1M portfolio)
+    // so the retirement portfolio is exactly the initial $1M.
+    // Expense mode: annualExpensesAtRetirement = $48K → withdrawal = $48K
+    // Rate mode: ignores expenses, uses $1M × 4% SWR = $40K withdrawal
+    // Rate-driven ($40K) withdraws less than expense-driven ($48K),
+    // so rate-driven should have a higher success rate.
+    const pureDecumBase = {
+      currentAge: 55,
+      retirementAge: 55,
+      lifeExpectancy: 90,
+      annualSavings: [],
+      postRetirementIncome: Array(35).fill(0),
+      annualExpensesAtRetirement: 48000,
+    }
+    const expenseResult = runMonteCarlo(makeDefaultParams({
+      ...pureDecumBase,
+      withdrawalBasis: 'expenses',
+    }))
+    const rateResult = runMonteCarlo(makeDefaultParams({
+      ...pureDecumBase,
+      withdrawalBasis: 'rate',
+    }))
+    // Rate-driven ($40K) withdraws less than expense-driven ($48K),
+    // so rate-driven should have a higher success rate
+    expect(rateResult.success_rate).toBeGreaterThan(expenseResult.success_rate)
   })
 })
 
@@ -746,6 +775,7 @@ describe('retirement cash bucket mitigation', () => {
     strategyParams: { swr: 0.04 },
     expenseRatio: 0.003,
     inflation: 0.025,
+    withdrawalBasis: 'expenses' as const,
   }
 
   it('mitigation none — unchanged from baseline', () => {
@@ -822,6 +852,7 @@ describe('retirement cash bucket mitigation', () => {
     strategyParams: { swr: 0.04 },
     expenseRatio: 0,        // zero fees for easier math
     inflation: 0,            // zero inflation for easier math
+    withdrawalBasis: 'expenses' as const,
     retirementMitigation: {
       type: 'cash_bucket',
       targetMonths: 24,
