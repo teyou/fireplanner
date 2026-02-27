@@ -25,6 +25,7 @@ import { PortfolioHistogram } from '@/components/simulation/PortfolioHistogram'
 import { FanChart } from '@/components/simulation/FanChart'
 import { FailureDistributionChart } from '@/components/simulation/FailureDistributionChart'
 import { useMonteCarloQuery } from '@/hooks/useMonteCarloQuery'
+import { MCProjectionTable } from '@/components/simulation/MCProjectionTable'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useSimulationStore } from '@/stores/useSimulationStore'
 
@@ -611,11 +612,25 @@ export function StressTestPage() {
       <AnalysisModeToggle portfolioLabel={portfolioLabel} />
 
       <Tabs defaultValue="monte-carlo" onValueChange={(tab) => trackEvent('stress_test_tab_changed', { tab })}>
-        <TabsList className={`grid w-full ${isStressAdvanced ? 'grid-cols-3' : 'grid-cols-1'}`}>
-          <TabsTrigger value="monte-carlo">Monte Carlo</TabsTrigger>
-          {isStressAdvanced && <TabsTrigger value="backtest">Historical Backtest</TabsTrigger>}
-          {isStressAdvanced && <TabsTrigger value="sequence-risk">Sequence Risk</TabsTrigger>}
-        </TabsList>
+        {(() => {
+          // Static Tailwind class mapping — dynamic template literals get purged
+          const hasResults = !!mc.data
+          const tabCount = 1 + (hasResults ? 1 : 0) + (isStressAdvanced ? 2 : 0)
+          const gridColsClass: Record<number, string> = {
+            1: 'grid-cols-1',
+            2: 'grid-cols-2',
+            3: 'grid-cols-3',
+            4: 'grid-cols-4',
+          }
+          return (
+            <TabsList className={`grid w-full ${gridColsClass[tabCount] ?? 'grid-cols-1'}`}>
+              <TabsTrigger value="monte-carlo">Monte Carlo</TabsTrigger>
+              {hasResults && <TabsTrigger value="mc-projection">Projection Table</TabsTrigger>}
+              {isStressAdvanced && <TabsTrigger value="backtest">Historical Backtest</TabsTrigger>}
+              {isStressAdvanced && <TabsTrigger value="sequence-risk">Sequence Risk</TabsTrigger>}
+            </TabsList>
+          )
+        })()}
 
         <TabsContent value="monte-carlo">
           <MonteCarloTab
@@ -629,6 +644,12 @@ export function StressTestPage() {
             isStale={mc.isStale}
           />
         </TabsContent>
+
+        {mc.data && (
+          <TabsContent value="mc-projection">
+            <MCProjectionTable result={mc.data!} isStale={mc.isStale} />
+          </TabsContent>
+        )}
 
         {isStressAdvanced && (
           <TabsContent value="backtest">
