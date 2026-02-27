@@ -683,6 +683,7 @@ export interface SimulationState {
   selectedStrategy: WithdrawalStrategyType
   strategyParams: StrategyParamsMap
   nSimulations: number
+  /** @deprecated No longer read by any consumer. Kept for migration compatibility. */
   analysisMode: AnalysisMode
   withdrawalBasis: WithdrawalBasis
   deterministicAccumulation: boolean  // when true, pre-retirement uses expected returns
