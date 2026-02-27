@@ -12,6 +12,14 @@ export interface ChangelogEntry {
 /** Newest first. */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-02-27',
+    category: 'feature' as const,
+    title: 'Withdrawal Basis Toggle',
+    description:
+      'New toggle on all simulation and projection pages: choose between "My Expenses" (withdrawals match your planned spending) or "Custom Rate" (withdrawals based on portfolio × strategy rate, e.g. the 4% rule). Previously, changing SWR had no effect on results when expenses were set.',
+    affectedSections: ['section-stress-test', 'section-projection'],
+  },
+  {
     date: '2026-02-26',
     category: 'feature',
     title: 'SEO and social sharing previews',
