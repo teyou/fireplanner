@@ -355,15 +355,9 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     // BHS grows annually until age 65, then freezes at that cohort's value
     const currentBhs = getBhsAtAge(age, params.currentAge)
 
-    // CPF OA Housing deduction (before contributions and interest)
+    // CPF OA Housing variables (deduction applied after contributions below)
     let cpfOaHousingDeduction = 0
     let cpfOaShortfall = 0
-    if (cpfHousingMode !== 'none' && cpfHousingMonthly > 0 && age < cpfHousingEndAge) {
-      const annualDeduction = cpfHousingMonthly * 12
-      cpfOaHousingDeduction = Math.min(annualDeduction, cpfOA)
-      cpfOaShortfall = Math.max(0, annualDeduction - cpfOA)
-      cpfOA = Math.max(0, cpfOA - cpfOaHousingDeduction)
-    }
 
     // Salary (only pre-retirement employment income)
     let salary = 0
@@ -557,6 +551,16 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
       const maRoom = Math.max(0, currentBhs - cpfMA)
       topUpMAActual = Math.min(topUpMA, maRoom)
       cpfMA += topUpMAActual
+    }
+
+    // CPF OA Housing deduction (after contributions so shortfall reflects
+    // the combined OA balance, matching the real monthly co-flow of
+    // contributions and mortgage deductions throughout the year)
+    if (cpfHousingMode !== 'none' && cpfHousingMonthly > 0 && age < cpfHousingEndAge) {
+      const annualDeduction = cpfHousingMonthly * 12
+      cpfOaHousingDeduction = Math.min(annualDeduction, cpfOA)
+      cpfOaShortfall = Math.max(0, annualDeduction - cpfOA)
+      cpfOA = Math.max(0, cpfOA - cpfOaHousingDeduction)
     }
 
     // Mid-year effective balances for interest calculation.

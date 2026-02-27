@@ -2175,6 +2175,53 @@ describe('integration tests', () => {
     expect(row56Cpfis.cpfEmployee).toBeCloseTo(row56NoCpfis.cpfEmployee, 0)
   })
 
+  it('no shortfall when employed with OA contributions covering mortgage', () => {
+    // Bug report: User at age 43, OA = $11,500, salary contributions ~$20K/yr,
+    // mortgage $1,723/mo ($20,676/yr). OA + contributions = ~$31K > mortgage.
+    // Expected: no shortfall. Bug: shortfall computed before contributions added.
+    const result = generateIncomeProjection({
+      currentAge: 43,
+      retirementAge: 65,
+      lifeExpectancy: 85,
+      salaryModel: 'simple',
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 48000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 11500,
+      initialCpfSA: 30000,
+      initialCpfMA: 20000,
+      cpfHousingMode: 'simple',
+      cpfHousingMonthly: 1723,
+      cpfMortgageYearsLeft: 20,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+    })
+
+    const firstRow = result[0] // age 43
+    // $72K salary → OA allocation at age 43 (under 55) = 23% of $72K = $16,560/yr
+    // OA balance = 11,500 + 16,560 = 28,060 > mortgage of 20,676/yr
+    // So there should be NO shortfall while employed
+    expect(firstRow.cpfOaShortfall).toBe(0)
+
+    // OA balance should be positive: initial + contributions - mortgage > 0
+    // (mortgage > contributions so OA declines, but no cash shortfall)
+    expect(firstRow.cpfOA).toBeGreaterThan(0)
+    // Housing deduction should equal full annual mortgage (no partial deduction)
+    expect(firstRow.cpfOaHousingDeduction).toBe(1723 * 12)
+  })
+
   it('tracks cpfOaShortfall when OA is depleted by mortgage', () => {
     const result = generateIncomeProjection({
       currentAge: 38,
