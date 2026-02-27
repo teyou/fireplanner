@@ -36,6 +36,7 @@ export interface BacktestEngineParams {
   oneTimeWithdrawals?: { year: number; amount: number }[]  // year-offset → amount
   retirementMitigation?: RetirementMitigationConfig
   annualExpensesAtRetirement?: number
+  withdrawalBasis: 'expenses' | 'rate'
 }
 
 export interface BacktestEngineResult {
@@ -156,11 +157,13 @@ function runSingleWindow(
   strategyParams: Record<string, number>,
   oneTimeWithdrawals?: { year: number; amount: number }[],
   annualExpensesAtRetirement: number = 0,
+  withdrawalBasis: 'expenses' | 'rate' = 'expenses',
 ): WindowResult {
   let portfolio = initialPortfolio
-  // Use user's actual retirement expenses when available;
-  // fall back to portfolio × SWR rate when no expenses are specified.
-  const initialWithdrawal = annualExpensesAtRetirement > 0
+  // Use user's actual retirement expenses when available and withdrawalBasis is 'expenses';
+  // fall back to portfolio × SWR rate when no expenses are specified or when the user
+  // has explicitly chosen rate-driven withdrawal (withdrawalBasis === 'rate').
+  const initialWithdrawal = annualExpensesAtRetirement > 0 && withdrawalBasis !== 'rate'
     ? annualExpensesAtRetirement
     : initialPortfolio * swr
   let prevWithdrawal = 0
@@ -280,6 +283,7 @@ export function runDetailedWindow(
     strategyParams,
     oneTimeWithdrawals,
     annualExpensesAtRetirement,
+    withdrawalBasis,
   } = params
   const expenses = annualExpensesAtRetirement ?? 0
 
@@ -304,9 +308,10 @@ export function runDetailedWindow(
   }
 
   let portfolio = initialPortfolio
-  // Use user's actual retirement expenses when available;
-  // fall back to portfolio × SWR rate when no expenses are specified.
-  const initialWithdrawal = expenses > 0
+  // Use user's actual retirement expenses when available and withdrawalBasis is 'expenses';
+  // fall back to portfolio × SWR rate when no expenses are specified or when the user
+  // has explicitly chosen rate-driven withdrawal (withdrawalBasis === 'rate').
+  const initialWithdrawal = expenses > 0 && withdrawalBasis !== 'rate'
     ? expenses
     : initialPortfolio * swr
   let prevWithdrawal = 0
@@ -426,6 +431,7 @@ export function runBacktest(params: BacktestEngineParams): BacktestEngineResult 
     strategyParams,
     oneTimeWithdrawals,
     annualExpensesAtRetirement,
+    withdrawalBasis,
   } = params
 
   const { portfolioReturns, inflationRates, years } = getPortfolioReturns(
@@ -456,6 +462,7 @@ export function runBacktest(params: BacktestEngineParams): BacktestEngineResult 
       strategyParams,
       oneTimeWithdrawals,
       annualExpensesAtRetirement,
+      withdrawalBasis,
     )
 
     results.push({
@@ -539,6 +546,8 @@ export function generateHeatmap(
     durationValues.map((duration) => {
       const result = runBacktest({
         ...params,
+        // Heatmap is always rate-driven: each cell tests a specific SWR × duration
+        // regardless of withdrawalBasis toggle, since annualExpensesAtRetirement is undefined.
         annualExpensesAtRetirement: undefined,
         swr,
         retirementDuration: duration,

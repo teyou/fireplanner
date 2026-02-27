@@ -21,6 +21,7 @@ const PARAMS = {
   withdrawalStrategy: 'constant_dollar' as const,
   strategyParams: { swr: 0.04 },
   inflation: 0.025,
+  withdrawalBasis: 'expenses' as const,
 }
 
 // ---------------------------------------------------------------------------
@@ -517,6 +518,21 @@ describe('annualExpensesAtRetirement', () => {
     expect(withExpenses.summary.median_ending_balance).not.toBe(
       withoutExpenses.summary.median_ending_balance,
     )
+  })
+
+  it('uses portfolio × SWR when withdrawalBasis is rate', () => {
+    const expenseResult = runBacktest({
+      ...PARAMS,
+      annualExpensesAtRetirement: 48000,
+      withdrawalBasis: 'expenses',
+    })
+    const rateResult = runBacktest({
+      ...PARAMS,
+      annualExpensesAtRetirement: 48000,
+      withdrawalBasis: 'rate',
+    })
+    // Rate-driven ($1M × 4% = $40K) withdraws less than expense-driven ($48K)
+    expect(rateResult.summary.success_rate).toBeGreaterThan(expenseResult.summary.success_rate)
   })
 
   it('generateHeatmap ignores annualExpensesAtRetirement so SWR axis varies', () => {

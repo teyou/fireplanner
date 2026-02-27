@@ -15,7 +15,9 @@ import type { BacktestResult, PerYearResult } from '@/lib/types'
 import type { DetailedWindowResult, BacktestEngineParams } from '@/lib/simulation/backtest'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
+import { getEffectiveExpenses } from '@/lib/calculations/expenses'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import {
   AreaChart,
@@ -57,6 +59,7 @@ export function BacktestDrillDown({
   const isMobile = useIsMobile()
   const profile = useProfileStore()
   const withdrawal = useWithdrawalStore()
+  const simulation = useSimulationStore()
   const analysisPortfolio = useAnalysisPortfolio()
 
   const [backtestResult, setBacktestResult] = useState<BacktestResult | null>(null)
@@ -77,7 +80,12 @@ export function BacktestDrillDown({
     withdrawalStrategy: strategy,
     strategyParams: flattenStrategyParams(strategy, withdrawal.strategyParams),
     inflation: profile.inflation,
-  }), [analysisPortfolio, swr, duration, dataset, blendRatio, profile, strategy, withdrawal.strategyParams])
+    withdrawalBasis: simulation.withdrawalBasis,
+    annualExpensesAtRetirement: getEffectiveExpenses(
+      profile.retirementAge, profile.annualExpenses,
+      profile.expenseAdjustments, profile.lifeExpectancy,
+    ) * Math.pow(1 + profile.inflation, Math.max(0, profile.retirementAge - profile.currentAge)),
+  }), [analysisPortfolio, swr, duration, dataset, blendRatio, profile, strategy, withdrawal.strategyParams, simulation.withdrawalBasis])
 
   // Load backtest data + worst trajectory on open
   useEffect(() => {

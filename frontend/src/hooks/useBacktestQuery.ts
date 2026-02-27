@@ -6,6 +6,7 @@ import type { BacktestSummary, PerYearResult, BacktestDataset, WithdrawalStrateg
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
+import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 import { trackEvent } from '@/lib/analytics'
 
@@ -60,6 +61,7 @@ export function useBacktestQuery(): UseBacktestQueryResult {
   const profile = useProfileStore()
   const allocation = useAllocationStore()
   const withdrawal = useWithdrawalStore()
+  const simulation = useSimulationStore()
   const analysisPortfolio = useAnalysisPortfolio()
   const [config, setConfigState] = useState<BacktestConfig>(DEFAULT_CONFIG)
 
@@ -97,11 +99,13 @@ export function useBacktestQuery(): UseBacktestQueryResult {
     retirementWithdrawals: profile.retirementWithdrawals,
     annualExpenses: profile.annualExpenses,
     expenseAdjustments: profile.expenseAdjustments,
+    withdrawalBasis: simulation.withdrawalBasis,
   }), [
     analysisPortfolio.retirementPortfolio, analysisPortfolio.allocationWeights,
     config.swr, config.retirementDuration, config.dataset, config.blendRatio,
     profile.expenseRatio, strategy, withdrawal.strategyParams, profile.inflation,
     profile.retirementWithdrawals, profile.annualExpenses, profile.expenseAdjustments,
+    simulation.withdrawalBasis,
   ])
 
   const buildParams = useCallback(() => {
@@ -131,12 +135,14 @@ export function useBacktestQuery(): UseBacktestQueryResult {
       oneTimeWithdrawals: oneTimeWithdrawals.length > 0 ? oneTimeWithdrawals : undefined,
       retirementMitigation: profile.retirementMitigation,
       annualExpensesAtRetirement: getEffectiveExpenses(profile.retirementAge, profile.annualExpenses, profile.expenseAdjustments, profile.lifeExpectancy) * Math.pow(1 + profile.inflation, Math.max(0, profile.retirementAge - profile.currentAge)),
+      withdrawalBasis: simulation.withdrawalBasis,
     }
   }, [
     analysisPortfolio.retirementPortfolio, analysisPortfolio.allocationWeights,
     config, profile.expenseRatio, strategy, withdrawal.strategyParams, profile.inflation,
     profile.retirementWithdrawals, profile.retirementAge, profile.retirementMitigation,
     profile.annualExpenses, profile.currentAge, profile.expenseAdjustments, profile.lifeExpectancy,
+    simulation.withdrawalBasis,
   ])
 
   // Base mutation (no heatmap — fast)
