@@ -13,6 +13,7 @@ describe('useSimulationStore', () => {
       expect(state.selectedStrategy).toBe('constant_dollar')
       expect(state.nSimulations).toBe(10000)
       expect(state.analysisMode).toBe('myPlan')
+      expect(state.withdrawalBasis).toBe('expenses')
     })
 
     it('has no validation errors', () => {
@@ -63,10 +64,12 @@ describe('useSimulationStore', () => {
     it('restores all defaults', () => {
       useSimulationStore.getState().setField('mcMethod', 'fat_tail')
       useSimulationStore.getState().setField('nSimulations', 1000)
+      useSimulationStore.getState().setField('withdrawalBasis', 'rate')
       useSimulationStore.getState().reset()
       const state = useSimulationStore.getState()
       expect(state.mcMethod).toBe('parametric')
       expect(state.nSimulations).toBe(10000)
+      expect(state.withdrawalBasis).toBe('expenses')
     })
   })
 

@@ -48,7 +48,7 @@ const DEFAULT_SIMULATION: Omit<SimulationState, 'validationErrors'> = {
   strategyParams: DEFAULT_STRATEGY_PARAMS,
   nSimulations: 10000,
   analysisMode: 'myPlan',
-  withdrawalBasis: 'expenses' as const,
+  withdrawalBasis: 'expenses',
   lastMCSuccessRate: null,
   lastBacktestSuccessRate: null,
 }
