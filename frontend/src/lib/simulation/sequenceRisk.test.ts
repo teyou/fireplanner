@@ -22,6 +22,7 @@ const PARAMS = {
   expenseRatio: 0.003,
   inflation: 0.025,
   postRetirementIncome: [] as number[],
+  withdrawalBasis: 'expenses' as const,
   crisis: {
     id: 'gfc',
     name: 'Global Financial Crisis',
@@ -348,5 +349,21 @@ describe('runSequenceRisk', () => {
     expect(withExpenses.crisis_success_rate).not.toBe(
       withoutExpenses.crisis_success_rate,
     )
+  })
+
+  it('uses portfolio × SWR when withdrawalBasis is rate', () => {
+    const expenseResult = runSequenceRisk({
+      ...PARAMS,
+      annualExpensesAtRetirement: 96000,  // $96K expenses
+      withdrawalBasis: 'expenses',
+    })
+    const rateResult = runSequenceRisk({
+      ...PARAMS,
+      annualExpensesAtRetirement: 96000,
+      withdrawalBasis: 'rate',
+    })
+    // Rate-driven ($2M × 4% = $80K) withdraws less than expense-driven ($96K)
+    // so rate-driven should have higher normal success rate
+    expect(rateResult.normal_success_rate).toBeGreaterThan(expenseResult.normal_success_rate)
   })
 })

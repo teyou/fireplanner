@@ -14,6 +14,7 @@ import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import { usePropertyStore } from '@/stores/usePropertyStore'
+import { useSimulationStore } from '@/stores/useSimulationStore'
 import { ASSET_CLASSES, CORRELATION_MATRIX } from '@/lib/data/historicalReturns'
 import { buildProjectionParams } from '@/hooks/useIncomeProjection'
 import { useIncomeStore } from '@/stores/useIncomeStore'
@@ -37,6 +38,7 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
   const allocation = useAllocationStore()
   const withdrawal = useWithdrawalStore()
   const propertyStore = usePropertyStore()
+  const simulation = useSimulationStore()
   const analysisPortfolio = useAnalysisPortfolio()
 
   const profileErrors = profile.validationErrors
@@ -64,6 +66,7 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
     retirementWithdrawals: profile.retirementWithdrawals,
     annualExpenses: profile.annualExpenses,
     expenseAdjustments: profile.expenseAdjustments,
+    withdrawalBasis: simulation.withdrawalBasis,
     ownsProperty: propertyStore.ownsProperty,
     propertyType: propertyStore.propertyType,
     hdbMonetizationStrategy: propertyStore.hdbMonetizationStrategy,
@@ -84,6 +87,7 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
     allocation.returnOverrides, allocation.stdDevOverrides,
     strategy, withdrawal.strategyParams,
     profile.retirementWithdrawals, profile.annualExpenses, profile.expenseAdjustments,
+    simulation.withdrawalBasis,
     propertyStore.ownsProperty, propertyStore.propertyType,
     propertyStore.hdbMonetizationStrategy, propertyStore.hdbSublettingRooms,
     propertyStore.hdbSublettingRate, propertyStore.downsizing,
@@ -252,6 +256,7 @@ export function useSequenceRiskQuery(): UseSequenceRiskQueryResult {
         portfolioInjections: portfolioInjections.length > 0 ? portfolioInjections : undefined,
         retirementMitigation: profile.retirementMitigation,
         annualExpensesAtRetirement: getEffectiveExpenses(profile.retirementAge, profile.annualExpenses, profile.expenseAdjustments, profile.lifeExpectancy) * Math.pow(1 + profile.inflation, Math.max(0, profile.retirementAge - profile.currentAge)),
+        withdrawalBasis: simulation.withdrawalBasis,
       }
 
       return runSequenceRiskWorker(params)
