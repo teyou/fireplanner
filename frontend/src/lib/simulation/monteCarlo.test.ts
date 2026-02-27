@@ -1017,4 +1017,12 @@ describe('representative paths', () => {
     const result = runMonteCarlo(params as MonteCarloEngineParams)
     expect(result.representative_paths_start_age).toBe(params.currentAge)
   })
+
+  it('p10 retirement balance is less than p90 retirement balance', () => {
+    const params = makeDefaultParams({ nSimulations: 1000, seed: 42, extractPaths: true })
+    const result = runMonteCarlo(params as MonteCarloEngineParams)
+    const p10 = result.representative_paths!.find(p => p.percentile === 10)!
+    const p90 = result.representative_paths!.find(p => p.percentile === 90)!
+    expect(p10.retirementBalance).toBeLessThan(p90.retirementBalance)
+  })
 })
