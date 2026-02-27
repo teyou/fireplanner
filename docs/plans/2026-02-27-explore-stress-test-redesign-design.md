@@ -47,19 +47,21 @@ A dismissible info banner at the top of the page:
 
 Purpose: set expectations that this is for learning, not the definitive test of their plan.
 
-#### FIRE Target MC section
+#### MC Simulation tab
 
-A new tab or section that runs Monte Carlo on the decumulation phase only.
+A new **tab** alongside the deterministic strategy comparison (matching the Stress Test tab pattern). Runs Monte Carlo on the decumulation phase only.
 
-**Starting balance toggle:**
+Strategy params are read from `useWithdrawalStore` (shared with the deterministic comparison tab). MC settings (method, number of sims) from `useSimulationStore`.
+
+**Starting balance toggle** (local state `exploreBalanceMode`, not in simulation store):
 ```
-[My Plan: $1,419,181]  |  [FIRE Target: $2,376,015]
+[My Plan: $1,419,181 at age 53 (2049$)]  |  [FIRE Target: $2,376,015 at age 46 (2042$)]
 ```
 
-- **My Plan:** uses the deterministically projected NW at retirement age (from the Projection engine, same value shown on the Projection page)
-- **FIRE Target:** uses the FIRE number (annual expenses / SWR)
+- **My Plan:** uses the deterministically projected NW at retirement age, labeled with the retirement year's dollar basis
+- **FIRE Target:** uses the FIRE number (annual expenses / SWR), labeled with the FIRE age year's dollar basis
 
-Both are just a number fed into decumulation-only MC. No accumulation phase, no stochastic pre-retirement.
+These are separate scenarios with potentially different starting ages and dollar bases, not side-by-side comparisons. Each runs its own MC from its respective starting age.
 
 **MC configuration:**
 - `currentAge = retirementAge` (skip accumulation)
@@ -150,24 +152,24 @@ No changes needed to the Projection Table component itself; the difference is in
 
 | Component | Change |
 |-----------|--------|
-| Sidebar nav (`layout/`) | Add EXPLORE section, move Withdrawal into it, rename to "Withdrawal Strategies" |
-| `StressTestPage.tsx` | Remove `AnalysisModeToggle`, add pre-retirement method toggle |
+| Sidebar nav (`layout/Sidebar.tsx`) | Add EXPLORE section, move Withdrawal into it, rename to "Withdrawal Strategies". Update mobile bottom nav label from "Withdraw" to "Strategies" (line 474). |
+| `StressTestPage.tsx` | Remove `AnalysisModeToggle`, add pre-retirement method toggle. Add subtle link to Explore page in MC results area. Hide/disable pre-retirement toggle with tooltip when `currentAge >= retirementAge`. |
 | `SimulationControls.tsx` | Add deterministic/stochastic toggle to simulation params card |
-| `WithdrawalPage.tsx` | Add educational banner, add MC section with starting-balance toggle |
+| `WithdrawalPage.tsx` | Add educational banner. Add MC Simulation tab alongside deterministic comparison tab with local `exploreBalanceMode` starting-balance toggle. |
 
 ### Hooks/stores to modify
 
 | Module | Change |
 |--------|--------|
-| `useSimulationStore.ts` | Add `deterministicAccumulation: boolean` field (default false). `analysisMode` field kept for Explore page starting-balance toggle but semantics simplified. |
-| `useAnalysisPortfolio.ts` | Simplify: Stress Test always uses current NW (no `skipAccumulation`). Explore page uses a simpler hook that just picks between projected NW and FIRE number. |
-| `useMonteCarloQuery.ts` | Pass `deterministicAccumulation` to MC engine. For Explore page usage: always set `currentAge = retirementAge`. |
+| `useSimulationStore.ts` | Add `deterministicAccumulation: boolean` field (default false). Deprecate `analysisMode` from this store (Explore page owns its own local state instead). |
+| `useAnalysisPortfolio.ts` | Simplify: Stress Test always uses current NW (hard-code My Plan, stop reading `analysisMode`). Explore page uses a new simpler hook that picks between projected NW and FIRE number based on local `exploreBalanceMode`. |
+| `useMonteCarloQuery.ts` | Pass `deterministicAccumulation` to MC engine. Add `deterministicAccumulation` to staleness signature. For Explore page usage: always set `currentAge = retirementAge` (or FIRE age). |
 
 ### Engine changes
 
 | Module | Change |
 |--------|--------|
-| `monteCarlo.ts` | Accept `deterministicAccumulation` param. When true, use `expectedPortfolioReturn` for all sims during `t < nYearsAccum` instead of per-sim `portfolioReturns[s][t]`. |
+| `monteCarlo.ts` | Accept `deterministicAccumulation` param. When true, use `expectedPortfolioReturn` for all sims during `t < nYearsAccum` instead of per-sim `portfolioReturns[s][t]`. When true and `extractPaths`, select representative paths by **terminal wealth** instead of retirement-age balance. |
 | `workerClient.ts` | Pass through new param. |
 | `simulation.worker.ts` | Pass through new param. |
 
@@ -191,7 +193,84 @@ No changes needed to the Projection Table component itself; the difference is in
 
 ---
 
-## 6. Migration Notes
+## 6. Migration & Persistence
 
-- `analysisMode` in localStorage (persisted Zustand state): the field can remain but its meaning changes. On the Explore page it controls starting balance selection. On the Stress Test page it's ignored (always My Plan). No migration needed since both values ('myPlan', 'fireTarget') remain valid for the Explore page toggle.
-- The new `deterministicAccumulation` field defaults to `false`, preserving current Stress Test behavior (stochastic accumulation) for existing users.
+### `analysisMode` state separation
+
+`analysisMode` is **removed from Stress Test page consumers entirely**. Stress Test always behaves as "My Plan" (actual current NW, full lifecycle). The Explore page gets its own **local state** (`exploreBalanceMode: 'myPlan' | 'fireTarget'`) that does not live in `useSimulationStore`. This eliminates coupling risk where toggling on Explore could silently affect Stress Test results.
+
+The existing `analysisMode` field in `useSimulationStore` can be deprecated and eventually removed. During transition, Stress Test hooks (`useBacktestQuery`, `useSequenceRiskQuery`, `useAnalysisPortfolio`) stop reading it.
+
+### `deterministicAccumulation` persistence
+
+The new `deterministicAccumulation` field (default: `false`) must be added to all persistence touchpoints:
+
+| Touchpoint | File | What to do |
+|-----------|------|------------|
+| Store definition | `useSimulationStore.ts` | Add field with default `false` |
+| localStorage partialize | `useSimulationStore.ts` (`partialize`) | Include in persisted keys |
+| JSON export/import | `exportImport.ts` | Include in export shape, handle missing field on import (default `false`) |
+| URL sharing | `shareUrl.ts` | Include in URL params |
+| Scenario save/load | `scenarios.ts` | Include in scenario shape, handle missing field in saved scenarios (default `false`) |
+
+Default `false` preserves current Stress Test behavior (stochastic accumulation) for existing users. Missing field in old persisted state gracefully falls back to `false`.
+
+---
+
+## 7. Codex Review Resolutions
+
+Review performed by Codex on the original design. All issues discussed and resolved below.
+
+### R1. Representative path selection in deterministic mode (Critical)
+
+**Problem:** When `deterministicAccumulation` is true, all sims arrive at retirement with identical balances. Current path selection picks sims by retirement-age balance percentile, so all five percentile paths collapse to the same sim.
+
+**Resolution:** When `deterministicAccumulation` is true, select representative paths by **terminal wealth** (balance at life expectancy) instead of retirement-age balance. Post-retirement returns are still stochastic, so terminal wealth has real spread. Pre-retirement rows will correctly show identical values; post-retirement rows will show meaningful percentile variation.
+
+### R2. `analysisMode` state separation (High)
+
+**Problem:** `analysisMode` in `useSimulationStore` is consumed by `useAnalysisPortfolio`, `useBacktestQuery`, and `useSequenceRiskQuery`. Repurposing it as "Explore-only" risks hidden behavior changes if any Stress Test consumer still reads it.
+
+**Resolution:** Complete state separation. Explore page owns its own local `exploreBalanceMode` state. Stress Test hooks hard-code My Plan behavior and stop reading `analysisMode`. See Section 6 for details.
+
+### R3. Dollar basis clarity on Explore toggle (High)
+
+**Problem:** "My Plan" (projected NW at retirement) and "FIRE Target" (expenses / SWR) may be in different dollar bases and correspond to different retirement years (retirement age vs FIRE age).
+
+**Resolution:** These are **separate scenarios, not side-by-side comparisons**. Each toggle option shows its value in its own dollar basis with a clear year label:
+- My Plan: "$1,419,181 at age 53 (2049$)"
+- FIRE Target: "$2,376,015 at age 46 (2042$)"
+
+Each runs its own MC with its own starting age and balance. No normalization between the two.
+
+### R4. Already-retired users (High)
+
+**Problem:** When `currentAge >= retirementAge`, accumulation years = 0, making the pre-retirement toggle a no-op.
+
+**Resolution:** Show the toggle **disabled with a tooltip** explaining it's not applicable ("Pre-retirement toggle not applicable: you're already in retirement"). Keeps UI consistent and teaches users what the toggle does.
+
+### R5. Staleness detection for `deterministicAccumulation` (Medium)
+
+**Problem:** `useMonteCarloQuery` computes a params signature for stale detection. If `deterministicAccumulation` isn't included, toggling it won't trigger a stale warning.
+
+**Resolution:** Add `deterministicAccumulation` to the staleness signature in `useMonteCarloQuery`. MC method choice (parametric/bootstrap/fat-tail) only affects post-retirement returns when deterministic accumulation is active; no method dropdown changes needed.
+
+### R6. Persistence touchpoints (Medium)
+
+**Problem:** Design said "no migration needed" but didn't list all persistence paths for the new field.
+
+**Resolution:** Explicit persistence checklist added to Section 6 above.
+
+### R7. Explore page layout and state model (Medium)
+
+**Problem:** "New tab or section" was ambiguous. No rule for whether deterministic comparison and Explore MC share strategy params.
+
+**Resolution:** Explore MC is a **tab** alongside the deterministic strategy comparison tab. Both read strategy params from `useWithdrawalStore` (keeps them in sync on the same page). MC settings (method, number of sims) read from `useSimulationStore` (global preferences). This matches the existing Stress Test tab pattern.
+
+### R8. Cross-linking and mobile nav (Low)
+
+**Problem:** Explore links to Stress Test via educational banner, but Stress Test doesn't link back. Mobile bottom nav still says "Withdraw."
+
+**Resolution:**
+- Add a **subtle link in Stress Test MC results area**: "Explore withdrawal strategies in isolation >"
+- Update mobile bottom nav label from "Withdraw" to **"Strategies"** (`Sidebar.tsx:474`)
