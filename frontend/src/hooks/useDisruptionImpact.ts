@@ -72,6 +72,45 @@ export const DISRUPTION_TEMPLATES: DisruptionTemplate[] = [
     probabilityByAge: 0,
     probabilitySource: 'MOM Labour Market Report 2024',
   },
+  {
+    label: 'Death of Spouse',
+    category: 'family',
+    defaultAgeOffset: 15,
+    durationYears: 99, // permanent — endAge MUST be clamped to lifeExpectancy (Codex fix #1)
+    event: { name: 'Death of Spouse', incomeImpact: 0.5, savingsPause: false, cpfPause: false },
+    probability: 0.03,
+    probabilityByAge: 55,
+    probabilitySource: 'SingStat Complete Life Tables 2023',
+    additionalAnnualExpense: 0,
+    lumpSumCost: 15000,
+    expenseReductionPercent: 0.15,
+  },
+  {
+    label: 'Critical Illness',
+    category: 'health',
+    defaultAgeOffset: 15,
+    durationYears: 2,
+    event: { name: 'Critical Illness', incomeImpact: 0, savingsPause: true, cpfPause: true },
+    probability: 0.25,
+    probabilityByAge: 65,
+    probabilitySource: 'LIA Singapore Protection Gap Study 2022',
+    additionalAnnualExpense: 50000,
+    lumpSumCost: 20000,
+    expenseReductionPercent: 0,
+  },
+  {
+    label: 'Permanent Disability',
+    category: 'health',
+    defaultAgeOffset: 15,
+    durationYears: 99, // permanent — endAge MUST be clamped to lifeExpectancy
+    event: { name: 'Permanent Disability', incomeImpact: 0, savingsPause: true, cpfPause: true },
+    probability: 0.05,
+    probabilityByAge: 65,
+    probabilitySource: 'MOH Principal Causes of Death & Disability Reports',
+    additionalAnnualExpense: 30000,
+    lumpSumCost: 0,
+    expenseReductionPercent: 0,
+  },
 ]
 
 // ============================================================
