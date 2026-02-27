@@ -117,7 +117,11 @@ function StreamRow({
           <Label className="text-xs">Type</Label>
           <Select
             value={stream.type}
-            onValueChange={(v) => onUpdate({ type: v as IncomeStreamType })}
+            onValueChange={(v) => {
+              const update: Partial<IncomeStream> = { type: v as IncomeStreamType }
+              if (v !== 'employment') update.isCpfApplicable = false
+              onUpdate(update)
+            }}
           >
             <SelectTrigger className="h-9 border-blue-300">
               <SelectValue />
@@ -211,16 +215,18 @@ function StreamRow({
           </Select>
         </div>
 
-        <div className="flex items-end pb-1">
-          <div className="flex items-center gap-1.5">
-            <Checkbox
-              id={`stream-cpf-${stream.id}`}
-              checked={stream.isCpfApplicable}
-              onCheckedChange={(checked: boolean | 'indeterminate') => onUpdate({ isCpfApplicable: checked === true })}
-            />
-            <Label htmlFor={`stream-cpf-${stream.id}`} className="text-sm cursor-pointer">CPF Applicable</Label>
+        {stream.type === 'employment' && (
+          <div className="flex items-end pb-1">
+            <div className="flex items-center gap-1.5">
+              <Checkbox
+                id={`stream-cpf-${stream.id}`}
+                checked={stream.isCpfApplicable}
+                onCheckedChange={(checked: boolean | 'indeterminate') => onUpdate({ isCpfApplicable: checked === true })}
+              />
+              <Label htmlFor={`stream-cpf-${stream.id}`} className="text-sm cursor-pointer">CPF Applicable</Label>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
