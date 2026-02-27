@@ -20,6 +20,16 @@ export const CHANGELOG: ChangelogEntry[] = [
     affectedSections: ['section-stress-test', 'section-projection'],
   },
   {
+    date: '2026-02-27',
+    category: 'fix',
+    title: 'CPF OA mortgage shortfall now accounts for contributions',
+    description:
+      'The year-by-year projection was computing CPF OA mortgage shortfalls before adding your annual OA contributions, causing false shortfalls for employed users whose monthly contributions easily cover the mortgage. The housing deduction now runs after contributions, matching the real monthly co-flow of salary credits and mortgage debits.',
+    affectedSections: ['section-cpf', 'section-projection'],
+    insight:
+      'In real life, CPF contributions and housing deductions both happen monthly. The old code deducted the full year\'s mortgage from the starting OA balance before adding any contributions, so someone with $11,500 OA and a $20,676/yr mortgage would show a $9,176 shortfall even though their $15,120/yr contributions more than cover it.',
+  },
+  {
     date: '2026-02-26',
     category: 'feature',
     title: 'SEO and social sharing previews',
@@ -561,4 +571,4 @@ export const CHANGELOG: ChangelogEntry[] = [
 ]
 
 /** Bump this string whenever any data file is updated. Triggers the banner for returning users. */
-export const DATA_VINTAGE = '2026-02-25'
+export const DATA_VINTAGE = '2026-02-27'
