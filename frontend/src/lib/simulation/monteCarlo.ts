@@ -20,7 +20,7 @@ import {
   type HistoricalReturnRow,
 } from '@/lib/data/historicalReturnsFull.ts'
 import { ASSET_CLASSES } from '@/lib/data/historicalReturns.ts'
-import type { MonteCarloResult, PercentileBands, TerminalStats, FailureDistribution, SpendingMetrics, HistogramBucket, HistogramSnapshot, RetirementMitigationConfig } from '@/lib/types.ts'
+import type { MonteCarloResult, PercentileBands, TerminalStats, FailureDistribution, SpendingMetrics, HistogramBucket, HistogramSnapshot, RetirementMitigationConfig, RepresentativePath } from '@/lib/types.ts'
 
 // ============================================================
 // Types
@@ -48,6 +48,7 @@ export interface MonteCarloEngineParams {
   retirementMitigation?: RetirementMitigationConfig
   annualExpensesAtRetirement?: number  // needed to compute bucket target
   withdrawalBasis: 'expenses' | 'rate'
+  extractPaths?: boolean  // when true, extract representative paths for projection replay
 }
 
 export type MonteCarloEngineResult = Omit<
@@ -659,6 +660,47 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
     }
   })
 
+  // ---- Extract representative paths (gated to avoid overhead in SWR optimizer) ----
+  let representativePaths: RepresentativePath[] | undefined
+  if (params.extractPaths) {
+    const TARGET_PERCENTILES = [10, 25, 50, 75, 90]
+    representativePaths = []
+
+    // Choose selection point: retirement-age balance for normal mode,
+    // terminal balance for fireTarget mode (nYearsAccum = 0, all sims
+    // have the same initial balance so retirement-age percentiles collapse).
+    const selectionYearIdx = nYearsAccum > 0 ? nYearsAccum : nYearsTotal
+    const selCol: number[] = new Array(nSims)
+    for (let s = 0; s < nSims; s++) {
+      selCol[s] = balances[s][selectionYearIdx]
+    }
+
+    // Also capture retirement-age balance for display purposes
+    const retYearIdx = nYearsAccum
+
+    for (const pct of TARGET_PERCENTILES) {
+      const targetVal = percentile(selCol, pct)
+
+      // Find the sim whose balance at the selection point is closest
+      let bestSim = 0
+      let bestDist = Math.abs(selCol[0] - targetVal)
+      for (let s = 1; s < nSims; s++) {
+        const dist = Math.abs(selCol[s] - targetVal)
+        if (dist < bestDist) {
+          bestDist = dist
+          bestSim = s
+        }
+      }
+
+      representativePaths.push({
+        percentile: pct,
+        simIndex: bestSim,
+        yearlyReturns: portfolioReturns[bestSim].slice(0, nYearsTotal),
+        retirementBalance: balances[bestSim][retYearIdx],
+      })
+    }
+  }
+
   return {
     success_rate: successRate,
     percentile_bands: percentileBands,
@@ -667,5 +709,7 @@ export function runMonteCarlo(params: MonteCarloEngineParams): MonteCarloEngineR
     withdrawal_bands: withdrawalBands,
     spending_metrics: spendingMetrics,
     histogram_snapshots: histogramSnapshots,
+    representative_paths: representativePaths,
+    representative_paths_start_age: params.extractPaths ? currentAge : undefined,
   }
 }

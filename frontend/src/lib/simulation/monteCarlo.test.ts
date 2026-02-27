@@ -972,3 +972,49 @@ describe('retirement cash bucket mitigation', () => {
     expect(result.success_rate).toBeGreaterThanOrEqual(0)
   })
 })
+
+describe('representative paths', () => {
+  it('returns 5 representative paths with correct percentiles when extractPaths is true', () => {
+    const params = makeDefaultParams({ nSimulations: 500, extractPaths: true })
+    const result = runMonteCarlo(params as MonteCarloEngineParams)
+    expect(result.representative_paths).toBeDefined()
+    expect(result.representative_paths).toHaveLength(5)
+    const percentiles = result.representative_paths!.map(p => p.percentile)
+    expect(percentiles).toEqual([10, 25, 50, 75, 90])
+  })
+
+  it('does NOT extract paths when extractPaths is false or omitted', () => {
+    const params = makeDefaultParams({ nSimulations: 500 })
+    const result = runMonteCarlo(params as MonteCarloEngineParams)
+    expect(result.representative_paths).toBeUndefined()
+  })
+
+  it('each path has yearlyReturns matching total simulation years', () => {
+    const params = makeDefaultParams({ nSimulations: 500, extractPaths: true })
+    const result = runMonteCarlo(params as MonteCarloEngineParams)
+    const nYearsTotal = params.lifeExpectancy - params.currentAge // 55
+    for (const path of result.representative_paths!) {
+      expect(path.yearlyReturns).toHaveLength(nYearsTotal)
+      expect(path.simIndex).toBeGreaterThanOrEqual(0)
+      expect(path.simIndex).toBeLessThan(500)
+    }
+  })
+
+  it('p50 path retirement balance approximately matches percentile band p50', () => {
+    const params = makeDefaultParams({ nSimulations: 1000, seed: 42, extractPaths: true })
+    const result = runMonteCarlo(params as MonteCarloEngineParams)
+    const retirementYearIndex = params.retirementAge - params.currentAge // 20
+    const bandP50AtRetirement = result.percentile_bands.p50[retirementYearIndex]
+    const p50Path = result.representative_paths!.find(p => p.percentile === 50)!
+    // The representative sim should be close to the percentile value.
+    // We pick the nearest sim (not interpolate), so allow ~1% tolerance.
+    // numDigits=-5 means |diff| < 50,000 which is <2% of a ~3M balance.
+    expect(p50Path.retirementBalance).toBeCloseTo(bandP50AtRetirement, -5)
+  })
+
+  it('includes effectiveStartAge for timeline alignment', () => {
+    const params = makeDefaultParams({ nSimulations: 500, extractPaths: true })
+    const result = runMonteCarlo(params as MonteCarloEngineParams)
+    expect(result.representative_paths_start_age).toBe(params.currentAge)
+  })
+})
