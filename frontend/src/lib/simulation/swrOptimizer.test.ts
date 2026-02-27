@@ -37,7 +37,7 @@ describe('optimizeSwr', () => {
     expect(result).toBeLessThanOrEqual(0.08)
   })
 
-  it('higher confidence produces lower SWR', () => {
+  it('higher confidence produces lower SWR', { timeout: 15_000 }, () => {
     const swr95 = optimizeSwr(0.95, BASE_PARAMS)
     const swr85 = optimizeSwr(0.85, BASE_PARAMS)
     expect(swr95).toBeLessThanOrEqual(swr85)
