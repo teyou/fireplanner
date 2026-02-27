@@ -775,7 +775,7 @@ export function ProjectionPage() {
           </div>
         </div>
         <div className="mt-3 flex flex-col gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <span className="text-sm font-medium whitespace-nowrap">Withdrawal Strategy:</span>
             <Select
               value={activeStrategy}

@@ -27,11 +27,13 @@ export function WithdrawalBasisToggle() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="inline-flex rounded-lg border bg-muted p-0.5">
+      <div className="inline-flex rounded-lg border bg-muted p-0.5" role="radiogroup" aria-label="Withdrawal basis">
         {MODES.map((mode) => (
           <Tooltip key={mode.value}>
             <TooltipTrigger asChild>
               <button
+                role="radio"
+                aria-checked={withdrawalBasis === mode.value}
                 onClick={() => setField('withdrawalBasis', mode.value)}
                 className={cn(
                   'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
