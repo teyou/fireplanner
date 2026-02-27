@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -134,6 +135,19 @@ function StrategyParams() {
   const withdrawalStore = useWithdrawalStore()
   const strategy = simulation.selectedStrategy
   const params = simulation.strategyParams[strategy]
+  const withdrawalBasis = simulation.withdrawalBasis
+  const [showHint, setShowHint] = useState(false)
+
+  // Only show hint for strategy + field combos where the toggle materially changes behavior.
+  // These are strategies whose initial withdrawal amount is set by portfolio × rate:
+  //   constant_dollar.swr, guardrails.initialRate, vanguard_dynamic.swr
+  // Other strategies (VPW, floor_ceiling, cape_based, etc.) compute withdrawals dynamically
+  // from portfolio size, remaining years, or CAPE ratio — the toggle has minimal effect.
+  const HINT_TRIGGER: Record<string, Set<string>> = {
+    constant_dollar: new Set(['swr']),
+    guardrails: new Set(['initialRate']),
+    vanguard_dynamic: new Set(['swr']),
+  }
 
   const setParam = (field: string, value: number) => {
     simulation.setStrategyParam(
@@ -147,9 +161,14 @@ function StrategyParams() {
       field as keyof typeof params,
       value
     )
+    const triggers = HINT_TRIGGER[strategy]
+    if (withdrawalBasis === 'expenses' && triggers?.has(field)) {
+      setShowHint(true)
+    }
   }
 
   return (
+    <>
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       {strategy === 'constant_dollar' && (
         <ParamInput label="SWR" value={(params as { swr: number }).swr * 100} onChange={(v) => setParam('swr', v / 100)} suffix="%" step={0.1} />
@@ -211,6 +230,29 @@ function StrategyParams() {
         <ParamInput label="Expected Real Return" value={(params as { expectedRealReturn: number }).expectedRealReturn * 100} onChange={(v) => setParam('expectedRealReturn', v / 100)} suffix="%" step={0.1} />
       )}
     </div>
+    {showHint && withdrawalBasis === 'expenses' && (
+      <p className="text-xs text-muted-foreground mt-2">
+        Switch to{' '}
+        <button
+          className="underline font-medium"
+          onClick={() => {
+            simulation.setField('withdrawalBasis', 'rate')
+            setShowHint(false)
+          }}
+        >
+          Custom Rate
+        </button>{' '}
+        to test different withdrawal rates.
+        <button
+          className="ml-1 text-muted-foreground/60 hover:text-muted-foreground"
+          onClick={() => setShowHint(false)}
+          aria-label="Dismiss hint"
+        >
+          ✕
+        </button>
+      </p>
+    )}
+    </>
   )
 }
 
