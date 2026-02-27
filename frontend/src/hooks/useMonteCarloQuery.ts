@@ -375,6 +375,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
         retirementMitigation: profile.retirementMitigation,
         annualExpensesAtRetirement: getEffectiveExpenses(profile.retirementAge, profile.annualExpenses, profile.expenseAdjustments, profile.lifeExpectancy) * Math.pow(1 + profile.inflation, Math.max(0, profile.retirementAge - profile.currentAge)),
         withdrawalBasis: simulation.withdrawalBasis,
+        extractPaths: true,  // Enable representative path extraction for projection table
       }
 
       return runMonteCarloWorker(params)
