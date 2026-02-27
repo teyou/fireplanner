@@ -115,7 +115,7 @@ describe('deterministicAccumulation', () => {
 ### Step 2: Run tests to verify they fail
 
 Run: `cd frontend && npx vitest run src/lib/simulation/monteCarlo.test.ts --reporter=verbose 2>&1 | tail -20`
-Expected: FAIL — `deterministicAccumulation` not recognized in type, identical balances test fails
+Expected: FAIL — identical balances test fails (note: `as MonteCarloEngineParams` cast bypasses the type error; failure comes from behavior assertions, not type recognition)
 
 ### Step 3: Add `deterministicAccumulation` to `MonteCarloEngineParams`
 
@@ -175,6 +175,38 @@ To:
       ? nYearsAccum
       : nYearsTotal
 ```
+
+### Step 5b: Fix yearlyReturns in representative paths for deterministic mode
+
+In `src/lib/simulation/monteCarlo.ts:698`, the representative path extraction exports:
+```typescript
+yearlyReturns: portfolioReturns[bestSim].slice(0, nYearsTotal),
+```
+
+When `deterministicAccumulation` is true, the actual balances used `expectedPortfolioReturn` during accumulation, but `yearlyReturns` still contains the random pre-retirement returns from `portfolioReturns`. This causes the MCProjectionTable (which replays paths using `yearlyReturns`) to diverge from the MC engine's actual balances.
+
+**Fix:** After line 698, override the pre-retirement entries when deterministic:
+
+```typescript
+      const returns = portfolioReturns[bestSim].slice(0, nYearsTotal)
+      // When deterministic accumulation was used, the actual balance computation
+      // used expectedPortfolioReturn during pre-retirement years, not the random
+      // per-sim returns. Override yearlyReturns to match so projection table replay
+      // produces identical balances to the MC engine.
+      if (deterministicAccumulation) {
+        for (let t = 0; t < nYearsAccum; t++) {
+          returns[t] = expectedPortfolioReturn
+        }
+      }
+      representativePaths.push({
+        percentile: pct,
+        simIndex: bestSim,
+        yearlyReturns: returns,
+        retirementBalance: balances[bestSim][retYearIdx],
+      })
+```
+
+This replaces the original single-line push. The projection table replay will now produce balances consistent with the MC engine in both modes.
 
 ### Step 6: Run tests to verify they pass
 
@@ -277,34 +309,23 @@ Change `version: 5` to `version: 6` and add migration case:
 
 ### Step 3: Add migration test
 
-If `src/stores/useSimulationStore.test.ts` exists, add a test verifying the v5→v6 migration. The store's `migrate` function is not directly exported, so test via the store's rehydration behavior:
+Add a test to `src/stores/useSimulationStore.test.ts` inside the existing `describe('persist migration', ...)` block. Use the same `persist.getOptions().migrate` pattern as the v3→v4 test at line 94:
 
 ```typescript
 it('v5 → v6 migration adds deterministicAccumulation: false', () => {
-  // Simulate v5 persisted state (no deterministicAccumulation field)
-  // Note: DEFAULT_STRATEGY_PARAMS is file-local; use inline or get from store defaults
-  const v5Persisted = {
-    state: {
-      mcMethod: 'parametric',
-      selectedStrategy: 'constant_dollar',
-      strategyParams: { constant_dollar: { swr: 0.04 } },
-      nSimulations: 10000,
-      analysisMode: 'myPlan',
-      withdrawalBasis: 'expenses',
-      lastMCSuccessRate: null,
-      lastBacktestSuccessRate: null,
-    },
-    version: 5,
+  const { migrate } = useSimulationStore.persist.getOptions()
+  const v5State: Record<string, unknown> = {
+    mcMethod: 'parametric',
+    selectedStrategy: 'constant_dollar',
+    strategyParams: { constant_dollar: { swr: 0.04 } },
+    nSimulations: 10000,
+    analysisMode: 'myPlan',
+    withdrawalBasis: 'expenses',
+    lastMCSuccessRate: null,
+    lastBacktestSuccessRate: null,
   }
-  // Write v5 state to localStorage as if it were persisted
-  localStorage.setItem('fireplanner-simulation', JSON.stringify(v5Persisted))
-
-  // Re-import store to trigger rehydration + migration
-  // (or call useSimulationStore.persist.rehydrate() if available)
-  useSimulationStore.persist.rehydrate()
-
-  // After migration, deterministicAccumulation should be false
-  expect(useSimulationStore.getState().deterministicAccumulation).toBe(false)
+  const migrated = migrate!(v5State, 5) as Record<string, unknown>
+  expect(migrated.deterministicAccumulation).toBe(false)
 })
 ```
 
@@ -872,6 +893,17 @@ All of these are already produced by `runMonteCarlo` and displayed on the Stress
 
 Instead, the Explore MC tab builds its own minimal `MonteCarloEngineParams` and calls `runMonteCarloWorker` directly via `useMutation`. This matches the design intent: "simplified decumulation-only model."
 
+**Validation gating:** The Run button must be disabled when inputs are invalid. Add a `canRun` guard to prevent `RangeError` from `Array(lifeExpectancy - startAge)` when values are bad:
+
+```typescript
+const canRunExplore = explore.initialPortfolio > 0
+  && explore.startAge < profile.lifeExpectancy
+  && explore.startAge >= profile.currentAge
+// Disable Run button: <Button disabled={!canRunExplore || isPending}>Run MC</Button>
+```
+
+**MC params construction:**
+
 ```typescript
 // In the Explore MC tab component
 const explore = useExplorePortfolio()
@@ -1006,3 +1038,10 @@ All 10 findings from the Codex implementation review have been incorporated:
 ### Round 5 fixes (2 additional)
 18. Clamp `fireAge` to `[currentAge, lifeExpectancy]` after rounding to prevent negative array lengths
 19. Remove contradictory text about Explore MC needing post-retirement income/goals (it's pure decumulation)
+
+### Round 6 fixes (4 additional)
+20. Fix `yearlyReturns` in representative paths: override pre-retirement entries with `expectedPortfolioReturn` when `deterministicAccumulation` is true, so projection table replay matches MC engine balances (Task 1 Step 5b)
+21. Add `canRun` validation gating for Explore MC run button to prevent `RangeError` from invalid array lengths (Task 8)
+22. Rewrite migration test to use `persist.getOptions().migrate` directly (matches existing v3→v4 test pattern) instead of async `rehydrate()` (Task 3 Step 3)
+23. Fix Task 1 expected-fail text: `as MonteCarloEngineParams` cast bypasses type error; failure comes from behavior assertions (Task 1 Step 2)
+24. (Not a bug) `(2049$)` label format is intentional dollar-basis notation per design doc — no fix needed
