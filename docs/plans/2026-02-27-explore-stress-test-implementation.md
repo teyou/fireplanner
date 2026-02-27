@@ -386,7 +386,6 @@ In `src/hooks/useAnalysisPortfolio.ts`, replace the entire hook body:
 export function useAnalysisPortfolio(): AnalysisPortfolioResult {
   const profile = useProfileStore()
   const allocation = useAllocationStore()
-  const { metrics } = useFireCalculations()
 
   return useMemo(() => {
     const currentWeights = allocation.currentWeights
@@ -434,12 +433,11 @@ export function useAnalysisPortfolio(): AnalysisPortfolioResult {
     profile.expectedReturn, profile.usePortfolioReturn, profile.inflation, profile.expenseRatio,
     allocation.currentWeights, allocation.targetWeights, allocation.glidePathConfig,
     allocation.returnOverrides, allocation.validationErrors,
-    metrics?.fireNumber,
   ])
 }
 ```
 
-Remove the `useSimulationStore` import since it's no longer needed.
+Remove the `useSimulationStore` and `useFireCalculations` imports since they're no longer needed.
 
 ### Step 2: Verify backtest and sequence risk hooks
 
@@ -447,11 +445,15 @@ Read `useBacktestQuery.ts` and `useSequenceRiskQuery.ts` to confirm they only us
 
 ### Step 3: Update `useAnalysisPortfolio.test.ts`
 
-The existing test file has a `fireTarget mode` describe block (lines 95-121) that sets `analysisMode: 'fireTarget'` and expects `skipAccumulation: true`, `initialPortfolio = FIRE number`, etc. Since `useAnalysisPortfolio` now always returns My Plan values, these tests must be **removed or rewritten**.
+The existing test file has fireTarget-dependent tests that will fail:
 
-**Remove** the entire `describe('fireTarget mode', ...)` block (lines 95-121).
+1. `describe('fireTarget mode', ...)` block (lines 95-121) — sets `analysisMode: 'fireTarget'` and expects `skipAccumulation: true`, `initialPortfolio = FIRE number`
+2. Additional fireTarget-related test around line 156 that also depends on `analysisMode` switching
 
-**Update** the remaining tests to not set `analysisMode` on the simulation store (it's no longer read).
+Since `useAnalysisPortfolio` now always returns My Plan values, **remove or rewrite all fireTarget tests** in this file:
+- **Remove** the entire `describe('fireTarget mode', ...)` block (lines 95-121)
+- **Remove or rewrite** the test at line 156+ that references `analysisMode: 'fireTarget'`
+- **Update** remaining tests to not set `analysisMode` on the simulation store (it's no longer read)
 
 ### Step 4: Run type-check and tests
 
@@ -835,11 +837,33 @@ Import `X` from lucide-react.
 
 **Important: MC param building is complex.** The current `useMonteCarloQuery` (lines 125-381) handles ~15 concerns: income projection, property downsizing, mortgage cashflows, cash reserve, retirement withdrawals, goal deductions, CPF OA withdrawals, post-retirement income, etc. The Explore MC needs a subset of this (post-retirement income, retirement withdrawals, goal deductions during retirement) but NOT pre-retirement concerns (savings, mortgage, income).
 
+**Required outputs** (per design doc Section 2):
+1. Success rate, median/5th/95th terminal wealth
+2. Fan chart (startAge to life expectancy)
+3. Withdrawal schedule table
+4. Failure distribution by decade
+5. SWR optimization results
+
+All of these are already produced by `runMonteCarlo` and displayed on the Stress Test page. Reuse the same result display components.
+
 **Approach:** Extract the post-retirement param-building logic from `useMonteCarloQuery` into a shared helper `buildPostRetirementParams()` that both pages can call. The Explore MC tab calls it with `startAge` from `useExplorePortfolio`, zero annual savings, and the shared post-retirement income/adjustments.
 
 Alternatively, for the initial implementation: the Explore MC can call `useMonteCarloQuery` but override `currentAge = startAge`, `initialPortfolio`, `annualSavings = []`, and `skipAccumulation = true` via the `useExplorePortfolio` result. This works because `useMonteCarloQuery` already supports `skipAccumulation` mode (it was the old FIRE Target behavior). **This is the recommended approach** since it reuses all existing param logic without extraction.
 
-To make this work: the Explore page needs its own instance of `useMonteCarloQuery` that passes the explore portfolio instead of `useAnalysisPortfolio`. Add an optional `portfolioOverride` param to `useMonteCarloQuery`, or create a thin `useExploreMCQuery` wrapper that constructs the override.
+To make this work: add an optional `portfolioOverride` param to `useMonteCarloQuery`:
+
+```typescript
+interface MCQueryOverrides {
+  initialPortfolio: number
+  allocationWeights: number[]
+  startAge: number        // overrides currentAge when skipAccumulation is true
+  skipAccumulation: true
+}
+```
+
+When `overrides` is provided, the hook uses `overrides.initialPortfolio` instead of `analysisPortfolio.initialPortfolio`, `overrides.startAge` instead of `profile.retirementAge` for the skip-accumulation start age (line 362), and `overrides.allocationWeights` for allocation. This is critical for the FIRE Target scenario on Explore, where `startAge = fireAge` which may differ from `retirementAge`.
+
+The Explore page calls: `useMonteCarloQuery({ initialPortfolio, allocationWeights, startAge, skipAccumulation: true })` with values from `useExplorePortfolio()`.
 
 ### Step 3: Remove AnalysisModeToggle from WithdrawalPage
 
