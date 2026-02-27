@@ -111,6 +111,9 @@ export const lifeEventSchema = z.object({
   affectedStreamIds: z.array(z.string()),
   savingsPause: z.boolean(),
   cpfPause: z.boolean(),
+  additionalAnnualExpense: z.number().min(0).optional(),
+  lumpSumCost: z.number().min(0).optional(),
+  expenseReductionPercent: z.number().min(0).max(1).optional(),
 })
 
 export const incomeSchema = z.object({

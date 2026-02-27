@@ -281,6 +281,26 @@ describe('applyLifeEvents', () => {
   it('returns original amount when disabled', () => {
     expect(applyLifeEvents(72000, 35, 'any', [careerBreak], false)).toBe(72000)
   })
+
+  it('should carry optional expense fields without breaking existing behavior', () => {
+    const eventWithExpense: LifeEvent = {
+      id: 'illness',
+      name: 'Critical Illness',
+      startAge: 45,
+      endAge: 47,
+      incomeImpact: 0,
+      affectedStreamIds: [],
+      savingsPause: true,
+      cpfPause: true,
+      additionalAnnualExpense: 50000,
+      lumpSumCost: 20000,
+      expenseReductionPercent: 0,
+    }
+    // Existing behavior: applyLifeEvents only affects income, not expenses
+    expect(applyLifeEvents(72000, 45, 'any', [eventWithExpense], true)).toBe(0)
+    // Outside the event window, income is unaffected
+    expect(applyLifeEvents(72000, 44, 'any', [eventWithExpense], true)).toBe(72000)
+  })
 })
 
 // ============================================================

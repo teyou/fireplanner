@@ -276,6 +276,10 @@ export interface LifeEvent {
   affectedStreamIds: string[]
   savingsPause: boolean
   cpfPause: boolean
+  // Expense impacts (optional, for stress test scenarios)
+  additionalAnnualExpense?: number  // extra yearly cost (medical, care)
+  lumpSumCost?: number              // one-time cost at startAge
+  expenseReductionPercent?: number   // lifestyle reduction (0.15 = 15% less)
 }
 
 export interface IncomeState {

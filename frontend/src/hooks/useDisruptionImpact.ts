@@ -13,41 +13,64 @@ import { usePropertyStore } from '@/stores/usePropertyStore'
 
 export interface DisruptionTemplate {
   label: string
+  category: 'career' | 'health' | 'family'
   event: Omit<LifeEvent, 'id' | 'startAge' | 'endAge' | 'affectedStreamIds'>
   defaultAgeOffset: number
   durationYears: number
+  // Probability context (displayed, not used in simulation)
+  probability?: number          // cumulative probability (0.25 = 25%)
+  probabilityByAge?: number     // "by age X" qualifier
+  probabilitySource?: string    // citation
+  // Expense impacts
+  additionalAnnualExpense?: number
+  lumpSumCost?: number
+  expenseReductionPercent?: number
 }
 
 export const DISRUPTION_TEMPLATES: DisruptionTemplate[] = [
   {
     label: 'Job Loss (6 months)',
+    category: 'career',
     defaultAgeOffset: 2,
     durationYears: 1,
     event: { name: 'Job Loss (6 months)', incomeImpact: 0, savingsPause: true, cpfPause: true },
+    probability: 0.15,
+    probabilityByAge: 0,
+    probabilitySource: 'MOM Retrenchment Statistics 2024',
   },
   {
     label: 'Job Loss (12 months)',
+    category: 'career',
     defaultAgeOffset: 2,
     durationYears: 2,
     event: { name: 'Job Loss (12 months)', incomeImpact: 0, savingsPause: true, cpfPause: true },
+    probability: 0.15,
+    probabilityByAge: 0,
+    probabilitySource: 'MOM Retrenchment Statistics 2024',
   },
   {
     label: 'Partial Disability',
+    category: 'health',
     defaultAgeOffset: 5,
     durationYears: 3,
     event: { name: 'Partial Disability', incomeImpact: 0.5, savingsPause: false, cpfPause: false },
   },
   {
     label: 'Parent Care',
+    category: 'family',
     defaultAgeOffset: 10,
     durationYears: 5,
     event: { name: 'Parent Care', incomeImpact: 0.8, savingsPause: false, cpfPause: false },
   },
   {
     label: 'Recession Pay Cut',
+    category: 'career',
     defaultAgeOffset: 3,
     durationYears: 2,
     event: { name: 'Recession Pay Cut', incomeImpact: 0.8, savingsPause: false, cpfPause: false },
+    probability: 0.15,
+    probabilityByAge: 0,
+    probabilitySource: 'MOM Labour Market Report 2024',
   },
 ]
 
