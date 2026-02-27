@@ -16,12 +16,15 @@
 
 ```
 Agent A (Engine):  Task 1 → Task 2
-Agent B (State):   Task 3 → Task 4 → Task 5
-Agent C (UI):      Task 6 → Task 7 → Task 8    (after A+B complete)
+Agent B (State):   Task 3 → Task 4 → Task 5a → Task 5b
+Agent C (UI):      Task 6    (independent, can run with A or B)
+                   Task 7 → Task 8    (after A+B+C complete)
 ```
 
 - **Agent A** and **Agent B** are independent: A touches `monteCarlo.ts` + tests, B touches stores/hooks
-- **Agent C** depends on both A and B being complete (UI wires to new store fields and engine params)
+- **Task 6** (nav restructure) is fully independent — can run in parallel with A or B
+- **Tasks 7-8** depend on A, B, and C being complete (UI wires to new store fields and engine params)
+- **Task 5b** (useWithdrawalComparison decoupling) must complete before Task 8 (Explore page)
 
 ---
 
@@ -70,9 +73,9 @@ describe('deterministicAccumulation', () => {
       deterministicAccumulation: true,
     }) as MonteCarloEngineParams
     const result = runMonteCarlo(params)
-    // Success rate should NOT be 0% or 100% — post-retirement is still stochastic
+    // Success rate is 0..1. Should NOT be 0 or 1 — post-retirement is still stochastic
     expect(result.success_rate).toBeGreaterThan(0)
-    expect(result.success_rate).toBeLessThan(100)
+    expect(result.success_rate).toBeLessThan(1)
   })
 
   it('selects representative paths by terminal wealth when enabled', () => {
@@ -214,7 +217,7 @@ No commit needed — the interface change in Task 1 flows through automatically 
 
 **Files:**
 - Modify: `src/lib/types.ts:681-691` (SimulationState interface)
-- Modify: `src/stores/useSimulationStore.ts:25-54` (keys, defaults, migration)
+- Modify: `src/stores/useSimulationStore.ts:25-54` (keys, defaults), `src/stores/useSimulationStore.ts:118-148` (migration, version bump)
 
 ### Step 1: Add field to `SimulationState` type
 
@@ -272,12 +275,35 @@ Change `version: 5` to `version: 6` and add migration case:
         }
 ```
 
-### Step 3: Run type-check
+### Step 3: Add migration test
+
+If `src/stores/useSimulationStore.test.ts` exists, add a test verifying the v5→v6 migration:
+
+```typescript
+it('v5 → v6 migration adds deterministicAccumulation: false', () => {
+  const v5State = {
+    mcMethod: 'parametric',
+    selectedStrategy: 'constant_dollar',
+    strategyParams: DEFAULT_STRATEGY_PARAMS,
+    nSimulations: 10000,
+    analysisMode: 'myPlan',
+    withdrawalBasis: 'expenses',
+    lastMCSuccessRate: null,
+    lastBacktestSuccessRate: null,
+  }
+  // Simulate migration by calling the migrate function with version 5
+  // The store's migrate function should add deterministicAccumulation
+  expect(v5State).not.toHaveProperty('deterministicAccumulation')
+  // After store hydration, the field should default to false
+})
+```
+
+### Step 4: Run type-check
 
 Run: `cd frontend && npm run type-check 2>&1 | tail -10`
 Expected: Zero errors
 
-### Step 4: Commit
+### Step 5: Commit
 
 ```bash
 git add src/lib/types.ts src/stores/useSimulationStore.ts
@@ -419,16 +445,74 @@ Remove the `useSimulationStore` import since it's no longer needed.
 
 Read `useBacktestQuery.ts` and `useSequenceRiskQuery.ts` to confirm they only use `useAnalysisPortfolio()` (not `simulation.analysisMode` directly). They already do — they consume `.retirementPortfolio` and `.allocationWeights`, which are now always My Plan values.
 
-### Step 3: Run type-check and tests
+### Step 3: Update `useAnalysisPortfolio.test.ts`
+
+The existing test file has a `fireTarget mode` describe block (lines 95-121) that sets `analysisMode: 'fireTarget'` and expects `skipAccumulation: true`, `initialPortfolio = FIRE number`, etc. Since `useAnalysisPortfolio` now always returns My Plan values, these tests must be **removed or rewritten**.
+
+**Remove** the entire `describe('fireTarget mode', ...)` block (lines 95-121).
+
+**Update** the remaining tests to not set `analysisMode` on the simulation store (it's no longer read).
+
+### Step 4: Run type-check and tests
 
 Run: `cd frontend && npm run type-check && npm run test 2>&1 | tail -10`
 Expected: All pass (Stress Test behavior unchanged since most users were on My Plan)
 
+### Step 5: Commit
+
+```bash
+git add src/hooks/useAnalysisPortfolio.ts src/hooks/useAnalysisPortfolio.test.ts
+git commit -m "refactor(hooks): simplify useAnalysisPortfolio to always use My Plan mode"
+```
+
+---
+
+## Task 5b: Decouple `analysisMode` from `useWithdrawalComparison`
+
+**Files:**
+- Modify: `src/hooks/useWithdrawalComparison.ts:35,74-76` (remove analysisMode branching)
+- Modify: `src/hooks/useWithdrawalComparison.test.ts:143-181` (update fireTarget test)
+
+**Why this is critical:** `useWithdrawalComparison` reads `analysisMode` at line 35 and uses it at line 74 to switch between two portfolio calculations. If left untouched, the persisted `analysisMode` value could silently affect the Explore page's deterministic comparison even after the toggle is removed from UI.
+
+### Step 1: Remove `analysisMode` branching from `useWithdrawalComparison`
+
+In `src/hooks/useWithdrawalComparison.ts:35`, remove:
+```typescript
+  const analysisMode = useSimulationStore((s) => s.analysisMode)
+```
+
+At lines 74-76, change:
+```typescript
+    const initialPortfolio = analysisMode === 'myPlan'
+      ? (opts?.initialPortfolioOverride ?? profile.liquidNetWorth * (1 + netReturn) ** yearsToRetirement)
+      : analysisPortfolio.initialPortfolio
+```
+
+To:
+```typescript
+    const initialPortfolio = opts?.initialPortfolioOverride
+      ?? profile.liquidNetWorth * (1 + netReturn) ** yearsToRetirement
+```
+
+Remove `analysisMode` from the dependency array (line 118).
+
+### Step 2: Update `useWithdrawalComparison.test.ts`
+
+The test at lines 143-181 (`uses fireTarget analysisMode portfolio from analysisPortfolio`) sets `analysisMode: 'fireTarget'` and expects different terminal portfolios. Since the hook no longer reads `analysisMode`, this test must be **rewritten** to test the `initialPortfolioOverride` opt-in path instead.
+
+Replace the test body to verify that when `initialPortfolioOverride` is provided, it uses that value, and when omitted, it uses projected portfolio.
+
+### Step 3: Run tests
+
+Run: `cd frontend && npm run test 2>&1 | tail -10`
+Expected: All pass
+
 ### Step 4: Commit
 
 ```bash
-git add src/hooks/useAnalysisPortfolio.ts
-git commit -m "refactor(hooks): simplify useAnalysisPortfolio to always use My Plan mode"
+git add src/hooks/useWithdrawalComparison.ts src/hooks/useWithdrawalComparison.test.ts
+git commit -m "refactor(hooks): decouple useWithdrawalComparison from analysisMode"
 ```
 
 ---
@@ -511,6 +595,16 @@ git commit -m "feat(nav): restructure into EXPLORE and ANALYSIS sections, rename
 **Files:**
 - Modify: `src/pages/StressTestPage.tsx` (remove AnalysisModeToggle, add pre-retirement toggle, add Explore link)
 - Modify: `src/components/simulation/SimulationControls.tsx` (add toggle to params card)
+
+### Step 0: Install shadcn ToggleGroup component
+
+The `toggle-group` component doesn't exist yet. Install it:
+
+```bash
+cd frontend && npx shadcn@latest add toggle-group
+```
+
+This creates `src/components/ui/toggle-group.tsx`. Verify it exists before proceeding.
 
 ### Step 1: Remove AnalysisModeToggle from StressTestPage
 
@@ -621,8 +715,6 @@ import { useProfileStore } from '@/stores/useProfileStore'
 import { useAllocationStore } from '@/stores/useAllocationStore'
 import { useFireCalculations } from '@/hooks/useFireCalculations'
 import { useProjection } from '@/hooks/useProjection'
-import { calculatePortfolioReturn } from '@/lib/calculations/portfolio'
-import { ASSET_CLASSES } from '@/lib/data/historicalReturns'
 import { formatCurrency } from '@/lib/utils'
 import { interpolateGlidePath } from '@/lib/calculations/portfolio'
 
@@ -654,7 +746,10 @@ export function useExplorePortfolio(): ExplorePortfolioResult {
   return useMemo(() => {
     if (balanceMode === 'fireTarget') {
       const fireNumber = metrics?.fireNumber ?? 0
-      const fireAge = metrics?.fireAge ?? profile.retirementAge
+      // Guard: fireAge can be Infinity when savings rate is insufficient
+      // (yearsToFire = Infinity → fireAge = currentAge + Infinity). Fall back to retirementAge.
+      const rawFireAge = metrics?.fireAge ?? profile.retirementAge
+      const fireAge = isFinite(rawFireAge) ? rawFireAge : profile.retirementAge
 
       // Use retirement-age weights for decumulation
       const retirementWeights = getExploreWeights(allocation, profile.retirementAge)
@@ -710,19 +805,41 @@ Transform to:
 - Tabs: "Strategy Comparison" (existing content) | "MC Simulation" (new)
 - Remove AnalysisModeToggle from this page
 
-**Educational banner** (add after header, before tabs):
+**Dismissible educational banner** (add after header, before tabs). Use `useState` for dismiss state:
 
 ```tsx
-<div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
-  Compare withdrawal strategies to understand how they behave under different market conditions.
-  This uses a simplified decumulation-only model. For a full stress test of your plan including accumulation, go to{' '}
-  <Link to="/stress-test" className="font-medium underline">Stress Test →</Link>
-</div>
+const [bannerDismissed, setBannerDismissed] = useState(false)
+
+// In JSX:
+{!bannerDismissed && (
+  <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200 flex items-start justify-between gap-2">
+    <p>
+      Compare withdrawal strategies to understand how they behave under different market conditions.
+      This uses a simplified decumulation-only model. For a full stress test of your plan including accumulation, go to{' '}
+      <Link to="/stress-test" className="font-medium underline">Stress Test →</Link>
+    </p>
+    <button
+      onClick={() => setBannerDismissed(true)}
+      className="shrink-0 text-blue-600 hover:text-blue-800 dark:text-blue-400"
+      aria-label="Dismiss banner"
+    >
+      <X className="h-4 w-4" />
+    </button>
+  </div>
+)}
 ```
 
-**MC Simulation tab content** — Wire `useExplorePortfolio` for the balance toggle, build MC params with `currentAge = startAge`, `initialPortfolio` from the hook, `annualSavings = []`, and render the same MC result components (success rate, fan chart, failure distribution).
+Import `X` from lucide-react.
 
-This tab reuses the existing `useMonteCarloQuery` hook but needs to override the params. The simplest approach: create a separate mutation in the Explore MC tab that calls `runMonteCarloWorker` directly with custom params built from `useExplorePortfolio`. This avoids modifying the shared `useMonteCarloQuery` hook.
+**MC Simulation tab content** — Wire `useExplorePortfolio` for the balance toggle, run decumulation-only MC, render result components (success rate, fan chart, failure distribution).
+
+**Important: MC param building is complex.** The current `useMonteCarloQuery` (lines 125-381) handles ~15 concerns: income projection, property downsizing, mortgage cashflows, cash reserve, retirement withdrawals, goal deductions, CPF OA withdrawals, post-retirement income, etc. The Explore MC needs a subset of this (post-retirement income, retirement withdrawals, goal deductions during retirement) but NOT pre-retirement concerns (savings, mortgage, income).
+
+**Approach:** Extract the post-retirement param-building logic from `useMonteCarloQuery` into a shared helper `buildPostRetirementParams()` that both pages can call. The Explore MC tab calls it with `startAge` from `useExplorePortfolio`, zero annual savings, and the shared post-retirement income/adjustments.
+
+Alternatively, for the initial implementation: the Explore MC can call `useMonteCarloQuery` but override `currentAge = startAge`, `initialPortfolio`, `annualSavings = []`, and `skipAccumulation = true` via the `useExplorePortfolio` result. This works because `useMonteCarloQuery` already supports `skipAccumulation` mode (it was the old FIRE Target behavior). **This is the recommended approach** since it reuses all existing param logic without extraction.
+
+To make this work: the Explore page needs its own instance of `useMonteCarloQuery` that passes the explore portfolio instead of `useAnalysisPortfolio`. Add an optional `portfolioOverride` param to `useMonteCarloQuery`, or create a thin `useExploreMCQuery` wrapper that constructs the override.
 
 ### Step 3: Remove AnalysisModeToggle from WithdrawalPage
 
@@ -779,6 +896,26 @@ After all tasks are complete:
 |------|-----------|
 | Existing users with `analysisMode: 'fireTarget'` in localStorage | Stress Test now ignores it (always My Plan). No crash, just different behavior. |
 | `useAnalysisPortfolio` consumed elsewhere | Search for all imports — should only be StressTestPage, useMonteCarloQuery, useBacktestQuery, useSequenceRiskQuery |
+| `useWithdrawalComparison` still reads `analysisMode` | Task 5b decouples it. Must complete before Task 8. |
 | Explore MC tab calling worker concurrently with Stress Test | Worker client supports concurrent calls via message ID multiplexing |
 | `deterministicAccumulation` missing from old exported JSON | Import handler defaults missing fields; `false` preserves old behavior |
 | Representative paths in SWR optimizer | SWR optimizer sets `extractPaths: false`, so path selection change is irrelevant |
+| `fireAge` can be `Infinity` when savings rate is insufficient | `useExplorePortfolio` guards with `isFinite()`, falls back to `retirementAge` |
+| `useAnalysisPortfolio.test.ts` has fireTarget tests that will fail | Task 5 Step 3 removes/rewrites these tests |
+| `useWithdrawalComparison.test.ts` has fireTarget test that will fail | Task 5b Step 2 rewrites the test |
+| Explore MC may drift from Stress Test MC param logic | Task 8 reuses `useMonteCarloQuery` with portfolio override instead of building params from scratch |
+
+## Codex Review Findings (Addressed)
+
+All 10 findings from the Codex implementation review have been incorporated:
+
+1. ToggleGroup component: added `npx shadcn@latest add toggle-group` prerequisite step (Task 7 Step 0)
+2. `useWithdrawalComparison` coupling: added Task 5b to decouple it
+3. `fireAge` Infinity guard: added `isFinite()` check in `useExplorePortfolio`
+4. Explore MC param construction: specified reuse of `useMonteCarloQuery` with portfolio override
+5. Unused imports: removed `calculatePortfolioReturn` and `ASSET_CLASSES` from `useExplorePortfolio`
+6. `success_rate` range: fixed assertion from `< 100` to `< 1`
+7. Dismissible banner: added dismiss state with X button
+8. Line number mismatch: corrected Task 3 file range to include migration lines 118-148
+9. Missing test updates: added test update steps to Tasks 3, 5, and 5b
+10. Parallelism: Task 6 now independent; Task 5b added as dependency for Task 8
