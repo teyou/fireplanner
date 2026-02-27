@@ -10,6 +10,22 @@
 
 **Design doc:** `docs/plans/2026-02-27-withdrawal-basis-toggle-design.md`
 
+**Review notes (Codex):** 8 findings addressed in this revision:
+1. [Critical] Task 5 rate-mode math now matches MC/SR income-offset pattern
+2. [High] BacktestDrillDown threading added to Task 3
+3. [High] Heatmap semantics documented (always rate-driven by design)
+4. [High] Changelog schema fixed (category not type, section-* IDs)
+5. [Medium] Mitigation sizing caveat documented (intentionally expense-based)
+6. [Medium] withdrawalBasis is required (not optional) on engine params
+7. [Medium] Hint only triggers for expense-anchored strategies
+8. [Medium] v5 migration tests and hook stale-detection tests added
+
+**Known limitation (intentional):** Cash-bucket sizing in MC (line 405) and SR mitigation sizing
+use `annualExpensesAtRetirement` regardless of `withdrawalBasis`. This is correct: the cash
+bucket covers N months of *living expenses* as a liquidity buffer — it should not change just
+because the user is testing a different withdrawal rate. If rate-driven users want to test
+bucket sizing, that's a separate feature.
+
 ---
 
 ## Task 1: Add type and store field
@@ -56,12 +72,28 @@ if (version < 5) {
 }
 ```
 
-**Step 3: Run type-check**
+**Step 3: Add v5 migration test**
+
+Check if simulation store migration tests exist (search for `fireplanner-simulation` or
+`useSimulationStore` in test files). If they do, add a test for v4 → v5 migration:
+
+```typescript
+it('migrates v4 state to v5 by adding withdrawalBasis', () => {
+  const v4State = { /* valid v4 state without withdrawalBasis */ }
+  const migrated = migrate(v4State, 4)
+  expect(migrated.withdrawalBasis).toBe('expenses')
+})
+```
+
+If no migration tests exist, create them in a new test file or add to the nearest
+simulation store test file.
+
+**Step 4: Run type-check**
 
 Run: `cd frontend && npm run type-check`
 Expected: PASS (new field is provided in defaults and migrated for existing users)
 
-**Step 4: Commit**
+**Step 5: Commit**
 
 ```bash
 git add frontend/src/lib/types.ts frontend/src/stores/useSimulationStore.ts
@@ -113,7 +145,7 @@ Expected: FAIL — `withdrawalBasis` not recognized in params type
 In `frontend/src/lib/simulation/monteCarlo.ts`, add to the interface after line 48 (`retirementMitigation`):
 
 ```typescript
-withdrawalBasis?: 'expenses' | 'rate'
+withdrawalBasis: 'expenses' | 'rate'
 ```
 
 Update the expense override block (lines 390-401). Replace:
@@ -180,10 +212,10 @@ Expected: FAIL
 In `frontend/src/lib/simulation/backtest.ts`, add to interface after line 38:
 
 ```typescript
-withdrawalBasis?: 'expenses' | 'rate'
+withdrawalBasis: 'expenses' | 'rate'
 ```
 
-Update `runSingleWindow` (line 147-158): add `withdrawalBasis?: 'expenses' | 'rate'` as a new parameter after `annualExpensesAtRetirement`.
+Update `runSingleWindow` (line 147-158): add `withdrawalBasis: 'expenses' | 'rate' = 'expenses'` as a new positional parameter after `annualExpensesAtRetirement`.
 
 Update condition at line 163:
 ```typescript
@@ -220,19 +252,48 @@ const simulation = useSimulationStore()
 
 Also add to stale detection signature.
 
-**Step 5: Run tests**
+**Step 5: Thread through BacktestDrillDown**
+
+In `frontend/src/components/backtest/BacktestDrillDown.tsx`, the `buildParams` callback (line 69-80)
+constructs its own `BacktestEngineParams` independently. Add `withdrawalBasis` to it:
+
+```typescript
+const simulation = useSimulationStore()
+// ...
+const buildParams = useCallback((): BacktestEngineParams => ({
+  // ... existing fields ...
+  withdrawalBasis: simulation.withdrawalBasis,
+}), [/* ... existing deps ..., simulation.withdrawalBasis */])
+```
+
+Import `useSimulationStore` if not already imported. Without this, drill-down charts won't
+match base backtest results after toggle changes.
+
+**Step 6: Address heatmap semantics**
+
+The `generateHeatmap` function in `backtest.ts` (line 542) already forces
+`annualExpensesAtRetirement: undefined` to sweep SWR values across the grid. This means
+the heatmap is inherently rate-driven regardless of the toggle — each cell tests a different
+SWR × duration combination by design. No code change needed, but add a comment:
+
+```typescript
+// Heatmap is always rate-driven: each cell tests a specific SWR × duration
+// regardless of withdrawalBasis toggle, since annualExpensesAtRetirement is undefined.
+```
+
+**Step 7: Run tests**
 
 Run: `cd frontend && npx vitest run src/lib/simulation/backtest.test.ts --reporter=verbose`
 Expected: PASS
 
-**Step 6: Commit**
+**Step 8: Commit**
 
 ```bash
-git add frontend/src/lib/simulation/backtest.ts frontend/src/hooks/useBacktestQuery.ts frontend/src/lib/simulation/backtest.test.ts
+git add frontend/src/lib/simulation/backtest.ts frontend/src/hooks/useBacktestQuery.ts frontend/src/components/backtest/BacktestDrillDown.tsx frontend/src/lib/simulation/backtest.test.ts
 git commit -m "feat: Backtest respects withdrawalBasis toggle
 
-Both runSingleWindow and runDetailedWindow now check withdrawalBasis
-before overriding SWR with expenses."
+runSingleWindow, runDetailedWindow, and BacktestDrillDown all thread
+withdrawalBasis. Heatmap remains always rate-driven by design."
 ```
 
 ---
@@ -258,13 +319,14 @@ Expected: FAIL
 In `frontend/src/lib/simulation/sequenceRisk.ts`, add to interface after line 48:
 
 ```typescript
-withdrawalBasis?: 'expenses' | 'rate'
+withdrawalBasis: 'expenses' | 'rate'
 ```
 
-Add `withdrawalBasis` parameter to `runSingleScenario` (after `portfolioInjections` at line 115):
+Add `withdrawalBasis` parameter to `runSingleScenario` (after `portfolioInjections` at line 115).
+Note: this is a positional function param, not an interface field, so use standard param syntax:
 
 ```typescript
-withdrawalBasis?: 'expenses' | 'rate',
+withdrawalBasis: 'expenses' | 'rate' = 'expenses',
 ```
 
 Update condition at line 158:
@@ -325,10 +387,17 @@ Test A — Basic rate-driven behavior:
 
 Test B — High income, low expense scenario in rate mode:
 - Set postRetirementIncome significantly higher than expenses (e.g. $60K income, $30K expenses)
-- In expense mode: surplus $30K would be reinvested, growing the portfolio
-- In rate mode: surplus income is ignored, portfolio draws only the strategy amount
-- Verify that rate-mode Terminal NW is lower than expense-mode Terminal NW for this scenario (because surplus income is not reinvested)
-- This validates that `surplusIncome = 0` in rate mode works correctly
+- Use a strategy with 5% SWR ($50K withdrawal on $1M portfolio)
+- In rate mode: net draw = max(0, $50K - $60K) = $0, surplus $10K reinvested
+- In expense mode: expense gap = max(0, $30K - $60K) = $0, surplus $30K reinvested
+- Verify rate-mode Terminal NW is lower than expense-mode (less surplus reinvested)
+- This validates that income offsets strategy withdrawal correctly in rate mode
+
+Test C — Rate-driven income offset consistency with MC:
+- Same inputs as Test A, but compute expected initial net withdrawal manually:
+  `max(0, portfolio * swr - postRetirementIncome)`
+- Verify the first retirement row's withdrawalAmount matches this formula
+- This validates projection matches MC/SR income offset semantics
 
 **Step 2: Run test to verify it fails**
 
@@ -340,7 +409,7 @@ Expected: FAIL
 In `frontend/src/lib/calculations/projection.ts`, add to interface after line 94 (`cpfLifePlan`):
 
 ```typescript
-withdrawalBasis?: 'expenses' | 'rate'
+withdrawalBasis: 'expenses' | 'rate'
 ```
 
 Update the `actualDraw` computation (lines 548-556). Replace:
@@ -358,10 +427,14 @@ const expenseGap = Math.max(0, inflationAdjustedExpenses - postRetirementIncome)
 let actualDraw: number
 let surplusIncome: number
 
-if (params.withdrawalBasis === 'rate' && startLiquidNW > 0) {
-  // Rate-driven: withdraw what the strategy prescribes
-  actualDraw = Math.min(strategyWithdrawal, startLiquidNW)
-  surplusIncome = 0  // no surplus concept in rate-driven mode
+if (params.withdrawalBasis === 'rate') {
+  // Rate-driven: income offsets strategy withdrawal (matching MC/SR engines).
+  // MC: netWithdrawal = max(0, withdrawal - income)  (monteCarlo.ts:444)
+  // SR: netWithdrawal = max(0, (withdrawal + oneTime) - income)  (sequenceRisk.ts:201)
+  // Projection mirrors this: draw = max(0, strategyWithdrawal - income).
+  const netStrategyDraw = Math.max(0, strategyWithdrawal - postRetirementIncome)
+  actualDraw = Math.min(netStrategyDraw, startLiquidNW)
+  surplusIncome = Math.max(0, postRetirementIncome - strategyWithdrawal)
 } else {
   // Expense-driven (default): withdraw what you need to spend
   actualDraw = Math.min(expenseGap, startLiquidNW)
@@ -370,6 +443,12 @@ if (params.withdrawalBasis === 'rate' && startLiquidNW > 0) {
 ```
 
 Note: `strategyWithdrawal` is computed just above this block (lines 511-520), so it's available.
+
+**Why income offsets the withdrawal (not ignored):** MC and SR engines compute
+`netWithdrawal = max(0, withdrawal - income)` — post-retirement income reduces the
+portfolio draw. The projection must match this so results are consistent across pages.
+If strategy withdrawal is $40K and income is $60K, net draw is $0 and surplus $20K
+is reinvested. This is materially different from ignoring income entirely.
 
 **Step 4: Thread through useProjection**
 
@@ -549,10 +628,14 @@ In `SimulationControls.tsx`, in the `StrategyParams` component, detect when the 
 const withdrawalBasis = useSimulationStore((s) => s.withdrawalBasis)
 const [showHint, setShowHint] = useState(false)
 
-// In the setParam callback for SWR-related fields:
+// Only show hint for strategies where the toggle has a meaningful effect.
+// Dynamic strategies (VPW, one_over_n, hebeler_autopilot) compute withdrawals
+// from portfolio size / remaining years, so the toggle has little/no impact.
+const EXPENSE_ANCHORED_FIELDS = new Set(['swr', 'initialRate', 'targetRate', 'rate', 'baseRate'])
+
 const setParam = (field: string, value: number) => {
   // existing logic...
-  if (withdrawalBasis === 'expenses' && (field === 'swr' || field === 'initialRate' || field === 'targetRate' || field === 'rate' || field === 'baseRate')) {
+  if (withdrawalBasis === 'expenses' && EXPENSE_ANCHORED_FIELDS.has(field)) {
     setShowHint(true)
   }
 }
@@ -581,31 +664,48 @@ parameters that would otherwise have no effect."
 
 ---
 
-## Task 9: Full test suite and type-check
+## Task 9: Full test suite, stale-detection tests, and type-check
 
 **Files:**
 - All test files
+- Hook test files (if they exist) for stale detection coverage
 
-**Step 1: Run full type-check**
+**Step 1: Verify withdrawalBasis is in stale-detection signatures**
+
+Grep all hooks for `currentParamsSig` or equivalent stale detection and confirm
+`withdrawalBasis` is included in each:
+- `useMonteCarloQuery.ts` — `currentParamsSig` useMemo
+- `useBacktestQuery.ts` — stale detection signature
+- `useSequenceRiskQuery.ts` — `currentParamsSig` useMemo
+- `useProjection.ts` — useMemo dependency array
+
+If any hook is missing `withdrawalBasis` in its signature, add it. This ensures
+toggling the mode marks existing results as stale.
+
+**Step 2: Run full type-check**
 
 Run: `cd frontend && npm run type-check`
-Expected: Zero errors
+Expected: Zero errors. Because `withdrawalBasis` is **required** (not optional) on engine
+params, any missed call site will fail at compile time.
 
-**Step 2: Run full test suite**
+**Step 3: Run full test suite**
 
 Run: `cd frontend && npm run test`
 Expected: ALL PASS
 
-**Step 3: Run lint**
+**Step 4: Run lint**
 
 Run: `cd frontend && npm run lint`
 Expected: PASS
 
-**Step 4: Fix any issues found**
+**Step 5: Fix any issues found**
 
-If any tests fail, investigate and fix. Existing tests should pass unchanged because the default `withdrawalBasis` is `'expenses'` which preserves current behavior.
+If any tests fail, investigate and fix. Existing tests should pass unchanged because the
+default `withdrawalBasis` is `'expenses'` which preserves current behavior. However, since
+`withdrawalBasis` is required on engine params, existing test helpers that build params may
+need `withdrawalBasis: 'expenses'` added explicitly.
 
-**Step 5: Commit any fixes**
+**Step 6: Commit any fixes**
 
 ```bash
 git commit -m "fix: address test/lint issues from withdrawal basis toggle"
@@ -627,8 +727,8 @@ Add a new entry to `frontend/src/lib/data/changelog.ts` describing the feature:
   date: '2026-02-27',
   title: 'Withdrawal Basis Toggle',
   description: 'New toggle on all simulation and projection pages: choose between "My Expenses" (withdrawals match your planned spending) or "Custom Rate" (withdrawals based on portfolio × strategy rate, e.g. the 4% rule). Previously, changing SWR had no effect on results.',
-  type: 'feature' as const,
-  affectedSections: ['stress-test', 'projection'],
+  category: 'feature' as const,
+  affectedSections: ['section-stress-test', 'section-projection'],
 },
 ```
 
