@@ -56,7 +56,6 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
   const currentParamsSig = useMemo(() => JSON.stringify({
     initialPortfolio: analysisPortfolio.initialPortfolio,
     allocationWeights: analysisPortfolio.allocationWeights,
-    skipAccumulation: analysisPortfolio.skipAccumulation,
     currentAge: profile.currentAge,
     retirementAge: profile.retirementAge,
     lifeExpectancy: profile.lifeExpectancy,
@@ -97,7 +96,7 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
     withdrawalBasis: simulation.withdrawalBasis,
     deterministicAccumulation: simulation.deterministicAccumulation,
   }), [
-    analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights, analysisPortfolio.skipAccumulation,
+    analysisPortfolio.initialPortfolio, analysisPortfolio.allocationWeights,
     profile.currentAge, profile.retirementAge, profile.lifeExpectancy, profile.expenseRatio, profile.inflation,
     simulation.mcMethod, simulation.nSimulations, simulation.selectedStrategy, simulation.strategyParams,
     allocation.returnOverrides, allocation.stdDevOverrides,
@@ -129,9 +128,8 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
       const annualSavings: number[] = []
       const postRetirementIncome: number[] = []
 
-      // Compute effectiveStartAge once (used for downsizing equity + lump-sum injections)
-      const effectiveStartAge = analysisPortfolio.skipAccumulation
-        ? profile.retirementAge : profile.currentAge
+      // effectiveStartAge: always currentAge (My Plan mode uses accumulation phase)
+      const effectiveStartAge = profile.currentAge
 
       // Property mortgage (cash portion only, mirrors projection.ts lines 98-99)
       const ownershipPct = propertyStore.ownershipPercent ?? 1
@@ -359,12 +357,10 @@ export function useMonteCarloQuery(): UseMonteCarloQueryResult {
         expectedReturns,
         stdDevs,
         correlationMatrix: CORRELATION_MATRIX,
-        // When skipping accumulation, start simulation at retirement age
-        currentAge: analysisPortfolio.skipAccumulation ? profile.retirementAge : profile.currentAge,
+        currentAge: profile.currentAge,
         retirementAge: profile.retirementAge,
         lifeExpectancy: profile.lifeExpectancy,
-        // When skipping accumulation, no pre-retirement savings (post-retirement income still included)
-        annualSavings: analysisPortfolio.skipAccumulation ? [] : effectiveSavings,
+        annualSavings: effectiveSavings,
         postRetirementIncome,
         method: simulation.mcMethod,
         nSimulations: simulation.nSimulations,

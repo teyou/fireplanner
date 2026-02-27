@@ -140,7 +140,9 @@ describe('useWithdrawalComparison', () => {
     expect(manualTerminal).not.toEqual(portfolioTerminal)
   })
 
-  it('uses fireTarget analysisMode portfolio from analysisPortfolio', () => {
+  // Skipped: useAnalysisPortfolio no longer supports fireTarget mode (always My Plan).
+  // Task 5b will decouple useWithdrawalComparison from the analysis hook and rewrite this test.
+  it.skip('uses fireTarget analysisMode portfolio from analysisPortfolio', () => {
     // NW = 1.5M, FIRE number = 80K/0.04 = 2M — deliberately different
     useProfileStore.setState({
       ...useProfileStore.getState(),
