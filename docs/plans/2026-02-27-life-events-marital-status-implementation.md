@@ -82,6 +82,7 @@ git commit -m "feat: add divorced and widowed marital status options"
 **Files:**
 - Modify: `frontend/src/hooks/useDisruptionImpact.ts:14-19`
 - Modify: `frontend/src/lib/types.ts:270-279` (LifeEvent interface)
+- Modify: `frontend/src/lib/validation/schemas.ts` (LifeEvent Zod schema, Codex fix #5)
 
 **Step 1: Write failing test for expense impact on LifeEvent**
 
@@ -189,7 +190,7 @@ Expected: All pass. Optional fields don't break existing code.
 **Step 7: Commit**
 
 ```bash
-git add frontend/src/lib/types.ts frontend/src/hooks/useDisruptionImpact.ts frontend/src/lib/calculations/income.test.ts
+git add frontend/src/lib/types.ts frontend/src/hooks/useDisruptionImpact.ts frontend/src/lib/validation/schemas.ts frontend/src/lib/calculations/income.test.ts
 git commit -m "feat: add expense impact and probability fields to LifeEvent and DisruptionTemplate"
 ```
 
@@ -269,7 +270,7 @@ probabilitySource: 'MOM Retrenchment Statistics 2024',
 category: 'health',
 
 // Parent Care — add:
-category: 'career',
+category: 'family',
 
 // Recession Pay Cut — add:
 category: 'career',
