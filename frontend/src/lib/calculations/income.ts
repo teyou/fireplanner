@@ -672,7 +672,7 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     const voluntaryTopUps = salary > 0
       ? (params.cpfTopUpOA ?? 0) + (params.cpfTopUpSA ?? 0) + (params.cpfTopUpMA ?? 0)
       : 0
-    const annualSavings = savingsPaused ? 0 : Math.max(0, totalNet - inflationAdjustedExpenses - voluntaryTopUps)
+    const annualSavings = savingsPaused ? 0 : Math.max(0, totalNet - inflationAdjustedExpenses - voluntaryTopUps - srsContribution)
     cumulativeSavings += annualSavings
 
     const activeLifeEvents = getActiveLifeEventNames(age, params.lifeEvents, params.lifeEventsEnabled)
