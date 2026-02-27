@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { WithdrawalBasisToggle } from '@/components/shared/WithdrawalBasisToggle'
 import type { BacktestDataset, HeatmapConfig, WithdrawalStrategyType } from '@/lib/types'
 import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
@@ -152,6 +153,7 @@ export function BacktestControls({ config, setConfig, isPending, canRun, validat
         </div>
 
         <StrategyParams strategy={config.withdrawalStrategy} />
+        <WithdrawalBasisToggle />
 
         {disabledReason && (
           <p className="text-sm text-muted-foreground">{disabledReason}</p>

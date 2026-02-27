@@ -7,6 +7,7 @@ import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import type { MonteCarloMethod, WithdrawalStrategyType } from '@/lib/types'
 import { InfoTooltip } from '@/components/shared/InfoTooltip'
+import { WithdrawalBasisToggle } from '@/components/shared/WithdrawalBasisToggle'
 import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
 import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { trackEvent } from '@/lib/analytics'
@@ -109,6 +110,7 @@ export function SimulationControls({ onRun, isPending, canRun, validationErrors 
         </div>
 
         <StrategyParams />
+        <WithdrawalBasisToggle />
 
         <div className="flex items-center gap-3">
           <Button

@@ -25,6 +25,7 @@ import { useEffectiveMode } from '@/hooks/useEffectiveMode'
 import { useUIStore } from '@/stores/useUIStore'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { StrategyParamCard } from '@/components/withdrawal/StrategyParamsSection'
+import { WithdrawalBasisToggle } from '@/components/shared/WithdrawalBasisToggle'
 import { getStrategyLabel } from '@/hooks/useWithdrawalComparison'
 import { trackEvent } from '@/lib/analytics'
 import { usePageMeta } from '@/hooks/usePageMeta'
@@ -789,6 +790,7 @@ export function ProjectionPage() {
                 ))}
               </SelectContent>
             </Select>
+            <WithdrawalBasisToggle />
           </div>
           <StrategyParamCard strategy={activeStrategy} />
         </div>

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, ChevronDown, ChevronRight, CheckCircle2, Info, ShieldAlert } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AnalysisModeToggle } from '@/components/shared/AnalysisModeToggle'
+import { WithdrawalBasisToggle } from '@/components/shared/WithdrawalBasisToggle'
 import { useAnalysisPortfolio } from '@/hooks/useAnalysisPortfolio'
 import { formatCurrency, cn } from '@/lib/utils'
 import type { PercentileBands } from '@/lib/types'
@@ -450,6 +451,8 @@ function SequenceRiskTab() {
             <p className="text-sm font-medium">{selectedCrisis.name} ({selectedCrisis.startYear})</p>
             <p className="text-xs text-muted-foreground mt-1">{selectedCrisis.description}</p>
           </div>
+
+          <WithdrawalBasisToggle />
 
           <div className="flex items-center gap-3">
             <Button

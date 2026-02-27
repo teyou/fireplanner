@@ -22,6 +22,7 @@ const BASE_PARAMS = {
   strategyParams: { swr: 0.04 },
   expenseRatio: 0.003,
   inflation: 0.025,
+  withdrawalBasis: 'rate' as const,
 }
 
 describe('optimizeSwr', () => {

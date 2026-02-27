@@ -2223,51 +2223,8 @@ describe('integration tests', () => {
   })
 
   it('genuine shortfall when employed but OA + contributions still insufficient', () => {
-    // Very low OA, very high mortgage, modest salary → shortfall even with contributions
-    const result = generateIncomeProjection({
-      currentAge: 43,
-      retirementAge: 65,
-      lifeExpectancy: 85,
-      salaryModel: 'simple',
-      annualSalary: 72000, // OA contribution ~$16,560/yr
-      salaryGrowthRate: 0,
-      realisticPhases: DEFAULT_CAREER_PHASES,
-      promotionJumps: [],
-      momEducation: 'degree',
-      momAdjustment: 1.0,
-      employerCpfEnabled: true,
-      incomeStreams: [],
-      lifeEvents: [],
-      lifeEventsEnabled: false,
-      annualExpenses: 48000,
-      inflation: 0,
-      personalReliefs: 20000,
-      srsAnnualContribution: 0,
-      initialCpfOA: 100, // Tiny OA balance
-      initialCpfSA: 30000,
-      initialCpfMA: 20000,
-      cpfHousingMode: 'simple',
-      cpfHousingMonthly: 2500, // $30,000/yr mortgage >> $100 + ~$16,560 contributions
-      cpfMortgageYearsLeft: 20,
-      cpfLifeStartAge: 65,
-      cpfLifePlan: 'standard',
-      cpfRetirementSum: 'frs',
-    })
-
-    const firstRow = result[0]
-    // OA = 100 + contributions, mortgage = 30,000
-    // Genuine shortfall because mortgage >> OA + contributions
-    expect(firstRow.cpfOaShortfall).toBeGreaterThan(0)
-    // OA nearly drained (tiny amount from mid-year interest approximation)
-    expect(firstRow.cpfOA).toBeLessThan(5)
-    // Shortfall should be mortgage minus (OA + contributions), not mortgage minus OA alone
-    // With the old bug, shortfall would be max(0, 30000 - 100) = 29,900 (ignoring contributions)
-    expect(firstRow.cpfOaShortfall).toBeLessThan(20000) // Must account for contributions
-  })
-
-  it('no shortfall when mortgage is well within OA + contributions', () => {
-    // Use a mortgage clearly below OA contributions to avoid rate-dependent edge cases
-    const mortgageMonthly = 1000 // $12,000/yr — well below OA contributions from $72K salary
+    // Age 43 is in 35-45 bracket: OA = 21% × $72K = $15,120/yr
+    // OA available = 100 + 15,120 = 15,220 < mortgage $30,000 → genuine shortfall
     const result = generateIncomeProjection({
       currentAge: 43,
       retirementAge: 65,
@@ -2287,7 +2244,50 @@ describe('integration tests', () => {
       inflation: 0,
       personalReliefs: 20000,
       srsAnnualContribution: 0,
-      initialCpfOA: 100, // Small initial balance
+      initialCpfOA: 100,
+      initialCpfSA: 30000,
+      initialCpfMA: 20000,
+      cpfHousingMode: 'simple',
+      cpfHousingMonthly: 2500, // $30,000/yr
+      cpfMortgageYearsLeft: 20,
+      cpfLifeStartAge: 65,
+      cpfLifePlan: 'standard',
+      cpfRetirementSum: 'frs',
+    })
+
+    const firstRow = result[0]
+    // Shortfall ≈ 30,000 - 15,220 = 14,780 (mortgage exceeds OA + contributions)
+    expect(firstRow.cpfOaShortfall).toBeCloseTo(14780, -2)
+    // Housing deduction capped to available OA: min(30000, 15220) ≈ 15,220
+    expect(firstRow.cpfOaHousingDeduction).toBeCloseTo(15220, -2)
+    // OA drained to ~0 (tiny residual from mid-year interest on the average balance)
+    expect(firstRow.cpfOA).toBeLessThan(5)
+  })
+
+  it('no shortfall when mortgage is within OA + contributions', () => {
+    // Age 43 bracket: OA = 21% × $72K = $15,120/yr
+    // Mortgage = $1,000 × 12 = $12,000 < $15,220 → no shortfall
+    const mortgageMonthly = 1000
+    const result = generateIncomeProjection({
+      currentAge: 43,
+      retirementAge: 65,
+      lifeExpectancy: 85,
+      salaryModel: 'simple',
+      annualSalary: 72000,
+      salaryGrowthRate: 0,
+      realisticPhases: DEFAULT_CAREER_PHASES,
+      promotionJumps: [],
+      momEducation: 'degree',
+      momAdjustment: 1.0,
+      employerCpfEnabled: true,
+      incomeStreams: [],
+      lifeEvents: [],
+      lifeEventsEnabled: false,
+      annualExpenses: 48000,
+      inflation: 0,
+      personalReliefs: 20000,
+      srsAnnualContribution: 0,
+      initialCpfOA: 100,
       initialCpfSA: 30000,
       initialCpfMA: 20000,
       cpfHousingMode: 'simple',
@@ -2299,16 +2299,14 @@ describe('integration tests', () => {
     })
 
     const firstRow = result[0]
-    // OA contributions from $72K salary are well above $12K mortgage
     expect(firstRow.cpfOaShortfall).toBe(0)
     expect(firstRow.cpfOaHousingDeduction).toBe(mortgageMonthly * 12)
-    // OA should be positive (initial + contributions - mortgage + interest)
     expect(firstRow.cpfOA).toBeGreaterThan(0)
   })
 
-  it('age 55 transition year with active mortgage deduction', () => {
-    // At age 55, SA→RA transfer happens. Use high SA (above FRS target)
-    // so the transfer doesn't drain OA, and mortgage deduction works normally.
+  it('age 55 transfer drains OA causing mortgage shortfall', () => {
+    // SA ($50K) << FRS (~$220K) → transfer pulls from OA to fill RA gap.
+    // Post-transfer OA ≈ 0, post-55 contributions alone can't cover $18K mortgage.
     const result = generateIncomeProjection({
       currentAge: 54,
       retirementAge: 65,
@@ -2329,7 +2327,7 @@ describe('integration tests', () => {
       personalReliefs: 20000,
       srsAnnualContribution: 0,
       initialCpfOA: 100000,
-      initialCpfSA: 250000, // Above FRS target so transfer won't drain OA
+      initialCpfSA: 50000,
       initialCpfMA: 30000,
       cpfHousingMode: 'simple',
       cpfHousingMonthly: 1500, // $18,000/yr
@@ -2342,20 +2340,13 @@ describe('integration tests', () => {
     const row54 = result.find((r) => r.age === 54)!
     const row55 = result.find((r) => r.age === 55)!
 
-    // Both years should have no shortfall (OA is large enough)
+    // Age 54: OA is large ($100K+), no shortfall
     expect(row54.cpfOaShortfall).toBe(0)
-    expect(row55.cpfOaShortfall).toBe(0)
-
-    // Both years should deduct full mortgage amount
     expect(row54.cpfOaHousingDeduction).toBe(1500 * 12)
-    expect(row55.cpfOaHousingDeduction).toBe(1500 * 12)
 
-    // OA should remain positive through the transition
-    // (SA excess above FRS flows to OA, supplementing it)
-    expect(row54.cpfOA).toBeGreaterThan(0)
-    expect(row55.cpfOA).toBeGreaterThan(0)
-
-    // SA should be 0 at age 55 (transferred to RA)
+    // Age 55: Transfer drains OA to fill RA gap → shortfall appears
+    expect(row55.cpfOaShortfall).toBeGreaterThan(0)
+    // SA fully transferred to RA
     expect(row55.cpfSA).toBe(0)
     expect(row55.cpfRA).toBeGreaterThan(0)
   })
