@@ -44,6 +44,7 @@ import { CRISIS_SCENARIOS } from '@/lib/data/crisisScenarios'
 import { formatPercent } from '@/lib/utils'
 import type { CrisisScenario } from '@/lib/types'
 import { trackEvent } from '@/lib/analytics'
+import { LifeEventsTab } from '@/components/stressTest/LifeEventsTab'
 
 function InterpretationCallout({ level, message }: { level: 'success' | 'warning' | 'danger'; message: string }) {
   const styles = {
@@ -598,10 +599,11 @@ export function StressTestPage() {
       <AnalysisModeToggle portfolioLabel={portfolioLabel} />
 
       <Tabs defaultValue="monte-carlo" onValueChange={(tab) => trackEvent('stress_test_tab_changed', { tab })}>
-        <TabsList className={`grid w-full ${isStressAdvanced ? 'grid-cols-3' : 'grid-cols-1'}`}>
+        <TabsList className={`grid w-full ${isStressAdvanced ? 'grid-cols-4' : 'grid-cols-1'}`}>
           <TabsTrigger value="monte-carlo">Monte Carlo</TabsTrigger>
           {isStressAdvanced && <TabsTrigger value="backtest">Historical Backtest</TabsTrigger>}
           {isStressAdvanced && <TabsTrigger value="sequence-risk">Sequence Risk</TabsTrigger>}
+          {isStressAdvanced && <TabsTrigger value="life-events">Life Events</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="monte-carlo">
@@ -617,6 +619,12 @@ export function StressTestPage() {
         {isStressAdvanced && (
           <TabsContent value="sequence-risk">
             <SequenceRiskTab />
+          </TabsContent>
+        )}
+
+        {isStressAdvanced && (
+          <TabsContent value="life-events">
+            <LifeEventsTab />
           </TabsContent>
         )}
       </Tabs>
