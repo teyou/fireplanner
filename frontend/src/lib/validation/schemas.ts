@@ -29,7 +29,7 @@ export const profileSchema = z.object({
   retirementAge: retirementAgeSchema,
   lifeExpectancy: lifeExpectancySchema,
   lifeStage: z.enum(['pre-fire', 'post-fire']),
-  maritalStatus: z.enum(['single', 'married']),
+  maritalStatus: z.enum(['single', 'married', 'divorced', 'widowed']),
   residencyStatus: z.enum(['citizen', 'pr', 'foreigner']),
 
   annualIncome: nonNegativeSchema,

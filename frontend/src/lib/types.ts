@@ -4,7 +4,7 @@
 
 export type LifeStage = 'pre-fire' | 'post-fire'
 export type FireType = 'regular' | 'lean' | 'fat' | 'coast' | 'barista'
-export type MaritalStatus = 'single' | 'married'
+export type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed'
 export type ResidencyStatus = 'citizen' | 'pr' | 'foreigner'
 export type SalaryModel = 'simple' | 'realistic' | 'data-driven'
 export type RebalanceFrequency = 'annual' | 'semi-annual' | 'quarterly'
