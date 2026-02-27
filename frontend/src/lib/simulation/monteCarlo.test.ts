@@ -1058,3 +1058,73 @@ describe('representative paths edge cases', () => {
     expect(result.representative_paths_start_age).toBeUndefined()
   })
 })
+
+describe('deterministicAccumulation', () => {
+  it('produces identical pre-retirement balances across all sims when enabled', () => {
+    const params = makeDefaultParams({
+      nSimulations: 100,
+      deterministicAccumulation: true,
+      extractPaths: true,
+    }) as MonteCarloEngineParams
+    const result = runMonteCarlo(params)
+    // All 5 representative paths should have the same retirement balance
+    const retBalances = result.representative_paths!.map(p => p.retirementBalance)
+    const first = retBalances[0]
+    for (const bal of retBalances) {
+      expect(bal).toBeCloseTo(first, 2)
+    }
+  })
+
+  it('produces varying pre-retirement balances when disabled', () => {
+    const params = makeDefaultParams({
+      nSimulations: 100,
+      extractPaths: true,
+      deterministicAccumulation: false,
+    }) as MonteCarloEngineParams
+    const result = runMonteCarlo(params)
+    const retBalances = result.representative_paths!.map(p => p.retirementBalance)
+    const unique = new Set(retBalances.map(b => Math.round(b)))
+    expect(unique.size).toBeGreaterThan(1)
+  })
+
+  it('still produces varying post-retirement outcomes when enabled', () => {
+    const params = makeDefaultParams({
+      nSimulations: 500,
+      deterministicAccumulation: true,
+    }) as MonteCarloEngineParams
+    const result = runMonteCarlo(params)
+    // Success rate is 0..1. Should NOT be 0 or 1 — post-retirement is still stochastic
+    expect(result.success_rate).toBeGreaterThan(0)
+    expect(result.success_rate).toBeLessThan(1)
+  })
+
+  it('selects representative paths by terminal wealth when enabled', () => {
+    const params = makeDefaultParams({
+      nSimulations: 500,
+      deterministicAccumulation: true,
+      extractPaths: true,
+    }) as MonteCarloEngineParams
+    const result = runMonteCarlo(params)
+    const paths = result.representative_paths!
+    // All retirement balances should be identical (deterministic accumulation)
+    const retBal0 = paths[0].retirementBalance
+    for (const p of paths) {
+      expect(p.retirementBalance).toBeCloseTo(retBal0, 2)
+    }
+    // But different paths should have different simIndex (selected by terminal, not retirement)
+    const simIndices = new Set(paths.map(p => p.simIndex))
+    expect(simIndices.size).toBeGreaterThan(1)
+  })
+
+  it('defaults to false (backward compatible)', () => {
+    const params = makeDefaultParams({
+      nSimulations: 100,
+      extractPaths: true,
+    }) as MonteCarloEngineParams
+    // No deterministicAccumulation field — should behave as stochastic
+    const result = runMonteCarlo(params)
+    const retBalances = result.representative_paths!.map(p => p.retirementBalance)
+    const unique = new Set(retBalances.map(b => Math.round(b)))
+    expect(unique.size).toBeGreaterThan(1)
+  })
+})
