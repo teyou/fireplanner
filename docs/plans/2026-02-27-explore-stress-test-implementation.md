@@ -16,12 +16,13 @@
 
 ```
 Agent A (Engine):  Task 1 → Task 2
-Agent B (State):   Task 3 → Task 4 → Task 5a → Task 5b
+Agent B (State):   Task 3 → (wait for Task 1) → Task 4 → Task 5a → Task 5b
 Agent C (UI):      Task 6    (independent, can run with A or B)
                    Task 7 → Task 8    (after A+B+C complete)
 ```
 
-- **Agent A** and **Agent B** are independent: A touches `monteCarlo.ts` + tests, B touches stores/hooks
+- **Agent A** and **Agent B** start independently: A touches `monteCarlo.ts`, B touches `types.ts` + store
+- **Task 4 depends on Task 1**: `useMonteCarloQuery` references `deterministicAccumulation` on `MonteCarloEngineParams`, which Task 1 adds to the type. Agent B must wait for Task 1 before starting Task 4.
 - **Task 6** (nav restructure) is fully independent — can run in parallel with A or B
 - **Tasks 7-8** depend on A, B, and C being complete (UI wires to new store fields and engine params)
 - **Task 5b** (useWithdrawalComparison decoupling) must complete before Task 8 (Explore page)
@@ -470,9 +471,14 @@ export function useAnalysisPortfolio(): AnalysisPortfolioResult {
 
 Remove the `useSimulationStore` and `useFireCalculations` imports since they're no longer needed.
 
-### Step 2: Verify backtest and sequence risk hooks
+### Step 2: Verify all `useAnalysisPortfolio` consumers
 
-Read `useBacktestQuery.ts` and `useSequenceRiskQuery.ts` to confirm they only use `useAnalysisPortfolio()` (not `simulation.analysisMode` directly). They already do — they consume `.retirementPortfolio` and `.allocationWeights`, which are now always My Plan values.
+Read these files and confirm they only consume `.retirementPortfolio` / `.allocationWeights` (not `simulation.analysisMode` directly):
+- `useBacktestQuery.ts` — consumes `.retirementPortfolio` and `.allocationWeights`
+- `useSequenceRiskQuery.ts` — consumes `.retirementPortfolio` and `.allocationWeights`
+- `BacktestDrillDown.tsx:61` — consumes `.retirementPortfolio` and `.allocationWeights`
+
+All three are on the Stress Test page which is always My Plan mode. They continue to work correctly since `useAnalysisPortfolio` now always returns My Plan values.
 
 ### Step 3: Update `useAnalysisPortfolio.test.ts`
 
@@ -639,12 +645,18 @@ cd frontend && npx shadcn@latest add toggle-group
 
 This creates `src/components/ui/toggle-group.tsx`. Verify it exists before proceeding.
 
-### Step 1: Remove AnalysisModeToggle from StressTestPage
+### Step 1: Remove AnalysisModeToggle and dead code from StressTestPage
 
 In `src/pages/StressTestPage.tsx`:
 - Remove the `<AnalysisModeToggle portfolioLabel={portfolioLabel} />` line (around line 612)
-- Remove the `portfolioLabel` destructuring from `useAnalysisPortfolio()` if it's only used for the toggle
+- Remove the `portfolioLabel` destructuring from `useAnalysisPortfolio()`
+- If `useAnalysisPortfolio()` is no longer used in the remaining JSX (check all references), remove the entire call and import
 - Remove the AnalysisModeToggle import
+
+Also in `src/hooks/useAnalysisPortfolio.ts`, clean up the return type:
+- Remove `analysisMode` from the `AnalysisPortfolioResult` interface (it's always `'myPlan'` now — dead field)
+- Remove `analysisMode: 'myPlan' as AnalysisMode` from the return value
+- Update any consumers that destructure `analysisMode` (check `useMonteCarloQuery.ts`, `useBacktestQuery.ts`)
 
 ### Step 2: Add pre-retirement toggle to SimulationControls
 
@@ -839,6 +851,40 @@ function getExploreWeights(
 }
 ```
 
+### Step 1b: Add tests for `useExplorePortfolio`
+
+Create `src/hooks/useExplorePortfolio.test.ts` with tests for the edge-case-prone `fireAge` guard logic:
+
+```typescript
+describe('useExplorePortfolio fireAge guards', () => {
+  it('clamps Infinity fireAge to retirementAge', () => {
+    // When savings rate is insufficient, yearsToFire = Infinity → fireAge = Infinity
+    // Hook should fall back to retirementAge
+  })
+
+  it('rounds fractional fireAge to nearest integer', () => {
+    // yearsToFire is a float → fireAge can be e.g. 46.3
+    // Hook should Math.round() to 46
+  })
+
+  it('clamps fireAge above lifeExpectancy to lifeExpectancy', () => {
+    // fireAge = 120 but lifeExpectancy = 95
+    // Should clamp to 95
+  })
+
+  it('clamps fireAge below currentAge to currentAge', () => {
+    // fireAge = 20 but currentAge = 30
+    // Should clamp to 30
+  })
+
+  it('returns retirementAge-based values in myPlan mode', () => {
+    // Default mode, uses projected NW at retirement
+  })
+})
+```
+
+These tests verify the defensive chain: `isFinite()` → `Math.round()` → `Math.min(lifeExpectancy, Math.max(currentAge, ...))`.
+
 ### Step 2: Add tabs and MC section to WithdrawalPage
 
 In `src/pages/WithdrawalPage.tsx`, restructure to use tabs:
@@ -944,6 +990,22 @@ Key differences from Stress Test MC:
 
 The Explore MC manages its own staleness by comparing a JSON signature of `explore.initialPortfolio`, `explore.startAge`, `explore.balanceMode`, plus the shared simulation settings.
 
+### Step 2b: Sync deterministic comparison tab with Explore balance toggle
+
+When the user toggles FIRE Target on the MC tab, the deterministic Strategy Comparison tab should also reflect the same starting balance. Pass `useExplorePortfolio().initialPortfolio` as the `initialPortfolioOverride` to `useWithdrawalComparison`:
+
+```typescript
+// In WithdrawalPage, both tabs share the same explore state
+const explore = useExplorePortfolio()
+
+// Strategy Comparison tab uses the same starting balance as MC tab
+const comparison = useWithdrawalComparison({
+  initialPortfolioOverride: explore.initialPortfolio,
+})
+```
+
+This ensures UX consistency: switching between tabs shows results for the same starting balance. The balance toggle label (`explore.label`) should be visible above both tabs so users know which balance is active.
+
 ### Step 3: Remove AnalysisModeToggle from WithdrawalPage
 
 Remove the `<AnalysisModeToggle>` component and its import from `WithdrawalPage.tsx`.
@@ -998,7 +1060,7 @@ After all tasks are complete:
 | Risk | Mitigation |
 |------|-----------|
 | Existing users with `analysisMode: 'fireTarget'` in localStorage | Stress Test now ignores it (always My Plan). No crash, just different behavior. |
-| `useAnalysisPortfolio` consumed elsewhere | Search for all imports — should only be StressTestPage, useMonteCarloQuery, useBacktestQuery, useSequenceRiskQuery |
+| `useAnalysisPortfolio` consumed elsewhere | Search for all imports — consumers: StressTestPage, useMonteCarloQuery, useBacktestQuery, useSequenceRiskQuery, BacktestDrillDown.tsx:61. All on Stress Test page (always My Plan). |
 | `useWithdrawalComparison` still reads `analysisMode` | Task 5b decouples it. Must complete before Task 8. |
 | Explore MC tab calling worker concurrently with Stress Test | Worker client supports concurrent calls via message ID multiplexing |
 | `deterministicAccumulation` missing from old exported JSON | Import handler defaults missing fields; `false` preserves old behavior |
@@ -1008,6 +1070,8 @@ After all tasks are complete:
 | `useWithdrawalComparison.test.ts` has fireTarget test that will fail | Task 5b Step 2 rewrites the test |
 | Explore MC results differ from Stress Test for same inputs | By design: Explore uses simplified decumulation-only params (no income, property, mortgage). Stress Test uses full lifecycle. Educational banner explains this. |
 | `fireAge` is fractional | `useExplorePortfolio` applies `Math.round()` after `isFinite()` guard |
+| Explore tabs show different starting balances | Task 8 Step 2b passes `explore.initialPortfolio` as `initialPortfolioOverride` to `useWithdrawalComparison`, keeping both tabs in sync |
+| `portfolioLabel` / `analysisMode` become dead code | Task 7 Step 1 removes dead destructuring from StressTestPage; Task 5 removes `analysisMode` from return type |
 
 ## Codex Review Findings (Addressed)
 
@@ -1045,3 +1109,10 @@ All 10 findings from the Codex implementation review have been incorporated:
 22. Rewrite migration test to use `persist.getOptions().migrate` directly (matches existing v3→v4 test pattern) instead of async `rehydrate()` (Task 3 Step 3)
 23. Fix Task 1 expected-fail text: `as MonteCarloEngineParams` cast bypasses type error; failure comes from behavior assertions (Task 1 Step 2)
 24. (Not a bug) `(2049$)` label format is intentional dollar-basis notation per design doc — no fix needed
+
+### Code Architect review fixes (5 additional)
+25. Fix parallelism map: Task 4 depends on Task 1 (needs `deterministicAccumulation` on `MonteCarloEngineParams` type)
+26. Clean up dead code: remove `portfolioLabel` and `analysisMode` from `useAnalysisPortfolio` return type and `StressTestPage` destructuring (Task 5 + Task 7)
+27. Add `BacktestDrillDown.tsx:61` to Task 5 consumer verification list (correct by construction but was missing from analysis)
+28. Add `useExplorePortfolio.test.ts` with fireAge guard edge case tests (Infinity, fractional, clamp bounds) (Task 8 Step 1b)
+29. Sync Explore page tabs: pass `explore.initialPortfolio` as `initialPortfolioOverride` to `useWithdrawalComparison` so both tabs use same starting balance (Task 8 Step 2b)
