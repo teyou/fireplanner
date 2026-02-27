@@ -685,6 +685,7 @@ export interface SimulationState {
   nSimulations: number
   analysisMode: AnalysisMode
   withdrawalBasis: WithdrawalBasis
+  deterministicAccumulation: boolean  // when true, pre-retirement uses expected returns
   lastMCSuccessRate: number | null
   lastBacktestSuccessRate: number | null
   validationErrors: ValidationErrors
