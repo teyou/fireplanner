@@ -1,6 +1,5 @@
 import type { WithdrawalBasis } from '@/lib/types'
 import { useSimulationStore } from '@/stores/useSimulationStore'
-import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import {
   Tooltip,
   TooltipContent,
@@ -34,7 +33,7 @@ const MODES: { value: WithdrawalBasis; label: string; tooltip: string }[] = [
 export function WithdrawalBasisToggle() {
   const withdrawalBasis = useSimulationStore((s) => s.withdrawalBasis)
   const setField = useSimulationStore((s) => s.setField)
-  const strategy = useWithdrawalStore((s) => s.selectedStrategies[0] ?? 'constant_dollar')
+  const strategy = useSimulationStore((s) => s.selectedStrategy)
 
   if (!RATE_SEEDED_STRATEGIES.has(strategy)) return null
 
