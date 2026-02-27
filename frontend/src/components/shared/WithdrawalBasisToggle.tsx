@@ -1,5 +1,6 @@
 import type { WithdrawalBasis } from '@/lib/types'
 import { useSimulationStore } from '@/stores/useSimulationStore'
+import { useWithdrawalStore } from '@/stores/useWithdrawalStore'
 import {
   Tooltip,
   TooltipContent,
@@ -7,6 +8,15 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+
+/** Strategies whose initial withdrawal is seeded from portfolio × rate.
+ *  All other strategies compute withdrawals dynamically each year,
+ *  so the expenses-vs-rate toggle has no effect. */
+const RATE_SEEDED_STRATEGIES = new Set([
+  'constant_dollar',
+  'guardrails',
+  'vanguard_dynamic',
+])
 
 const MODES: { value: WithdrawalBasis; label: string; tooltip: string }[] = [
   {
@@ -24,6 +34,9 @@ const MODES: { value: WithdrawalBasis; label: string; tooltip: string }[] = [
 export function WithdrawalBasisToggle() {
   const withdrawalBasis = useSimulationStore((s) => s.withdrawalBasis)
   const setField = useSimulationStore((s) => s.setField)
+  const strategy = useWithdrawalStore((s) => s.selectedStrategies[0] ?? 'constant_dollar')
+
+  if (!RATE_SEEDED_STRATEGIES.has(strategy)) return null
 
   return (
     <TooltipProvider delayDuration={200}>
