@@ -57,6 +57,7 @@ export function LifeEventsTab() {
     baseMetrics,
     disruptedMetrics,
     deltas,
+    resolvedCosts,
     selectTemplate,
     setStartAge,
   } = useDisruptionImpact()
@@ -87,9 +88,9 @@ export function LifeEventsTab() {
       affectedStreamIds: [],
       savingsPause: selectedTemplate.event.savingsPause,
       cpfPause: selectedTemplate.event.cpfPause,
-      additionalAnnualExpense: selectedTemplate.additionalAnnualExpense,
-      lumpSumCost: selectedTemplate.lumpSumCost,
-      expenseReductionPercent: selectedTemplate.expenseReductionPercent,
+      additionalAnnualExpense: resolvedCosts?.additionalAnnualExpense,
+      lumpSumCost: resolvedCosts?.lumpSumCost,
+      expenseReductionPercent: resolvedCosts?.expenseReductionPercent,
     })
 
     if (!income.lifeEventsEnabled) {
@@ -165,18 +166,18 @@ export function LifeEventsTab() {
           {selectedTemplate.event.incomeImpact > 0 && selectedTemplate.event.incomeImpact < 1 && (
             <p className="text-xs text-muted-foreground">Income: Reduced to {(selectedTemplate.event.incomeImpact * 100).toFixed(0)}%</p>
           )}
-          {selectedTemplate.additionalAnnualExpense ? (
+          {resolvedCosts?.additionalAnnualExpense ? (
             <p className="text-xs text-muted-foreground">
-              Additional expenses: {formatCurrency(selectedTemplate.additionalAnnualExpense)}/yr
+              Additional expenses: {formatCurrency(resolvedCosts.additionalAnnualExpense)}/yr
               {selectedTemplate.durationYears < 90 ? ` for ${selectedTemplate.durationYears} years` : ''}
             </p>
           ) : null}
-          {selectedTemplate.lumpSumCost ? (
-            <p className="text-xs text-muted-foreground">One-time cost: {formatCurrency(selectedTemplate.lumpSumCost)}</p>
+          {resolvedCosts?.lumpSumCost ? (
+            <p className="text-xs text-muted-foreground">One-time cost: {formatCurrency(resolvedCosts.lumpSumCost)}</p>
           ) : null}
-          {selectedTemplate.expenseReductionPercent ? (
+          {resolvedCosts?.expenseReductionPercent ? (
             <p className="text-xs text-muted-foreground">
-              Lifestyle reduction: {(selectedTemplate.expenseReductionPercent * 100).toFixed(0)}% lower expenses
+              Lifestyle reduction: {(resolvedCosts.expenseReductionPercent * 100).toFixed(0)}% lower expenses
             </p>
           ) : null}
         </div>

@@ -11,6 +11,17 @@ import { usePropertyStore } from '@/stores/usePropertyStore'
 // Disruption Template Types
 // ============================================================
 
+export interface CostTier {
+  additionalAnnualExpense?: number
+  lumpSumCost?: number
+  /** Decimal fraction: 0.15 = 15% reduction. Matches schema z.number().min(0).max(1). */
+  expenseReductionPercent?: number
+}
+
+export type CostTierKey = 'subsidised' | 'private'
+
+export const MAX_LIFE_EVENTS = 4
+
 export interface DisruptionTemplate {
   label: string
   category: 'career' | 'health' | 'family'
@@ -21,10 +32,8 @@ export interface DisruptionTemplate {
   probability?: number          // cumulative probability (0.25 = 25%)
   probabilityByAge?: number     // "by age X" qualifier
   probabilitySource?: string    // citation
-  // Expense impacts
-  additionalAnnualExpense?: number
-  lumpSumCost?: number
-  expenseReductionPercent?: number
+  // Tiered expense impacts (subsidised = B2/C ward, private = A/B1 ward)
+  costs?: Record<CostTierKey, CostTier>
 }
 
 export const DISRUPTION_TEMPLATES: DisruptionTemplate[] = [
@@ -54,6 +63,10 @@ export const DISRUPTION_TEMPLATES: DisruptionTemplate[] = [
     defaultAgeOffset: 5,
     durationYears: 3,
     event: { name: 'Partial Disability', incomeImpact: 0.5, savingsPause: false, cpfPause: false },
+    costs: {
+      subsidised: { additionalAnnualExpense: 12000, lumpSumCost: 3000 },
+      private: { additionalAnnualExpense: 20000, lumpSumCost: 5000 },
+    },
   },
   {
     label: 'Parent Care',
@@ -61,6 +74,10 @@ export const DISRUPTION_TEMPLATES: DisruptionTemplate[] = [
     defaultAgeOffset: 10,
     durationYears: 5,
     event: { name: 'Parent Care', incomeImpact: 0.8, savingsPause: false, cpfPause: false },
+    costs: {
+      subsidised: { additionalAnnualExpense: 16000, lumpSumCost: 3000 },
+      private: { additionalAnnualExpense: 36000, lumpSumCost: 5000 },
+    },
   },
   {
     label: 'Recession Pay Cut',
@@ -81,9 +98,10 @@ export const DISRUPTION_TEMPLATES: DisruptionTemplate[] = [
     probability: 0.03,
     probabilityByAge: 55,
     probabilitySource: 'SingStat Complete Life Tables 2023',
-    additionalAnnualExpense: 0,
-    lumpSumCost: 15000,
-    expenseReductionPercent: 0.15,
+    costs: {
+      subsidised: { lumpSumCost: 10000, expenseReductionPercent: 0.15 },
+      private: { lumpSumCost: 15000, expenseReductionPercent: 0.15 },
+    },
   },
   {
     label: 'Critical Illness',
@@ -94,9 +112,10 @@ export const DISRUPTION_TEMPLATES: DisruptionTemplate[] = [
     probability: 0.25,
     probabilityByAge: 65,
     probabilitySource: 'LIA Singapore Protection Gap Study 2022',
-    additionalAnnualExpense: 50000,
-    lumpSumCost: 20000,
-    expenseReductionPercent: 0,
+    costs: {
+      subsidised: { additionalAnnualExpense: 15000, lumpSumCost: 8000 },
+      private: { additionalAnnualExpense: 50000, lumpSumCost: 20000 },
+    },
   },
   {
     label: 'Permanent Disability',
@@ -107,9 +126,10 @@ export const DISRUPTION_TEMPLATES: DisruptionTemplate[] = [
     probability: 0.05,
     probabilityByAge: 65,
     probabilitySource: 'MOH Principal Causes of Death & Disability Reports',
-    additionalAnnualExpense: 30000,
-    lumpSumCost: 0,
-    expenseReductionPercent: 0,
+    costs: {
+      subsidised: { additionalAnnualExpense: 20000, lumpSumCost: 10000 },
+      private: { additionalAnnualExpense: 50000, lumpSumCost: 15000 },
+    },
   },
 ]
 
@@ -137,6 +157,7 @@ export interface DisruptionImpactResult {
   baseMetrics: DisruptionMetrics | null
   disruptedMetrics: DisruptionMetrics | null
   deltas: DisruptionDeltas | null
+  resolvedCosts: CostTier | null
   hasData: boolean
   selectTemplate: (index: number | null) => void
   setStartAge: (age: number) => void
@@ -146,7 +167,7 @@ export interface DisruptionImpactResult {
 // Hook: useDisruptionImpact
 // ============================================================
 
-export function useDisruptionImpact(): DisruptionImpactResult {
+export function useDisruptionImpact(costTier: CostTierKey = 'subsidised'): DisruptionImpactResult {
   const profile = useProfileStore()
   const income = useIncomeStore()
   const allocation = useAllocationStore()
@@ -180,6 +201,7 @@ export function useDisruptionImpact(): DisruptionImpactResult {
         baseMetrics: null,
         disruptedMetrics: null,
         deltas: null,
+        resolvedCosts: null,
         hasData: false,
       }
     }
@@ -193,6 +215,7 @@ export function useDisruptionImpact(): DisruptionImpactResult {
         baseMetrics,
         disruptedMetrics: null,
         deltas: null,
+        resolvedCosts: null,
         hasData: true,
       }
     }
@@ -252,7 +275,12 @@ export function useDisruptionImpact(): DisruptionImpactResult {
       }
     }
 
-    // Compute expense impact from template
+    // Resolve tiered costs for the selected template
+    const EMPTY_COST_TIER: CostTier = {}
+    const resolvedCosts: CostTier = template.costs?.[costTier] ?? EMPTY_COST_TIER
+    const { additionalAnnualExpense, lumpSumCost, expenseReductionPercent } = resolvedCosts
+
+    // Compute expense impact from resolved tier costs
     // Distinguish permanent vs temporary events using durationYears (not event timing):
     // - Permanent (durationYears >= 90, e.g. Death of Spouse, Permanent Disability):
     //   modify annualExpenses → changes FIRE Number + savings rate
@@ -271,26 +299,26 @@ export function useDisruptionImpact(): DisruptionImpactResult {
       // Permanent: modify annualExpenses directly (correctly changes savings rate AND FIRE number)
       // IMPORTANT (Codex fix #3): Apply lifestyle reduction FIRST (to base expenses only),
       // THEN add event-specific costs. Otherwise the reduction incorrectly discounts medical costs.
-      if (template.expenseReductionPercent) {
-        disruptedExpenses *= (1 - template.expenseReductionPercent)
+      if (expenseReductionPercent) {
+        disruptedExpenses *= (1 - expenseReductionPercent)
       }
-      if (template.additionalAnnualExpense) {
-        disruptedExpenses += template.additionalAnnualExpense
+      if (additionalAnnualExpense) {
+        disruptedExpenses += additionalAnnualExpense
       }
     } else {
       // Temporary: model total event cost as a wealth shock to liquidNetWorth
       const eventDuration = clampedEndAge - clampedStartAge
-      if (template.additionalAnnualExpense) {
-        liquidNWAdjustment -= template.additionalAnnualExpense * eventDuration
+      if (additionalAnnualExpense) {
+        liquidNWAdjustment -= additionalAnnualExpense * eventDuration
       }
-      if (template.expenseReductionPercent) {
+      if (expenseReductionPercent) {
         // Temporary expense reduction = net savings during event period
-        liquidNWAdjustment += baseInputs.annualExpenses * template.expenseReductionPercent * eventDuration
+        liquidNWAdjustment += baseInputs.annualExpenses * expenseReductionPercent * eventDuration
       }
     }
     // Lump sum is always an immediate wealth shock regardless of duration
-    if (template.lumpSumCost) {
-      liquidNWAdjustment -= template.lumpSumCost
+    if (lumpSumCost) {
+      liquidNWAdjustment -= lumpSumCost
     }
 
     // Compute disrupted metrics with modified income AND expenses
@@ -318,11 +346,12 @@ export function useDisruptionImpact(): DisruptionImpactResult {
       baseMetrics,
       disruptedMetrics,
       deltas,
+      resolvedCosts,
       hasData: true,
     }
   }, [
     profile, income, allocation, property,
-    template, effectiveStartAge,
+    template, effectiveStartAge, costTier,
   ])
 
   return {
@@ -331,6 +360,7 @@ export function useDisruptionImpact(): DisruptionImpactResult {
     baseMetrics: result.baseMetrics,
     disruptedMetrics: result.disruptedMetrics,
     deltas: result.deltas,
+    resolvedCosts: result.resolvedCosts ?? null,
     hasData: result.hasData,
     selectTemplate,
     setStartAge,
