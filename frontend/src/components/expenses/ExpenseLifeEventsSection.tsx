@@ -20,7 +20,7 @@ interface ExpenseTemplate {
 
 function makeExpenseTemplates(currentAge: number, lifeExpectancy: number): ExpenseTemplate[] {
   const clamp = (offset: number, duration: number) => {
-    const start = Math.max(currentAge + 1, currentAge + offset)
+    const start = Math.min(lifeExpectancy - 1, Math.max(currentAge + 1, currentAge + offset))
     const end = Math.min(lifeExpectancy, start + duration)
     return { startAge: start, endAge: end }
   }
@@ -81,7 +81,7 @@ export function ExpenseLifeEventsSection() {
     income.addLifeEvent({
       id,
       name: '',
-      startAge: currentAge + 5,
+      startAge: Math.min(lifeExpectancy - 1, currentAge + 5),
       endAge: Math.min(lifeExpectancy, currentAge + 7),
       incomeImpact: 1,
       affectedStreamIds: [],
