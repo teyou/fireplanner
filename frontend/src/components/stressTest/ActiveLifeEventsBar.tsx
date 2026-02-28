@@ -61,7 +61,13 @@ function ProbabilityBadge({ probability, byAge }: { probability?: number; byAge?
 
 function EventChip({ event, onRemove }: { event: LifeEvent; onRemove: () => void }) {
   const isPermanent = (event.endAge - event.startAge) > 50
-  const ageLabel = isPermanent ? `age ${event.startAge}+` : `age ${event.startAge}\u2013${event.endAge}`
+  // endAge is exclusive in the engine (age < endAge), so display last active age
+  const lastActiveAge = event.endAge - 1
+  const ageLabel = isPermanent
+    ? `age ${event.startAge}+`
+    : lastActiveAge === event.startAge
+      ? `age ${event.startAge}`
+      : `age ${event.startAge}\u2013${lastActiveAge}`
   return (
     <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-1">
       <span className="text-xs">{event.name} {ageLabel}</span>
