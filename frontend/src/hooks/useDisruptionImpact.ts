@@ -22,6 +22,8 @@ export type CostTierKey = 'subsidised' | 'private'
 
 export const MAX_LIFE_EVENTS = 4
 
+const EMPTY_COST_TIER: CostTier = {}
+
 export interface DisruptionTemplate {
   label: string
   category: 'career' | 'health' | 'family'
@@ -44,7 +46,6 @@ export const DISRUPTION_TEMPLATES: DisruptionTemplate[] = [
     durationYears: 1,
     event: { name: 'Job Loss (6 months)', incomeImpact: 0, savingsPause: true, cpfPause: true },
     probability: 0.15,
-    probabilityByAge: 0,
     probabilitySource: 'MOM Retrenchment Statistics 2024',
   },
   {
@@ -54,7 +55,6 @@ export const DISRUPTION_TEMPLATES: DisruptionTemplate[] = [
     durationYears: 2,
     event: { name: 'Job Loss (12 months)', incomeImpact: 0, savingsPause: true, cpfPause: true },
     probability: 0.15,
-    probabilityByAge: 0,
     probabilitySource: 'MOM Retrenchment Statistics 2024',
   },
   {
@@ -86,7 +86,6 @@ export const DISRUPTION_TEMPLATES: DisruptionTemplate[] = [
     durationYears: 2,
     event: { name: 'Recession Pay Cut', incomeImpact: 0.8, savingsPause: false, cpfPause: false },
     probability: 0.15,
-    probabilityByAge: 0,
     probabilitySource: 'MOM Labour Market Report 2024',
   },
   {
@@ -220,9 +219,9 @@ export function useDisruptionImpact(costTier: CostTierKey = 'subsidised'): Disru
       }
     }
 
-    // Create the disruption event
+    // Create the disruption event (clamp endAge to lifeExpectancy for permanent events)
     const clampedStartAge = Math.max(profile.currentAge + 1, effectiveStartAge)
-    const endAge = clampedStartAge + template.durationYears
+    const endAge = Math.min(profile.lifeExpectancy, clampedStartAge + template.durationYears)
     const disruptionEvent: LifeEvent = {
       id: 'disruption-preview',
       name: template.event.name,
@@ -298,7 +297,6 @@ export function useDisruptionImpact(costTier: CostTierKey = 'subsidised'): Disru
     }
 
     // Resolve tiered costs for the selected template
-    const EMPTY_COST_TIER: CostTier = {}
     const resolvedCosts: CostTier = template.costs?.[costTier] ?? EMPTY_COST_TIER
     const { additionalAnnualExpense, lumpSumCost, expenseReductionPercent } = resolvedCosts
 
@@ -338,9 +336,11 @@ export function useDisruptionImpact(costTier: CostTierKey = 'subsidised'): Disru
         liquidNWAdjustment += baseInputs.annualExpenses * expenseReductionPercent * eventDuration
       }
     }
-    // Lump sum is always an immediate wealth shock regardless of duration
+    // Lump sum is always an immediate wealth shock regardless of duration.
+    // Inflate to match the event's start year (consistent with MC/SR hooks).
     if (lumpSumCost) {
-      liquidNWAdjustment -= lumpSumCost
+      const yearsToEvent = clampedStartAge - profile.currentAge
+      liquidNWAdjustment -= lumpSumCost * Math.pow(1 + profile.inflation, yearsToEvent)
     }
 
     // Compute disrupted metrics with modified income AND expenses

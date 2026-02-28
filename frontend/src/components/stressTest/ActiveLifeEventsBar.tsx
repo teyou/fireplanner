@@ -277,6 +277,16 @@ function LifeEventSheetBody({ onClose }: { onClose: () => void }) {
           {resolvedCosts?.expenseReductionPercent ? (
             <p className="text-xs text-muted-foreground">
               Lifestyle reduction: {(resolvedCosts.expenseReductionPercent * 100).toFixed(0)}% lower expenses
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="inline h-3 w-3 ml-1 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="text-sm">Reductions apply to base expenses before adding costs. Multiple overlapping reductions compound multiplicatively (e.g. two 20% reductions = 36% total).</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </p>
           ) : null}
         </div>

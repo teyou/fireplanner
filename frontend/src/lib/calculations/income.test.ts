@@ -385,6 +385,83 @@ describe('getLifeEventExpenseImpact', () => {
     expect(result.adjustedExpense).toBe(60000)
     expect(result.lumpSum).toBe(0)
   })
+
+  it('handles combined lumpSumCost + expenseReductionPercent (Death of Spouse pattern)', () => {
+    const deathOfSpouse: LifeEvent = {
+      id: 'dos',
+      name: 'Death of Spouse',
+      startAge: 50,
+      endAge: 90,
+      incomeImpact: 0.5,
+      affectedStreamIds: [],
+      savingsPause: false,
+      cpfPause: false,
+      lumpSumCost: 10000,
+      expenseReductionPercent: 0.15,
+    }
+    // At startAge: lump sum + reduction
+    const atStart = getLifeEventExpenseImpact(50, 60000, [deathOfSpouse], true)
+    expect(atStart.adjustedExpense).toBe(51000) // 60K * 0.85
+    expect(atStart.lumpSum).toBe(10000)
+
+    // After startAge: reduction only, no lump sum
+    const after = getLifeEventExpenseImpact(55, 60000, [deathOfSpouse], true)
+    expect(after.adjustedExpense).toBe(51000)
+    expect(after.lumpSum).toBe(0)
+  })
+
+  it('clamps negative expense field values to zero (defensive guard)', () => {
+    const badEvent: LifeEvent = {
+      id: 'bad',
+      name: 'Bad Data',
+      startAge: 40,
+      endAge: 42,
+      incomeImpact: 1,
+      affectedStreamIds: [],
+      savingsPause: false,
+      cpfPause: false,
+      additionalAnnualExpense: -5000,
+      lumpSumCost: -3000,
+      expenseReductionPercent: -0.1,
+    }
+    const result = getLifeEventExpenseImpact(40, 60000, [badEvent], true)
+    // Negative values clamped to 0: no effect on base expense, no lump sum
+    expect(result.adjustedExpense).toBe(60000)
+    expect(result.lumpSum).toBe(0)
+  })
+
+  it('clamps expenseReductionPercent above 1.0 to 100%', () => {
+    const overReduction: LifeEvent = {
+      id: 'over',
+      name: 'Over Reduction',
+      startAge: 40,
+      endAge: 42,
+      incomeImpact: 1,
+      affectedStreamIds: [],
+      savingsPause: false,
+      cpfPause: false,
+      expenseReductionPercent: 1.5, // 150% — invalid
+    }
+    const result = getLifeEventExpenseImpact(40, 60000, [overReduction], true)
+    // Clamped to 1.0 → 60K * (1 - 1.0) = 0
+    expect(result.adjustedExpense).toBe(0)
+  })
+
+  it('returns lump sums for multiple events starting at same age', () => {
+    // Verifies projection.ts consumption path: multiple lump sums aggregate
+    const event1: LifeEvent = {
+      id: 'e1', name: 'Event 1', startAge: 40, endAge: 42,
+      incomeImpact: 1, affectedStreamIds: [], savingsPause: false, cpfPause: false,
+      lumpSumCost: 8000,
+    }
+    const event2: LifeEvent = {
+      id: 'e2', name: 'Event 2', startAge: 40, endAge: 45,
+      incomeImpact: 1, affectedStreamIds: [], savingsPause: false, cpfPause: false,
+      lumpSumCost: 5000,
+    }
+    const result = getLifeEventExpenseImpact(40, 60000, [event1, event2], true)
+    expect(result.lumpSum).toBe(13000) // 8K + 5K
+  })
 })
 
 // ============================================================

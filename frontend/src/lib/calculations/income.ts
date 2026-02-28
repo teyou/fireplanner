@@ -261,18 +261,22 @@ export function getLifeEventExpenseImpact(
 
   for (const event of lifeEvents) {
     if (age >= event.startAge && age < event.endAge) {
-      // Apply reduction to base expenses first (lifestyle downgrade)
-      if (event.expenseReductionPercent) {
-        adjusted *= (1 - event.expenseReductionPercent)
+      // Apply reduction to base expenses first (lifestyle downgrade).
+      // Clamp to [0, 1] defensively — schema validates but store mutations don't.
+      const reduction = Math.max(0, Math.min(1, event.expenseReductionPercent ?? 0))
+      if (reduction > 0) {
+        adjusted *= (1 - reduction)
       }
       // Then add event-specific costs (medical, care, etc.)
-      if (event.additionalAnnualExpense) {
-        adjusted += event.additionalAnnualExpense
+      const addition = Math.max(0, event.additionalAnnualExpense ?? 0)
+      if (addition > 0) {
+        adjusted += addition
       }
     }
     // Lump sum only at event start
-    if (age === event.startAge && event.lumpSumCost) {
-      lumpSum += event.lumpSumCost
+    if (age === event.startAge) {
+      const lump = Math.max(0, event.lumpSumCost ?? 0)
+      if (lump > 0) lumpSum += lump
     }
   }
 

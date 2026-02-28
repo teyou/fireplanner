@@ -45,6 +45,7 @@ import { formatPercent } from '@/lib/utils'
 import type { CrisisScenario } from '@/lib/types'
 import { trackEvent } from '@/lib/analytics'
 import { ActiveLifeEventsBar } from '@/components/stressTest/ActiveLifeEventsBar'
+import { useIncomeStore } from '@/stores/useIncomeStore'
 
 function InterpretationCallout({ level, message }: { level: 'success' | 'warning' | 'danger'; message: string }) {
   const styles = {
@@ -550,6 +551,7 @@ export function StressTestPage() {
   const stressNudge = useSectionNudge('section-stress-test')
   const setSectionMode = useUIStore((s) => s.setSectionMode)
   const isStressAdvanced = stressMode === 'advanced'
+  const lifeEventCount = useIncomeStore((s) => s.lifeEvents.length)
 
   return (
     <div className="space-y-6">
@@ -598,7 +600,13 @@ export function StressTestPage() {
 
       <AnalysisModeToggle portfolioLabel={portfolioLabel} />
 
-      {isStressAdvanced && <ActiveLifeEventsBar />}
+      {isStressAdvanced ? (
+        <ActiveLifeEventsBar />
+      ) : lifeEventCount > 0 ? (
+        <p className="text-xs text-muted-foreground">
+          {lifeEventCount} life event{lifeEventCount !== 1 ? 's' : ''} active (switch to Advanced mode to manage)
+        </p>
+      ) : null}
 
       <Tabs defaultValue="monte-carlo" onValueChange={(tab) => trackEvent('stress_test_tab_changed', { tab })}>
         <TabsList className={`grid w-full ${isStressAdvanced ? 'grid-cols-3' : 'grid-cols-1'}`}>
