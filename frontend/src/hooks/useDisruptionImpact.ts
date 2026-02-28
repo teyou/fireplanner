@@ -234,12 +234,14 @@ export function useDisruptionImpact(costTier: CostTierKey = 'subsidised'): Disru
       cpfPause: template.event.cpfPause,
     }
 
-    // Recompute income projection with disruption event appended
+    // Recompute income projections to compare base vs disrupted across all working years.
+    // Using projection[0] alone would miss disruptions at future ages since it only
+    // reflects current-age income. Instead, compare total working-year income and
+    // derive the average annual income loss for the steady-state FIRE model.
     const incomeHasErrors = Object.keys(income.validationErrors).length > 0
     let disruptedIncome = baseInputs.annualIncome
     if (!incomeHasErrors) {
-      const allEvents = [...income.lifeEvents, disruptionEvent]
-      const projection = generateIncomeProjection({
+      const commonProjectionParams = {
         currentAge: profile.currentAge,
         retirementAge: profile.retirementAge,
         lifeExpectancy: profile.lifeExpectancy,
@@ -252,8 +254,6 @@ export function useDisruptionImpact(costTier: CostTierKey = 'subsidised'): Disru
         momAdjustment: income.momAdjustment,
         employerCpfEnabled: income.employerCpfEnabled,
         incomeStreams: income.incomeStreams,
-        lifeEvents: allEvents,
-        lifeEventsEnabled: true, // Force enabled for disruption preview
         annualExpenses: profile.annualExpenses,
         expenseAdjustments: profile.expenseAdjustments,
         inflation: profile.inflation,
@@ -269,9 +269,31 @@ export function useDisruptionImpact(costTier: CostTierKey = 'subsidised'): Disru
         cpfHousingMode: profile.cpfHousingMode,
         cpfHousingMonthly: profile.cpfHousingMonthly,
         cpfMortgageYearsLeft: profile.cpfMortgageYearsLeft,
+      }
+
+      // Base projection (with store's existing life events)
+      const baseProjection = generateIncomeProjection({
+        ...commonProjectionParams,
+        lifeEvents: income.lifeEvents,
+        lifeEventsEnabled: income.lifeEventsEnabled,
       })
-      if (projection.length > 0) {
-        disruptedIncome = projection[0].totalGross
+
+      // Disrupted projection (with disruption event appended, forced enabled)
+      const allEvents = [...income.lifeEvents, disruptionEvent]
+      const disruptedProjection = generateIncomeProjection({
+        ...commonProjectionParams,
+        lifeEvents: allEvents,
+        lifeEventsEnabled: true,
+      })
+
+      // Compare total working-year income to derive average annual loss
+      const baseWorking = baseProjection.filter(r => !r.isRetired)
+      const disruptedWorking = disruptedProjection.filter(r => !r.isRetired)
+      if (baseWorking.length > 0 && disruptedWorking.length > 0) {
+        const baseTotalIncome = baseWorking.reduce((s, r) => s + r.totalGross, 0)
+        const disruptedTotalIncome = disruptedWorking.reduce((s, r) => s + r.totalGross, 0)
+        const avgAnnualLoss = (baseTotalIncome - disruptedTotalIncome) / baseWorking.length
+        disruptedIncome = baseInputs.annualIncome - avgAnnualLoss
       }
     }
 
