@@ -238,6 +238,47 @@ function getActiveLifeEventNames(age: number, lifeEvents: LifeEvent[], enabled: 
     .map((e) => e.name)
 }
 
+/**
+ * Compute the expense impact of life events at a given age.
+ *
+ * - expenseReductionPercent is applied FIRST to the base expense (lifestyle downgrade)
+ * - additionalAnnualExpense is added AFTER the reduction (medical costs, care costs)
+ * - lumpSumCost is returned separately (one-time hit at event start age only)
+ *
+ * This ordering ensures reductions don't discount event-specific costs.
+ * Returns the adjusted annual expense and any lump-sum cost for that age.
+ */
+export function getLifeEventExpenseImpact(
+  age: number,
+  baseExpense: number,
+  lifeEvents: LifeEvent[],
+  enabled: boolean
+): { adjustedExpense: number; lumpSum: number } {
+  if (!enabled) return { adjustedExpense: baseExpense, lumpSum: 0 }
+
+  let adjusted = baseExpense
+  let lumpSum = 0
+
+  for (const event of lifeEvents) {
+    if (age >= event.startAge && age < event.endAge) {
+      // Apply reduction to base expenses first (lifestyle downgrade)
+      if (event.expenseReductionPercent) {
+        adjusted *= (1 - event.expenseReductionPercent)
+      }
+      // Then add event-specific costs (medical, care, etc.)
+      if (event.additionalAnnualExpense) {
+        adjusted += event.additionalAnnualExpense
+      }
+    }
+    // Lump sum only at event start
+    if (age === event.startAge && event.lumpSumCost) {
+      lumpSum += event.lumpSumCost
+    }
+  }
+
+  return { adjustedExpense: adjusted, lumpSum }
+}
+
 export interface IncomeProjectionParams {
   currentAge: number
   retirementAge: number
@@ -665,9 +706,12 @@ export function generateIncomeProjection(params: IncomeProjectionParams): Income
     // Net income
     const totalNet = totalGross - sgTax - cpfEmployee
 
-    // Savings
+    // Savings — apply life event expense impacts (additional costs, lifestyle reductions)
     const effectiveBase = getEffectiveExpenses(age, params.annualExpenses, params.expenseAdjustments ?? [], params.lifeExpectancy)
-    const inflationAdjustedExpenses = effectiveBase * Math.pow(1 + params.inflation, year)
+    const { adjustedExpense: lifeEventAdjustedExpense } = getLifeEventExpenseImpact(
+      age, effectiveBase, params.lifeEvents, params.lifeEventsEnabled
+    )
+    const inflationAdjustedExpenses = lifeEventAdjustedExpense * Math.pow(1 + params.inflation, year)
     const savingsPaused = isSavingsPaused(age, params.lifeEvents, params.lifeEventsEnabled)
     const voluntaryTopUps = salary > 0
       ? (params.cpfTopUpOA ?? 0) + (params.cpfTopUpSA ?? 0) + (params.cpfTopUpMA ?? 0)

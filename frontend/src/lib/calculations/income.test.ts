@@ -10,6 +10,7 @@ import {
   generateIncomeProjection,
   calculateIncomeSummary,
   sumPostRetirementIncome,
+  getLifeEventExpenseImpact,
   DEFAULT_CAREER_PHASES,
 } from './income'
 import type {
@@ -300,6 +301,89 @@ describe('applyLifeEvents', () => {
     expect(applyLifeEvents(72000, 45, 'any', [eventWithExpense], true)).toBe(0)
     // Outside the event window, income is unaffected
     expect(applyLifeEvents(72000, 44, 'any', [eventWithExpense], true)).toBe(72000)
+  })
+})
+
+// ============================================================
+// getLifeEventExpenseImpact
+// ============================================================
+
+describe('getLifeEventExpenseImpact', () => {
+  const medicalEvent: LifeEvent = {
+    id: 'medical',
+    name: 'Medical Emergency',
+    startAge: 40,
+    endAge: 42,
+    incomeImpact: 1,
+    affectedStreamIds: [],
+    savingsPause: false,
+    cpfPause: false,
+    additionalAnnualExpense: 30000,
+    lumpSumCost: 10000,
+  }
+
+  const lifestyleEvent: LifeEvent = {
+    id: 'downgrade',
+    name: 'Lifestyle Downgrade',
+    startAge: 50,
+    endAge: 70,
+    incomeImpact: 1,
+    affectedStreamIds: [],
+    savingsPause: false,
+    cpfPause: false,
+    expenseReductionPercent: 0.15,
+  }
+
+  it('returns base expense when disabled', () => {
+    const result = getLifeEventExpenseImpact(40, 60000, [medicalEvent], false)
+    expect(result.adjustedExpense).toBe(60000)
+    expect(result.lumpSum).toBe(0)
+  })
+
+  it('returns base expense outside event window', () => {
+    const result = getLifeEventExpenseImpact(39, 60000, [medicalEvent], true)
+    expect(result.adjustedExpense).toBe(60000)
+    expect(result.lumpSum).toBe(0)
+  })
+
+  it('adds additionalAnnualExpense during event', () => {
+    const result = getLifeEventExpenseImpact(40, 60000, [medicalEvent], true)
+    expect(result.adjustedExpense).toBe(90000) // 60K + 30K
+  })
+
+  it('returns lumpSum only at startAge', () => {
+    expect(getLifeEventExpenseImpact(40, 60000, [medicalEvent], true).lumpSum).toBe(10000)
+    expect(getLifeEventExpenseImpact(41, 60000, [medicalEvent], true).lumpSum).toBe(0)
+  })
+
+  it('applies expenseReductionPercent to base only', () => {
+    const result = getLifeEventExpenseImpact(55, 60000, [lifestyleEvent], true)
+    expect(result.adjustedExpense).toBe(51000) // 60K * 0.85
+  })
+
+  it('applies reduction BEFORE adding costs (no discounting of medical costs)', () => {
+    // Both events active: reduction + medical
+    const combined: LifeEvent = {
+      id: 'combo',
+      name: 'Combo',
+      startAge: 40,
+      endAge: 42,
+      incomeImpact: 1,
+      affectedStreamIds: [],
+      savingsPause: false,
+      cpfPause: false,
+      additionalAnnualExpense: 30000,
+      expenseReductionPercent: 0.10,
+    }
+    const result = getLifeEventExpenseImpact(40, 60000, [combined], true)
+    // 60K * 0.9 = 54K + 30K = 84K (NOT (60K + 30K) * 0.9 = 81K)
+    expect(result.adjustedExpense).toBe(84000)
+  })
+
+  it('handles empty events array', () => {
+    const result = getLifeEventExpenseImpact(40, 60000, [], true)
+    expect(result.adjustedExpense).toBe(60000)
+    expect(result.lumpSum).toBe(0)
   })
 })
 
@@ -3749,5 +3833,95 @@ describe('sumPostRetirementIncome', () => {
 
   it('returns 0 for a zero-income row', () => {
     expect(sumPostRetirementIncome(makeRow())).toBe(0)
+  })
+})
+
+// ============================================================
+// Life event expense impacts in income projection
+// ============================================================
+
+describe('life event expense impacts in projection', () => {
+  // Use low expenses relative to income so savings changes aren't clamped by max(0,...)
+  const baseParams = {
+    currentAge: 30,
+    retirementAge: 65,
+    lifeExpectancy: 90,
+    salaryModel: 'simple' as const,
+    annualSalary: 72000,
+    salaryGrowthRate: 0,
+    realisticPhases: DEFAULT_CAREER_PHASES,
+    promotionJumps: [],
+    momEducation: 'degree' as const,
+    momAdjustment: 1.0,
+    employerCpfEnabled: true,
+    incomeStreams: [],
+    lifeEvents: [] as LifeEvent[],
+    lifeEventsEnabled: false,
+    annualExpenses: 20000,
+    inflation: 0,
+    personalReliefs: 20000,
+    srsAnnualContribution: 0,
+    initialCpfOA: 0,
+    initialCpfSA: 0,
+    initialCpfMA: 0,
+  }
+
+  it('additionalAnnualExpense reduces annualSavings during event period', () => {
+    const event: LifeEvent = {
+      id: 'medical',
+      name: 'Medical Emergency',
+      startAge: 35,
+      endAge: 37,
+      incomeImpact: 1,
+      affectedStreamIds: [],
+      savingsPause: false,
+      cpfPause: false,
+      additionalAnnualExpense: 10000,
+    }
+    const withoutEvent = generateIncomeProjection({ ...baseParams })
+    const withEvent = generateIncomeProjection({
+      ...baseParams,
+      lifeEvents: [event],
+      lifeEventsEnabled: true,
+    })
+
+    const baseSavings35 = withoutEvent.find(r => r.age === 35)!.annualSavings
+    const eventSavings35 = withEvent.find(r => r.age === 35)!.annualSavings
+
+    // Savings should be reduced by the additional expense amount
+    expect(eventSavings35).toBeLessThan(baseSavings35)
+    expect(baseSavings35 - eventSavings35).toBeCloseTo(10000, -2)
+
+    // Outside event window, savings should be the same
+    const baseSavings33 = withoutEvent.find(r => r.age === 33)!.annualSavings
+    const eventSavings33 = withEvent.find(r => r.age === 33)!.annualSavings
+    expect(eventSavings33).toBe(baseSavings33)
+  })
+
+  it('expenseReductionPercent increases annualSavings during event period', () => {
+    const event: LifeEvent = {
+      id: 'downgrade',
+      name: 'Lifestyle Downgrade',
+      startAge: 35,
+      endAge: 40,
+      incomeImpact: 1,
+      affectedStreamIds: [],
+      savingsPause: false,
+      cpfPause: false,
+      expenseReductionPercent: 0.20,
+    }
+    const withoutEvent = generateIncomeProjection({ ...baseParams })
+    const withEvent = generateIncomeProjection({
+      ...baseParams,
+      lifeEvents: [event],
+      lifeEventsEnabled: true,
+    })
+
+    const baseSavings36 = withoutEvent.find(r => r.age === 36)!.annualSavings
+    const eventSavings36 = withEvent.find(r => r.age === 36)!.annualSavings
+
+    // 20% of 20K expenses = 4K saved → savings increase by 4K
+    expect(eventSavings36).toBeGreaterThan(baseSavings36)
+    expect(eventSavings36 - baseSavings36).toBeCloseTo(4000, -2)
   })
 })
