@@ -1,0 +1,415 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - region "Notifications alt+T"
+    - complementary [ref=e4]:
+      - generic [ref=e5]: FIRE Planner
+      - generic [ref=e6]:
+        - button "Simple" [ref=e7] [cursor=pointer]
+        - button "Advanced" [ref=e8] [cursor=pointer]
+      - navigation [ref=e9]:
+        - generic [ref=e10]:
+          - generic [ref=e11]: START
+          - link "Start Here" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e14]
+            - text: Start Here
+        - generic [ref=e17]:
+          - generic [ref=e18]: INPUTS
+          - generic [ref=e19]:
+            - button "Personal Customized" [ref=e20] [cursor=pointer]:
+              - img [ref=e21]
+              - text: Personal
+              - generic "Customized" [ref=e24]
+            - button "FIRE Settings Using defaults" [ref=e25] [cursor=pointer]:
+              - img [ref=e26]
+              - text: FIRE Settings
+              - generic "Using defaults" [ref=e30]
+            - button "Income Using defaults" [ref=e31] [cursor=pointer]:
+              - img [ref=e32]
+              - text: Income
+              - generic "Using defaults" [ref=e34]
+            - button "Expenses Using defaults" [ref=e35] [cursor=pointer]:
+              - img [ref=e36]
+              - text: Expenses
+              - generic "Using defaults" [ref=e39]
+            - button "Goals Using defaults" [ref=e40] [cursor=pointer]:
+              - img [ref=e41]
+              - text: Goals
+              - generic "Using defaults" [ref=e44]
+            - button "Net Worth Customized" [ref=e45] [cursor=pointer]:
+              - img [ref=e46]
+              - text: Net Worth
+              - generic "Customized" [ref=e49]
+            - button "CPF Using defaults" [ref=e50] [cursor=pointer]:
+              - img [ref=e51]
+              - text: CPF
+              - generic "Using defaults" [ref=e53]
+            - button "Healthcare Using defaults" [ref=e54] [cursor=pointer]:
+              - img [ref=e55]
+              - text: Healthcare
+              - generic "Using defaults" [ref=e58]
+            - button "Property 1 error(s)" [ref=e59] [cursor=pointer]:
+              - img [ref=e60]
+              - text: Property
+              - generic "1 error(s)" [ref=e63]
+            - button "Allocation Using defaults" [ref=e64] [cursor=pointer]:
+              - img [ref=e65]
+              - text: Allocation
+              - generic "Using defaults" [ref=e68]
+        - generic [ref=e69]:
+          - generic [ref=e70]: PLAN
+          - link "Projection" [ref=e72] [cursor=pointer]:
+            - /url: /projection
+            - img [ref=e73]
+            - text: Projection
+        - generic [ref=e75]:
+          - generic [ref=e76]: EXPLORE
+          - link "Withdrawal Strategies" [ref=e78] [cursor=pointer]:
+            - /url: /withdrawal
+            - img [ref=e79]
+            - text: Withdrawal Strategies
+        - generic [ref=e82]:
+          - generic [ref=e83]: ANALYSIS
+          - link "Stress Test" [ref=e85] [cursor=pointer]:
+            - /url: /stress-test
+            - img [ref=e86]
+            - text: Stress Test
+        - generic [ref=e88]:
+          - generic [ref=e89]: RESULTS
+          - link "Dashboard" [ref=e91] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e92]
+            - text: Dashboard
+        - generic [ref=e97]:
+          - generic [ref=e98]: REFERENCE
+          - generic [ref=e99]:
+            - link "Reference Guide" [ref=e100] [cursor=pointer]:
+              - /url: /reference
+              - img [ref=e101]
+              - text: Reference Guide
+            - link "Checklist" [ref=e103] [cursor=pointer]:
+              - /url: /checklist
+              - img [ref=e104]
+              - text: Checklist
+      - generic [ref=e107]:
+        - button "Scenarios" [ref=e108] [cursor=pointer]:
+          - img [ref=e109]
+          - text: Scenarios
+        - generic [ref=e113]:
+          - button "Export" [ref=e114] [cursor=pointer]:
+            - img [ref=e115]
+            - text: Export
+          - button "Excel" [ref=e118] [cursor=pointer]:
+            - img [ref=e119]
+            - text: Excel
+          - button "Import" [ref=e122] [cursor=pointer]:
+            - img [ref=e123]
+            - text: Import
+          - button "Share" [ref=e126] [cursor=pointer]:
+            - img [ref=e127]
+            - text: Share
+        - button "Help & FAQ ?" [ref=e133] [cursor=pointer]:
+          - img [ref=e134]
+          - text: Help & FAQ
+          - generic [ref=e137]: "?"
+        - generic [ref=e138]:
+          - button "Light theme" [ref=e139] [cursor=pointer]:
+            - img [ref=e140]
+          - button "Dark theme" [ref=e146] [cursor=pointer]:
+            - img [ref=e147]
+          - button "System theme" [ref=e149] [cursor=pointer]:
+            - img [ref=e150]
+    - generic [ref=e152]:
+      - main [ref=e154]:
+        - generic [ref=e155]:
+          - generic [ref=e156]:
+            - img [ref=e157]
+            - generic [ref=e160]:
+              - generic [ref=e161]: Track your spending against your FIRE plan.
+              - button "Get early access →" [ref=e162] [cursor=pointer]
+            - button "Dismiss expense tracker banner" [ref=e163] [cursor=pointer]:
+              - img [ref=e164]
+          - generic [ref=e198]:
+            - generic [ref=e199]:
+              - heading "FIRE Dashboard" [level=1] [ref=e200]
+              - paragraph [ref=e201]: Your financial independence snapshot. All metrics are computed from your profile, income, and allocation settings.
+            - generic [ref=e202]:
+              - img [ref=e203]
+              - generic [ref=e205]:
+                - paragraph [ref=e206]: "You're using default values for some sections. Personalize your inputs for accurate results:"
+                - generic [ref=e207]:
+                  - link "Income" [ref=e208] [cursor=pointer]:
+                    - /url: /inputs#section-income
+                  - link "Expenses" [ref=e209] [cursor=pointer]:
+                    - /url: /inputs#section-expenses
+            - generic [ref=e212]:
+              - generic [ref=e214]:
+                - paragraph [ref=e215]: FIRE Number
+                - 'link "$1,333,333 Proj: $2,095,478 (+57.2%)" [ref=e217] [cursor=pointer]':
+                  - /url: /inputs#section-fire-settings
+                  - text: $1,333,333
+                  - generic [ref=e218]: "Proj: $2,095,478 (+57.2%)"
+              - generic [ref=e220]:
+                - paragraph [ref=e221]: Progress
+                - generic [ref=e222]: 225.00%
+                - progressbar [ref=e223]
+              - generic [ref=e226]:
+                - paragraph [ref=e227]: Years to FIRE
+                - generic [ref=e228]: 0 years
+              - generic [ref=e230]:
+                - paragraph [ref=e231]: FIRE Age
+                - generic [ref=e232]: Age 30
+              - generic [ref=e234]:
+                - paragraph [ref=e235]:
+                  - text: Coast FIRE Number
+                  - button "More information" [ref=e236]: i
+                - generic [ref=e237]: $1,077,842
+              - generic [ref=e239]:
+                - paragraph [ref=e240]:
+                  - text: Barista FIRE Income
+                  - button "More information" [ref=e241]: i
+                - generic [ref=e242]: $0/yr
+              - generic [ref=e244]:
+                - paragraph [ref=e245]: Savings Rate
+                - generic [ref=e246]: 33.33%
+              - generic [ref=e248]:
+                - paragraph [ref=e249]: Total Net Worth
+                - link "$3,000,000" [ref=e251] [cursor=pointer]:
+                  - /url: /inputs#section-net-worth
+            - generic [ref=e253]:
+              - generic [ref=e255]:
+                - generic [ref=e256]: Portfolio Trajectory
+                - link "View full projection" [ref=e257] [cursor=pointer]:
+                  - /url: /projection
+                  - text: View full projection
+                  - img [ref=e258]
+              - generic [ref=e261]:
+                - img "Net worth projection from current age to life expectancy" [ref=e262]:
+                  - img [ref=e265]:
+                    - generic [ref=e266]:
+                      - generic [ref=e267]:
+                        - generic [ref=e269]: "30"
+                        - generic [ref=e271]: "32"
+                        - generic [ref=e273]: "34"
+                        - generic [ref=e275]: "36"
+                        - generic [ref=e277]: "38"
+                        - generic [ref=e279]: "40"
+                        - generic [ref=e281]: "42"
+                        - generic [ref=e283]: "44"
+                        - generic [ref=e285]: "46"
+                        - generic [ref=e287]: "48"
+                        - generic [ref=e289]: "50"
+                        - generic [ref=e291]: "52"
+                        - generic [ref=e293]: "54"
+                        - generic [ref=e295]: "56"
+                        - generic [ref=e297]: "58"
+                        - generic [ref=e299]: "60"
+                        - generic [ref=e301]: "62"
+                        - generic [ref=e303]: "64"
+                        - generic [ref=e305]: "66"
+                        - generic [ref=e307]: "68"
+                        - generic [ref=e309]: "70"
+                        - generic [ref=e311]: "72"
+                        - generic [ref=e313]: "74"
+                        - generic [ref=e315]: "76"
+                        - generic [ref=e317]: "78"
+                        - generic [ref=e319]: "80"
+                        - generic [ref=e321]: "82"
+                        - generic [ref=e323]: "84"
+                        - generic [ref=e325]: "86"
+                        - generic [ref=e327]: "88"
+                        - generic [ref=e329]: "90"
+                      - generic [ref=e330]: Age
+                    - generic [ref=e332]:
+                      - generic [ref=e334]: $0k
+                      - generic [ref=e336]: $3000k
+                      - generic [ref=e338]: $6000k
+                      - generic [ref=e340]: $9000k
+                      - generic [ref=e342]: $12000k
+                    - generic [ref=e356]: "FIRE #"
+                    - generic [ref=e358]: FIRE
+                - generic [ref=e359]:
+                  - generic [ref=e360]: Growing
+                  - generic [ref=e362]: Spending
+                  - generic [ref=e364]: FIRE Number
+            - generic [ref=e369] [cursor=pointer]:
+              - img [ref=e370]
+              - text: What-If Explorer
+              - generic [ref=e371]: Click to expand
+            - generic [ref=e375] [cursor=pointer]:
+              - img [ref=e376]
+              - text: Time-Cost Translator
+              - generic [ref=e379]: Click to expand
+            - generic [ref=e383] [cursor=pointer]:
+              - img [ref=e384]
+              - text: One More Year Analysis
+              - generic [ref=e386]: Click to expand
+            - generic [ref=e388]:
+              - generic [ref=e390]: Withdrawal Strategy
+              - generic [ref=e391]:
+                - paragraph [ref=e392]: Constant Dollar (4% Rule)
+                - generic [ref=e393]:
+                  - generic [ref=e394]:
+                    - generic [ref=e395]: Avg. Withdrawal
+                    - generic [ref=e396]: $119,797/yr
+                  - generic [ref=e397]:
+                    - generic [ref=e398]: Survived
+                    - generic [ref=e399]: "Yes"
+                - link "Compare all 6 strategies" [ref=e400] [cursor=pointer]:
+                  - /url: /inputs#section-expenses
+            - generic [ref=e402]:
+              - generic [ref=e404]: Passive Income Coverage
+              - generic [ref=e405]:
+                - paragraph [ref=e406]: No passive income streams configured. Add rental, investment, business, or government income to see coverage analysis.
+                - link "Configure income streams" [ref=e407] [cursor=pointer]:
+                  - /url: /inputs#section-income
+            - generic [ref=e409]:
+              - generic [ref=e411]:
+                - generic [ref=e412]: Cash Flow
+                - generic [ref=e413]:
+                  - button "All" [ref=e414] [cursor=pointer]
+                  - button "Pre-Retirement" [ref=e415] [cursor=pointer]
+                  - button "Retirement" [ref=e416] [cursor=pointer]
+              - img "Stacked area chart showing income and outflow cash flows over time" [ref=e418]:
+                - img [ref=e421]:
+                  - generic [ref=e425]:
+                    - generic [ref=e426]:
+                      - generic [ref=e428]: "30"
+                      - generic [ref=e430]: "32"
+                      - generic [ref=e432]: "34"
+                      - generic [ref=e434]: "36"
+                      - generic [ref=e436]: "38"
+                      - generic [ref=e438]: "40"
+                      - generic [ref=e440]: "42"
+                      - generic [ref=e442]: "44"
+                      - generic [ref=e444]: "46"
+                      - generic [ref=e446]: "48"
+                      - generic [ref=e448]: "50"
+                      - generic [ref=e450]: "52"
+                      - generic [ref=e452]: "54"
+                      - generic [ref=e454]: "56"
+                      - generic [ref=e456]: "58"
+                      - generic [ref=e458]: "60"
+                      - generic [ref=e460]: "62"
+                      - generic [ref=e462]: "64"
+                      - generic [ref=e464]: "66"
+                      - generic [ref=e466]: "68"
+                      - generic [ref=e468]: "70"
+                      - generic [ref=e470]: "72"
+                      - generic [ref=e472]: "74"
+                      - generic [ref=e474]: "76"
+                      - generic [ref=e476]: "78"
+                      - generic [ref=e478]: "80"
+                      - generic [ref=e480]: "82"
+                      - generic [ref=e482]: "84"
+                      - generic [ref=e484]: "86"
+                      - generic [ref=e486]: "88"
+                      - generic [ref=e488]: "90"
+                    - generic [ref=e489]: Age
+                  - generic [ref=e491]:
+                    - generic [ref=e493]: "-$300,000"
+                    - generic [ref=e495]: "-$150,000"
+                    - generic [ref=e497]: $0
+                    - generic [ref=e499]: $150,000
+                    - generic [ref=e501]: $300,000
+                  - generic [ref=e503]: Retire
+            - generic [ref=e541]:
+              - generic [ref=e543]: Risk Assessment
+              - generic [ref=e545]:
+                - generic [ref=e546]:
+                  - generic [ref=e547]:
+                    - generic [ref=e548]: Sequence Risk
+                    - generic [ref=e549]: LOW
+                  - paragraph [ref=e550]: Risk of poor market returns in early retirement years depleting the portfolio.
+                  - paragraph [ref=e551]: Your equity allocation provides reasonable sequence risk protection.
+                - generic [ref=e552]:
+                  - generic [ref=e553]:
+                    - generic [ref=e554]: Inflation Risk
+                    - generic [ref=e555]: MEDIUM
+                  - paragraph [ref=e556]: Risk that inflation erodes purchasing power over a long retirement.
+                  - paragraph [ref=e557]: Your inflation assumption is reasonable for Singapore.
+                - generic [ref=e558]:
+                  - generic [ref=e559]:
+                    - generic [ref=e560]: Longevity Risk
+                    - generic [ref=e561]: HIGH
+                  - paragraph [ref=e562]: Risk of outliving your savings with a long retirement horizon.
+                  - paragraph [ref=e563]: Consider CPF LIFE, annuities, or a lower SWR.
+                - generic [ref=e564]:
+                  - generic [ref=e565]:
+                    - generic [ref=e566]: Currency Risk
+                    - generic [ref=e567]: LOW
+                  - paragraph [ref=e568]: Risk from USD/SGD exchange rate fluctuations on US-denominated holdings.
+                  - paragraph [ref=e569]: Your currency diversification is adequate.
+                - generic [ref=e570]:
+                  - generic [ref=e571]:
+                    - generic [ref=e572]: Healthcare Risk
+                    - generic [ref=e573]: HIGH
+                  - paragraph [ref=e574]: Risk of unexpected healthcare costs in later years.
+                  - paragraph [ref=e575]: Build up CPF MediSave and consider MediShield Life supplements.
+                - generic [ref=e576]:
+                  - generic [ref=e577]:
+                    - generic [ref=e578]: Concentration Risk
+                    - generic [ref=e579]: LOW
+                  - paragraph [ref=e580]: Risk from over-concentration in a single asset class.
+                  - paragraph [ref=e581]: Your portfolio is well diversified.
+            - generic [ref=e585]:
+              - generic [ref=e586]:
+                - generic [ref=e587]:
+                  - heading "Track your spending against this plan" [level=3] [ref=e588]
+                  - paragraph [ref=e589]: I'm building a companion expense tracker for SGFirePlanner so your real spending can help keep your FIRE plan up to date.
+                - generic [ref=e590]:
+                  - generic [ref=e591]:
+                    - generic [ref=e592]: Email
+                    - textbox "Email" [ref=e593]:
+                      - /placeholder: you@example.com
+                      - text: test@gmail.com
+                  - group "How do you track expenses today?" [ref=e594]:
+                    - generic [ref=e595]: How do you track expenses today?
+                    - radiogroup "How do you track expenses today?" [ref=e596]:
+                      - radio "I track consistently" [ref=e597] [cursor=pointer]
+                      - radio "I track sometimes" [checked] [ref=e598] [cursor=pointer]
+                      - radio "I used to, but stopped" [ref=e599] [cursor=pointer]
+                      - radio "I don't currently track" [ref=e600] [cursor=pointer]
+                  - group "Primary device" [ref=e601]:
+                    - generic [ref=e602]: Primary device
+                    - radiogroup "Primary device" [ref=e603]:
+                      - radio "iPhone" [checked] [ref=e604] [cursor=pointer]
+                      - radio "Android" [ref=e605] [cursor=pointer]
+                      - radio "Both" [ref=e606] [cursor=pointer]
+                      - radio "Not sure" [ref=e607] [cursor=pointer]
+                  - alert [ref=e622]: Something went wrong.
+                  - button "Join early access" [ref=e608] [cursor=pointer]
+                  - paragraph [ref=e609]:
+                    - text: Only used for early access invites. No spam.
+                    - link "Privacy policy" [ref=e610] [cursor=pointer]:
+                      - /url: /privacy
+              - button "Dismiss" [ref=e611] [cursor=pointer]:
+                - img [ref=e612]
+        - generic [ref=e169]:
+          - paragraph [ref=e170]:
+            - text: Want a companion expense tracker?
+            - button "Get early access" [ref=e171] [cursor=pointer]
+          - paragraph [ref=e172]: This tool is for educational and planning purposes only. It does not constitute financial advice. Results are estimates based on historical data and assumptions that may not reflect future outcomes. Your financial data stays in your browser and is never sent to any server. Email addresses submitted for notifications are stored separately. Not affiliated with CPF Board or any government agency.
+      - generic [ref=e173]:
+        - generic [ref=e174]:
+          - generic [ref=e175]:
+            - generic [ref=e176]: "FIRE Age:"
+            - generic [ref=e177]: "30"
+          - generic [ref=e178]:
+            - generic [ref=e179]: "Years to FIRE:"
+            - generic [ref=e180]: Achieved!
+          - generic [ref=e181]:
+            - generic [ref=e182]: "FIRE Number:"
+            - generic [ref=e183]: "$1,333,333 (proj: $2,095,478)"
+          - generic [ref=e184]:
+            - generic [ref=e185]: "Progress:"
+            - generic [ref=e186]: 100%
+          - generic [ref=e187]:
+            - generic [ref=e188]: "MC Success:"
+            - generic [ref=e189]: 92.5%
+          - generic [ref=e190]:
+            - generic [ref=e191]: "Backtest:"
+            - generic [ref=e192]: 100.0%
+        - button "Change stats position" [ref=e194] [cursor=pointer]:
+          - img [ref=e195]
+  - generic [ref=e615]: "-$300,000"

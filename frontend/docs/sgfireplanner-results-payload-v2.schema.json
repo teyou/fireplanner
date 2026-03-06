@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://expense.app/schemas/sgfireplanner-results-payload-v2.json",
+  "title": "SGFirePlanner Results Payload v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "computed_at_utc",
+    "p_success",
+    "wr_safe_50",
+    "horizon_years",
+    "allocation_summary"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 2
+    },
+    "computed_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "input_signature": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 256
+    },
+    "scenario_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "scenario_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "simulation_method": {
+      "type": "string",
+      "enum": [
+        "parametric",
+        "bootstrap",
+        "fat_tail"
+      ]
+    },
+    "n_simulations": {
+      "type": "integer",
+      "minimum": 100
+    },
+    "computation_time_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "cached": {
+      "type": "boolean"
+    },
+    "horizon_years": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 120
+    },
+    "target_fire_age": {
+      "type": "integer",
+      "minimum": 18,
+      "maximum": 120
+    },
+    "projected_fire_age_p50": {
+      "type": "integer",
+      "minimum": 18,
+      "maximum": 120
+    },
+    "annual_expenses_target_real": {
+      "type": "number",
+      "minimum": 0
+    },
+    "required_portfolio": {
+      "type": "number",
+      "minimum": 0
+    },
+    "required_portfolio_basis": {
+      "type": "string",
+      "enum": [
+        "wr_safe_95",
+        "wr_safe_90",
+        "wr_safe_85",
+        "wr_safe_50",
+        "explicit_amount"
+      ]
+    },
+    "required_savings_rate": {
+      "type": "number",
+      "minimum": -1,
+      "maximum": 2
+    },
+    "p_success": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "wr_safe_95": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "wr_safe_90": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "wr_safe_85": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "wr_safe_50": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "wr_safe_50_source": {
+      "type": "string",
+      "enum": [
+        "optimized_confidence_50",
+        "strategy_proxy",
+        "withdrawal_band_proxy"
+      ]
+    },
+    "fail_prob_0_5y": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "fail_prob_6_10y": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "terminal_p5": {
+      "type": "number",
+      "minimum": 0
+    },
+    "terminal_p50": {
+      "type": "number",
+      "minimum": 0
+    },
+    "terminal_p95": {
+      "type": "number",
+      "minimum": 0
+    },
+    "portfolio_at_fire_p50": {
+      "type": "number",
+      "minimum": 0
+    },
+    "allocation_summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "allocation_weights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "usEquities",
+        "sgEquities",
+        "intlEquities",
+        "bonds",
+        "reits",
+        "gold",
+        "cash",
+        "cpf"
+      ],
+      "properties": {
+        "usEquities": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "sgEquities": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "intlEquities": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "bonds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "reits": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "gold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "cash": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "cpf": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}
